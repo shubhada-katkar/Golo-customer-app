@@ -1,0 +1,409 @@
+import React from "react";
+import { View, StyleSheet, Text, TouchableOpacity, ScrollView } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
+import { MaterialIcons, Ionicons } from "@expo/vector-icons";
+import { Dimensions } from "react-native";
+const { width, height } = Dimensions.get("window");
+
+export default function Template({ navigation }) {
+    return (
+        <SafeAreaView style={{ flex: 1 }}>
+            <LinearGradient
+                colors={["#f9a641", "#f5b849", "#ffffff"]}
+                start={{ x: 0.5, y: 0 }}
+                end={{ x: 0.5, y: 1 }} style={{ flex: 1, padding: 16 }} >
+
+                <View style={styles.row1}>
+                    <TouchableOpacity onPress={() => navigation.goBack()}>
+                        <MaterialIcons
+                            name="arrow-back-ios"
+                            size={26} style={{ paddingHorizontal: 10 }} />
+                    </TouchableOpacity>
+                    <Text style={{ fontSize: 22, fontFamily: "Medium", lineHeight: Math.round(22 * 1.5) }}>
+                        Smart Jahirati
+                    </Text>
+                </View>
+
+                <Text style={{ fontSize: 16, marginLeft: 48, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5), marginBottom:10 }}>
+                    Post Your Ads Instantly Online
+                </Text>
+
+                <ScrollView contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
+
+                    <Text style={{ marginTop: 16, fontSize: 16, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) }}>
+                        Language
+                    </Text>
+
+                    <TouchableOpacity style={styles.language}>
+                        <Text style={{ fontFamily: "Medium", fontSize: 14, lineHeight: Math.round(14 * 1.5) }}>English</Text>
+                    </TouchableOpacity>
+
+                    <Text style={{ paddingVertical: 14, fontSize: 16, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) }}>
+                        Choose from these 3 sample templates
+                    </Text>
+
+
+                    <TouchableOpacity style={styles.card1} onPress={()=>navigation.navigate("FormPage"
+                        , {template:"card1"}    )}>
+                        <View style={styles.topRow}>
+                            <View style={styles.tag}>
+                                <Text style={styles.tagText}>Product / Service</Text>
+                            </View>
+
+                            <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                                <Ionicons name="heart-outline" size={18} />
+                                <Ionicons name="share-social-outline" size={18} />
+                            </View>
+                        </View>
+
+                        <Text style={styles.timeText}>20m ago</Text>
+
+                        <View style={styles.image1}>
+                        </View>
+
+                        <View style={styles.row}>
+                            <Text style={styles.cardTitle}>
+                                Home Tiffin Service Now Available
+                            </Text>
+                            <Text style={styles.metaText}>
+                                ₹450
+                            </Text>
+                        </View>
+
+                        <Text style={styles.cardDesc}> Pure Veg Meals</Text>
+
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 26 }}>
+                            <View style={{ flexDirection: "row", alignItems: "center", marginTop: 10, gap: 5 }}>
+                                <Ionicons name="location-outline" size={16} />
+                                <Text style={styles.metaText}>Rajampuri</Text>
+                            </View>
+                            <View style={{ flexDirection: "row", alignItems: "center", marginTop: 10, gap: 5 }}>
+                                <Ionicons name="person" size={16} />
+                                <Text style={styles.metaText}>Ghar ka Tiffin</Text>
+                            </View>
+                        </View>
+
+                        <View style={{
+                            flexDirection: "row", justifyContent: "space-between",
+                            marginTop: 10
+                        }}>
+                            <View style={styles.chatBtn}>
+                                <Text style={styles.btnText}>
+                                    Chat</Text>
+                            </View>
+                            <View style={styles.callBtn}>
+                                <Text style={styles.btnText}>
+                                    Call</Text>
+                            </View>
+                        </View>
+                    </TouchableOpacity>
+
+                    <View style={styles.priceStrip}>
+                        <Text style={styles.priceText}>For ₹5 Only</Text>
+                    </View>
+
+
+                    <TouchableOpacity style={styles.card2} onPress={()=>navigation.navigate("FormPage",
+                        {template:"card2"}    )}>
+                        <View style={styles.topRow}>
+                            <View style={styles.tag}>
+                                <Text style={styles.tagText}>Product / Service</Text>
+                            </View>
+
+                            <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                                <Ionicons name="heart-outline" size={18} />
+                                <Ionicons name="share-social-outline" size={18} />
+                            </View>
+                        </View>
+
+                        <Text style={styles.timeText}>20m ago</Text>
+
+                        <View style={styles.row2}>
+                            <View style={styles.image2} />
+
+                            <View>
+                                <Text style={styles.cardTitle}>
+                                    Home Tiffin Service
+                                </Text>
+                                <Text style={styles.cardDesc}>Pure Veg Meals</Text>
+                            </View>
+                        </View>
+
+                        <View
+                            style={{
+                                flexDirection: "row",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                marginTop: 10,
+                            }} >
+                            <Text style={styles.metaText}>₹450</Text>
+
+                            <View style={{ flexDirection: "row", gap: 10 }}>
+                                <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+                                    <Ionicons name="location-outline" size={16} />
+                                    <Text style={styles.metaText}>Rajampuri</Text>
+                                </View>
+
+                                <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+                                    <Ionicons name="person" size={16} />
+                                    <Text style={styles.metaText}>Ghar ka Tiffin</Text>
+                                </View>
+                            </View>
+                        </View>
+
+                        <View
+                            style={{
+                                flexDirection: "row",
+                                justifyContent: "space-between",
+                                marginTop: 12,
+                            }} >
+                            <View style={styles.chatBtn}>
+                                <Text style={styles.btnText}>Chat</Text>
+                            </View>
+
+                            <View style={styles.callBtn}>
+                                <Text style={styles.btnText}>Call</Text>
+                            </View>
+                        </View>
+                    </TouchableOpacity>
+
+                    <View style={styles.priceStrip}>
+                        <Text style={styles.priceText}>For ₹3 Only</Text>
+                    </View>
+
+
+                    <TouchableOpacity style={styles.previewCard} onPress={()=>navigation.navigate("FormPage",
+                        {template:"card3"}    )}>
+                        {/* Top row */}
+                        <View style={styles.topRow}>
+                            <View style={styles.tag}>
+                                <Text style={styles.tagText}>Product / Service</Text>
+                            </View>
+
+                            <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                                <Ionicons name="heart-outline" size={18} />
+                                <Ionicons name="share-social-outline" size={18} />
+                            </View>
+                        </View>
+
+                        <Text style={styles.timeText}>20m ago</Text>
+
+                        {/* Title */}
+                        <Text style={styles.cardTitle}>
+                            Garba workshop this weekend
+                        </Text>
+
+                        {/* Description */}
+                        <Text style={styles.cardDesc}>
+                            Free entry for college students. Everyone welcome
+                        </Text>
+
+                        {/* Meta */}
+                        <View style={styles.metaRow}>
+                            <View style={styles.metaItem}>
+                                <Ionicons name="location-outline" size={14} />
+                                <Text style={styles.metaText}>Model Town, 0.8km</Text>
+                            </View>
+                            <Text style={styles.metaText}>City Hall Club</Text>
+                        </View>
+
+                        {/* Buttons */}
+                        <View style={styles.actionRow}>
+                            <View style={styles.chatBtn}>
+                                <Text style={styles.btnText}>Chat</Text>
+                            </View>
+                            <View style={styles.callBtn}>
+                                <Text style={styles.btnText}>Call</Text>
+                            </View>
+                        </View>
+                    </TouchableOpacity>
+
+                    {/* Price strip */}
+                    <View style={styles.priceStrip}>
+                        <Text style={styles.priceText}>For ₹2 only</Text>
+                    </View>
+
+                </ScrollView>
+            </LinearGradient>
+        </SafeAreaView>
+    );
+}
+
+const styles = StyleSheet.create({
+    row1: {
+        flexDirection: "row",
+        alignItems: "center"
+    },
+    language: {
+        borderRadius: 10,
+        borderWidth: 0.5,
+        padding: 10,
+        marginTop: 10
+    },
+    card1: {
+        backgroundColor: "#ffffff",
+        paddingVertical: 20,
+        paddingHorizontal: 18,
+        borderRadius: 10,
+    },
+    proser: {
+        borderRadius: 12,
+        backgroundColor: "#d6d6d6",
+        paddingVertical: 6,
+        paddingHorizontal: 10,
+        width: 120,
+        alignItems: "center"
+    },
+    image1: {
+        borderRadius: 10,
+        backgroundColor: "#d8d8d8",
+        height: height * 0.23,
+        width: width - 75,
+        alignSelf: "center",
+        marginTop: 10
+    },
+    row: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        marginTop: 10
+    },
+    card2: {
+        backgroundColor: "#ffffff",
+        paddingVertical: 20,
+        paddingHorizontal: 18,
+        borderRadius: 10,
+        marginTop: 40
+    },
+    image2: {
+        borderRadius: 10,
+        backgroundColor: "#d8d8d8",
+        height: 100,
+        width: 160,
+        marginTop: 10
+    },
+    row2: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 10
+    },
+
+
+    previewCard: {
+        backgroundColor: "#fff",
+        borderRadius: 10,
+        padding: 14,
+        marginTop: 20,
+    },
+
+    topRow: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+    },
+
+    tag: {
+        backgroundColor: "#eef0f3",
+        paddingHorizontal: 12,
+        paddingVertical: 4,
+        borderRadius: 8,
+    },
+
+    tagText: {
+        fontSize: 12,
+        fontFamily: "Medium",
+        lineHeight: Math.round(12 * 1.5)
+    },
+
+    timeText: {
+        fontSize: 12,
+        color: "#777",
+        marginTop: 6,
+        fontFamily: "Medium",
+        lineHeight: Math.round(12 * 1.5)
+    },
+
+    cardTitle: {
+        fontSize: 16,
+        fontWeight: "600",
+        marginTop: 10,
+        fontFamily: "Medium",
+        lineHeight: Math.round(16 * 1.5)
+    },
+
+    cardDesc: {
+        fontSize: 13,
+        color: "#666",
+        marginTop: 4,
+        fontFamily: "Medium",
+        lineHeight: Math.round(13 * 1.5)
+    },
+
+    metaRow: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginTop: 10,
+    },
+
+    metaItem: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 4,
+    },
+
+    metaText: {
+        fontSize: 12,
+        color: "#444",
+        fontFamily: "Medium",
+        lineHeight: Math.round(12 * 1.5)
+    },
+
+    actionRow: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        marginTop: 14,
+    },
+
+    chatBtn: {
+        backgroundColor: "#f5b849",
+        flex: 1,
+        marginRight: 8,
+        paddingVertical: 8,
+        borderRadius: 8,
+        alignItems: "center",
+    },
+
+    callBtn: {
+        backgroundColor: "#157a4f",
+        flex: 1,
+        marginLeft: 8,
+        paddingVertical: 8,
+        borderRadius: 8,
+        alignItems: "center",
+    },
+
+    btnText: {
+        color: "#fff",
+        fontSize: 14,
+        fontWeight: "600",
+        fontFamily: "Medium",
+        lineHeight: Math.round(14 * 1.5)
+    },
+
+    priceStrip: {
+        backgroundColor: "#aaaaaa",
+        paddingVertical: 10,
+        borderRadius: 6,
+        alignItems: "center",
+    },
+
+    priceText: {
+        color: "#fff",
+        fontSize: 18,
+        fontFamily: "Medium",
+        lineHeight: Math.round(18 * 1.5)
+    },
+
+})
