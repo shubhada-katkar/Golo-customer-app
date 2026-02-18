@@ -1,6 +1,6 @@
 import React, { useContext, useEffect, useState, useRef } from "react";
 import {
-    View, StyleSheet, Text, TouchableOpacity, Image,
+    View, StyleSheet, Text, TouchableOpacity, Image, Switch,
     TextInput, ActivityIndicator, Alert, ScrollView, KeyboardAvoidingView, Platform
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -12,7 +12,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
 
 export default function ProfilePage({ navigation }) {
-    const { colors } = useContext(ThemeContext);
+    const { theme, colors, toggleTheme } = useContext(ThemeContext);
     const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
     const [profileImage, setProfileImage] = useState(null);
@@ -212,25 +212,42 @@ export default function ProfilePage({ navigation }) {
                     </Text>
                 </View>
 
-                <View style={{ height: 1, backgroundColor: colors.divider, marginTop: 10 }} />
-
                 <ScrollView
                     contentContainerStyle={{ paddingBottom: 110 }}
                     keyboardShouldPersistTaps="handled"
                     showsVerticalScrollIndicator={false} >
 
-                    <TouchableOpacity onPress={confirmLogout}
-                        style={{
-                            flexDirection: "row", paddingLeft: 8, alignItems: "center",
-                            gap: 4, marginTop: 10
-                        }}>
-                        <MaterialIcons name="exit-to-app" size={20} color="#f86868" />
-                        <Text style={{
-                            fontSize: 18, color: "#f86868", fontFamily: "Medium",
-                            lineHeight: Math.round(16 * 1.5)
-                        }}>
-                            Logout</Text>
-                    </TouchableOpacity>
+
+                    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                        <TouchableOpacity onPress={confirmLogout}
+                            style={{
+                                flexDirection: "row", alignItems: "center", paddingLeft:8 }}>
+                            <MaterialIcons name="exit-to-app" size={20} color="#f86868" />
+                            <Text style={{
+                                fontSize: 18, color: "#f86868", fontFamily: "Medium",
+                                lineHeight: Math.round(18 * 1.5)
+                            }}> Logout</Text>
+                        </TouchableOpacity>
+
+                        <View 
+                            style={{
+                                flexDirection: "row", alignItems: "center" }}>
+                            <Text style={{
+                                fontSize: 18, color: colors.text, fontFamily: "Medium",
+                                lineHeight: Math.round(18 * 1.5)
+                            }}> Dark Mode</Text>
+                            <Switch
+                                value={theme === "dark"}
+                                onValueChange={toggleTheme}
+                                thumbColor={theme === "dark" ? "#157a4f" : "#f4f3f4"}
+                                trackColor={{ false: "#ccc", true: "#141414" }}
+                                ios_backgroundColor="#ccc"
+                                style={{ transform: [{ scaleX: 1.17 }, { scaleY: 1.17 }], paddingLeft: 8 }}
+                            />
+                        </View>
+                    </View>
+
+                    <View style={{ height: 0.5, backgroundColor: colors.divider, marginTop: 10 }} />
 
                     {/* PROFILE IMAGE */}
                     <TouchableOpacity style={styles.avatarWrapper} onPress={pickImage}>
@@ -252,7 +269,7 @@ export default function ProfilePage({ navigation }) {
                     <View style={{ paddingHorizontal: 14, marginTop: 16 }}>
 
                         {/* NAME */}
-                        <Text style={styles.text}>Your Name</Text>
+                        <Text style={[styles.text,{color:colors.text}]}>Your Name</Text>
                         <View style={styles.inputRow}>
                             <TextInput
                                 ref={nameRef}
@@ -270,12 +287,12 @@ export default function ProfilePage({ navigation }) {
                                     setEditEmail(false);
                                     setTimeout(() => nameRef.current?.focus(), 100);
                                 }} >
-                                <MaterialIcons name="edit" size={22} style={{ marginLeft: 8 }} />
+                                <MaterialIcons name="edit" size={22} style={{ marginLeft: 8, color:colors.text }} />
                             </TouchableOpacity>
                         </View>
 
                         {/* PHONE */}
-                        <Text style={styles.text}>Contact Number</Text>
+                        <Text style={[styles.text,{color:colors.text}]}>Contact Number</Text>
                         <View style={styles.inputRow}>
                             <TextInput
                                 ref={phoneRef}
@@ -295,12 +312,12 @@ export default function ProfilePage({ navigation }) {
                                     setEditEmail(false);
                                     setTimeout(() => phoneRef.current?.focus(), 100);
                                 }}  >
-                                <MaterialIcons name="edit" size={22} style={{ marginLeft: 8 }} />
+                                <MaterialIcons name="edit" size={22} style={{ marginLeft: 8,color:colors.text }} />
                             </TouchableOpacity>
                         </View>
 
                         {/* EMAIL (NON EDITABLE) */}
-                        <Text style={styles.text}>Email</Text>
+                        <Text style={[styles.text,{color:colors.text}]}>Email</Text>
                         <View style={styles.inputRow}>
                             <TextInput
                                 ref={emailRef}
@@ -318,7 +335,7 @@ export default function ProfilePage({ navigation }) {
                                     setEditPhone(false);
                                     setTimeout(() => emailRef.current?.focus(), 100);
                                 }}  >
-                                <MaterialIcons name="edit" size={22} style={{ marginLeft: 8 }} />
+                                <MaterialIcons name="edit" size={22} style={{ marginLeft: 8, color:colors.text }} />
                             </TouchableOpacity>
                         </View>
 

@@ -1,13 +1,17 @@
-import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import React, {useState} from "react";
+import {
+  View, Text, TouchableOpacity, StyleSheet, ScrollView,
+  TextInput, Switch, Dimensions
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
-export default function PreviewCard({ navigation }) {
+const { width, height } = Dimensions.get("window");
+
+export default function Card3() {
+  const [addPrice, setAddPrice] = useState(false);
   return (
-    <TouchableOpacity
-      style={styles.previewCard}
-      onPress={() => navigation.navigate("FormPage", { template: "card3" })}
-    >
+    <ScrollView showsVerticalScrollIndicator={false}>
+    <View style={styles.previewCard}>
       <View style={styles.topRow}>
         <View style={styles.tag}>
           <Text style={styles.tagText}>Product / Service</Text>
@@ -37,7 +41,41 @@ export default function PreviewCard({ navigation }) {
         <View style={styles.chatBtn}><Text style={styles.btnText}>Chat</Text></View>
         <View style={styles.callBtn}><Text style={styles.btnText}>Call</Text></View>
       </View>
-    </TouchableOpacity>
+    </View>
+
+
+ <Text style={styles.composeTitle}>Compose</Text>
+
+      <View style={styles.formCard}>
+        <Text style={styles.label}>Category</Text>
+        <Text style={styles.value}>Food</Text>
+
+        <Text style={styles.label}>Heading</Text>
+        <TextInput style={styles.input} placeholder="Type your text here..." />
+
+        <Text style={styles.label}>Body text</Text>
+        <TextInput style={[styles.input, styles.textArea]} multiline placeholder="Type your text here..." />
+
+        <Text style={styles.label}>Location</Text>
+        <TextInput style={styles.input} placeholder="Type your Location here..." />
+
+        <Text style={styles.label}>Contact no.</Text>
+        <TextInput style={styles.input} placeholder="Type your Contact no here..." keyboardType="phone-pad" />
+
+        <View style={styles.switchRow}>
+          <Text style={styles.label}>Do you want to add price?</Text>
+          <Switch value={addPrice} onValueChange={setAddPrice} />
+        </View>
+
+        {addPrice && (
+          <TextInput style={styles.input} placeholder="Add your product price here" keyboardType="numeric" />
+        )}
+      </View>
+
+      <TouchableOpacity style={styles.nextBtn}>
+        <Text style={styles.nextText}>Next</Text>
+      </TouchableOpacity>
+    </ScrollView >
   );
 }
 
@@ -57,4 +95,30 @@ const styles = StyleSheet.create({
   callBtn: { backgroundColor: "#157a4f", flex: 1, marginLeft: 8, paddingVertical: 8, borderRadius: 8, alignItems: "center" },
   btnText: { color: "#fff", fontSize: 14, fontFamily: "Medium" },
   iconRow: { flexDirection: "row", gap: 10 },
+
+  /* FORM */
+  composeTitle: { fontSize: 18, fontFamily: "Medium", marginBottom: 10 },
+  formCard: { backgroundColor: "#fff", padding: 16, borderRadius: 10 },
+  label: { fontSize: 16, marginTop: 10, fontFamily: "Medium" },
+  value: { fontSize: 16, color: "#555", fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
+  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10, marginTop: 6 },
+  textArea: { height: 80, textAlignVertical: "top" },
+  switchRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 12 },
+
+  uploadBox: {
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderColor: "#aaa",
+    borderRadius: 10,
+    padding: 16,
+    alignItems: "center",
+    marginTop: 8,
+  },
+  uploadText: { marginTop: 6, color: "#555", fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
+  orText: { marginVertical: 6, color: "#999", fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
+  cameraBtn: { backgroundColor: "#157a4f", paddingVertical: 8, paddingHorizontal: 18, borderRadius: 8 },
+  cameraText: { color: "#fff", fontFamily: "Medium", lineHeight: Math.round(14 * 1.5) },
+
+  nextBtn: { backgroundColor: "#157a4f", padding: 12, borderRadius: 10, alignItems: "center", marginVertical: 20 },
+  nextText: { color: "#fff", fontSize: 16, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
 });

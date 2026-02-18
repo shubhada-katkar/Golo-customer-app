@@ -41,7 +41,7 @@ export default function Fav({navigation}) {
                             <Text style={{ fontSize: 16, fontFamily: "SemiBold", color: colors.text }}>
                                 Moon cafe
                             </Text>
-                            <Text style={{ fontSize: 13, color: colors.muted }}>
+                            <Text style={{ fontSize: 13, color: colors.text }}>
                                 Rajarampuri, 5 km away from your place.
                             </Text>
                         </View>

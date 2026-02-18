@@ -46,7 +46,6 @@ export default function FormPage({ route, navigation }) {
                 </ScrollView>
             </LinearGradient>
         </SafeAreaView>
-
     );
 }
 

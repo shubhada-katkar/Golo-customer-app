@@ -41,8 +41,8 @@ export default function ChatPage({navigation}) {
 
                         {/* Chat Content */}
                         <View style={{ flex: 1 }}>
-                            <Text style={styles.name}>Priya Sharma</Text>
-                            <Text style={styles.message}>Pls take a look at the images.</Text>
+                            <Text style={[styles.name,{color:colors.text}]}>Priya Sharma</Text>
+                            <Text style={[styles.message,{color:colors.text}]}>Pls take a look at the images.</Text>
                         </View>
 
                         {/* Time + Badge */}
@@ -81,8 +81,8 @@ const styles = StyleSheet.create({
     },
 
     avatar: {
-        width: 48,
-        height: 48,
+        width: 50,
+        height: 50,
         borderRadius: 24,
         marginRight: 12,
     },

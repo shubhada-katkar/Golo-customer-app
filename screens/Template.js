@@ -43,7 +43,6 @@ export default function Template({ navigation }) {
                         Choose from these 3 sample templates
                     </Text>
 
-
                     <TouchableOpacity style={styles.card1} onPress={()=>navigation.navigate("FormPage"
                         , {template:"card1"}    )}>
                         <View style={styles.topRow}>
@@ -172,8 +171,7 @@ export default function Template({ navigation }) {
                         <Text style={styles.priceText}>For ₹3 Only</Text>
                     </View>
 
-
-                    <TouchableOpacity style={styles.previewCard} onPress={()=>navigation.navigate("FormPage",
+                    <TouchableOpacity style={styles.card3} onPress={()=>navigation.navigate("FormPage",
                         {template:"card3"}    )}>
                         {/* Top row */}
                         <View style={styles.topRow}>
@@ -227,8 +225,7 @@ export default function Template({ navigation }) {
                 </ScrollView>
             </LinearGradient>
         </SafeAreaView>
-    );
-}
+    );}
 
 const styles = StyleSheet.create({
     row1: {
@@ -288,34 +285,28 @@ const styles = StyleSheet.create({
         alignItems: "center",
         gap: 10
     },
-
-
-    previewCard: {
+    card3: {
         backgroundColor: "#fff",
         borderRadius: 10,
         padding: 14,
         marginTop: 20,
     },
-
     topRow: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
     },
-
     tag: {
         backgroundColor: "#eef0f3",
         paddingHorizontal: 12,
         paddingVertical: 4,
         borderRadius: 8,
     },
-
     tagText: {
         fontSize: 12,
         fontFamily: "Medium",
         lineHeight: Math.round(12 * 1.5)
     },
-
     timeText: {
         fontSize: 12,
         color: "#777",
@@ -323,7 +314,6 @@ const styles = StyleSheet.create({
         fontFamily: "Medium",
         lineHeight: Math.round(12 * 1.5)
     },
-
     cardTitle: {
         fontSize: 16,
         fontWeight: "600",
@@ -331,7 +321,6 @@ const styles = StyleSheet.create({
         fontFamily: "Medium",
         lineHeight: Math.round(16 * 1.5)
     },
-
     cardDesc: {
         fontSize: 13,
         color: "#666",
@@ -339,33 +328,28 @@ const styles = StyleSheet.create({
         fontFamily: "Medium",
         lineHeight: Math.round(13 * 1.5)
     },
-
     metaRow: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
         marginTop: 10,
     },
-
     metaItem: {
         flexDirection: "row",
         alignItems: "center",
         gap: 4,
     },
-
     metaText: {
         fontSize: 12,
         color: "#444",
         fontFamily: "Medium",
         lineHeight: Math.round(12 * 1.5)
     },
-
     actionRow: {
         flexDirection: "row",
         justifyContent: "space-between",
         marginTop: 14,
     },
-
     chatBtn: {
         backgroundColor: "#f5b849",
         flex: 1,
@@ -374,7 +358,6 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         alignItems: "center",
     },
-
     callBtn: {
         backgroundColor: "#157a4f",
         flex: 1,
@@ -383,7 +366,6 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         alignItems: "center",
     },
-
     btnText: {
         color: "#fff",
         fontSize: 14,
@@ -391,19 +373,16 @@ const styles = StyleSheet.create({
         fontFamily: "Medium",
         lineHeight: Math.round(14 * 1.5)
     },
-
     priceStrip: {
         backgroundColor: "#aaaaaa",
         paddingVertical: 10,
         borderRadius: 6,
         alignItems: "center",
     },
-
     priceText: {
         color: "#fff",
         fontSize: 18,
         fontFamily: "Medium",
         lineHeight: Math.round(18 * 1.5)
     },
-
 })
