@@ -16,7 +16,8 @@ import * as ImagePicker from "expo-image-picker";
 
 const { width, height } = Dimensions.get("window");
 
-export default function Card1() {
+export default function Card1({ category, formData, setFormData, onNext }) {
+
   const [addPrice, setAddPrice] = useState(false);
   const [image, setImage] = useState(null);
 
@@ -54,71 +55,55 @@ export default function Card1() {
   };
 
   return (
-    <ScrollView  showsVerticalScrollIndicator={false}>
+    <ScrollView showsVerticalScrollIndicator={false}>
 
-      {/* ===== CARD PREVIEW (VIEW ONLY) ===== */}
-      <View style={styles.card1}>
-        <View style={styles.topRow}>
-          <View style={styles.tag}>
-            <Text style={styles.tagText}>Product / Service</Text>
-          </View>
-
-          <View style={styles.iconRow}>
-            <Ionicons name="heart-outline" size={18} />
-            <Ionicons name="share-social-outline" size={18} />
-          </View>
-        </View>
-
-        <Text style={styles.timeText}>20m ago</Text>
-
-        <View style={styles.image1} />
-
-        <View style={styles.row}>
-          <Text style={styles.cardTitle}>Home Tiffin Service Now Available</Text>
-          <Text style={styles.metaText}>₹450</Text>
-        </View>
-
-        <Text style={styles.cardDesc}>Pure Veg Meals</Text>
-
-        <View style={styles.metaGroup}>
-          <View style={styles.metaItem}>
-            <Ionicons name="location-outline" size={16} />
-            <Text style={styles.metaText}>Rajampuri</Text>
-          </View>
-          <View style={styles.metaItem}>
-            <Ionicons name="person" size={16} />
-            <Text style={styles.metaText}>Ghar ka Tiffin</Text>
-          </View>
-        </View>
-
-        <View style={styles.btnRow}>
-          <View style={styles.chatBtn}>
-            <Text style={styles.btnText}>Chat</Text>
-          </View>
-          <View style={styles.callBtn}>
-            <Text style={styles.btnText}>Call</Text>
-          </View>
-        </View>
-      </View>
-
-      {/* ===== FORM BELOW CARD ===== */}
-      <Text style={styles.composeTitle}>Compose</Text>
+      <Text style={styles.composeTitle}>Basic Details</Text>
 
       <View style={styles.formCard}>
         <Text style={styles.label}>Category</Text>
-        <Text style={styles.value}>Food</Text>
+        <Text style={styles.value}>{category?.label || category}</Text>
 
         <Text style={styles.label}>Heading</Text>
-        <TextInput style={styles.input} placeholder="Type your text here..." />
+        <TextInput
+          style={styles.input}
+          value={formData.heading}
+          onChangeText={(text) =>
+            setFormData({ ...formData, heading: text })
+          }
+          placeholder="Type your text here..."
+        />
 
         <Text style={styles.label}>Body text</Text>
-        <TextInput style={[styles.input, styles.textArea]} multiline placeholder="Type your text here..." />
+        <TextInput
+          style={[styles.input, styles.textArea]}
+          value={formData.body}
+          onChangeText={(text) =>
+            setFormData({ ...formData, body: text })
+          }
+          multiline
+          placeholder="Type your text here..."
+        />
 
         <Text style={styles.label}>Location</Text>
-        <TextInput style={styles.input} placeholder="Type your Location here..." />
+        <TextInput
+          style={styles.input}
+          value={formData.location}
+          onChangeText={(text) =>
+            setFormData({ ...formData, location: text })
+          }
+          placeholder="Type your Location here..."
+        />
 
         <Text style={styles.label}>Contact no.</Text>
-        <TextInput style={styles.input} placeholder="Type your Contact no here..." keyboardType="phone-pad" />
+        <TextInput
+          style={styles.input}
+          value={formData.contact}
+          onChangeText={(text) =>
+            setFormData({ ...formData, contact: text })
+          }
+          keyboardType="phone-pad"
+          placeholder="Type your Contact no here..."
+        />
 
         <View style={styles.switchRow}>
           <Text style={styles.label}>Do you want to add price?</Text>
@@ -126,7 +111,15 @@ export default function Card1() {
         </View>
 
         {addPrice && (
-          <TextInput style={styles.input} placeholder="Add your product price here" keyboardType="numeric" />
+          <TextInput
+            style={styles.input}
+            value={formData.price}
+            onChangeText={(text) =>
+              setFormData({ ...formData, price: text })
+            }
+            placeholder="Add your product price here"
+            keyboardType="numeric"
+          />
         )}
 
         <Text style={styles.label}>Add Image</Text>
@@ -153,7 +146,7 @@ export default function Card1() {
         )}
       </View>
 
-      <TouchableOpacity style={styles.nextBtn}>
+      <TouchableOpacity style={styles.nextBtn} onPress={onNext}>
         <Text style={styles.nextText}>Next</Text>
       </TouchableOpacity>
 
@@ -162,40 +155,6 @@ export default function Card1() {
 }
 
 const styles = StyleSheet.create({
-
-  /* CARD STYLES (SAME AS YOURS) */
-  card1: {
-    backgroundColor: "#fff",
-    paddingVertical: 20,
-    paddingHorizontal: 18,
-    borderRadius: 10,
-    marginBottom: 20,
-  },
-  topRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  tag: { backgroundColor: "#eef0f3", paddingHorizontal: 12, paddingVertical: 4, borderRadius: 8 },
-  tagText: { fontSize: 12, fontFamily: "Medium" },
-  timeText: { fontSize: 12, color: "#777", marginTop: 6, fontFamily: "Medium" },
-  image1: {
-    borderRadius: 10,
-    backgroundColor: "#d8d8d8",
-    height: height * 0.23,
-    width: width - 75,
-    alignSelf: "center",
-    marginTop: 10,
-  },
-  row: { flexDirection: "row", justifyContent: "space-between", marginTop: 10 },
-  cardTitle: { fontSize: 16, fontFamily: "Medium" },
-  cardDesc: { fontSize: 13, color: "#666", marginTop: 4, fontFamily: "Medium" },
-  metaText: { fontSize: 12, color: "#444", fontFamily: "Medium" },
-  metaGroup: { flexDirection: "row", gap: 26, marginTop: 10 },
-  metaItem: { flexDirection: "row", alignItems: "center", gap: 5 },
-  btnRow: { flexDirection: "row", justifyContent: "space-between", marginTop: 10 },
-  chatBtn: { backgroundColor: "#f5b849", flex: 1, marginRight: 8, paddingVertical: 8, borderRadius: 8, alignItems: "center" },
-  callBtn: { backgroundColor: "#157a4f", flex: 1, marginLeft: 8, paddingVertical: 8, borderRadius: 8, alignItems: "center" },
-  btnText: { color: "#fff", fontSize: 14, fontFamily: "Medium" },
-  iconRow: { flexDirection: "row", gap: 10 },
-
-  /* FORM */
   composeTitle: { fontSize: 18, fontFamily: "Medium", marginBottom: 10 },
   formCard: { backgroundColor: "#fff", padding: 16, borderRadius: 10 },
   label: { fontSize: 16, marginTop: 10, fontFamily: "Medium" },

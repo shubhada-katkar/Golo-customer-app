@@ -6,7 +6,8 @@ import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 import { Dimensions } from "react-native";
 const { width, height } = Dimensions.get("window");
 
-export default function Template({ navigation }) {
+export default function Template({ navigation, route }) {
+    const { category } = route.params || {};
     return (
         <SafeAreaView style={{ flex: 1 }}>
             <LinearGradient
@@ -25,7 +26,7 @@ export default function Template({ navigation }) {
                     </Text>
                 </View>
 
-                <Text style={{ fontSize: 16, marginLeft: 48, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5), marginBottom:10 }}>
+                <Text style={{ fontSize: 16, marginLeft: 48, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5), marginBottom: 10 }}>
                     Post Your Ads Instantly Online
                 </Text>
 
@@ -43,8 +44,8 @@ export default function Template({ navigation }) {
                         Choose from these 3 sample templates
                     </Text>
 
-                    <TouchableOpacity style={styles.card1} onPress={()=>navigation.navigate("FormPage"
-                        , {template:"card1"}    )}>
+                    <TouchableOpacity style={styles.card1} onPress={() => navigation.navigate("FormPage"
+                        , { template: "card1", category: category })}>
                         <View style={styles.topRow}>
                             <View style={styles.tag}>
                                 <Text style={styles.tagText}>Product / Service</Text>
@@ -103,8 +104,8 @@ export default function Template({ navigation }) {
                     </View>
 
 
-                    <TouchableOpacity style={styles.card2} onPress={()=>navigation.navigate("FormPage",
-                        {template:"card2"}    )}>
+                    <TouchableOpacity style={styles.card2} onPress={() => navigation.navigate("FormPage",
+                        { template: "card2", category: category })}>
                         <View style={styles.topRow}>
                             <View style={styles.tag}>
                                 <Text style={styles.tagText}>Product / Service</Text>
@@ -171,8 +172,8 @@ export default function Template({ navigation }) {
                         <Text style={styles.priceText}>For ₹3 Only</Text>
                     </View>
 
-                    <TouchableOpacity style={styles.card3} onPress={()=>navigation.navigate("FormPage",
-                        {template:"card3"}    )}>
+                    <TouchableOpacity style={styles.card3} onPress={() => navigation.navigate("FormPage",
+                        { template: "card3", category: category })}>
                         {/* Top row */}
                         <View style={styles.topRow}>
                             <View style={styles.tag}>
@@ -225,7 +226,8 @@ export default function Template({ navigation }) {
                 </ScrollView>
             </LinearGradient>
         </SafeAreaView>
-    );}
+    );
+}
 
 const styles = StyleSheet.create({
     row1: {

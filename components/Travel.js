@@ -1,0 +1,217 @@
+import React, { useContext } from "react";
+import { View, Text, TextInput, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
+import { AntDesign } from "@expo/vector-icons";
+import { Picker } from "@react-native-picker/picker";
+
+export default function Travel({ formData, setFormData, category, onPrevious }) {
+  if (category?.id !== "travel") return null;
+
+  const Radio = ({ label, selected, onPress }) => (
+    <TouchableOpacity style={styles.radioRow} onPress={onPress}>
+      <View style={styles.radioOuter}>
+        {selected ? <View style={styles.radioInner} /> : null}
+      </View>
+      <Text style={styles.radioLabel}>{label}</Text>
+    </TouchableOpacity>
+  );
+
+  return (
+    <View>
+      {/* Header */}
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
+          paddingHorizontal: 5,
+          paddingBottom: 10,
+        }}
+      >
+        <Text style={styles.composeTitle}>Travel</Text>
+
+        <TouchableOpacity
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            paddingHorizontal: 10,
+            paddingVertical: 4,
+            backgroundColor: "#108136",
+            borderRadius: 10,
+          }}
+          onPress={onPrevious}
+        >
+          <AntDesign name="arrow-left" size={18} color="#ffffff" />
+          <Text
+            style={{
+              fontFamily: "Medium",
+              fontSize: 16,
+              marginLeft: 6,
+              color: "#ffffff",
+              lineHeight: Math.round(16 * 1.5),
+            }}
+          >
+            Previous
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.formCard}>
+
+        <Text style={styles.label}>Package Type</Text>
+        <View style={styles.pickerWrap}>
+          <Picker
+            selectedValue={formData.courseType || ""}
+            onValueChange={(value) => setFormData({ ...formData, courseType: value })}
+            mode="dropdown"
+          >
+            <Picker.Item label="Select package type" value="" />
+            <Picker.Item label="Tour Package" value="tour package" />
+            <Picker.Item label="Cab Service" value="cab service" />
+            <Picker.Item label="Bus Rental" value="bus rental" />
+            <Picker.Item label="Hotel Only" value="hotel only" />
+          </Picker>
+        </View>
+
+        <Text style={styles.label}>Destination</Text>
+        <TextInput
+          style={styles.input}
+          value={formData.destination || ""}
+          onChangeText={(text) =>
+            setFormData({ ...formData, destination: text })
+          }
+          placeholder="e.g. Dubai, Paris, Bali..."
+        />
+
+        <Text style={styles.label}>Duration</Text>
+        <TextInput
+          style={styles.input}
+          value={formData.duration || ""}
+          onChangeText={(text) =>
+            setFormData({ ...formData, duration: text })
+          }
+          placeholder="e.g. 5D/4N, 7D/6N"
+        />
+
+        <Text style={styles.label}>Travel Date</Text>
+        <TextInput
+          style={styles.input}
+          value={formData.travelDate || ""}
+          onChangeText={(text) =>
+            setFormData({ ...formData, travelDate: text })
+          }
+          placeholder="e.g. 15th June 2024"
+        />
+
+        <Text style={styles.label}>Duration</Text>
+        <TextInput
+          style={styles.input}
+          value={formData.duration || ""}
+          onChangeText={(text) =>
+            setFormData({ ...formData, duration: text })
+          }
+          placeholder="e.g. 6 Months"
+        />
+
+        <View style={{ height: 1, backgroundColor: "#a7a7a7", marginTop: 20 }} />
+
+        <Text style={styles.label}>Price / Person</Text>
+        <TextInput
+          style={styles.input}
+          value={formData.price || ""}
+          onChangeText={(text) =>
+            setFormData({ ...formData, price: text })
+          }
+          placeholder="Amount per person"
+        />
+
+        <Text style={styles.label}>Available Seats</Text>
+        <TextInput
+          style={styles.input}
+          value={formData.availableSeats || ""}
+          onChangeText={(text) =>
+            setFormData({ ...formData, availableSeats: text })
+          }
+          placeholder="Available Seats"
+        />
+
+        <Text style={styles.label}>Pickup Location</Text>
+        <TextInput
+          style={styles.input}
+          value={formData.pickupLocation || ""}
+          onChangeText={(text) =>
+            setFormData({ ...formData, pickupLocation: text })
+          }
+          placeholder="Pickup Location"
+        />
+
+        <Text style={styles.label}>Inclusions</Text>
+        <TextInput
+          style={styles.input}
+          value={formData.inclusions || ""}
+          onChangeText={(text) =>
+            setFormData({ ...formData, inclusions: text })
+          }
+          placeholder="Inclusions"
+        />
+
+        <Text style={styles.label}>Exclusions</Text>
+        <TextInput
+          style={styles.input}
+          value={formData.exclusions || ""}
+          onChangeText={(text) =>
+            setFormData({ ...formData, exclusions: text })
+          }
+          placeholder="Exclusions"
+        />
+      </View>
+
+      <TouchableOpacity style={styles.nextBtn}>
+        <Text style={styles.nextText}>See Preview</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+
+  composeTitle: { fontSize: 18, fontFamily: "Medium", lineHeight: Math.round(18 * 1.5) },
+  formCard: { backgroundColor: "#fff", paddingHorizontal: 16, borderRadius: 10, paddingBottom: 18 },
+  label: { fontSize: 16, marginTop: 16, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
+  value: { fontSize: 16, color: "#555", fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
+  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10, marginTop: 6 },
+  textArea: { height: 80, textAlignVertical: "top" },
+  switchRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 12 },
+
+  uploadBox: {
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderColor: "#aaa",
+    borderRadius: 10,
+    padding: 16,
+    alignItems: "center",
+    marginTop: 8,
+  },
+  uploadText: { marginTop: 6, color: "#555", fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
+  orText: { marginVertical: 6, color: "#999", fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
+  cameraBtn: { backgroundColor: "#157a4f", paddingVertical: 8, paddingHorizontal: 18, borderRadius: 8 },
+  cameraText: { color: "#fff", fontFamily: "Medium", lineHeight: Math.round(14 * 1.5) },
+
+  nextBtn: {
+    flexDirection: "row",
+    backgroundColor: "#157a4f",
+    padding: 12,
+    borderRadius: 10,
+    alignItems: "center",
+    marginVertical: 20,
+    justifyContent: "center"
+  },
+  nextText: { color: "#fff", fontSize: 16, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
+
+  pickerWrap: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 8,
+    overflow: "hidden",
+  },
+
+});

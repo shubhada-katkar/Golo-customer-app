@@ -8,7 +8,9 @@ import { ScrollView } from "react-native-gesture-handler";
 import { Modal } from "react-native";
 import { TouchableWithoutFeedback, Keyboard } from "react-native";
 
-export default function CalendarScreen({ navigation }) {
+export default function CalendarScreen({ navigation, route }) {
+  const { category } = route.params || {};
+
   const [showCalendar, setShowCalendar] = useState(false);
   const [selectedDates, setSelectedDates] = useState({});
   const datesArray = Object.keys(selectedDates).sort();
@@ -35,30 +37,25 @@ export default function CalendarScreen({ navigation }) {
   };
 
   const fetchCities = async () => {
-    setShowLocations(!showLocations);
+    if (cities.length > 0) return;
 
-    if (cities.length === 0) {
-      setLoadingCities(true);
+    setLoadingCities(true);
+    try {
+      const response = await fetch(
+        "https://countriesnow.space/api/v0.1/countries/cities",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ country: "India" }),
+        }
+      );
 
-      try {
-        const response = await fetch(
-          "https://countriesnow.space/api/v0.1/countries/cities",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ country: "India" }),
-          }
-        );
-
-        const data = await response.json();
-        setCities(data.data.slice(0, 50)); // limit results
-
-      } catch (error) {
-        console.log("City fetch error:", error);
-      }
-
-      setLoadingCities(false);
+      const data = await response.json();
+      setCities(data.data);
+    } catch (error) {
+      console.log("City fetch error:", error);
     }
+    setLoadingCities(false);
   };
 
   const filteredCities = cities
@@ -110,40 +107,20 @@ export default function CalendarScreen({ navigation }) {
             <View style={styles.location}>
               <TextInput
                 placeholder="Type Location..."
-                value={searchText} style={{fontSize:14, fontFamily:"Italic"}}
-                onFocus={() => setShowLocations(false)} 
-                onChangeText={async (text) => {
+                value={searchText}
+                style={{ fontSize: 14, fontFamily: "Italic" }}
+                onFocus={() => setShowLocations(false)}
+                onChangeText={(text) => {
                   setSearchText(text);
 
-                  if (text.length >= 1) {  // fetch only when user types at least 1 letter
-                    if (cities.length === 0) {
-                      setLoadingCities(true);
-
-                      try {
-                        const response = await fetch(
-                          "https://countriesnow.space/api/v0.1/countries/cities",
-                          {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ country: "India" }),
-                          }
-                        );
-
-                        const data = await response.json();
-                        setCities(data.data); // remove slice limit
-
-                      } catch (error) {
-                        console.log("City fetch error:", error);
-                      }
-
-                      setLoadingCities(false);
-                    }
-
-                    setShowLocations(true); // show dropdown only after typing
+                  if (text.length >= 1) {
+                    fetchCities();
+                    setShowLocations(true);
                   } else {
-                    setShowLocations(false); // hide if empty
+                    setShowLocations(false);
                   }
-                }} />
+                }}
+              />
 
             </View>
 
@@ -183,7 +160,7 @@ export default function CalendarScreen({ navigation }) {
           <TouchableOpacity
             style={styles.dates}
             onPress={() => setShowCalendar(true)} >
-            <Text style={{ fontSize: 16, fontFamily:"Italic",lineHeight:Math.round(16*1.5) }}>
+            <Text style={{ fontSize: 16, fontFamily: "Italic", lineHeight: Math.round(16 * 1.5) }}>
               {datesArray.length === 0
                 ? "Select Dates"
                 : datesArray.length === 1
@@ -243,16 +220,18 @@ export default function CalendarScreen({ navigation }) {
             </View>
           )}
 
-
           {/* Next Button */}
           <TouchableOpacity
             style={styles.button}
-            onPress={() => navigation.navigate("Template")}
+            onPress={() =>
+              navigation.navigate("Template", { category })
+            }
           >
-            <Text style={{ color: "#ffffff", fontSize: 18 , fontFamily:"Medium",lineHeight:Math.round(18*1.5)}}>
+            <Text style={{ color: "#ffffff", fontSize: 18, fontFamily: "Medium", lineHeight: Math.round(18 * 1.5) }}>
               Next
             </Text>
           </TouchableOpacity>
+
         </LinearGradient>
       </TouchableWithoutFeedback>
     </SafeAreaView>
@@ -266,20 +245,20 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 22,
-    fontFamily:"Medium",
-    lineHeight:Math.round(22*1.4)
+    fontFamily: "Medium",
+    lineHeight: Math.round(22 * 1.4)
   },
   subtitle: {
     fontSize: 16,
     marginLeft: 48,
-    fontFamily:"Medium",
-    lineHeight:Math.round(16*1.1)
+    fontFamily: "Medium",
+    lineHeight: Math.round(16 * 1.1)
   },
   label: {
     marginTop: 16,
     fontSize: 16,
-    fontFamily:"Medium",
-    lineHeight:Math.round(16*1.2)
+    fontFamily: "Medium",
+    lineHeight: Math.round(16 * 1.2)
   },
   location: {
     borderRadius: 10,
@@ -298,7 +277,7 @@ const styles = StyleSheet.create({
   },
   button: {
     paddingHorizontal: 38,
-    paddingVertical:10,
+    paddingVertical: 10,
     backgroundColor: "#157a4f",
     alignSelf: "center",
     borderRadius: 10,

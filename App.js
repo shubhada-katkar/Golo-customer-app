@@ -59,6 +59,7 @@ export default function App() {
           <Stack.Screen name='Registration' component={Registration} />
           <Stack.Screen name='AuthLoading' component={AuthLoading}/>
           <Stack.Screen name='FormPage' component={FormPage}/>
+
         </Stack.Navigator>
       </NavigationContainer>
     </ThemeProvider>

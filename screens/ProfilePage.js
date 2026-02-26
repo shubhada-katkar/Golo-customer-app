@@ -221,7 +221,8 @@ export default function ProfilePage({ navigation }) {
                     <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
                         <TouchableOpacity onPress={confirmLogout}
                             style={{
-                                flexDirection: "row", alignItems: "center", paddingLeft:8 }}>
+                                flexDirection: "row", alignItems: "center", paddingLeft: 8
+                            }}>
                             <MaterialIcons name="exit-to-app" size={20} color="#f86868" />
                             <Text style={{
                                 fontSize: 18, color: "#f86868", fontFamily: "Medium",
@@ -229,9 +230,10 @@ export default function ProfilePage({ navigation }) {
                             }}> Logout</Text>
                         </TouchableOpacity>
 
-                        <View 
+                        <View
                             style={{
-                                flexDirection: "row", alignItems: "center" }}>
+                                flexDirection: "row", alignItems: "center"
+                            }}>
                             <Text style={{
                                 fontSize: 18, color: colors.text, fontFamily: "Medium",
                                 lineHeight: Math.round(18 * 1.5)
@@ -269,8 +271,8 @@ export default function ProfilePage({ navigation }) {
                     <View style={{ paddingHorizontal: 14, marginTop: 16 }}>
 
                         {/* NAME */}
-                        <Text style={[styles.text,{color:colors.text}]}>Your Name</Text>
-                        <View style={styles.inputRow}>
+                        <Text style={[styles.text, { color: colors.text }]}>Your Name</Text>
+                        <View style={styles.inputWrapper}>
                             <TextInput
                                 ref={nameRef}
                                 value={username}
@@ -278,22 +280,27 @@ export default function ProfilePage({ navigation }) {
                                 editable={editName}
                                 style={[
                                     styles.input,
-                                    !editName && styles.disabledInput
-                                ]} />
+                                    !editName && styles.disabledInput,
+                                    { paddingRight: 40 } // space for icon
+                                ]}
+                            />
+
                             <TouchableOpacity
+                                style={styles.editIcon}
                                 onPress={() => {
                                     setEditName(true);
                                     setEditPhone(false);
                                     setEditEmail(false);
                                     setTimeout(() => nameRef.current?.focus(), 100);
-                                }} >
-                                <MaterialIcons name="edit" size={22} style={{ marginLeft: 8, color:colors.text }} />
+                                }}
+                            >
+                                <MaterialIcons name="edit" size={20} color={colors.text} />
                             </TouchableOpacity>
                         </View>
 
                         {/* PHONE */}
-                        <Text style={[styles.text,{color:colors.text}]}>Contact Number</Text>
-                        <View style={styles.inputRow}>
+                        <Text style={[styles.text, { color: colors.text }]}>Contact Number</Text>
+                        <View style={styles.inputWrapper}>
                             <TextInput
                                 ref={phoneRef}
                                 value={phone}
@@ -302,23 +309,24 @@ export default function ProfilePage({ navigation }) {
                                 keyboardType="numeric"
                                 style={[
                                     styles.input,
-                                    !editPhone && styles.disabledInput
+                                    !editPhone && styles.disabledInput,
+                                    { paddingRight: 40 }
                                 ]} />
 
-                            <TouchableOpacity
+                            <TouchableOpacity style={styles.editIcon}
                                 onPress={() => {
                                     setEditPhone(true);
                                     setEditName(false);
                                     setEditEmail(false);
                                     setTimeout(() => phoneRef.current?.focus(), 100);
                                 }}  >
-                                <MaterialIcons name="edit" size={22} style={{ marginLeft: 8,color:colors.text }} />
+                                <MaterialIcons name="edit" size={22} style={{ marginLeft: 8, color: colors.text }} />
                             </TouchableOpacity>
                         </View>
 
                         {/* EMAIL (NON EDITABLE) */}
-                        <Text style={[styles.text,{color:colors.text}]}>Email</Text>
-                        <View style={styles.inputRow}>
+                        <Text style={[styles.text, { color: colors.text }]}>Email</Text>
+                        <View style={styles.inputWrapper}>
                             <TextInput
                                 ref={emailRef}
                                 value={email}
@@ -326,16 +334,17 @@ export default function ProfilePage({ navigation }) {
                                 editable={editEmail}
                                 style={[
                                     styles.input,
-                                    !editEmail && styles.disabledInput
+                                    !editEmail && styles.disabledInput,
+                                    { paddingRight: 40 }
                                 ]} />
-                            <TouchableOpacity
+                            <TouchableOpacity style={styles.editIcon}
                                 onPress={() => {
                                     setEditEmail(true);
                                     setEditName(false);
                                     setEditPhone(false);
                                     setTimeout(() => emailRef.current?.focus(), 100);
                                 }}  >
-                                <MaterialIcons name="edit" size={22} style={{ marginLeft: 8, color:colors.text }} />
+                                <MaterialIcons name="edit" size={22} style={{ marginLeft: 8, color: colors.text }} />
                             </TouchableOpacity>
                         </View>
 
@@ -386,9 +395,10 @@ const styles = StyleSheet.create({
         flex: 1,
         borderRadius: 10,
         paddingHorizontal: 14,
+        paddingRight: 40, 
         borderWidth: 0.5,
         fontSize: 14,
-        backgroundColor: "#e0e0e0"
+        backgroundColor: "#e0e0e0",
     },
     saveButton: {
         marginTop: 20,
@@ -414,5 +424,16 @@ const styles = StyleSheet.create({
     avatarWrapper: {
         alignSelf: "center",
         marginTop: 15,
+    },
+    inputWrapper: {
+        position: "relative",
+        marginTop: 6,
+    },
+
+    editIcon: {
+        position: "absolute",
+        right: 12,
+        top: "50%",
+        transform: [{ translateY: -10 }],
     },
 });

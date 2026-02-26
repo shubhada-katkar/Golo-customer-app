@@ -1,33 +1,67 @@
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
-import {
-    MaterialIcons, Ionicons
-} from "@expo/vector-icons";
+import { MaterialIcons } from "@expo/vector-icons";
 import { ScrollView } from "react-native-gesture-handler";
+
 import Card1 from "../components/Card1";
 import Card2 from "../components/Card2";
 import Card3 from "../components/Card3";
+import Education from "../components/Education";
+import Matrimonial from "../components/Matrimonial";
+import Furniture from "../components/Furniture";
+import Employment from "../components/Employment";
+import Electronics from "../components/Electronics";
+import Pets from "../components/Pets";
+import Mobiles from "../components/Mobiles";
+import Astrology from "../components/Astrology";
+import Travel from "../components/Travel";
+
+import Property from "../components/Property";
+import Vehicles from "../components/Vehicles";
 
 export default function FormPage({ route, navigation }) {
-    const { template } = route.params || {};
+    const { category, template } = route.params || {};
 
+    const [step, setStep] = useState(1);
+    const [formData, setFormData] = useState({});
+
+    const scrollRef = useRef(null);
+    useEffect(() => {
+        scrollRef.current?.scrollTo({ y: 0, animated: true });
+    }, [step]);
+
+    const STEP_2_COMPONENTS = {
+        education: Education,
+        travel: Travel,
+        vehicles: Vehicles,
+        property: Property,
+        matrimonial:Matrimonial,
+        employment:Employment,
+        furniture:Furniture,
+        electronics_home:Electronics,
+        pets:Pets,
+        mobiles:Mobiles,
+        astrology:Astrology,
+    };
+
+    const Step2Component = STEP_2_COMPONENTS[category?.id];
     return (
         <SafeAreaView style={{ flex: 1 }}>
             <LinearGradient
                 colors={["#f9a641", "#f5b849", "#ffffff"]}
                 start={{ x: 0.5, y: 0 }}
-                end={{ x: 0.5, y: 1 }} style={{ flex: 1 }} >
-
+                end={{ x: 0.5, y: 1 }}
+                style={{ flex: 1 }}
+            >
                 <View style={{ padding: 16 }}>
                     <View style={styles.row1}>
-                        <TouchableOpacity>
-                            <MaterialIcons onPress={() => navigation.goBack()}
-                                name="arrow-back-ios"
-                                size={26} style={{ paddingHorizontal: 10 }} />
+                        <TouchableOpacity onPress={() => navigation.goBack()}>
+                            <MaterialIcons name="arrow-back-ios" size={26} style={{ paddingHorizontal: 10 }} />
                         </TouchableOpacity>
-                        <Text style={{ fontSize: 22, fontFamily: "Medium", lineHeight: Math.round(22 * 1.4) }}>
+
+                        <Text style={{ fontSize: 22, fontFamily: "Medium", lineHeight: Math.round(22 * 1.5) }}>
                             Smart Jahirati
                         </Text>
                     </View>
@@ -37,11 +71,45 @@ export default function FormPage({ route, navigation }) {
                     </Text>
                 </View>
 
-                <ScrollView>
+                <ScrollView ref={scrollRef}>
                     <View style={{ flex: 1, padding: 20 }}>
-                        {template === "card1" && <Card1 navigation={navigation} />}
-                        {template === "card2" && <Card2 navigation={navigation} />}
-                        {template === "card3" && <Card3 navigation={navigation} />}
+
+                        {step === 1 && template === "card1" && (
+                            <Card1
+                                category={category}
+                                formData={formData}
+                                setFormData={setFormData}
+                                onNext={() => setStep(2)}
+                            />
+                        )}
+
+                        {step === 1 && template === "card2" && (
+                            <Card2
+                                category={category}
+                                formData={formData}
+                                setFormData={setFormData}
+                                onNext={() => setStep(2)}
+                            />
+                        )}
+
+                        {step === 1 && template === "card3" && (
+                            <Card3
+                                category={category}
+                                formData={formData}
+                                setFormData={setFormData}
+                                onNext={() => setStep(2)}
+                            />
+                        )}
+
+                        {step === 2 && Step2Component && (
+                            <Step2Component
+                                category={category}
+                                formData={formData}
+                                setFormData={setFormData}
+                                onPrevious={() => setStep(1)}
+                            />
+                        )}
+
                     </View>
                 </ScrollView>
             </LinearGradient>
@@ -52,6 +120,6 @@ export default function FormPage({ route, navigation }) {
 const styles = StyleSheet.create({
     row1: {
         flexDirection: "row",
-        alignItems: "center"
+        alignItems: "center",
     },
-})
+});
