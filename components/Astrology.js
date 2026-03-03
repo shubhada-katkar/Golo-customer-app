@@ -1,9 +1,12 @@
 import React, { useContext } from "react";
 import { View, Text, TextInput, StyleSheet, TouchableOpacity } from "react-native";
 import { AntDesign, MaterialIcons, Feather } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 
-export default function Astrology({ formData, setFormData, category, onPrevious }) {
+export default function Astrology({ formData, setFormData, category, onPrevious, template, selectedDays, selectedLocations, price }) {
     if (category?.id !== "astrology") return null;
+    const navigation = useNavigation();
+
     const ConditionButton = ({ label, value, icon, selected, onPress }) => {
         return (
             <TouchableOpacity
@@ -203,7 +206,7 @@ export default function Astrology({ formData, setFormData, category, onPrevious 
 
             </View>
 
-            <TouchableOpacity style={styles.nextBtn}>
+            <TouchableOpacity style={styles.nextBtn} onPress={() => {navigation.navigate("Preview", {template, category, formData, selectedDays, selectedLocations, price});}}>
                 <Text style={styles.nextText}>See Preview</Text>
             </TouchableOpacity>
         </View>

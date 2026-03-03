@@ -11,7 +11,7 @@ export default function AuthLoading({ navigation }) {
         if (token) {
           navigation.reset({
             index: 0,
-            routes: [{ name: "ChojaHome" }],
+            routes: [{ name: "GoloHome" }],
           });
         } else {
           navigation.reset({

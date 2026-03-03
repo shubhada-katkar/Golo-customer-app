@@ -2,9 +2,11 @@ import React, { useContext } from "react";
 import { View, Text, TextInput, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
+import { useNavigation } from "@react-navigation/native";
 
-export default function Travel({ formData, setFormData, category, onPrevious }) {
+export default function Travel({ formData, setFormData, category, onPrevious, template, price, selectedDays, selectedLocations }) {
   if (category?.id !== "travel") return null;
+  const navigation = useNavigation();
 
   const Radio = ({ label, selected, onPress }) => (
     <TouchableOpacity style={styles.radioRow} onPress={onPress}>
@@ -164,8 +166,7 @@ export default function Travel({ formData, setFormData, category, onPrevious }) 
           placeholder="Exclusions"
         />
       </View>
-
-      <TouchableOpacity style={styles.nextBtn}>
+      <TouchableOpacity style={styles.nextBtn} onPress={() => { navigation.navigate("Preview", { template, category, formData, price, selectedDays, selectedLocations }); }}>
         <Text style={styles.nextText}>See Preview</Text>
       </TouchableOpacity>
     </View>
@@ -173,7 +174,6 @@ export default function Travel({ formData, setFormData, category, onPrevious }) 
 }
 
 const styles = StyleSheet.create({
-
   composeTitle: { fontSize: 18, fontFamily: "Medium", lineHeight: Math.round(18 * 1.5) },
   formCard: { backgroundColor: "#fff", paddingHorizontal: 16, borderRadius: 10, paddingBottom: 18 },
   label: { fontSize: 16, marginTop: 16, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
@@ -213,5 +213,4 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     overflow: "hidden",
   },
-
 });

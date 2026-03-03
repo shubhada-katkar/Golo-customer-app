@@ -15,6 +15,14 @@ import ChojaHome from './screens/ChojaHome';
 import { useFonts } from "expo-font";
 import AuthLoading from './screens/AuthLoading';
 import FormPage from './screens/FormPage';
+import Preview from './screens/Preview';
+import Payment from './screens/Payment';
+import ChatScreen from './screens/ChatScreen';
+import GoloHome from './screens/GoloHome';
+import GoloFav from './screens/GoloFav';
+import GoloChatPage from './screens/GoloChatPage';
+import OfferDetails from './screens/OfferDetails';
+import Claimed from './screens/Claimed';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -29,7 +37,7 @@ export default function App() {
     "Medium": require("./assets/fonts/GoogleSans-Medium.ttf"),
   });
 
-    useEffect(() => {
+  useEffect(() => {
     if (fontsLoaded) {
       SplashScreen.hideAsync();
     }
@@ -42,7 +50,7 @@ export default function App() {
     <ThemeProvider>
       <NavigationContainer>
         <Stack.Navigator
-          initialRouteName="AuthLoading"
+          initialRouteName="Login"
           screenOptions={{
             headerShown: false,
             cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
@@ -57,8 +65,16 @@ export default function App() {
           <Stack.Screen name='ChojaHome' component={ChojaHome} />
           <Stack.Screen name='Login' component={Login} />
           <Stack.Screen name='Registration' component={Registration} />
-          <Stack.Screen name='AuthLoading' component={AuthLoading}/>
-          <Stack.Screen name='FormPage' component={FormPage}/>
+          <Stack.Screen name='AuthLoading' component={AuthLoading} />
+          <Stack.Screen name='FormPage' component={FormPage} />
+          <Stack.Screen name='Preview' component={Preview} />
+          <Stack.Screen name='Payment' component={Payment} />
+          <Stack.Screen name='ChatScreen' component={ChatScreen} />
+          <Stack.Screen name='GoloHome' component={GoloHome} />
+          <Stack.Screen name='GoloFav' component={GoloFav} />
+          <Stack.Screen name='GoloChatPage' component={GoloChatPage} />
+          <Stack.Screen name="OfferDetails" component={OfferDetails} />
+          <Stack.Screen name="Claimed" component={Claimed} />
 
         </Stack.Navigator>
       </NavigationContainer>

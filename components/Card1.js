@@ -19,7 +19,7 @@ const { width, height } = Dimensions.get("window");
 export default function Card1({ category, formData, setFormData, onNext }) {
 
   const [addPrice, setAddPrice] = useState(false);
-  const [image, setImage] = useState(null);
+  const [images, setImages] = useState([]);
 
   const pickImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -30,11 +30,18 @@ export default function Card1({ category, formData, setFormData, onNext }) {
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsMultipleSelection: true,   // ✅ this is key
       quality: 0.7,
     });
 
     if (!result.canceled) {
-      setImage(result.assets[0].uri);
+      const uris = result.assets.map((asset) => asset.uri);
+
+      setImages((prev) => [...prev, ...uris]);
+      setFormData({
+        ...formData,
+        images: [...(formData.images || []), ...uris]
+      });
     }
   };
 
@@ -50,7 +57,13 @@ export default function Card1({ category, formData, setFormData, onNext }) {
     });
 
     if (!result.canceled) {
-      setImage(result.assets[0].uri);
+      const uri = result.assets[0].uri;
+
+      setImages((prev) => [...prev, uri]);
+      setFormData({
+        ...formData,
+        images: [...(formData.images || []), uri],
+      });
     }
   };
 
@@ -123,27 +136,36 @@ export default function Card1({ category, formData, setFormData, onNext }) {
         )}
 
         <Text style={styles.label}>Add Image</Text>
-        <TouchableOpacity style={styles.uploadBox} onPress={pickImage}>
-          <Ionicons name="cloud-upload-outline" size={28} color="#555" />
-          <Text style={styles.uploadText}>Upload your image here</Text>
+        <View style={styles.uploadBox}>
+          <TouchableOpacity onPress={pickImage}>
+            <Ionicons name="cloud-upload-outline" size={28} color="#555" style={{ alignSelf: "center" }} />
+            <Text style={styles.uploadText}>Upload your image here</Text>
+          </TouchableOpacity>
+
           <Text style={styles.orText}>OR</Text>
 
           <TouchableOpacity style={styles.cameraBtn} onPress={openCamera}>
             <Text style={styles.cameraText}>Open Camera</Text>
           </TouchableOpacity>
-        </TouchableOpacity>
+        </View>
 
-        {image && (
-          <Image
-            source={{ uri: image }}
-            style={{
-              width: "100%",
-              height: 180,
-              borderRadius: 10,
-              marginTop: 12,
-            }}
-          />
+        {images.length > 0 && (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 12 }}>
+            {images.map((uri, index) => (
+              <Image
+                key={index}
+                source={{ uri }}
+                style={{
+                  width: 120,
+                  height: 120,
+                  borderRadius: 10,
+                  marginRight: 10,
+                }}
+              />
+            ))}
+          </ScrollView>
         )}
+
       </View>
 
       <TouchableOpacity style={styles.nextBtn} onPress={onNext}>

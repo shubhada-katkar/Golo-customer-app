@@ -30,9 +30,9 @@ export default function ChatPage({navigation}) {
 
             <View style={{ flexDirection: "row", backgroundColor: colors.divider, height: 1, color: colors.divider, marginTop: 10 }} />
 
-            <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
+            <ScrollView contentContainerStyle={{ paddingBottom: 60 }}>
                 {[1, 2, 3, 4, 5, 6, 7, 8].map((item, index) => (
-                    <View key={index} style={styles.chatCard}>
+                    <TouchableOpacity key={index} style={styles.chatCard} onPress={() => navigation.navigate("ChatScreen")}>
                         {/* Profile Image */}
                         <Image
                             source={require("../assets/profile.png")}
@@ -52,7 +52,7 @@ export default function ChatPage({navigation}) {
                                 <Text style={styles.badgeText}>5</Text>
                             </View>
                         </View>
-                    </View>
+                    </TouchableOpacity>
                 ))}
             </ScrollView>
 

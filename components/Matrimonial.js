@@ -2,9 +2,11 @@ import React from "react";
 import { View, Text, TextInput, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
+import { useNavigation } from "@react-navigation/native";
 
-export default function Matrimonial({ formData, setFormData, category, onPrevious }) {
+export default function Matrimonial({ formData, setFormData, category, onPrevious, template, price, selectedDays, selectedLocations }) {
   if (category?.id !== "matrimonial") return null;
+  const navigation = useNavigation();
 
   return (
     <View>
@@ -204,7 +206,7 @@ export default function Matrimonial({ formData, setFormData, category, onPreviou
 
       </View>
 
-      <TouchableOpacity style={styles.nextBtn}>
+      <TouchableOpacity style={styles.nextBtn} onPress={() => { navigation.navigate("Preview", { template, category, formData, price, selectedDays, selectedLocations }); }}>
         <Text style={styles.nextText}>See Preview</Text>
       </TouchableOpacity>
 
@@ -236,7 +238,7 @@ const styles = StyleSheet.create({
   cameraBtn: { backgroundColor: "#157a4f", paddingVertical: 8, paddingHorizontal: 18, borderRadius: 8 },
   cameraText: { color: "#fff", fontFamily: "Medium", lineHeight: Math.round(14 * 1.5) },
 
-  nextBtn: { backgroundColor: "#157a4f", padding: 12, borderRadius: 10, alignItems: "center", marginVertical: 20, flexDirection:"row", justifyContent:"center" },
+  nextBtn: { backgroundColor: "#157a4f", padding: 12, borderRadius: 10, alignItems: "center", marginVertical: 20, flexDirection: "row", justifyContent: "center" },
   nextText: { color: "#fff", fontSize: 16, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
 
   pickerWrap: {

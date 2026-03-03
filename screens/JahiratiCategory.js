@@ -5,7 +5,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import {
     MaterialIcons, FontAwesome, MaterialCommunityIcons, AntDesign,
     SimpleLineIcons, Entypo, FontAwesome6,
-    Ionicons
+    Ionicons, Feather
 } from "@expo/vector-icons";
 
 export default function JahiratiCategory({ navigation }) {
@@ -130,8 +130,8 @@ export default function JahiratiCategory({ navigation }) {
                         </Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity style={getCategoryStyle("Lost and Found")}
-                        onPress={() => setSelectedCategory({ id: "lost_found", label: "Lost and Found" })}>
+                    <TouchableOpacity style={getCategoryStyle("LostandFound")}
+                        onPress={() => setSelectedCategory({ id: "lostandfound", label: "LostandFound" })}>
                         <FontAwesome6 name="people-carry-box" size={20} />
                         <Text style={styles.text}>
                             Lost and Found
@@ -169,30 +169,31 @@ export default function JahiratiCategory({ navigation }) {
                         onPress={() => setSelectedCategory({ id: "personal", label: "Personal" })}>
                         <MaterialIcons name="person" size={20} />
                         <Text style={styles.text}>
-                            Personal
+                            Personal Achievements
                         </Text>
                     </TouchableOpacity>
                 </View>
 
                 {/*Row : 6*/}
                 <View style={styles.rows}>
-                    <TouchableOpacity style={getCategoryStyle("Obituary")}
-                        onPress={() => setSelectedCategory({ id: "obituary", label: "Obituary" })}>
-                        <FontAwesome name="wpforms" size={20} />
-                        <Text style={styles.text}>
-                            Obituary
-                        </Text>
-                    </TouchableOpacity>
 
-                    <TouchableOpacity style={getCategoryStyle("Public Notice")}
-                        onPress={() => setSelectedCategory({ id: "public_notice", label: "Public Notice" })}>
+                    <TouchableOpacity style={getCategoryStyle("PublicNotice")}
+                        onPress={() => setSelectedCategory({ id: "publicnotice", label: "PublicNotice" })}>
                         <AntDesign name="info-circle" size={20} />
                         <Text style={styles.text}>
                             Public Notice
                         </Text>
                     </TouchableOpacity>
 
-                     <TouchableOpacity style={getCategoryStyle("Others")}
+                    <TouchableOpacity style={getCategoryStyle("Greetings")}
+                        onPress={() => setSelectedCategory({ id: "greetings", label: "Greetings" })}>
+                        <Feather name="gift" size={20} />
+                        <Text style={styles.text}>
+                            Greetings
+                        </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity style={getCategoryStyle("Others")}
                         onPress={() => setSelectedCategory({ id: "others", label: "Others" })}>
                         <Entypo name="dots-three-horizontal" size={20} />
                         <Text style={styles.text}>
@@ -208,7 +209,6 @@ export default function JahiratiCategory({ navigation }) {
                             alert("Please select a category first");
                             return;
                         }
-
                         navigation.navigate("CalendarScreen", { category: selectedCategory });
                     }}
                 >
@@ -237,13 +237,13 @@ const styles = StyleSheet.create({
     component: {
         backgroundColor: "#ffffff",
         alignItems: "center",
-        height: 65.5,
+        height: 68,
         width: 124,
         borderRadius: 10,
         justifyContent: "center"
     },
     text: {
-        fontSize: 12,
+        fontSize: 11,
         fontFamily: "Medium"
     },
     selectedComponent: {
@@ -257,6 +257,6 @@ const styles = StyleSheet.create({
         backgroundColor: "#157a4f",
         alignSelf: "center",
         borderRadius: 10,
-        marginTop: 24
+        marginTop: 30
     }
 })

@@ -1,9 +1,11 @@
 import React, { useContext } from "react";
 import { View, Text, TextInput, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 
-export default function Employment({ formData, setFormData, category, onPrevious }) {
+export default function Employment({ formData, setFormData, category, onPrevious, template, price, selectedDays, selectedLocations }) {
   if (category?.id !== "employment") return null;
+  const navigation = useNavigation();
 
   const ConditionButton = ({ label, value }) => (
     <TouchableOpacity
@@ -181,7 +183,7 @@ export default function Employment({ formData, setFormData, category, onPrevious
 
       </View>
 
-      <TouchableOpacity style={styles.nextBtn}>
+      <TouchableOpacity style={styles.nextBtn} onPress={() => { navigation.navigate("Preview", { template, category, formData, price, selectedDays, selectedLocations }); }}>
         <Text style={styles.nextText}>See Preview</Text>
       </TouchableOpacity>
     </View>

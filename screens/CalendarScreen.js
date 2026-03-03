@@ -13,13 +13,11 @@ export default function CalendarScreen({ navigation, route }) {
 
   const [showCalendar, setShowCalendar] = useState(false);
   const [selectedDates, setSelectedDates] = useState({});
+  const [locationInput, setLocationInput] = useState("");
   const datesArray = Object.keys(selectedDates).sort();
   const maxBoxHeight = 240;
-  const [showLocations, setShowLocations] = useState(false);
-  const [selectedLocation, setSelectedLocation] = useState("");
-  const [cities, setCities] = useState([]);
-  const [loadingCities, setLoadingCities] = useState(false);
-  const [searchText, setSearchText] = useState("");
+  const selectedDaysCount = datesArray.length;
+  const [selectedLocations, setSelectedLocations] = useState([]);
 
   const onDayPress = (day) => {
     const updatedDates = { ...selectedDates };
@@ -36,48 +34,9 @@ export default function CalendarScreen({ navigation, route }) {
     setSelectedDates(updatedDates);
   };
 
-  const fetchCities = async () => {
-    if (cities.length > 0) return;
-
-    setLoadingCities(true);
-    try {
-      const response = await fetch(
-        "https://countriesnow.space/api/v0.1/countries/cities",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ country: "India" }),
-        }
-      );
-
-      const data = await response.json();
-      setCities(data.data);
-    } catch (error) {
-      console.log("City fetch error:", error);
-    }
-    setLoadingCities(false);
-  };
-
-  const filteredCities = cities
-    .filter((city) =>
-      city.toLowerCase().includes(searchText.toLowerCase())
-    )
-    .sort((a, b) => {
-      const aStarts = a.toLowerCase().startsWith(searchText.toLowerCase());
-      const bStarts = b.toLowerCase().startsWith(searchText.toLowerCase());
-
-      if (aStarts && !bStarts) return -1;
-      if (!aStarts && bStarts) return 1;
-      return a.localeCompare(b);
-    });
-
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      <TouchableWithoutFeedback
-        onPress={() => {
-          setShowLocations(false);
-          Keyboard.dismiss();
-        }} >
+      <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
         <LinearGradient
           colors={["#f9a641", "#f5b849", "#ffffff"]}
           start={{ x: 0.5, y: 0 }}
@@ -106,48 +65,58 @@ export default function CalendarScreen({ navigation, route }) {
           <View style={{ position: "relative" }}>
             <View style={styles.location}>
               <TextInput
-                placeholder="Type Location..."
-                value={searchText}
+                placeholder="Type location and press enter"
+                value={locationInput}
                 style={{ fontSize: 14, fontFamily: "Italic" }}
-                onFocus={() => setShowLocations(false)}
-                onChangeText={(text) => {
-                  setSearchText(text);
-
-                  if (text.length >= 1) {
-                    fetchCities();
-                    setShowLocations(true);
-                  } else {
-                    setShowLocations(false);
+                onChangeText={(text) => setLocationInput(text)}
+                onSubmitEditing={() => {
+                  const text = locationInput || "";
+                  const arr = text
+                    .split(",")
+                    .map((s) => s.trim())
+                    .filter(Boolean);
+                  if (arr.length === 0) return;
+                  const newItems = arr.filter((a) => !selectedLocations.includes(a));
+                  if (newItems.length > 0) {
+                    setSelectedLocations((prev) => [...prev, ...newItems]);
                   }
+                  setLocationInput("");
                 }}
+                returnKeyType="done"
               />
-
             </View>
 
-            {showLocations && (
-              <TouchableWithoutFeedback onPress={() => { }}>
-                <View style={styles.dropdown}>
-                  {loadingCities ? (
-                    <Text style={{ padding: 15 }}>Loading cities...</Text>
-                  ) : (
-                    <ScrollView showsVerticalScrollIndicator={false}>
-                      {filteredCities.map((city) => (
-                        <TouchableOpacity
-                          key={city}
-                          style={styles.cityItem}
-                          onPress={() => {
-                            setSelectedLocation(city);
-                            setShowLocations(false);
-                            setSearchText(city);
-                          }}
-                        >
-                          <Text>{city}</Text>
-                        </TouchableOpacity>
-                      ))}
-                    </ScrollView>
-                  )}
-                </View>
-              </TouchableWithoutFeedback>
+            {selectedLocations.length > 0 && (
+              <View style={{ flexDirection: "row", flexWrap: "wrap", marginTop: 8 }}>
+                {selectedLocations.map((loc, idx) => (
+                  <View
+                    key={`${loc}-${idx}`}
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      backgroundColor: "#fff",
+                      paddingHorizontal: 10,
+                      paddingVertical: 6,
+                      borderRadius: 20,
+                      marginRight: 8,
+                      marginTop: 6,
+                      borderWidth: 0.5,
+                    }}
+                  >
+                    <Text style={{ fontSize: 15 }}>{loc}</Text>
+                    <TouchableOpacity
+                      onPress={() => {
+                        const newArr = selectedLocations.filter((_, i) => i !== idx);
+                        setSelectedLocations(newArr);
+                        setLocationInput(newArr.join(", "));
+                      }}
+                      style={{ marginLeft: 8 }}
+                    >
+                      <MaterialIcons name="close" size={22} color="red" />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </View>
             )}
           </View>
 
@@ -224,7 +193,11 @@ export default function CalendarScreen({ navigation, route }) {
           <TouchableOpacity
             style={styles.button}
             onPress={() =>
-              navigation.navigate("Template", { category })
+              navigation.navigate("Template", {
+                category,
+                selectedDays: datesArray.length,
+                selectedLocations: selectedLocations,
+              })
             }
           >
             <Text style={{ color: "#ffffff", fontSize: 18, fontFamily: "Medium", lineHeight: Math.round(18 * 1.5) }}>

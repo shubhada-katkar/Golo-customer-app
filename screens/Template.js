@@ -7,7 +7,7 @@ import { Dimensions } from "react-native";
 const { width, height } = Dimensions.get("window");
 
 export default function Template({ navigation, route }) {
-    const { category } = route.params || {};
+    const { category, selectedDays, selectedLocations } = route.params || {};
     return (
         <SafeAreaView style={{ flex: 1 }}>
             <LinearGradient
@@ -44,12 +44,8 @@ export default function Template({ navigation, route }) {
                         Choose from these 3 sample templates
                     </Text>
 
-                    <TouchableOpacity style={styles.card1} onPress={() => navigation.navigate("FormPage"
-                        , { template: "card1", category: category })}>
+                    <View style={styles.card1}>
                         <View style={styles.topRow}>
-                            <View style={styles.tag}>
-                                <Text style={styles.tagText}>Product / Service</Text>
-                            </View>
 
                             <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
                                 <Ionicons name="heart-outline" size={18} />
@@ -64,23 +60,23 @@ export default function Template({ navigation, route }) {
 
                         <View style={styles.row}>
                             <Text style={styles.cardTitle}>
-                                Home Tiffin Service Now Available
+                                Your Ad Title Will Appear Here
                             </Text>
                             <Text style={styles.metaText}>
-                                ₹450
+                                Price
                             </Text>
                         </View>
 
-                        <Text style={styles.cardDesc}> Pure Veg Meals</Text>
+                        <Text style={styles.cardDesc}>Description</Text>
 
                         <View style={{ flexDirection: "row", alignItems: "center", gap: 26 }}>
                             <View style={{ flexDirection: "row", alignItems: "center", marginTop: 10, gap: 5 }}>
                                 <Ionicons name="location-outline" size={16} />
-                                <Text style={styles.metaText}>Rajampuri</Text>
+                                <Text style={styles.metaText}>Location</Text>
                             </View>
                             <View style={{ flexDirection: "row", alignItems: "center", marginTop: 10, gap: 5 }}>
                                 <Ionicons name="person" size={16} />
-                                <Text style={styles.metaText}>Ghar ka Tiffin</Text>
+                                <Text style={styles.metaText}>Seller</Text>
                             </View>
                         </View>
 
@@ -97,19 +93,20 @@ export default function Template({ navigation, route }) {
                                     Call</Text>
                             </View>
                         </View>
-                    </TouchableOpacity>
 
-                    <View style={styles.priceStrip}>
-                        <Text style={styles.priceText}>For ₹5 Only</Text>
+                        <View style={styles.priceStrip}>
+                            <Text style={styles.priceText}>For ₹15 Only</Text>
+                        </View>
+
+                        <TouchableOpacity style={styles.selectStrip} onPress={() => navigation.navigate("FormPage",
+                            { template: "card1", category: category, selectedDays, selectedLocations, price:15 })}>
+                            <Text style={styles.stripText}>Select This Template</Text>
+                        </TouchableOpacity>
+
                     </View>
 
-
-                    <TouchableOpacity style={styles.card2} onPress={() => navigation.navigate("FormPage",
-                        { template: "card2", category: category })}>
+                    <View style={styles.card2}>
                         <View style={styles.topRow}>
-                            <View style={styles.tag}>
-                                <Text style={styles.tagText}>Product / Service</Text>
-                            </View>
 
                             <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
                                 <Ionicons name="heart-outline" size={18} />
@@ -124,9 +121,9 @@ export default function Template({ navigation, route }) {
 
                             <View>
                                 <Text style={styles.cardTitle}>
-                                    Home Tiffin Service
+                                    Your Ad Title Will Appear Here
                                 </Text>
-                                <Text style={styles.cardDesc}>Pure Veg Meals</Text>
+                                <Text style={styles.cardDesc}>Description</Text>
                             </View>
                         </View>
 
@@ -137,17 +134,17 @@ export default function Template({ navigation, route }) {
                                 justifyContent: "space-between",
                                 marginTop: 10,
                             }} >
-                            <Text style={styles.metaText}>₹450</Text>
+                            <Text style={styles.metaText}>Price</Text>
 
                             <View style={{ flexDirection: "row", gap: 10 }}>
                                 <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
                                     <Ionicons name="location-outline" size={16} />
-                                    <Text style={styles.metaText}>Rajampuri</Text>
+                                    <Text style={styles.metaText}>Location</Text>
                                 </View>
 
                                 <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
                                     <Ionicons name="person" size={16} />
-                                    <Text style={styles.metaText}>Ghar ka Tiffin</Text>
+                                    <Text style={styles.metaText}>Seller</Text>
                                 </View>
                             </View>
                         </View>
@@ -166,19 +163,20 @@ export default function Template({ navigation, route }) {
                                 <Text style={styles.btnText}>Call</Text>
                             </View>
                         </View>
-                    </TouchableOpacity>
 
-                    <View style={styles.priceStrip}>
-                        <Text style={styles.priceText}>For ₹3 Only</Text>
+                        <View style={styles.priceStrip}>
+                            <Text style={styles.priceText}>For ₹10 Only</Text>
+                        </View>
+
+                        <TouchableOpacity style={styles.selectStrip} onPress={() => navigation.navigate("FormPage",
+                            { template: "card2", category: category, selectedDays, selectedLocations, price:10 })}>
+                            <Text style={styles.stripText}>Select This Template</Text>
+                        </TouchableOpacity>
                     </View>
 
-                    <TouchableOpacity style={styles.card3} onPress={() => navigation.navigate("FormPage",
-                        { template: "card3", category: category })}>
+                    <View style={styles.card3}>
                         {/* Top row */}
                         <View style={styles.topRow}>
-                            <View style={styles.tag}>
-                                <Text style={styles.tagText}>Product / Service</Text>
-                            </View>
 
                             <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
                                 <Ionicons name="heart-outline" size={18} />
@@ -190,21 +188,24 @@ export default function Template({ navigation, route }) {
 
                         {/* Title */}
                         <Text style={styles.cardTitle}>
-                            Garba workshop this weekend
+                            Your Ad Title Will Appear Here
                         </Text>
 
                         {/* Description */}
                         <Text style={styles.cardDesc}>
-                            Free entry for college students. Everyone welcome
+                            Description
                         </Text>
 
                         {/* Meta */}
                         <View style={styles.metaRow}>
                             <View style={styles.metaItem}>
                                 <Ionicons name="location-outline" size={14} />
-                                <Text style={styles.metaText}>Model Town, 0.8km</Text>
+                                <Text style={styles.metaText}>Location</Text>
                             </View>
-                            <Text style={styles.metaText}>City Hall Club</Text>
+                            <View style={styles.metaItem}>
+                                <Ionicons name="person" size={14} />
+                                <Text style={styles.metaText}>Seller</Text>
+                            </View>
                         </View>
 
                         {/* Buttons */}
@@ -216,11 +217,16 @@ export default function Template({ navigation, route }) {
                                 <Text style={styles.btnText}>Call</Text>
                             </View>
                         </View>
-                    </TouchableOpacity>
 
-                    {/* Price strip */}
-                    <View style={styles.priceStrip}>
-                        <Text style={styles.priceText}>For ₹2 only</Text>
+                        <View style={styles.priceStrip}>
+                            <Text style={styles.priceText}>For ₹5 only</Text>
+                        </View>
+
+                        <TouchableOpacity style={styles.selectStrip} onPress={() => navigation.navigate("FormPage",
+                            { template: "card3", category: category, selectedDays, selectedLocations, price:5 })}>
+                            <Text style={styles.stripText}>Select This Template</Text>
+                        </TouchableOpacity>
+
                     </View>
 
                 </ScrollView>
@@ -295,19 +301,7 @@ const styles = StyleSheet.create({
     },
     topRow: {
         flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-    },
-    tag: {
-        backgroundColor: "#eef0f3",
-        paddingHorizontal: 12,
-        paddingVertical: 4,
-        borderRadius: 8,
-    },
-    tagText: {
-        fontSize: 12,
-        fontFamily: "Medium",
-        lineHeight: Math.round(12 * 1.5)
+        alignSelf: "flex-end"
     },
     timeText: {
         fontSize: 12,
@@ -377,14 +371,29 @@ const styles = StyleSheet.create({
     },
     priceStrip: {
         backgroundColor: "#aaaaaa",
-        paddingVertical: 10,
-        borderRadius: 6,
+        paddingVertical: 6,
+        borderRadius: 10,
         alignItems: "center",
+        marginTop: 10
     },
     priceText: {
         color: "#fff",
-        fontSize: 18,
+        fontSize: 16,
         fontFamily: "Medium",
-        lineHeight: Math.round(18 * 1.5)
+        lineHeight: Math.round(16 * 1.5)
     },
+    selectStrip: {
+        borderColor: "#6e6d6d",
+        paddingVertical: 8,
+        borderRadius: 10,
+        borderWidth: 1,
+        alignItems: "center",
+        marginTop: 12
+    },
+    stripText: {
+        color: "#000000",
+        fontSize: 14,
+        fontFamily: "Medium",
+        lineHeight: Math.round(14 * 1.5)
+    }
 })

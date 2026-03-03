@@ -26,6 +26,7 @@ export default function Card2({ category, formData, setFormData, onNext }) {
 
     if (!result.canceled) {
       setImage(result.assets[0].uri);
+      setFormData({ ...formData, image: result.assets[0].uri });
     }
   };
 
@@ -112,15 +113,19 @@ export default function Card2({ category, formData, setFormData, onNext }) {
         )}
 
         <Text style={styles.label}>Add Image</Text>
-        <TouchableOpacity style={styles.uploadBox} onPress={pickImage}>
+        <View style={styles.uploadBox}>
+
+          <TouchableOpacity onPress={pickImage} style={{ alignItems: "center" }}>
           <Ionicons name="cloud-upload-outline" size={28} color="#555" />
           <Text style={styles.uploadText}>Upload your image here</Text>
+          </TouchableOpacity>
+
           <Text style={styles.orText}>OR</Text>
 
           <TouchableOpacity style={styles.cameraBtn} onPress={openCamera}>
             <Text style={styles.cameraText}>Open Camera</Text>
           </TouchableOpacity>
-        </TouchableOpacity>
+        </View>
 
         {image && (
           <Image

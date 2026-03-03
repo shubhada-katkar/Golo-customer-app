@@ -1,19 +1,43 @@
-import React from "react";
-import { View, Text, TextInput, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
+import React, { useContext, useState } from "react";
+import { View, Text, TextInput, StyleSheet, TouchableOpacity } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
+import { Picker } from "@react-native-picker/picker";
+import { useNavigation } from "@react-navigation/native";
 
-export default function Vehicles({ formData, setFormData, category, onPrevious }) {
+export default function Vehicles({ formData, setFormData, category, onPrevious, template, price, selectedDays, selectedLocations }) {
   if (category?.id !== "vehicles") return null;
+  const [selectedTab, setSelectedTab] = useState("sell");
+  const navigation = useNavigation();
+
+  const ConditionButton = ({ label, value }) => (
+    <TouchableOpacity
+      style={[
+        styles.segmentBtn,
+        formData.condition === value && styles.segmentBtnSelected,
+      ]}
+      onPress={() => setFormData({ ...formData, condition: value })}
+    >
+      <Text
+        style={[
+          styles.segmentText,
+          formData.condition === value && styles.segmentTextSelected,
+        ]}
+      >
+        {label}
+      </Text>
+    </TouchableOpacity>
+  );
 
   return (
-    <ScrollView showsVerticalScrollIndicator={false}>
-
+    <View>
+      {/* Header */}
       <View
         style={{
           flexDirection: "row",
           justifyContent: "space-between",
           alignItems: "center",
           paddingHorizontal: 5,
+          paddingBottom: 10,
         }}
       >
         <Text style={styles.composeTitle}>Vehicles</Text>
@@ -22,155 +46,292 @@ export default function Vehicles({ formData, setFormData, category, onPrevious }
           style={{
             flexDirection: "row",
             alignItems: "center",
-            paddingHorizontal: 8, 
-            paddingVertical:5,
-            backgroundColor:"#108136",
-            borderRadius:10         // bigger touch target
+            paddingHorizontal: 10,
+            paddingVertical: 4,
+            backgroundColor: "#108136",
+            borderRadius: 10,
           }}
-         onPress={onPrevious}  >
-          <AntDesign name="arrow-left" size={18} color="#ffffff"/>
-          <Text style={{fontFamily:"Medium", fontSize:16, marginLeft: 6, 
-            color:"#ffffff", lineHeight:Math.round(16*1.5) }}>Previous</Text>
+          onPress={onPrevious}
+        >
+          <AntDesign name="arrow-left" size={18} color="#ffffff" />
+          <Text
+            style={{
+              fontFamily: "Medium",
+              fontSize: 16,
+              marginLeft: 6,
+              color: "#ffffff",
+              lineHeight: Math.round(16 * 1.5),
+            }}
+          >
+            Previous
+          </Text>
         </TouchableOpacity>
       </View>
 
-      <View style={styles.formCard}>
+      <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 60, justifyContent: "space-between" }}>
 
-        <Text style={styles.label}>Posting Type</Text>
-        <TextInput
-          style={styles.input}
-          value={formData.heading}
-          onChangeText={(text) =>
-            setFormData({ ...formData, postingType: text })
-          }
-          placeholder="Type your text here..."
-        />
+        <TouchableOpacity
+          style={[
+            styles.tab,
+            selectedTab === "sell" && styles.activeTab
+          ]}
+          onPress={() => {
+            setSelectedTab("sell");
+            setFormData({ ...formData, noticeType: "sell" });
+          }}
+        >
+          <Text
+            style={[
+              styles.tabText,
+              selectedTab === "sell" && styles.activeTabText
+            ]}
+          >
+            Sell
+          </Text>
+        </TouchableOpacity>
 
-        <Text style={styles.label}>Vehicle Type</Text>
-        <TextInput
-          style={styles.input}
-          value={formData.heading}
-          onChangeText={(text) =>
-            setFormData({ ...formData, vehicleType: text })
-          }
-          placeholder="Type"
-        />
-
-        <Text style={styles.label}>Brand</Text>
-        <TextInput
-          style={styles.input}
-          value={formData.heading}
-          onChangeText={(text) =>
-            setFormData({ ...formData, brand: text })
-          }
-          placeholder="e.g. Toyato, Tata..."
-        />
-
-        <Text style={styles.label}>Model</Text>
-        <TextInput
-          style={styles.input}
-          value={formData.heading}
-          onChangeText={(text) =>
-            setFormData({ ...formData, model: text })
-          }
-          placeholder="e.g. Camry, Civic..."
-        />
-
-        <Text style={styles.label}>Variant</Text>
-        <TextInput
-          style={styles.input}
-          value={formData.heading}
-          onChangeText={(text) =>
-            setFormData({ ...formData, variant: text })
-          }
-          placeholder="e.g.VXI, ZXI"
-        />
-
-        <Text style={styles.label}>Year</Text>
-        <TextInput
-          style={styles.input}
-          value={formData.heading}
-          onChangeText={(text) =>
-            setFormData({ ...formData, year: text })
-          }
-          placeholder="Enter Year of purchase"
-        />
-
-        <Text style={styles.label}>Fuel Type</Text>
-        <TextInput
-          style={styles.input}
-          value={formData.heading}
-          onChangeText={(text) =>
-            setFormData({ ...formData, fuelType: text })
-          }
-          placeholder="Fuel"
-        />
-
-        <Text style={styles.label}>KM Driven</Text>
-        <TextInput
-          style={styles.input}
-          value={formData.heading}
-          onChangeText={(text) =>
-            setFormData({ ...formData, km: text })
-          }
-          placeholder="e.g. 23000"
-        />
-
-        <Text style={styles.label}>Ownership</Text>
-        <TextInput
-          style={styles.input}
-          value={formData.heading}
-          onChangeText={(text) =>
-            setFormData({ ...formData, ownership: text })
-          }
-          placeholder="Select"
-        />
-
-        <Text style={styles.label}>Insurance Valid Till</Text>
-        <TextInput
-          style={styles.input}
-          value={formData.heading}
-          onChangeText={(text) =>
-            setFormData({ ...formData, insurance: text })
-          }
-          placeholder=""
-        />
-
-            <Text style={styles.label}>Condition</Text>
-        <TextInput
-          style={styles.input}
-          value={formData.heading}
-          onChangeText={(text) =>
-            setFormData({ ...formData, condition: text })
-          }
-          placeholder="Condition"
-        />
-
-            <Text style={styles.label}>Expected Price</Text>
-        <TextInput
-          style={styles.input}
-          value={formData.heading}
-          onChangeText={(text) =>
-            setFormData({ ...formData, price: text })
-          }
-          placeholder="Enter Amount"
-        />
+        <TouchableOpacity
+          style={[
+            styles.tab,
+            selectedTab === "rent" && styles.activeTab
+          ]}
+          onPress={() => {
+            setSelectedTab("rent");
+            setFormData({ ...formData, noticeType: "rent" });
+          }}
+        >
+          <Text
+            style={[
+              styles.tabText,
+              selectedTab === "rent" && styles.activeTabText
+            ]}
+          >
+            Rent
+          </Text>
+        </TouchableOpacity>
 
       </View>
 
-      <TouchableOpacity style={styles.nextBtn}>
+
+      <View style={styles.formCard}>
+
+        {selectedTab === "sell" && (
+          <>
+            <Text style={styles.label}>Vehicle Type</Text>
+            <View style={styles.pickerWrap}>
+              <Picker
+                selectedValue={formData.vehicleType || ""}
+                onValueChange={(value) => setFormData({ ...formData, vehicleType: value })}
+                mode="dropdown"
+              >
+                <Picker.Item label="Vehicle Type" value="" />
+                <Picker.Item label="Four Wheeler" value="fourWheeler" />
+                <Picker.Item label="Two Wheeler" value="twoWheeler" />
+                <Picker.Item label="Three Wheeler" value="threeWheeler" />
+                <Picker.Item label="Truck" value="truck" />
+                <Picker.Item label="Other Vehicle" value="otherVehicle" />
+              </Picker>
+            </View>
+
+            <Text style={styles.label}>Brand</Text>
+            <TextInput
+              style={styles.input}
+              value={formData.brand || ""}
+              onChangeText={(text) =>
+                setFormData({ ...formData, brand: text })
+              }
+              placeholder="Enter brand of the vehicle"
+            />
+
+            <Text style={styles.label}>Model</Text>
+            <TextInput
+              style={styles.input}
+              value={formData.model || ""}
+              onChangeText={(text) =>
+                setFormData({ ...formData, model: text })
+              }
+              placeholder="Enter model of the vehicle"
+            />
+
+            <Text style={styles.label}>Variant</Text>
+            <TextInput
+              style={styles.input}
+              value={formData.variant || ""}
+              onChangeText={(text) =>
+                setFormData({ ...formData, variant: text })
+              }
+              placeholder="Enter variant of the vehicle"
+            />
+
+            <Text style={styles.label}>Year</Text>
+            <TextInput
+              style={styles.input}
+              value={formData.year || ""}
+              onChangeText={(text) =>
+                setFormData({ ...formData, year: text })
+              }
+              placeholder="Enter year of the vehicle"
+            />
+
+            <Text style={styles.label}>KM Driven</Text>
+            <TextInput
+              style={styles.input}
+              value={formData.kmDriven || ""}
+              onChangeText={(text) =>
+                setFormData({ ...formData, kmDriven: text })
+              }
+              placeholder="Enter KM driven of the vehicle"
+            />
+
+            <Text style={styles.label}>Fuel Type</Text>
+            <View style={styles.pickerWrap}>
+              <Picker
+                selectedValue={formData.fuelType || ""}
+                onValueChange={(value) => setFormData({ ...formData, fuelType: value })}
+                mode="dropdown"
+              >
+                <Picker.Item label="Fuel Type" value="" />
+                <Picker.Item label="Petrol" value="petrol" />
+                <Picker.Item label="Diesel" value="diesel" />
+                <Picker.Item label="CNG" value="cng" />
+                <Picker.Item label="Electric" value="electric" />
+              </Picker>
+            </View>
+
+            <Text style={styles.label}>Transmission</Text>
+            <View style={styles.segmentRow}>
+              <ConditionButton label="Manual" value="manual" />
+              <ConditionButton label="Automatic" value="automatic" />
+            </View>
+
+            <Text style={styles.label}>Ownership</Text>
+            <View style={styles.pickerWrap}>
+              <Picker
+                selectedValue={formData.ownership || ""}
+                onValueChange={(value) => setFormData({ ...formData, ownership: value })}
+                mode="dropdown"
+              >
+                <Picker.Item label="Ownership" value="" />
+                <Picker.Item label="Single Owner" value="singleOwner" />
+                <Picker.Item label="Second Owner" value="secondOwner" />
+                <Picker.Item label="Third Owner" value="thirdOwner" />
+              </Picker>
+            </View>
+
+            <Text style={styles.label}>RC Available</Text>
+            <View style={styles.segmentRow}>
+              <ConditionButton label="Yes" value="yes" />
+              <ConditionButton label="No" value="no" />
+            </View>
+
+            <Text style={styles.label}>Insurance Valid Till</Text>
+            <TextInput
+              style={styles.input}
+              value={formData.insuranceValidTill || ""}
+              onChangeText={(text) =>
+                setFormData({ ...formData, insuranceValidTill: text })
+              }
+              placeholder="Enter insurance valid till date"
+            />
+
+            <Text style={styles.label}>Condition</Text>
+            <View style={styles.segmentRow}>
+              <ConditionButton label="Excellent" value="excellent" />
+              <ConditionButton label="Very Good" value="veryGood" />
+              <ConditionButton label="Good" value="good" />
+            </View>
+
+            <Text style={styles.label}>Price</Text>
+            <TextInput
+              style={styles.input}
+              value={formData.price || ""}
+              onChangeText={(text) =>
+                setFormData({ ...formData, price: text })
+              }
+              placeholder="Enter price of the vehicle"
+            />
+          </>
+        )}
+
+        {selectedTab === "rent" && (
+          <>
+            <Text style={styles.label}>Vehicle Type</Text>
+            <View style={styles.pickerWrap}>
+              <Picker
+                selectedValue={formData.vehicleType2 || ""}
+                onValueChange={(value) => setFormData({ ...formData, vehicleType2: value })}
+                mode="dropdown"
+              >
+                <Picker.Item label="Vehicle Type" value="" />
+                <Picker.Item label="Four Wheeler" value="fourWheeler" />
+                <Picker.Item label="Two Wheeler" value="twoWheeler" />
+                <Picker.Item label="Three Wheeler" value="threeWheeler" />
+                <Picker.Item label="Truck" value="truck" />
+                <Picker.Item label="Other Vehicle" value="otherVehicle" />
+              </Picker>
+            </View>
+
+            <Text style={styles.label}>Brand</Text>
+            <TextInput
+              style={styles.input}
+              value={formData.brand2 || ""}
+              onChangeText={(text) =>
+                setFormData({ ...formData, brand2: text })
+              }
+              placeholder="Enter brand of the vehicle"
+            />
+
+            <Text style={styles.label}>Per Day Rent Amount</Text>
+            <TextInput
+              style={styles.input}
+              value={formData.perDayRentAmount || ""}
+              onChangeText={(text) =>
+                setFormData({ ...formData, perDayRentAmount: text })
+              }
+              placeholder="Enter per day rent amount"
+            />
+
+            <Text style={styles.label}>Security Deposit</Text>
+            <TextInput
+              style={styles.input}
+              value={formData.securityDeposit || ""}
+              onChangeText={(text) =>
+                setFormData({ ...formData, securityDeposit: text })
+              }
+              placeholder="Enter security deposit amount"
+            />
+
+            <Text style={styles.label}>Includes Driver</Text>
+            <View style={styles.segmentRow}>
+              <ConditionButton label="Yes" value="yes" />
+              <ConditionButton label="No" value="no" />
+              <ConditionButton label="Both" value="both" />
+            </View>
+
+            <Text style={styles.label}>Min Rental Duration (Days)</Text>
+            <TextInput
+              style={styles.input}
+              value={formData.minRentalDuration || ""}
+              onChangeText={(text) =>
+                setFormData({ ...formData, minRentalDuration: text })
+              }
+              placeholder="Enter minimum rental duration in days"
+            />
+          </>
+        )}
+      </View>
+
+      <TouchableOpacity style={styles.nextBtn} onPress={() => { navigation.navigate("Preview", { template, category, formData, price, selectedDays, selectedLocations }); }}>
         <Text style={styles.nextText}>See Preview</Text>
       </TouchableOpacity>
-
-    </ScrollView >
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-
-  composeTitle: { fontSize: 18, fontFamily: "Medium", marginBottom: 10 },
-  formCard: { backgroundColor: "#fff", padding: 16, borderRadius: 10 },
-  label: { fontSize: 16, marginTop: 10, fontFamily: "Medium", lineHeight:Math.round(16*1.5) },
+  composeTitle: { fontSize: 18, fontFamily: "Medium", lineHeight: Math.round(18 * 1.5) },
+  formCard: { backgroundColor: "#fff", paddingHorizontal: 16, borderRadius: 10, paddingBottom: 18, marginTop: 10 },
+  label: { fontSize: 16, marginTop: 16, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
   value: { fontSize: 16, color: "#555", fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
   input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10, marginTop: 6 },
   textArea: { height: 80, textAlignVertical: "top" },
@@ -190,6 +351,69 @@ const styles = StyleSheet.create({
   cameraBtn: { backgroundColor: "#157a4f", paddingVertical: 8, paddingHorizontal: 18, borderRadius: 8 },
   cameraText: { color: "#fff", fontFamily: "Medium", lineHeight: Math.round(14 * 1.5) },
 
-  nextBtn: { backgroundColor: "#157a4f", padding: 12, borderRadius: 10, alignItems: "center", marginVertical: 20 },
+  nextBtn: {
+    flexDirection: "row",
+    backgroundColor: "#157a4f",
+    padding: 12,
+    borderRadius: 10,
+    alignItems: "center",
+    marginVertical: 20,
+    justifyContent: "center"
+  },
   nextText: { color: "#fff", fontSize: 16, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
+
+  pickerWrap: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 8,
+    overflow: "hidden",
+  },
+  tab: {
+    borderRadius: 60,
+    backgroundColor: "#c9e9e9",
+    paddingHorizontal: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    paddingVertical: 6
+  },
+  activeTab: {
+    backgroundColor: "#156e7a",
+  },
+
+  tabText: {
+    fontFamily: "Medium",
+    fontSize: 15,
+    lineHeight: Math.round(15 * 1.5),
+    color: "#0a3d3d",
+  },
+
+  activeTabText: {
+    color: "#ffffff",
+  },
+
+  segmentRow: {
+    flexDirection: "row",
+    marginTop: 6,
+  },
+  segmentBtn: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    paddingVertical: 8,
+    alignItems: "center",
+  },
+  segmentBtnSelected: {
+    backgroundColor: "#f5b849",
+    borderColor: "#bd8e38",
+  },
+  segmentText: {
+    fontSize: 15,
+    fontFamily: "Medium",
+    color: "#444",
+    lineHeight: Math.round(15 * 1.5),
+  },
+  segmentTextSelected: {
+    color: "#fff",
+  },
 });

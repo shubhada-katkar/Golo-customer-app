@@ -349,6 +349,15 @@ export default function ProfilePage({ navigation }) {
                         </View>
 
 
+                        <TouchableOpacity
+                            style={styles.saveButton}
+                            onPress={()=>navigation.navigate("Claimed")}
+                            disabled={saving} >
+                            <Text style={{ color: "white", fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) }}>
+                                Claimed Offers
+                            </Text>
+                        </TouchableOpacity>
+
                         {/* SAVE BUTTON */}
                         <TouchableOpacity
                             style={styles.saveButton}
@@ -362,12 +371,6 @@ export default function ProfilePage({ navigation }) {
                     </View>
                 </ScrollView>
             </KeyboardAvoidingView>
-
-            <SafeAreaView
-                edges={["bottom"]}
-                style={{ position: "absolute", bottom: 0, width: "100%" }} >
-                <ChojaBottom />
-            </SafeAreaView>
         </SafeAreaView>
     );
 }

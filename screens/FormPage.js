@@ -17,12 +17,18 @@ import Pets from "../components/Pets";
 import Mobiles from "../components/Mobiles";
 import Astrology from "../components/Astrology";
 import Travel from "../components/Travel";
-
+import Business from "../components/Business";
+import PublicNotice from "../components/PublicNotice";
+import Personal from "../components/Personal";
+import LostandFound from "../components/LostandFound";
+import Service from "../components/Service";
+import Others from "../components/Others";
+import Greetings from "../components/Greetings";
 import Property from "../components/Property";
 import Vehicles from "../components/Vehicles";
 
 export default function FormPage({ route, navigation }) {
-    const { category, template } = route.params || {};
+    const { category, template, selectedDays, selectedLocations, price } = route.params || {};
 
     const [step, setStep] = useState(1);
     const [formData, setFormData] = useState({});
@@ -44,6 +50,13 @@ export default function FormPage({ route, navigation }) {
         pets:Pets,
         mobiles:Mobiles,
         astrology:Astrology,
+        business:Business,
+        publicnotice:PublicNotice,
+        personal:Personal,
+        lostandfound:LostandFound,
+        service:Service,
+        others:Others,
+        greetings:Greetings,
     };
 
     const Step2Component = STEP_2_COMPONENTS[category?.id];
@@ -107,6 +120,11 @@ export default function FormPage({ route, navigation }) {
                                 formData={formData}
                                 setFormData={setFormData}
                                 onPrevious={() => setStep(1)}
+                                template={template}
+                                navigation={navigation} 
+                                selectedDays={selectedDays}
+                                selectedLocations={selectedLocations}
+                                price={price}
                             />
                         )}
 
