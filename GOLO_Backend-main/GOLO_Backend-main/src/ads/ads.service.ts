@@ -159,7 +159,11 @@ export class AdsService {
   ============================================================ */
 
   async getAdById(adId: string): Promise<Ad> {
-    const ad = await this.adModel.findOne({ adId }).exec();
+    // Try to find by _id first (MongoDB ObjectId), then fall back to adId field
+    let ad = await this.adModel.findById(adId).exec();
+    if (!ad) {
+      ad = await this.adModel.findOne({ adId }).exec();
+    }
     if (!ad) throw new NotFoundException(`Ad ${adId} not found`);
     return ad;
   }

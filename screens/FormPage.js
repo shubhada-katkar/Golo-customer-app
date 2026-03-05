@@ -43,20 +43,20 @@ export default function FormPage({ route, navigation }) {
         travel: Travel,
         vehicles: Vehicles,
         property: Property,
-        matrimonial:Matrimonial,
-        employment:Employment,
-        furniture:Furniture,
-        electronics_home:Electronics,
-        pets:Pets,
-        mobiles:Mobiles,
-        astrology:Astrology,
-        business:Business,
-        publicnotice:PublicNotice,
-        personal:Personal,
-        lostandfound:LostandFound,
-        service:Service,
-        others:Others,
-        greetings:Greetings,
+        matrimonial: Matrimonial,
+        employment: Employment,
+        furniture: Furniture,
+        electronics_home: Electronics,
+        pets: Pets,
+        mobiles: Mobiles,
+        astrology: Astrology,
+        business: Business,
+        publicnotice: PublicNotice,
+        personal: Personal,
+        lostandfound: LostandFound,
+        service: Service,
+        others: Others,
+        greetings: Greetings,
     };
 
     const Step2Component = STEP_2_COMPONENTS[category?.id];
@@ -87,7 +87,7 @@ export default function FormPage({ route, navigation }) {
                 <ScrollView ref={scrollRef}>
                     <View style={{ flex: 1, padding: 20 }}>
 
-                        {step === 1 && template === "card1" && (
+                        {step === 1 && (template === "card1" || String(template) === "1") && (
                             <Card1
                                 category={category}
                                 formData={formData}
@@ -96,7 +96,7 @@ export default function FormPage({ route, navigation }) {
                             />
                         )}
 
-                        {step === 1 && template === "card2" && (
+                        {step === 1 && (template === "card2" || String(template) === "2") && (
                             <Card2
                                 category={category}
                                 formData={formData}
@@ -105,7 +105,7 @@ export default function FormPage({ route, navigation }) {
                             />
                         )}
 
-                        {step === 1 && template === "card3" && (
+                        {step === 1 && (template === "card3" || String(template) === "3") && (
                             <Card3
                                 category={category}
                                 formData={formData}
@@ -121,7 +121,7 @@ export default function FormPage({ route, navigation }) {
                                 setFormData={setFormData}
                                 onPrevious={() => setStep(1)}
                                 template={template}
-                                navigation={navigation} 
+                                navigation={navigation}
                                 selectedDays={selectedDays}
                                 selectedLocations={selectedLocations}
                                 price={price}

@@ -1,0 +1,150 @@
+import React from "react";
+import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+
+export default function Template2Card({ ad, navigation }) {
+    return (
+        <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => navigation.navigate("AdDetails", { adId: ad._id })}
+            style={styles.card}
+        >
+            <View style={styles.topRow}>
+                <Ionicons name="heart-outline" size={18} />
+                <Ionicons name="share-social-outline" size={18} />
+            </View>
+
+            <Text style={styles.timeText}>
+                {new Date(ad.createdAt || Date.now()).toLocaleString()}
+            </Text>
+
+            <View style={styles.row}>
+                {ad.images?.length > 0 ? (
+                    <Image source={{ uri: ad.images[0] }} style={styles.image} />
+                ) : (
+                    <View style={styles.image} />
+                )}
+
+                <View style={{ flex: 1 }}>
+                    <Text style={styles.title}>{ad.title}</Text>
+                    <Text numberOfLines={2} style={styles.desc}>
+                        {ad.description}
+                    </Text>
+                </View>
+            </View>
+
+            <View style={styles.metaRow}>
+                <Text style={styles.price}>{ad.price ? `₹${ad.price}` : ""}</Text>
+                <View style={{ flexDirection: "row", gap: 10 }}>
+                    <View style={styles.metaItem}>
+                        <Ionicons name="location-outline" size={14} />
+                        <Text style={styles.metaText}>{ad.location || ad.city}</Text>
+                    </View>
+                    <View style={styles.metaItem}>
+                        <Ionicons name="person" size={14} />
+                        <Text style={styles.metaText}>{ad.contactInfo?.name}</Text>
+                    </View>
+                </View>
+            </View>
+
+            <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 10 }}>
+                <View style={styles.chatBtn}>
+                    <Text style={styles.btnText}>Chat</Text>
+                </View>
+                <View style={styles.callBtn}>
+                    <Text style={styles.btnText}>Call</Text>
+                </View>
+            </View>
+
+        </TouchableOpacity>
+    );
+}
+
+const styles = StyleSheet.create({
+    card: {
+        backgroundColor: "#fff",
+        padding: 16,
+        borderRadius: 10,
+        marginBottom: 20,
+    },
+    topRow: {
+        flexDirection: "row",
+        justifyContent: "flex-end",
+        gap: 10,
+    },
+    timeText: {
+        fontSize: 12,
+        color: "#777",
+        marginTop: 6,
+        fontFamily: "Medium",
+        lineHeight: Math.round(12 * 1.5)
+    },
+    row: {
+        flexDirection: "row",
+        gap: 10,
+        marginTop: 10,
+    },
+    image: {
+        height: 100,
+        width: 165,
+        borderRadius: 10,
+        backgroundColor: "#ddd",
+    },
+    title: {
+        fontSize: 16,
+        fontFamily: "Medium",
+        lineHeight: Math.round(16 * 1.5)
+    },
+    desc: {
+        fontSize: 13,
+        color: "#666",
+        marginTop: 4,
+        fontFamily: "Medium",
+        lineHeight: Math.round(13 * 1.5)
+    },
+    metaRow: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        marginTop: 10,
+        alignItems: "center",
+    },
+    metaItem: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 5,
+    },
+    metaText: {
+        fontSize: 12,
+        color: "#444",
+        fontFamily: "Medium",
+        lineHeight: Math.round(12 * 1.5)
+    },
+    price: {
+        fontSize: 14,
+        fontFamily: "Medium",
+        lineHeight: Math.round(14 * 1.5)
+    },
+    chatBtn: {
+        backgroundColor: "#f5b849",
+        flex: 1,
+        marginRight: 8,
+        paddingVertical: 8,
+        borderRadius: 8,
+        alignItems: "center",
+    },
+    callBtn: {
+        backgroundColor: "#157a4f",
+        flex: 1,
+        marginLeft: 8,
+        paddingVertical: 8,
+        borderRadius: 8,
+        alignItems: "center",
+    },
+    btnText: {
+        color: "#fff",
+        fontSize: 14,
+        fontWeight: "600",
+        fontFamily: "Medium",
+        lineHeight: Math.round(14 * 1.5)
+    },
+});

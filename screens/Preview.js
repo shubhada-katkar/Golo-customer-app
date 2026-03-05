@@ -73,7 +73,7 @@ export default function Preview({ navigation, route }) {
                     Preview</Text>
 
 
-                {template === "card1" && (
+                {(template === "card1" || String(template) === "1") && (
                     <>
                         <View style={{ paddingHorizontal: 16 }} >
                             <View style={styles.card1}>
@@ -212,7 +212,7 @@ export default function Preview({ navigation, route }) {
                     </>
                 )}
 
-                {template === "card2" && (
+                {(template === "card2" || String(template) === "2") && (
                     <View style={{ paddingHorizontal: 16 }}>
                         <View style={styles.card2}>
                             <View style={styles.topRow}>
@@ -297,7 +297,7 @@ export default function Preview({ navigation, route }) {
                     </View>
                 )}
 
-                {template === "card3" && (
+                {(template === "card3" || String(template) === "3") && (
                     <View style={{ paddingHorizontal: 16 }}>
                         <View style={styles.card3}>
                             {/* Top row */}
@@ -354,7 +354,7 @@ export default function Preview({ navigation, route }) {
                 <TouchableOpacity
                     style={styles.button}
                     onPress={() => {
-                        navigation.navigate("Payment",{  template, selectedDays, selectedLocations, price });
+                        navigation.navigate("Payment", { template, selectedDays, selectedLocations, price, formData, category });
                     }}
                 >
                     <Text style={{ color: "#ffffff", fontSize: 16, fontFamily: "Medium", lineHeight: Math.round(16 * 1.2) }}>
@@ -363,7 +363,7 @@ export default function Preview({ navigation, route }) {
                 </TouchableOpacity>
 
             </LinearGradient>
-        </SafeAreaView>
+        </SafeAreaView >
     );
 }
 
@@ -398,7 +398,7 @@ const styles = StyleSheet.create({
         alignItems: "center"
     },
     image1: {
-        width: width-70 ,          // 👈 important for paging
+        width: width - 70,          // 👈 important for paging
         height: height * 0.25,
         backgroundColor: "#d8d8d8",
     },

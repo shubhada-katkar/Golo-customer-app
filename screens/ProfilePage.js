@@ -36,7 +36,7 @@ export default function ProfilePage({ navigation }) {
         try {
             const token = await AsyncStorage.getItem("customerToken");
 
-            const res = await fetch(`${BASE_URL}/api/customer/profile`, {
+            const res = await fetch(`${BASE_URL}/users/profile`, {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }
@@ -54,14 +54,16 @@ export default function ProfilePage({ navigation }) {
             }
 
             if (!res.ok) {
-                Alert.alert("Error", data.message);
+                Alert.alert("Error", data.message || "Failed to fetch profile");
                 return;
             }
 
-            setUsername(data.customer.username);
-            setPhone(data.customer.phone);
-            setEmail(data.customer.email);
-            setProfileImage(data.customer.image?.url || null);
+            const profile = data.data;
+            setUsername(profile.name || "");
+            setPhone(profile.profile?.phone || "");
+            setEmail(profile.email || "");
+            // image url may not exist
+            setProfileImage(profile.profile?.avatar || null);
 
             setLoading(false);
 
@@ -103,7 +105,7 @@ export default function ProfilePage({ navigation }) {
 
             const token = await AsyncStorage.getItem("customerToken");
             const formData = new FormData();
-            formData.append("username", username);
+            formData.append("name", username);
             formData.append("phone", phone);
             formData.append("email", email);
 
@@ -114,7 +116,7 @@ export default function ProfilePage({ navigation }) {
                     name: "profile.jpg",
                 });
             }
-            const res = await fetch(`${BASE_URL}/api/customer/profile`, {
+            const res = await fetch(`${BASE_URL}/users/profile`, {
                 method: "PUT",
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -157,12 +159,14 @@ export default function ProfilePage({ navigation }) {
                 return;
             }
 
-            const res = await fetch(`${BASE_URL}/api/customer/logout`, {
+            const refreshToken = await AsyncStorage.getItem("customerRefreshToken");
+            const res = await fetch(`${BASE_URL}/users/logout`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${token}`,
                 },
+                body: JSON.stringify({ refreshToken }),
             });
 
             const data = await res.json();

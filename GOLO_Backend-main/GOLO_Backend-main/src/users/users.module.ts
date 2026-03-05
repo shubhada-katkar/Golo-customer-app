@@ -17,9 +17,17 @@ import { AdsModule } from 'src/ads/ads.module';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => {
-        const secret = configService.get<string>('JWT_SECRET');
-        const expiresIn = configService.get<string>('JWT_EXPIRATION') || '15m';
-        
+        const secret =
+          configService.get<string>('JWT_SECRET') ||
+          configService.get<string>('config.jwt.secret') ||
+          process.env.JWT_SECRET;
+
+        const expiresIn =
+          configService.get<string>('JWT_EXPIRATION') ||
+          configService.get<string>('config.jwt.expiresIn') ||
+          process.env.JWT_EXPIRATION ||
+          '15m';
+
         if (!secret) {
           throw new Error('JWT_SECRET is not defined in environment variables');
         }

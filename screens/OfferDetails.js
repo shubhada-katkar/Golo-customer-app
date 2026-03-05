@@ -1,22 +1,64 @@
-import React,{useContext} from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, StatusBar } from 'react-native';
+import React, { useContext, useState, useRef } from 'react';
+import {
+    View, Text, StyleSheet, Image, TouchableOpacity, ScrollView,
+    StatusBar, Modal, Alert
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemeContext } from "../theme/ThemeContext";
 import Topbar from "../components/Topbar";
 import GoloBottom from "../components/GoloBottom";
 
+import QRCode from "react-native-qrcode-svg";
+import ViewShot from "react-native-view-shot";
+import * as MediaLibrary from "expo-media-library";
+
 export default function GoloHome({ navigation }) {
     const { colors } = useContext(ThemeContext);
 
+    const [showQR, setShowQR] = useState(false);
+    const [token, setToken] = useState("");
+
+    const qrRef = useRef();
+
+    // generate random token
+    const generateToken = () => {
+        return "GOLO-" + Math.random().toString(36).substring(2, 10);
+    };
+
+    const handleClaim = () => {
+        const newToken = generateToken();
+        setToken(newToken);
+        setShowQR(true);
+    };
+
+    const downloadQR = async () => {
+
+        const permission = await MediaLibrary.requestPermissionsAsync();
+        if (!permission.granted) {
+            Alert.alert("Permission required");
+            return;
+        }
+
+        qrRef.current.capture().then(async (uri) => {
+
+            await MediaLibrary.saveToLibraryAsync(uri);
+
+            Alert.alert("Saved", "QR Code saved to gallery");
+
+        });
+    };
+
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-            <Topbar />
+        <>
+            <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+                <Topbar />
                 <StatusBar barStyle="dark-content" />
 
                 {/* Header */}
                 <View style={styles.header}>
-                    <Ionicons name="arrow-back" size={24} />
+                    <Ionicons name="arrow-back" size={24} onPress={() => navigation.goBack()}
+                        style={{ paddingLeft: 6 }} />
                     <View style={styles.headerRight}>
                         <Ionicons name="heart-outline" size={22} style={styles.icon} />
                         <Ionicons name="share-social-outline" size={22} />
@@ -66,38 +108,84 @@ export default function GoloHome({ navigation }) {
                         </View>
 
                         {/* Buy Button */}
-                        <TouchableOpacity style={styles.buyBtn}>
-                            <Text style={styles.buyText}>Buy Now</Text>
+                        <TouchableOpacity style={styles.buyBtn} onPress={(handleClaim)}>
+                            <Text style={styles.buyText}>Claim Now</Text>
                         </TouchableOpacity>
 
-                        {/* Deals */}
-                        <View style={styles.deals}>
-                            <Text style={styles.dealsTitle}>Deals for you</Text>
-                            <Text style={styles.dealsSub}>Within 0.3 km • Offers live</Text>
+                        {/* Bottom Actions */}
+                        <View style={styles.bottomBar}>
+                            <TouchableOpacity style={styles.callBtn}>
+                                <Ionicons name="call" size={18} color="#fff" />
+                                <Text style={styles.bottomText}> Call/Text</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity style={styles.dirBtn}>
+                                <Ionicons name="navigate" size={18} color="#000" />
+                                <Text style={styles.dirText}> Direction</Text>
+                            </TouchableOpacity>
                         </View>
+
                     </View>
                 </ScrollView>
+                <SafeAreaView
+                    edges={["bottom"]}
+                    style={{ position: "absolute", bottom: 0, width: "100%" }} >
+                    <GoloBottom />
+                </SafeAreaView>
 
-                {/* Bottom Actions */}
-                <View style={styles.bottomBar}>
-                    <TouchableOpacity style={styles.callBtn}>
-                        <Ionicons name="call" size={18} color="#fff" />
-                        <Text style={styles.bottomText}> Call/Text</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity style={styles.dirBtn}>
-                        <Ionicons name="navigate" size={18} color="#000" />
-                        <Text style={styles.dirText}> Direction</Text>
-                    </TouchableOpacity>
-                </View>
-
-            <SafeAreaView
-                edges={["bottom"]}
-                style={{ position: "absolute", bottom: 0, width: "100%" }} >
-                <GoloBottom />
             </SafeAreaView>
 
-        </SafeAreaView>
+            <Modal visible={showQR} transparent animationType="slide">
+
+                <View style={styles.modalContainer}>
+
+                    <View style={styles.qrCard}>
+
+                        <Text style={{
+                            fontSize: 18, fontFamily: "Medium",
+                            lineHeight: Math.round(18 * 1.5)
+                        }}>
+                            Show this QR to Merchant
+                        </Text>
+
+                        <ViewShot ref={qrRef} options={{ format: "png", quality: 1 }}>
+
+                            <View style={{ padding: 20, backgroundColor: "white" }}>
+
+                                <QRCode
+                                    value={token}
+                                    size={220}
+                                />
+
+                            </View>
+
+                        </ViewShot>
+
+                        <Text style={{ fontFamily: "Medium", lineHeight: Math.round(12 * 1.5) }}>
+                            Token: {token}
+                        </Text>
+
+                        <TouchableOpacity style={styles.downloadBtn} onPress={downloadQR}>
+                            <Text style={{
+                                fontSize: 14, color: "#fff",
+                                fontFamily: "Medium", lineHeight: Math.round(14 * 1.5)
+                            }}>Download QR</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity onPress={() => setShowQR(false)}>
+                            <Text style={{
+                                marginTop: 10, fontSize: 14, color: "#f94741ff",
+                                fontFamily: "Medium", lineHeight: Math.round(14 * 1.5)
+                            }}>
+                                Close</Text>
+                        </TouchableOpacity>
+
+                    </View>
+
+                </View>
+
+            </Modal>
+        </>
     );
 };
 
@@ -107,8 +195,8 @@ const styles = StyleSheet.create({
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        paddingHorizontal:10,
-        paddingVertical:5
+        paddingHorizontal: 10,
+        paddingVertical: 10
     },
     headerRight: {
         flexDirection: 'row',
@@ -219,6 +307,7 @@ const styles = StyleSheet.create({
         borderTopWidth: 1,
         borderColor: '#eee',
         gap: 10,
+        paddingBottom: 60
     },
 
     callBtn: {
@@ -249,4 +338,47 @@ const styles = StyleSheet.create({
     dirText: {
         fontWeight: '600',
     },
+
+    content: {
+        padding: 16
+    },
+
+    title: {
+        fontSize: 20,
+        fontWeight: "700"
+    },
+
+    buyBtn: {
+        marginTop: 20,
+        backgroundColor: "#FBBF24",
+        paddingVertical: 14,
+        borderRadius: 10,
+        alignItems: "center"
+    },
+
+    buyText: {
+        fontWeight: "700"
+    },
+
+    modalContainer: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "rgba(0,0,0,0.5)"
+    },
+
+    qrCard: {
+        width: 300,
+        backgroundColor: "white",
+        borderRadius: 14,
+        padding: 20,
+        alignItems: "center"
+    },
+
+    downloadBtn: {
+        marginTop: 15,
+        backgroundColor: "#065f46",
+        padding: 10,
+        borderRadius: 8
+    }
 });

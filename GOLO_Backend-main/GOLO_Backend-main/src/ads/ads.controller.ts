@@ -738,7 +738,6 @@ async testKafka() {
   }
 
   // ==================== ADMIN ROUTES (Admin only) ====================
-
   /**
    * Admin: Delete any ad
    */
@@ -973,5 +972,4 @@ async testKafka() {
       };
     }
   }
-
 }

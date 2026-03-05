@@ -30,23 +30,18 @@ const categories = [
 ];
 
 export default function ChojaHome() {
+    const [selectedCategory, setSelectedCategory] = useState(null);
     const { colors } = useContext(ThemeContext);
     const inputRef = useRef(null);
     const [tab, setTab] = useState("Chotya Jahirati");
-    const renderTabContent = () => {
-        switch (tab) {
-            case "I Want":
-                return <Iwant />;
-
-            case "My Ads":
-                return <MyAds />;
-
-            case "Chotya Jahirati":
-            default:
-                return <ChotyaJahirati />;
-        }
-    };
     const [showAllCategories, setShowAllCategories] = useState(false);
+    const sortedCategories = selectedCategory
+        ? [
+            categories.find(c => c.label === selectedCategory),
+            ...categories.filter(c => c.label !== selectedCategory),
+        ]
+        : categories;
+    const scrollRef = useRef(null);
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
@@ -77,10 +72,30 @@ export default function ChojaHome() {
                         flexDirection: "row",
                         alignItems: "center"
                     }}>
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                        <ScrollView
+                            ref={scrollRef}
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                        >
                             <View style={styles.chipsRow}>
-                                {categories.map((item, index) => (
-                                    <CategoryChip key={index} icon={item.icon} label={item.label} />
+                                {sortedCategories.map((item, index) => (
+                                    <CategoryChip
+                                        key={index}
+                                        icon={item.icon}
+                                        label={item.label}
+                                        isActive={selectedCategory === item.label}
+                                        onPress={() => {
+                                            if (selectedCategory === item.label) {
+                                                setSelectedCategory(null);
+                                            } else {
+                                                setSelectedCategory(item.label);
+                                                setShowAllCategories(false);
+
+                                                // scroll to beginning
+                                                scrollRef.current?.scrollTo({ x: 0, animated: true });
+                                            }
+                                        }}
+                                    />
                                 ))}
                             </View>
                         </ScrollView>
@@ -94,14 +109,45 @@ export default function ChojaHome() {
                 ) : (
                     <View>
                         <TouchableOpacity onPress={() => setShowAllCategories(false)} style={{ alignSelf: "flex-end", marginRight: 6 }}>
-                            <Text style={[styles.headerText, { color: colors.primary, paddingVertical:4, bottom:5 }]}>Hide Categories</Text>
+                            <Text style={[styles.headerText, { color: colors.primary, paddingVertical: 4, bottom: 5 }]}>Hide Categories</Text>
                         </TouchableOpacity>
                         <View style={styles.categoryGrid}>
-                            {categories.map((item, index) => (
-                                <View key={index} style={styles.gridItem}>
-                                    <Ionicons name={item.icon} size={22} color="#ffffff" />
-                                    <Text style={styles.gridText}>{item.label}</Text>
-                                </View>
+                            {sortedCategories.map((item, index) => (
+                                <TouchableOpacity
+                                    key={index}
+                                    onPress={() => {
+                                        if (selectedCategory === item.label) {
+                                            setSelectedCategory(null);
+                                        } else {
+                                            setSelectedCategory(item.label);
+                                            setShowAllCategories(false);
+
+                                            // scroll to beginning
+                                            scrollRef.current?.scrollTo({ x: 0, animated: true });
+                                        }
+                                    }}
+                                    style={[
+                                        styles.gridItem,
+                                        selectedCategory === item.label && {
+                                            backgroundColor: "#FFD700"
+                                        }
+                                    ]}
+                                >
+                                    <Ionicons
+                                        name={item.icon}
+                                        size={22}
+                                        color={selectedCategory === item.label ? "#000" : "#ffffff"}
+                                    />
+
+                                    <Text
+                                        style={[
+                                            styles.gridText,
+                                            { color: selectedCategory === item.label ? "#000" : "#fff" }
+                                        ]}
+                                    >
+                                        {item.label}
+                                    </Text>
+                                </TouchableOpacity>
                             ))}
                         </View>
                     </View>
@@ -148,7 +194,9 @@ export default function ChojaHome() {
             </View>
 
             <View style={{ flex: 1, marginTop: 10 }}>
-                {renderTabContent()}
+                {tab === "Chotya Jahirati" && <ChotyaJahirati selectedCategory={selectedCategory} />}
+                {tab === "I Want" && <Iwant />}
+                {tab === "My Ads" && <MyAds selectedCategory={selectedCategory} />}
             </View>
 
             <SafeAreaView
@@ -161,11 +209,28 @@ export default function ChojaHome() {
     );
 }
 
-const CategoryChip = ({ icon, label }) => (
-    <View style={styles.chip}>
-        <Ionicons name={icon} size={16} color="#fff" />
-        <Text style={styles.chipText}>{label}</Text>
-    </View>
+const CategoryChip = ({ icon, label, isActive, onPress }) => (
+    <TouchableOpacity
+        onPress={onPress}
+        style={[
+            styles.chip,
+            isActive && { backgroundColor: "#f1d94e", borderColor: "#000", borderWidth: 1.5 } // active color
+        ]}
+    >
+        <Ionicons
+            name={icon}
+            size={16}
+            color={isActive ? "#000" : "#fff"}
+        />
+        <Text
+            style={[
+                styles.chipText,
+                { color: isActive ? "#000" : "#fff" }
+            ]}
+        >
+            {label}
+        </Text>
+    </TouchableOpacity>
 );
 
 const styles = StyleSheet.create({
@@ -261,18 +326,18 @@ const styles = StyleSheet.create({
         width: "30%", // 3 per row
         backgroundColor: "#000000",
         borderRadius: 10,
-        gap:6,
+        gap: 6,
         paddingVertical: 8,
         marginBottom: 10,
         alignItems: "center",
-        flexDirection:"row",
-        justifyContent:"center"
+        flexDirection: "row",
+        justifyContent: "center"
     },
 
     gridText: {
         fontSize: 12,
         fontFamily: "Medium",
-        lineHeight:Math.round(12*1.5),
+        lineHeight: Math.round(12 * 1.5),
         textAlign: "center",
         color: "#fff"
     },

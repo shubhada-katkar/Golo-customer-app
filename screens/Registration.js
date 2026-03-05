@@ -21,69 +21,22 @@ export default function Registration({ navigation }) {
 
     const [visiblepass, setvisiblepass] = useState(false);
 
-    const [otp, setOtp] = useState("");
-    const [otpSent, setOtpSent] = useState(false);
-    const [otpVerified, setOtpVerified] = useState(false);
-    const [emailVerified, setEmailVerified] = useState(false);
+    // email is considered verified by default when using new backend
+    const [emailVerified, setEmailVerified] = useState(true);
 
-    const [loadingOtp, setLoadingOtp] = useState(false);
     const [registerLoading, setRegisterLoading] = useState(false);
 
     // ================= EMAIL VALIDATION =================
 
     const isValidEmail = (email) => /\S+@\S+\.\S+/.test(email);
+    // NOTE: email validation is simple – backend will perform full checks
 
     // ================= EMAIL VERIFY HANDLER =================
 
+    // With the new backend the email is verified during registration itself.
+    // This function is left empty to satisfy old references (none now).
     const handleEmailVerification = async () => {
-        try {
-            if (!email) return alert("Enter email first");
-            if (!isValidEmail(email)) return alert("Enter valid email");
-
-            // -------- SEND OTP --------
-            if (!otpSent) {
-                setLoadingOtp(true);
-
-                const res = await fetch(`${BASE_URL}/api/auth/send-otp`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ email, role:"customer" }),
-                });
-
-                const data = await res.json();
-                setLoadingOtp(false);
-
-                if (!res.ok) return alert(data.message);
-
-                setOtpSent(true);
-                alert("OTP sent to your email");
-            }
-
-            // -------- VERIFY OTP --------
-            else {
-                if (!otp) return alert("Enter OTP");
-
-                setLoadingOtp(true);
-
-                const res = await fetch(`${BASE_URL}/api/auth/verify-otp`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ email, otp, role:"customer" }),
-                });
-
-                const data = await res.json();
-                setLoadingOtp(false);
-
-                if (!res.ok) return alert(data.message || "Invalid OTP");
-                setOtpVerified(true);
-                setEmailVerified(true);
-                alert("Email verified successfully");
-            }
-
-        } catch (err) {
-            setLoadingOtp(false);
-            alert("Network error");
-        }
+        // no-op
     };
 
     // ================= IMAGE PICKER =================
@@ -110,31 +63,37 @@ export default function Registration({ navigation }) {
     const handleRegister = async () => {
         if (registerLoading) return;
 
-        if (!emailVerified) {
-            return alert("Please verify your email");
-        }
+        // backend handles email validation; skip check
 
         try {
             setRegisterLoading(true);
 
-            const formData = new FormData();
-            formData.append("username", username);
-            formData.append("email", email);
-            formData.append("phone", phone);
-            formData.append("password", password);
-
-            if (profileImage) {
+            // If no profile image, send JSON (backend expects JSON). If image present, fall back
+            // to multipart FormData (backend currently has no file handler, so prefer JSON).
+            let response;
+            if (!profileImage) {
+                const payload = { name: username, email, phone, password };
+                response = await fetch(`${BASE_URL}/users/register`, {
+                    method: "POST",
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+            } else {
+                const formData = new FormData();
+                formData.append("name", username); // backend expects 'name' field
+                formData.append("email", email);
+                formData.append("phone", phone);
+                formData.append("password", password);
                 formData.append("image", {
                     uri: profileImage,
                     name: "profile.jpg",
                     type: "image/jpeg",
                 });
+                response = await fetch(`${BASE_URL}/users/register`, {
+                    method: "POST",
+                    body: formData,
+                });
             }
-
-            const response = await fetch(`${BASE_URL}/api/customer/register`, {
-                method: "POST",
-                body: formData,
-            });
 
             const data = await response.json();
 
@@ -179,7 +138,6 @@ export default function Registration({ navigation }) {
                         <View style={styles.card}>
 
                             {/* IMAGE */}
-
                             <TouchableOpacity onPress={pickImage} style={styles.avatarWrapper}>
                                 <View style={{ position: "relative" }}>
                                     <Image
@@ -196,78 +154,23 @@ export default function Registration({ navigation }) {
                             </TouchableOpacity>
 
                             {/* INPUTS */}
-                            <Text style={{ fontSize: 16, fontFamily:"Medium" }}>Username</Text>
+                            <Text style={{ fontSize: 16, fontFamily:"Medium" }}>Name</Text>
                             <TextInput style={styles.input} value={username}
                                 placeholder="Enter your name" onChangeText={setUsername} />
 
                             <Text style={styles.label}>Email</Text>
 
-                            <View style={styles.emailRow}>
-                                <TextInput
-                                    style={[styles.input, { flex: 1 }]} value={email}
-                                    editable={!emailVerified}
-                                    onChangeText={(text) => {
-                                        setEmail(text);
-                                        setOtpSent(false);
-                                        setOtp("");
-                                        setEmailVerified(false);
-                                    }}
-                                    keyboardType="email-address" placeholder="Enter Email" />
-
-                                <TouchableOpacity
-                                    style={[
-                                        styles.verifyBtn,
-                                        otpSent && { backgroundColor: "#4caf50" }
-                                    ]}
-                                    onPress={handleEmailVerification}
-                                    disabled={otpSent || loadingOtp} >
-
-                                    {loadingOtp ?
-                                        <ActivityIndicator color="white" /> :
-                                        <Text style={{ color: "white", fontFamily:"Medium" }}>
-                                            {otpSent ? "Sent ✓" : "Send OTP"}
-                                        </Text>
-                                    }
-                                </TouchableOpacity>
-                            </View>
-
-                            {otpSent && (
-                                <>
-                                    <Text style={styles.label}>OTP</Text>
-
-                                    <View style={styles.emailRow}>
-
-                                        <TextInput
-                                            style={[styles.input, { flex: 1 }]}
-                                            value={otp}
-                                            editable={!otpVerified}
-                                            onChangeText={setOtp}
-                                            keyboardType="numeric" />
-
-                                        <TouchableOpacity
-                                            style={[
-                                                styles.verifyBtn,
-                                                otpVerified && { backgroundColor: "#4caf50" }
-                                            ]}
-                                            onPress={handleEmailVerification}
-                                            disabled={otpVerified || loadingOtp} >
-
-                                            {loadingOtp ?
-                                                <ActivityIndicator color="white" /> :
-                                                <Text style={{ color: "white", fontFamily:"Medium" }}>
-                                                    {otpVerified ? "Verified ✓" : "Verify OTP"}
-                                                </Text>
-                                            }
-
-                                        </TouchableOpacity>
-
-                                    </View>
-                                </>
-                            )}
+                            <TextInput
+                                style={styles.input}
+                                value={email}
+                                onChangeText={setEmail}
+                                keyboardType="email-address"
+                                placeholder="Enter Email"
+                            />
 
                             <Text style={styles.label}>Phone</Text>
                             <TextInput style={styles.input} value={phone}
-                                placeholder="Enter contact number" onChangeText={setPhone} keyboardType="numeric" />
+                                placeholder="e.g. 91+ xxx..." onChangeText={setPhone} keyboardType="numeric" />
 
                             <Text style={styles.label}>Password</Text>
                             <View style={styles.inputpassword}>

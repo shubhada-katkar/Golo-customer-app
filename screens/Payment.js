@@ -1,13 +1,15 @@
 import React, { useContext, useEffect, useState } from "react";
-import { View, StyleSheet, Text, TouchableOpacity } from "react-native";
+import { View, StyleSheet, Text, TouchableOpacity, ActivityIndicator, Alert } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function Payment({ navigation, route }) {
-    const { template, selectedDays, selectedLocations, price } = route.params || {};
+    const { template, selectedDays, selectedLocations, price, formData, category } = route.params || {};
     const [isFeatured, setIsFeatured] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
 
     const STANDARD_FEE = Number(price || 0);     // base price from previous screen
@@ -30,6 +32,93 @@ export default function Payment({ navigation, route }) {
     // Total
     const total = subtotal + gst;
 
+    const handlePaymentAndSubmit = async () => {
+        setIsSubmitting(true);
+        try {
+            const token = await AsyncStorage.getItem("customerToken");
+            const userId = await AsyncStorage.getItem("customerId");
+
+            if (!token) {
+                Alert.alert("Error", "You must be logged in to post an ad.");
+                setIsSubmitting(false);
+                return;
+            }
+
+            const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
+
+            // Format phone to E.164 (prepend +91 if needed)
+            const rawPhone = formData?.contact || "";
+            const phone = rawPhone.startsWith("+") ? rawPhone : `+91${rawPhone.replace(/\s/g, "")}`;
+
+            // Build the payload matching CreateAdDto
+            const payload = {
+                title: formData?.heading || "Ad Title",
+                description: formData?.body || "Ad Description",
+                category: category?.label || "Education",
+                subCategory: category?.label || "Education",
+                userId: userId,
+                userType: "Customer",
+                images: formData?.images?.length ? formData.images : (formData?.image ? [formData.image] : ["https://placeholder.com/image.jpg"]),
+                price: Number(formData?.price || 0),
+                location: formData?.location || "Not specified",
+                contactInfo: {
+                    name: formData?.institutionName || formData?.contactPerson || "User",
+                    phone: phone,
+                    preferredContactMethod: "phone"
+                },
+                templateId: Number(template !== undefined ? (typeof template === 'string' ? template.replace('card', '') : template) : 1),
+                cities: selectedLocations || [],
+                isPromoted: isFeatured,
+            };
+
+            // Inject category specific data if it's Education
+            if (category?.label === "Education") {
+                payload.educationData = {
+                    institutionType: formData?.institutionType || "School",
+                    institutionName: formData?.institutionName || "",
+                    courseName: formData?.courseName || undefined,
+                    duration: formData?.duration || undefined,
+                    fees: formData?.fees ? Number(formData.fees) : undefined,
+                    eligibility: formData?.eligibility || undefined,
+                    contactPerson: formData?.contactPerson || undefined,
+                    contactNumber: formData?.contactNumber || undefined,
+                    email: formData?.eduEmail || undefined,
+                    affiliatedTo: formData?.affiliatedTo || undefined,
+                    website: formData?.website || undefined,
+                    establishedYear: formData?.establishedYear ? Number(formData.establishedYear) : undefined,
+                    studentCapacity: formData?.studentCapacity ? Number(formData.studentCapacity) : undefined,
+                };
+            }
+
+            console.log("Submitting payload:", JSON.stringify(payload, null, 2));
+
+            const response = await fetch(`${BASE_URL}/ads`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                Alert.alert("Success", "Your ad has been posted successfully!");
+                // Clear any navigation state or go root
+                navigation.navigate("ChojaHome"); // Or wherever you want to go after success
+            } else {
+                Alert.alert("Failed", data.message || "Failed to post ad.");
+                console.error("Ad creation error:", data);
+            }
+        } catch (error) {
+            console.error("Submission Error:", error);
+            Alert.alert("Error", "An unexpected error occurred while posting.");
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
     return (
         <SafeAreaView style={{ flex: 1 }}>
             <LinearGradient
@@ -39,150 +128,154 @@ export default function Payment({ navigation, route }) {
 
                 <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
 
-                <View style={styles.row1}>
-                    <TouchableOpacity onPress={() => navigation.goBack()}>
-                        <MaterialIcons
-                            name="arrow-back-ios"
-                            size={26} style={{ paddingHorizontal: 10 }} />
-                    </TouchableOpacity>
-                    <Text style={{ fontSize: 22, fontFamily: "Medium", lineHeight: Math.round(22 * 1.4) }}>
-                        Smart Jahirati
-                    </Text>
-                </View>
-
-                <Text style={{ fontSize: 16, marginLeft: 48, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) }}>
-                    Post Your Ads Instantly Online
-                </Text>
-
-                <Text style={{ marginTop: 20, marginLeft: 20, fontSize: 20, fontFamily: "Medium", lineHeight: Math.round(20 * 1.5) }}>
-                    Payment</Text>
-
-                <View style={{ paddingHorizontal: 16, backgroundColor: "#f1efef", marginHorizontal: 20, borderRadius: 12, paddingVertical: 12, marginTop: 10 }}>
-                    <Text style={styles.label}>Locations selected:</Text>
-
-                    <View style={{ flexDirection: "row", flexWrap: "wrap", marginTop: 8 }}>
-                        {selectedLocations?.length ? (
-                            selectedLocations.map((loc, idx) => (
-                                <View
-                                    key={`${loc}-${idx}`}
-                                    style={{
-                                        backgroundColor: "#e6b346",
-                                        paddingHorizontal: 10,
-                                        paddingVertical: 6,
-                                        borderRadius: 10,
-                                        marginRight: 8,
-                                        marginBottom: 6,
-                                    }}
-                                >
-                                    <Text style={{ fontSize: 15, color: "#ffffff" }}>{loc}</Text>
-                                </View>
-                            ))
-                        ) : (
-                            <Text style={styles.value}>No locations selected</Text>
-                        )}
-                    </View>
-
-                    <View style={styles.rows}>
-                        <Text style={[styles.label, { width: "100%" }]}>Number of days selected:</Text>
-                        <Text style={styles.value}>
-                            {selectedDays ? `${selectedDays} day(s)` : "No days selected"}
+                    <View style={styles.row1}>
+                        <TouchableOpacity onPress={() => navigation.goBack()}>
+                            <MaterialIcons
+                                name="arrow-back-ios"
+                                size={26} style={{ paddingHorizontal: 10 }} />
+                        </TouchableOpacity>
+                        <Text style={{ fontSize: 22, fontFamily: "Medium", lineHeight: Math.round(22 * 1.4) }}>
+                            Smart Jahirati
                         </Text>
                     </View>
-                </View>
 
-                <View style={{ paddingHorizontal: 16, marginTop: 10, backgroundColor: "#f1efef", marginHorizontal: 20, borderRadius: 12, paddingVertical: 12 }}>
-                    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-                        <Text style={styles.label}>Promotion & Pricing</Text>
-                        <Text style={styles.label}>₹100</Text>
-                    </View>
+                    <Text style={{ fontSize: 16, marginLeft: 48, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) }}>
+                        Post Your Ads Instantly Online
+                    </Text>
 
-                    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 12 }}>
+                    <Text style={{ marginTop: 20, marginLeft: 20, fontSize: 20, fontFamily: "Medium", lineHeight: Math.round(20 * 1.5) }}>
+                        Payment</Text>
 
-                        <View style={{ flexDirection: "row", alignItems: "center" }}>
-                            <MaterialCommunityIcons name="lightning-bolt" size={24} color="#219227" />
-                            <Text style={[styles.label, { marginTop: 0, fontSize: 15, width: "100%" }]}>Featured Ad</Text>
+                    <View style={{ paddingHorizontal: 16, backgroundColor: "#f1efef", marginHorizontal: 20, borderRadius: 12, paddingVertical: 12, marginTop: 10 }}>
+                        <Text style={styles.label}>Locations selected:</Text>
+
+                        <View style={{ flexDirection: "row", flexWrap: "wrap", marginTop: 8 }}>
+                            {selectedLocations?.length ? (
+                                selectedLocations.map((loc, idx) => (
+                                    <View
+                                        key={`${loc}-${idx}`}
+                                        style={{
+                                            backgroundColor: "#e6b346",
+                                            paddingHorizontal: 10,
+                                            paddingVertical: 6,
+                                            borderRadius: 10,
+                                            marginRight: 8,
+                                            marginBottom: 6,
+                                        }}
+                                    >
+                                        <Text style={{ fontSize: 15, color: "#ffffff" }}>{loc}</Text>
+                                    </View>
+                                ))
+                            ) : (
+                                <Text style={styles.value}>No locations selected</Text>
+                            )}
                         </View>
 
-                        <TouchableOpacity
-                            style={[
-                                styles.checkbox,
-                                { borderColor: isFeatured ? "#219227" : "#444" }
-                            ]}
-                            onPress={() => setIsFeatured(prev => !prev)}
-                        >
-                            {isFeatured && <View style={styles.checkboxTick} />}
-                        </TouchableOpacity>
-                    </View>
-
-                </View>
-
-                {/*Card*/}
-                <View style={styles.centerContainer}>
-                    <View style={styles.card}>
-
-                        <View>
-                            <Text style={[styles.label, { fontSize: 20 }]}>Bill</Text>
-                        </View>
-
-                        {/* 1. Standard Listing Fee */}
                         <View style={styles.rows}>
-                            <Text style={styles.label}>Template:</Text>
-                            <Text style={styles.value}>₹{STANDARD_FEE}</Text>
-                        </View>
-
-                        {/* 2. Day-wise Fee (only if days > 1) */}
-                        {days > 1 && (
-                            <View style={styles.rows}>
-                                <Text style={styles.label}>
-                                    Standard Listing Fee:
-                                </Text>
-                                <Text style={styles.value}>₹{dayWiseFee}</Text>
-                            </View>
-                        )}
-
-                        {/* 3. Featured Ad Fee (only if checked) */}
-                        {isFeatured && (
-                            <View style={styles.rows}>
-                                <Text style={styles.label}>Featured Ad Fee:</Text>
-                                <Text style={styles.value}>₹{FEATURED_FEE}</Text>
-                            </View>
-                        )}
-
-                        {/* 4. Bulk Discount */}
-                        <View style={styles.rows}>
-                            <Text style={styles.label}>Bulk Discount:</Text>
-                            <Text style={styles.value}>- ₹0</Text>
-                        </View>
-
-                        <View style={styles.divider} />
-
-                        <View style={styles.totalRow}>
-                            <Text style={styles.totalText}>Subtotal:</Text>
-                            <Text style={styles.totalText}>₹{subtotal.toFixed(0)}</Text>
-                        </View>
-
-                        <View style={[styles.totalRow, { marginTop: 8 }]}>
-                            <Text style={styles.totalText}>GST (18%):</Text>
-                            <Text style={styles.totalText}>₹{gst.toFixed(0)}</Text>
-                        </View>
-
-                        <View style={[styles.totalRow, { marginTop: 8 }]}>
-                            <Text style={[styles.totalText, { fontSize: 20, marginTop: 16 }]}>Total:</Text>
-                            <Text style={[styles.totalText, { fontSize: 20, marginTop: 16 }]}>
-                                ₹{total.toFixed(0)}
+                            <Text style={[styles.label, { width: "100%" }]}>Number of days selected:</Text>
+                            <Text style={styles.value}>
+                                {selectedDays ? `${selectedDays} day(s)` : "No days selected"}
                             </Text>
                         </View>
                     </View>
 
-                    {/* Proceed Button */}
-                    <TouchableOpacity
-                        style={styles.payButton}
-                        onPress={() => console.log("Proceed to Pay")}
-                    >
-                        <Text style={styles.payText}>Proceed to Pay</Text>
-                        <MaterialIcons name="double-arrow" color={"#ffffff"} size={20} />
-                    </TouchableOpacity>
-                </View>
+                    <View style={{ paddingHorizontal: 16, marginTop: 10, backgroundColor: "#f1efef", marginHorizontal: 20, borderRadius: 12, paddingVertical: 12 }}>
+                        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                            <Text style={styles.label}>Promotion & Pricing</Text>
+                            <Text style={styles.label}>₹100</Text>
+                        </View>
+
+                        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 12 }}>
+
+                            <View style={{ flexDirection: "row", alignItems: "center" }}>
+                                <MaterialCommunityIcons name="lightning-bolt" size={24} color="#219227" />
+                                <Text style={[styles.label, { marginTop: 0, fontSize: 15, width: "100%" }]}>Featured Ad</Text>
+                            </View>
+
+                            <TouchableOpacity
+                                style={[
+                                    styles.checkbox,
+                                    { borderColor: isFeatured ? "#219227" : "#444" }
+                                ]}
+                                onPress={() => setIsFeatured(prev => !prev)}
+                            >
+                                {isFeatured && <View style={styles.checkboxTick} />}
+                            </TouchableOpacity>
+                        </View>
+
+                    </View>
+
+                    {/*Card*/}
+                    <View style={styles.centerContainer}>
+                        <View style={styles.card}>
+
+                            <View>
+                                <Text style={[styles.label, { fontSize: 20 }]}>Bill</Text>
+                            </View>
+
+                            {/* 1. Standard Listing Fee */}
+                            <View style={styles.rows}>
+                                <Text style={styles.label}>Template:</Text>
+                                <Text style={styles.value}>₹{STANDARD_FEE}</Text>
+                            </View>
+
+                            {/* 2. Day-wise Fee (only if days > 1) */}
+                            {days > 1 && (
+                                <View style={styles.rows}>
+                                    <Text style={styles.label}>
+                                        Standard Listing Fee:
+                                    </Text>
+                                    <Text style={styles.value}>₹{dayWiseFee}</Text>
+                                </View>
+                            )}
+
+                            {/* 3. Featured Ad Fee (only if checked) */}
+                            {isFeatured && (
+                                <View style={styles.rows}>
+                                    <Text style={styles.label}>Featured Ad Fee:</Text>
+                                    <Text style={styles.value}>₹{FEATURED_FEE}</Text>
+                                </View>
+                            )}
+
+                            {/* 4. Bulk Discount */}
+                            <View style={styles.rows}>
+                                <Text style={styles.label}>Bulk Discount:</Text>
+                                <Text style={styles.value}>- ₹0</Text>
+                            </View>
+
+                            <View style={styles.divider} />
+
+                            <View style={styles.totalRow}>
+                                <Text style={styles.totalText}>Subtotal:</Text>
+                                <Text style={styles.totalText}>₹{subtotal.toFixed(0)}</Text>
+                            </View>
+
+                            <View style={[styles.totalRow, { marginTop: 8 }]}>
+                                <Text style={styles.totalText}>GST (18%):</Text>
+                                <Text style={styles.totalText}>₹{gst.toFixed(0)}</Text>
+                            </View>
+
+                            <View style={[styles.totalRow, { marginTop: 8 }]}>
+                                <Text style={[styles.totalText, { fontSize: 20, marginTop: 16 }]}>Total:</Text>
+                                <Text style={[styles.totalText, { fontSize: 20, marginTop: 16 }]}>
+                                    ₹{total.toFixed(0)}
+                                </Text>
+                            </View>
+                        </View>
+
+                        {/* Proceed Button */}
+                        <TouchableOpacity
+                            style={[styles.payButton, isSubmitting && { opacity: 0.7 }]}
+                            onPress={handlePaymentAndSubmit}
+                            disabled={isSubmitting}
+                        >
+                            {isSubmitting ? (
+                                <ActivityIndicator color="white" style={{ marginRight: 8 }} />
+                            ) : null}
+                            <Text style={styles.payText}>{isSubmitting ? "Processing..." : "Post Ad (Bypass Payment)"}</Text>
+                            {!isSubmitting && <MaterialIcons name="double-arrow" color={"#ffffff"} size={20} />}
+                        </TouchableOpacity>
+                    </View>
 
                 </ScrollView>
             </LinearGradient>

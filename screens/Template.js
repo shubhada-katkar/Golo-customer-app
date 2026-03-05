@@ -99,7 +99,7 @@ export default function Template({ navigation, route }) {
                         </View>
 
                         <TouchableOpacity style={styles.selectStrip} onPress={() => navigation.navigate("FormPage",
-                            { template: "card1", category: category, selectedDays, selectedLocations, price:15 })}>
+                            { template:1, category: category, selectedDays, selectedLocations, price:15 })}>
                             <Text style={styles.stripText}>Select This Template</Text>
                         </TouchableOpacity>
 
@@ -169,7 +169,7 @@ export default function Template({ navigation, route }) {
                         </View>
 
                         <TouchableOpacity style={styles.selectStrip} onPress={() => navigation.navigate("FormPage",
-                            { template: "card2", category: category, selectedDays, selectedLocations, price:10 })}>
+                            { template: 2, category: category, selectedDays, selectedLocations, price:10 })}>
                             <Text style={styles.stripText}>Select This Template</Text>
                         </TouchableOpacity>
                     </View>
@@ -223,7 +223,7 @@ export default function Template({ navigation, route }) {
                         </View>
 
                         <TouchableOpacity style={styles.selectStrip} onPress={() => navigation.navigate("FormPage",
-                            { template: "card3", category: category, selectedDays, selectedLocations, price:5 })}>
+                            { template: 3, category: category, selectedDays, selectedLocations, price:5 })}>
                             <Text style={styles.stripText}>Select This Template</Text>
                         </TouchableOpacity>
 

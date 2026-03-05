@@ -1,16 +1,15 @@
-import { 
-  IsString, 
-  IsNotEmpty, 
-  IsEnum, 
-  IsNumber, 
-  IsOptional, 
-  IsArray, 
+import {
+  IsString,
+  IsNotEmpty,
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  IsArray,
   IsBoolean,
   ValidateNested,
   Min,
   IsLatitude,
   IsLongitude,
-  IsUrl,
   IsObject
 } from 'class-validator';
 import { Type } from 'class-transformer';
@@ -63,12 +62,12 @@ export class CreateAdDto {
   userType: string;
 
   @IsArray()
-  @IsUrl({}, { each: true })
+  @IsString({ each: true })
   images: string[];
 
   @IsOptional()
   @IsArray()
-  @IsUrl({}, { each: true })
+  @IsString({ each: true })
   videos?: string[];
 
   @IsNumber()
@@ -110,8 +109,8 @@ export class CreateAdDto {
   @Type(() => ContactInfoDto)
   contactInfo: ContactInfoDto;
 
-   // ==================== NEW FIELDS FROM FRONTEND ====================
-  
+  // ==================== NEW FIELDS FROM FRONTEND ====================
+
   @IsOptional()
   @IsString()
   language?: string;  // From frontend language selector

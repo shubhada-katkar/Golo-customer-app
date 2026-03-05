@@ -8,6 +8,7 @@ import GoloBottom from "../components/GoloBottom";
 import { useNavigation } from "@react-navigation/native";
 
 export default function GoloHome() {
+    const [selectedCategory, setSelectedCategory] = useState(null);
     const { colors } = useContext(ThemeContext);
     const [showAllCategories, setShowAllCategories] = useState(false);
     const categories = [
@@ -37,45 +38,73 @@ export default function GoloHome() {
                         <Text style={styles.headerText}>Discover What’s Nearby</Text>
                     </View>
 
-                    <TouchableOpacity onPress={() => setShowAllCategories(!showAllCategories)}>
-                        <View style={styles.headerRow}>
-                            <Text style={styles.headerText}>
-                                {showAllCategories ? "Hide Categories" : "See All"}
-                            </Text>
-                            <Ionicons name="arrow-forward-circle-outline" size={20} color={colors.primary} />
-                        </View>
-                    </TouchableOpacity>
-
                 </View>
 
-                {/* Category Chips */}
-                {!showAllCategories ? (
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 20 }}>
-                        <View style={styles.chipsRow}>
-                            <CategoryChip icon="school-outline" label="Education" />
-                            <CategoryChip icon="heart-outline" label="Matrimonial" />
-                            <CategoryChip icon="megaphone-outline" label="Business - Promotion" />
-                            <CategoryChip icon="airplane-outline" label="Travel" />
-                            <CategoryChip icon="sparkles-outline" label="Astrology" />
-                            <CategoryChip icon="home-outline" label="Real Estate" />
-                            <CategoryChip icon="construct-outline" label="Service" />
-                            <CategoryChip icon="briefcase-outline" label="Employment" />
-                            <CategoryChip icon="paw-outline" label="Pets" />
-                            <CategoryChip icon="tv-outline" label="Electronics & Home appliances" />
-                            <CategoryChip icon="cube-outline" label="Furniture" />
-                            <CategoryChip icon="ellipsis-horizontal-outline" label="Other" />
+                <View style={{
+                    marginTop: 12,
+                    paddingHorizontal: 8,
+                }}>
+                    {!showAllCategories ? (
+                        <View style={{
+                            height: 46,
+                            flexDirection: "row",
+                            alignItems: "center"
+                        }}>
+                            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                                <View style={styles.chipsRow}>
+                                    {categories.map((item, index) => (
+                                        <CategoryChip
+                                            key={index}
+                                            icon={item.icon}
+                                            label={item.label}
+                                            isActive={selectedCategory === item.label}
+                                            onPress={() => setSelectedCategory(item.label)}
+                                        />
+                                    ))}
+                                </View>
+                            </ScrollView>
+
+                            <TouchableOpacity onPress={() => setShowAllCategories(true)}>
+                                <View style={styles.headerRow}>
+                                    <Text style={[styles.headerText, { marginTop: -10, paddingLeft: 10 }]}>See All</Text>
+                                </View>
+                            </TouchableOpacity>
                         </View>
-                    </ScrollView>
-                ) : (
-                    <View style={styles.categoryGrid}>
-                        {categories.map((item, index) => (
-                            <View key={index} style={styles.gridItem}>
-                                <Ionicons name={item.icon} size={24} color="#ffffff" />
-                                <Text style={styles.gridText}>{item.label}</Text>
+                    ) : (
+                        <View>
+                            <TouchableOpacity onPress={() => setShowAllCategories(false)} style={{ alignSelf: "flex-end", marginRight: 6 }}>
+                                <Text style={[styles.headerText, { color: colors.primary, paddingVertical: 4, bottom: 5 }]}>Hide Categories</Text>
+                            </TouchableOpacity>
+                            <View style={styles.categoryGrid}>
+                                {categories.map((item, index) => (
+                                    <TouchableOpacity
+                                        key={index}
+                                        onPress={() => setSelectedCategory(item.label)}
+                                        style={[
+                                            styles.gridItem,
+                                            selectedCategory === item.label && { backgroundColor: "#FFD700" }
+                                        ]}
+                                    >
+                                        <Ionicons
+                                            name={item.icon}
+                                            size={22}
+                                            color={selectedCategory === item.label ? "#000" : "#ffffff"}
+                                        />
+
+                                        <Text
+                                            style={[
+                                                styles.gridText,
+                                                { color: selectedCategory === item.label ? "#000" : "#fff" }
+                                            ]}
+                                        >
+                                            {item.label}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
                             </View>
-                        ))}
-                    </View>
-                )}
+                        </View>
+                    )}
+                </View>
 
                 {/* Cards */}
                 {[1, 2, 3].map((_, index) => (
@@ -93,10 +122,27 @@ export default function GoloHome() {
     );
 }
 
-const CategoryChip = ({ icon, label }) => (
-    <TouchableOpacity style={styles.chip}>
-        <Ionicons name={icon} size={16} color="#fff" />
-        <Text style={styles.chipText}>{label}</Text>
+const CategoryChip = ({ icon, label, isActive, onPress }) => (
+    <TouchableOpacity
+        onPress={onPress}
+        style={[
+            styles.chip,
+            isActive && { backgroundColor: "#f1d94e", borderColor: "#000", borderWidth: 1.5 } // active color
+        ]}
+    >
+        <Ionicons
+            name={icon}
+            size={16}
+            color={isActive ? "#000" : "#fff"}
+        />
+        <Text
+            style={[
+                styles.chipText,
+                { color: isActive ? "#000" : "#fff" }
+            ]}
+        >
+            {label}
+        </Text>
     </TouchableOpacity>
 );
 
@@ -154,7 +200,7 @@ const styles = StyleSheet.create({
     headerText: {
         fontSize: 16,
         fontFamily: "Medium",
-        lineHeight: Math.round(16 * 1.4),
+        lineHeight: Math.round(16 * 1.5),
     },
 
     chipsRow: {
@@ -252,21 +298,49 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
 
+    chipsRow: {
+        flexDirection: "row",
+        marginBottom: 10,
+        alignItems: "center"
+    },
+
+    chip: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#000",
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+        borderRadius: 20,
+        marginRight: 10,
+    },
+
+    chipText: {
+        color: "#fff",
+        marginLeft: 6,
+        fontSize: 12,
+        fontFamily: "Medium",
+        lineHeight: Math.round(12 * 1.4),
+    },
+    categoryGrid: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        justifyContent: "space-between",
+    },
+
     gridItem: {
-        width: "30%", // 3 items per row
+        width: "30%", // 3 per row
         backgroundColor: "#000000",
         borderRadius: 10,
+        gap: 6,
         paddingVertical: 8,
-        gap: 5,
         marginBottom: 10,
         alignItems: "center",
         flexDirection: "row",
-        paddingHorizontal: 10,
         justifyContent: "center"
     },
 
     gridText: {
-        fontSize: 11,
+        fontSize: 12,
         fontFamily: "Medium",
         lineHeight: Math.round(12 * 1.5),
         textAlign: "center",
