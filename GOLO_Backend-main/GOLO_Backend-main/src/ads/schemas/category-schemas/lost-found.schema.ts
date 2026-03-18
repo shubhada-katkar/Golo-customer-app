@@ -5,41 +5,30 @@ export type LostFoundDocument = LostFound & Document;
 
 @Schema({ _id: false, timestamps: false })
 export class LostFound {
-  @Prop({ required: true, enum: ['Lost', 'Found'] })
-  type: string;
+
+  @Prop({ required: true, enum: ['lost', 'found'] })
+  condition: string;
 
   @Prop({ required: true })
   itemName: string;
 
-  @Prop()
-  category: string;
+  @Prop({ required: true })
+  itemType: string;
 
-  @Prop()
-  brand: string;
+  @Prop({ required: true })
+  date: Date;
 
-  @Prop()
-  color: string;
+  @Prop({ required: true })
+  location: string;
 
-  @Prop()
-  distinctiveFeatures: string;
-
-  @Prop()
-  lostFoundLocation: string;
-
-  @Prop()
-  lostFoundDate: Date;
+  @Prop({ required: true })
+  description: string;
 
   @Prop()
   reward: string;
 
-  @Prop()
-  contactName: string;
-
   @Prop({ required: true })
-  contactNumber: string;
-
-  @Prop()
-  email: string;
+  contactDetails: string;
 
   @Prop({ type: [String] })
   images: string[];

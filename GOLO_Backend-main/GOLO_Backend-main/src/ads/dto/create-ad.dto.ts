@@ -28,6 +28,10 @@ import { AstrologyDto } from './category-dtos/astrology.dto';
 import { EmploymentDto } from './category-dtos/employment.dto';
 import { LostFoundDto } from './category-dtos/lost-found.dto';
 import { PersonalDto } from './category-dtos/personal.dto';
+import { GreetingsDto } from './category-dtos/greetings.dto';
+import { OthersDto } from './category-dtos/others.dto';
+import { PublicNoticeDto } from './category-dtos/public-notice.dto';
+
 import { ContactInfoDto } from './contact-info.dto';
 import { MetadataDto } from './metadata.dto';
 import { Prop } from '@nestjs/mongoose';
@@ -45,7 +49,7 @@ export class CreateAdDto {
     'Education', 'Matrimonial', 'Vehicle', 'Business', 'Travel',
     'Astrology', 'Property', 'Public Notice', 'Lost & Found',
     'Service', 'Personal', 'Employment', 'Pets', 'Mobiles',
-    'Electronics & Home appliances', 'Furniture', 'Other'
+    'Electronics & Home appliances', 'Furniture', 'Others', 'Greetings'
   ])
   category: string;
 
@@ -132,7 +136,6 @@ export class CreateAdDto {
   @IsOptional()
   @IsNumber()
   templateId?: number;  // Template ID for UI (1, 2, or 3)
-
 
   // For Property category
   @IsOptional()
@@ -223,6 +226,24 @@ export class CreateAdDto {
   @ValidateNested()
   @Type(() => PersonalDto)
   personalData?: PersonalDto;
+
+  // For Greetings category
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => GreetingsDto)
+  greetingsData?: GreetingsDto;
+
+  // For Others category
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => OthersDto)
+  othersData?: OthersDto;
+
+  // For Public Notice category
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => PublicNoticeDto)
+  publicNoticeData?: PublicNoticeDto;
 
   @IsOptional()
   @IsArray()

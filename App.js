@@ -5,6 +5,8 @@ import { createStackNavigator, CardStyleInterpolators } from "@react-navigation/
 import { ThemeProvider } from "./theme/ThemeContext";
 import Login from './screens/Login';
 import Registration from './screens/Registration';
+import ForgotPassword from './screens/ForgotPassword';
+import ResetPassword from './screens/ResetPassword';
 import JahiratiCategory from './screens/JahiratiCategory';
 import CalendarScreen from './screens/CalendarScreen';
 import Template from './screens/Template';
@@ -24,10 +26,27 @@ import GoloChatPage from './screens/GoloChatPage';
 import OfferDetails from './screens/OfferDetails';
 import Claimed from './screens/Claimed';
 import AdDetails from './screens/AdDetails';
+import Analytics from './screens/Analytics';
+import Transaction from './screens/Transaction';
+import AdAnalytics from "./screens/AdAnalytics";
 
 SplashScreen.preventAutoHideAsync();
 
 const Stack = createStackNavigator();
+
+const SHARE_WEB_BASE = (process.env.EXPO_PUBLIC_SHARE_WEB_BASE_URL || "").replace(/\/+$/, "");
+
+const linking = {
+  prefixes: [
+    "golo://",
+    ...(SHARE_WEB_BASE ? [SHARE_WEB_BASE] : []),
+  ],
+  config: {
+    screens: {
+      AdDetails: "ad/:adId",
+    },
+  },
+};
 
 export default function App() {
   // 🔑 Move useFonts inside the component
@@ -49,7 +68,7 @@ export default function App() {
 
   return (
     <ThemeProvider>
-      <NavigationContainer>
+      <NavigationContainer linking={linking}>
         <Stack.Navigator
           initialRouteName="Login"
           screenOptions={{
@@ -66,6 +85,8 @@ export default function App() {
           <Stack.Screen name='ChojaHome' component={ChojaHome} />
           <Stack.Screen name='Login' component={Login} />
           <Stack.Screen name='Registration' component={Registration} />
+          <Stack.Screen name='ForgotPassword' component={ForgotPassword} />
+          <Stack.Screen name='ResetPassword' component={ResetPassword} />
           <Stack.Screen name='AuthLoading' component={AuthLoading} />
           <Stack.Screen name='FormPage' component={FormPage} />
           <Stack.Screen name='Preview' component={Preview} />
@@ -77,6 +98,9 @@ export default function App() {
           <Stack.Screen name="OfferDetails" component={OfferDetails} />
           <Stack.Screen name="Claimed" component={Claimed} />
           <Stack.Screen name="AdDetails" component={AdDetails} />
+          <Stack.Screen name="Analytics" component={Analytics} />
+          <Stack.Screen name="Transaction" component={Transaction} />
+          <Stack.Screen name="AdAnalytics" component={AdAnalytics} />
 
         </Stack.Navigator>
       </NavigationContainer>

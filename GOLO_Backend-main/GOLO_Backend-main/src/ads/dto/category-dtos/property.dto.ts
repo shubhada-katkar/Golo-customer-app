@@ -1,95 +1,73 @@
-import { IsEnum, IsString, IsNumber, IsOptional, IsArray, IsBoolean, Min } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsString, IsOptional } from 'class-validator';
 
 export class PropertyDto {
-  @IsEnum(['Rent', 'Sell'])
-  type: string;
-
-  @IsEnum(['Apartment', 'House', 'Villa', 'Commercial', 'Land', 'Office'])
-  propertyType: string;
-
-  @IsNumber()
-  @Min(0)
-  @Type(() => Number)
-  area: number;
 
   @IsString()
-  areaUnit: string;
+  noticeType: string; // sell or rent
 
   @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Type(() => Number)
-  bedrooms?: number;
+  @IsString()
+  propertyType?: string;
+
+  // Sell fields
+  @IsOptional()
+  @IsString()
+  bhk?: string;
 
   @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Type(() => Number)
-  bathrooms?: number;
+  @IsString()
+  builtUpArea?: string;
 
   @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Type(() => Number)
-  balconies?: number;
+  @IsString()
+  bathrooms?: string;
+
+  @IsOptional()
+  @IsString()
+  floor?: string;
+
+  @IsOptional()
+  @IsString()
+  propertyAge?: string;
 
   @IsOptional()
   @IsString()
   furnishing?: string;
 
-  @IsNumber()
-  @Min(0)
-  @Type(() => Number)
-  price: number;
-
   @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Type(() => Number)
-  maintenanceCharges?: number;
-
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Type(() => Number)
-  floorNumber?: number;
-
-  @IsOptional()
-  @IsNumber()
-  @Min(1)
-  @Type(() => Number)
-  totalFloors?: number;
+  @IsString()
+  condition?: string; // parking yes/no
 
   @IsOptional()
   @IsString()
-  facing?: string;
+  facingSide?: string;
 
   @IsOptional()
   @IsString()
-  parking?: string;
+  price?: string;
+
+  // Rent fields
+  @IsOptional()
+  @IsString()
+  monthlyRentAmount?: string;
 
   @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  amenities?: string[];
+  @IsString()
+  securityDeposit?: string;
 
   @IsOptional()
-  @Type(() => Date)
-  possessionDate?: Date;
+  @IsString()
+  maintenanceAmount?: string;
 
   @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Type(() => Number)
-  ageOfProperty?: number;
+  @IsString()
+  availableFrom?: string;
 
   @IsOptional()
-  @IsBoolean()
-  gatedCommunity?: boolean;
+  @IsString()
+  tenantType?: string;
 
   @IsOptional()
-  @IsBoolean()
-  powerBackup?: boolean;
+  @IsString()
+  leaseDuration?: string;
 }
-// Make sure this closing brace exists

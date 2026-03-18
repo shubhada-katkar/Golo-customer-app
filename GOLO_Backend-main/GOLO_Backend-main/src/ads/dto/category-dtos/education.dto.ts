@@ -1,16 +1,28 @@
-import { IsEnum, IsString, IsNumber, IsOptional, IsArray, IsEmail, Min, IsDate } from 'class-validator';
+import { IsEnum, IsString, IsOptional, IsNumber, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class EducationDto {
-  @IsEnum(['School', 'College', 'Coaching', 'Tutorial', 'Online Course'])
-  institutionType: string;
 
-  @IsString()
-  institutionName: string;
+  @IsEnum(['tuition', 'coaching', 'online course', 'workshop', 'other'])
+  courseType: string;
+
+  @IsEnum(['online', 'offline'])
+  modeOfEducation: string;
+
+  @IsEnum(['yes', 'no'])
+  demoAvailable: string;
 
   @IsOptional()
   @IsString()
-  courseName?: string;
+  class?: string;
+
+  @IsOptional()
+  @IsString()
+  subject?: string;
+
+  @IsOptional()
+  @IsString()
+  institute?: string;
 
   @IsOptional()
   @IsString()
@@ -24,54 +36,9 @@ export class EducationDto {
 
   @IsOptional()
   @IsString()
-  eligibility?: string;
-
-  @IsOptional()
-  @Type(() => Date)
-  admissionStartDate?: Date;
-
-  @IsOptional()
-  @Type(() => Date)
-  admissionEndDate?: Date;
-
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  facilities?: string[];
+  experience?: string;
 
   @IsOptional()
   @IsString()
-  website?: string;
-
-  @IsOptional()
-  @IsString()
-  contactPerson?: string;
-
-  @IsOptional()
-  @IsString()
-  contactNumber?: string;
-
-  @IsOptional()
-  @IsEmail()
-  email?: string;
-
-  @IsOptional()
-  @IsString()
-  affiliatedTo?: string;
-
-  @IsOptional()
-  @IsString()
-  accreditation?: string;
-
-  @IsOptional()
-  @IsNumber()
-  @Min(1800)
-  @Type(() => Number)
-  establishedYear?: number;
-
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Type(() => Number)
-  studentCapacity?: number;
+  qualification?: string;
 }

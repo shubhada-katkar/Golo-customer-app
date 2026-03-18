@@ -1,11 +1,17 @@
 import { 
   Controller, Post, Body, Get, Put, Delete, Param, 
-  UseGuards, Query, Ip, InternalServerErrorException, NotFoundException 
+  UseGuards, Query, Ip, InternalServerErrorException, NotFoundException,
+  UseInterceptors, UploadedFile
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { UsersService } from './users.service';
+import { CloudinaryService } from '../ads/cloudinary.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { SendEmailOtpDto } from './dto/send-email-otp.dto';
+import { VerifyEmailOtpDto } from './dto/verify-email-otp.dto';
+import { ResetPasswordWithOtpDto } from './dto/reset-password-with-otp.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -14,7 +20,10 @@ import { UserRole } from './schemas/user.schema';
 
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly cloudinaryService: CloudinaryService,
+  ) {}
 
   // ==================== PUBLIC ROUTES ====================
 
@@ -25,6 +34,26 @@ export class UsersController {
       success: true,
       message: 'User registered successfully',
       data: user,
+    };
+  }
+
+  @Post('send-registration-otp')
+  async sendRegistrationOtp(@Body() body: SendEmailOtpDto) {
+    const result = await this.usersService.sendRegistrationOtp(body.email);
+    return {
+      success: true,
+      message: 'OTP sent to your email',
+      data: result,
+    };
+  }
+
+  @Post('verify-registration-otp')
+  async verifyRegistrationOtp(@Body() body: VerifyEmailOtpDto) {
+    const result = await this.usersService.verifyRegistrationOtp(body.email, body.otp);
+    return {
+      success: true,
+      message: 'Email verified successfully',
+      data: result,
     };
   }
 
@@ -43,6 +72,36 @@ export class UsersController {
     const result = await this.usersService.refreshToken(refreshTokenDto.refreshToken);
     return {
       success: true,
+      data: result,
+    };
+  }
+
+  @Post('forgot-password/send-otp')
+  async sendForgotPasswordOtp(@Body() body: SendEmailOtpDto) {
+    const result = await this.usersService.sendForgotPasswordOtp(body.email);
+    return {
+      success: true,
+      message: 'OTP sent to your email',
+      data: result,
+    };
+  }
+
+  @Post('forgot-password/verify-otp')
+  async verifyForgotPasswordOtp(@Body() body: VerifyEmailOtpDto) {
+    const result = await this.usersService.verifyForgotPasswordOtp(body.email, body.otp);
+    return {
+      success: true,
+      message: 'OTP verified successfully',
+      data: result,
+    };
+  }
+
+  @Post('forgot-password/reset')
+  async resetPasswordWithOtp(@Body() body: ResetPasswordWithOtpDto) {
+    const result = await this.usersService.resetPasswordWithOtp(body.email, body.otp, body.newPassword);
+    return {
+      success: true,
+      message: 'Password reset successfully',
       data: result,
     };
   }
@@ -72,8 +131,13 @@ export class UsersController {
 
   @Put('profile')
   @UseGuards(JwtAuthGuard)
-  async updateProfile(@CurrentUser() user: any, @Body() updateData: any) {
-    const profile = await this.usersService.updateProfile(user.id, updateData);
+  @UseInterceptors(FileInterceptor('image'))
+  async updateProfile(
+    @CurrentUser() user: any,
+    @Body() updateData: any,
+    @UploadedFile() file?: { buffer: Buffer; originalname?: string },
+  ) {
+    const profile = await this.usersService.updateProfile(user.id, updateData, file, this.cloudinaryService);
     return {
       success: true,
       message: 'Profile updated successfully',
@@ -89,7 +153,7 @@ export class UsersController {
     const result = await this.usersService.sendPasswordChangeOTP(user.id);
     return {
       success: true,
-      message: 'OTP sent to your registered phone number',
+      message: 'OTP sent to your registered email',
       data: result,
     };
   }

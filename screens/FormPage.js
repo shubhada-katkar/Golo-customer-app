@@ -28,7 +28,7 @@ import Property from "../components/Property";
 import Vehicles from "../components/Vehicles";
 
 export default function FormPage({ route, navigation }) {
-    const { category, template, selectedDays, selectedLocations, price } = route.params || {};
+    const { category, template, selectedDays, selectedLocations, selectedDates, startDate, endDate, price } = route.params || {};
 
     const [step, setStep] = useState(1);
     const [formData, setFormData] = useState({});
@@ -114,6 +114,20 @@ export default function FormPage({ route, navigation }) {
                             />
                         )}
 
+                        {step === 1 && template == null && (
+                            <Text style={{ color: "red", marginTop: 20 }}>
+                                ⚠️ No template received. Got: {JSON.stringify(route.params)}
+                            </Text>
+                        )}
+
+                        {step === 1 &&
+                            template != null &&
+                            !["card1", "card2", "card3", "1", "2", "3"].includes(String(template)) && (
+                                <Text style={{ color: "red", marginTop: 20 }}>
+                                    ⚠️ Unknown template value: "{template}"
+                                </Text>
+                            )}
+
                         {step === 2 && Step2Component && (
                             <Step2Component
                                 category={category}
@@ -124,8 +138,17 @@ export default function FormPage({ route, navigation }) {
                                 navigation={navigation}
                                 selectedDays={selectedDays}
                                 selectedLocations={selectedLocations}
+                                selectedDates={selectedDates}
+                                startDate={startDate}
+                                endDate={endDate}
                                 price={price}
                             />
+                        )}
+
+                        {step === 2 && !Step2Component && (
+                            <Text style={{ color: "red", marginTop: 20 }}>
+                                ⚠️ No form component found for category: "{category?.id}"
+                            </Text>
                         )}
 
                     </View>

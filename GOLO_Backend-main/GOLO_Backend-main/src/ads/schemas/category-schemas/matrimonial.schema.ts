@@ -5,6 +5,7 @@ export type MatrimonialDocument = Matrimonial & Document;
 
 @Schema({ _id: false, timestamps: false })
 export class Matrimonial {
+
   @Prop({ required: true })
   profileFor: string;
 
@@ -18,12 +19,6 @@ export class Matrimonial {
   gender: string;
 
   @Prop()
-  height: string;
-
-  @Prop()
-  weight: string;
-
-  @Prop()
   maritalStatus: string;
 
   @Prop()
@@ -31,9 +26,6 @@ export class Matrimonial {
 
   @Prop()
   caste: string;
-
-  @Prop()
-  motherTongue: string;
 
   @Prop()
   education: string;
@@ -45,34 +37,16 @@ export class Matrimonial {
   annualIncome: string;
 
   @Prop()
-  city: string;
+  height: string;
 
   @Prop()
-  state: string;
+  location: string;
 
   @Prop()
-  country: string;
+  aboutMe: string;
 
   @Prop()
-  about: string;
-
-  @Prop({ type: [String] })
-  hobbies: string[];
-
-  @Prop()
-  diet: string;
-
-  @Prop()
-  drink: string;
-
-  @Prop()
-  smoke: string;
-
-  @Prop()
-  contactNumber: string;
-
-  @Prop()
-  email: string;
+  partnerPreference: string;
 }
 
 export const MatrimonialSchema = SchemaFactory.createForClass(Matrimonial);

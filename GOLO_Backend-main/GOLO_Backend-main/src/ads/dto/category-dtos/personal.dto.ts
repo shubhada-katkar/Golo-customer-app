@@ -1,13 +1,10 @@
-import { IsString, IsOptional, IsArray, IsEmail, IsUrl } from 'class-validator';
+import { IsString, IsOptional } from 'class-validator';
 
 export class PersonalDto {
+
   @IsOptional()
   @IsString()
   name?: string;
-
-  @IsOptional()
-  @IsString()
-  age?: string;
 
   @IsOptional()
   @IsString()
@@ -15,35 +12,17 @@ export class PersonalDto {
 
   @IsOptional()
   @IsString()
-  location?: string;
+  age?: string;
 
   @IsOptional()
   @IsString()
-  lookingFor?: string;
+  achievementTitle?: string;
 
   @IsOptional()
   @IsString()
-  interests?: string;
-
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  hobbies?: string[];
+  description?: string;
 
   @IsOptional()
   @IsString()
-  about?: string;
-
-  @IsOptional()
-  @IsString()
-  contactNumber?: string;
-
-  @IsOptional()
-  @IsEmail()
-  email?: string;
-
-  @IsOptional()
-  @IsArray()
-  @IsUrl({}, { each: true })
-  images?: string[];
+  contact?: string;
 }

@@ -1,7 +1,8 @@
-import { IsEnum, IsString, IsNumber, IsOptional, IsArray, IsBoolean, Min, Max } from 'class-validator';
+import { IsEnum, IsString, IsNumber, IsOptional } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class VehicleDto {
+
   @IsEnum(['Rent', 'Sell'])
   type: string;
 
@@ -11,7 +12,15 @@ export class VehicleDto {
 
   @IsOptional()
   @IsString()
+  vehicleType2?: string;
+
+  @IsOptional()
+  @IsString()
   brand?: string;
+
+  @IsOptional()
+  @IsString()
+  brand2?: string;
 
   @IsOptional()
   @IsString()
@@ -19,35 +28,20 @@ export class VehicleDto {
 
   @IsOptional()
   @IsString()
-  brandModel?: string;
+  variant?: string;
 
   @IsOptional()
   @IsNumber()
-  @Type(() => Number)
-  rentAmount?: number;
-
-  @IsOptional()
-  @IsNumber()
-  @Type(() => Number)
-  securityDeposit?: number;
-
-  @IsOptional()
-  @IsEnum(['Yes', 'No', 'Both'])
-  includesDriver?: string;
-
-  @IsOptional()
-  @IsString()
-  minRentalDuration?: string;
-
-  @IsOptional()
-  @IsNumber()
-  @Min(1900)
-  @Max(new Date().getFullYear() + 1)
   @Type(() => Number)
   year?: number;
 
   @IsOptional()
-  @IsEnum(['Petrol', 'Diesel', 'Electric', 'Hybrid', 'CNG'])
+  @IsNumber()
+  @Type(() => Number)
+  kilometersDriven?: number;
+
+  @IsOptional()
+  @IsString()
   fuelType?: string;
 
   @IsOptional()
@@ -55,20 +49,8 @@ export class VehicleDto {
   transmission?: string;
 
   @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Type(() => Number)
-  kilometersDriven?: number;
-
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Type(() => Number)
-  price?: number;
-
-  @IsOptional()
   @IsString()
-  color?: string;
+  ownership?: string;
 
   @IsOptional()
   @IsString()
@@ -76,28 +58,30 @@ export class VehicleDto {
 
   @IsOptional()
   @IsString()
-  registrationNumber?: string;
-
-  @IsOptional()
-  @IsNumber()
-  @Min(1)
-  @Type(() => Number)
-  ownerNumber?: number;
-
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  features?: string[];
-
-  @IsOptional()
-  @IsString()
   condition?: string;
 
   @IsOptional()
-  @IsBoolean()
-  emiAvailable?: boolean;
+  @IsNumber()
+  @Type(() => Number)
+  price?: number;
+
+  // Rent fields
 
   @IsOptional()
-  @IsBoolean()
-  exchangeAvailable?: boolean;
+  @IsNumber()
+  @Type(() => Number)
+  perDayRentAmount?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  securityDeposit?: number;
+
+  @IsOptional()
+  @IsEnum(['yes', 'no', 'both'])
+  includesDriver?: string;
+
+  @IsOptional()
+  @IsString()
+  minRentalDuration?: string;
 }

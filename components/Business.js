@@ -227,7 +227,7 @@ export default function Business({ formData, setFormData, category, onPrevious, 
                 />
             </View>
 
-            <TouchableOpacity style={styles.nextBtn} onPress={() => {navigation.navigate("Preview", {template, category, formData, price, selectedDays, selectedLocations});}}>
+            <TouchableOpacity style={styles.nextBtn} onPress={() => { navigation.navigate("Preview", { template, category, formData, price, selectedDays, selectedLocations }); }}>
                 <Text style={styles.nextText}>See Preview</Text>
             </TouchableOpacity>
         </View>

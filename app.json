@@ -2,6 +2,7 @@
   "expo": {
     "name": "GOLO",
     "slug": "golo-customer-app",
+    "scheme": "golo",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/logo.png",

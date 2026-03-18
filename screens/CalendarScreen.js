@@ -7,6 +7,7 @@ import { Calendar } from "react-native-calendars";
 import { ScrollView } from "react-native-gesture-handler";
 import { Modal } from "react-native";
 import { TouchableWithoutFeedback, Keyboard } from "react-native";
+import { Alert } from "react-native";
 
 export default function CalendarScreen({ navigation, route }) {
   const { category } = route.params || {};
@@ -18,6 +19,54 @@ export default function CalendarScreen({ navigation, route }) {
   const maxBoxHeight = 240;
   const selectedDaysCount = datesArray.length;
   const [selectedLocations, setSelectedLocations] = useState([]);
+
+  const buildDateRange = (startDateStr, endDateStr) => {
+    const result = [];
+    const cursor = new Date(startDateStr);
+    const end = new Date(endDateStr);
+
+    while (cursor <= end) {
+      result.push(cursor.toISOString().split("T")[0]);
+      cursor.setDate(cursor.getDate() + 1);
+    }
+
+    return result;
+  };
+
+  const handleNext = () => {
+    const pendingInputLocations = (locationInput || "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    const mergedLocations = [
+      ...selectedLocations,
+      ...pendingInputLocations.filter((loc) => !selectedLocations.includes(loc)),
+    ];
+
+    if (datesArray.length === 0) {
+      Alert.alert("Select Dates", "Please select ad dates before continuing.");
+      return;
+    }
+
+    if (mergedLocations.length === 0) {
+      Alert.alert("Select Location", "Please add at least one location before continuing.");
+      return;
+    }
+
+    const startDate = datesArray[0];
+    const endDate = datesArray[datesArray.length - 1];
+    const selectedDateRange = buildDateRange(startDate, endDate);
+
+    navigation.navigate("Template", {
+      category,
+      selectedDays: selectedDateRange.length,
+      selectedDates: selectedDateRange,
+      startDate,
+      endDate,
+      selectedLocations: mergedLocations,
+    });
+  };
 
   const onDayPress = (day) => {
     const updatedDates = { ...selectedDates };
@@ -192,13 +241,7 @@ export default function CalendarScreen({ navigation, route }) {
           {/* Next Button */}
           <TouchableOpacity
             style={styles.button}
-            onPress={() =>
-              navigation.navigate("Template", {
-                category,
-                selectedDays: datesArray.length,
-                selectedLocations: selectedLocations,
-              })
-            }
+            onPress={handleNext}
           >
             <Text style={{ color: "#ffffff", fontSize: 18, fontFamily: "Medium", lineHeight: Math.round(18 * 1.5) }}>
               Next

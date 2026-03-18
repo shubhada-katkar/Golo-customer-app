@@ -6,7 +6,7 @@ import Topbar from "../components/Topbar";
 import ChojaBottom from "../components/ChojaBottom";
 import { MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons";
 
-export default function Fav({navigation}) {
+export default function Claimed({ navigation }) {
     const { colors } = useContext(ThemeContext);
 
     return (
@@ -47,10 +47,10 @@ export default function Fav({navigation}) {
                         </View>
 
                         {/* Outline Heart */}
-                        <TouchableOpacity style={{borderRadius:10,borderWidth:1.5,padding:10}}>
-                        <Text style={{fontFamily:"Medium", lineHeight:Math.round(14*1.5)}}>
-                            Use It
-                        </Text>
+                        <TouchableOpacity style={{ borderRadius: 10, borderWidth: 1.5, padding: 10 }}>
+                            <Text style={{ fontFamily: "Medium", lineHeight: Math.round(14 * 1.5) }}>
+                                Use It
+                            </Text>
                         </TouchableOpacity>
                     </View>
                 ))}
@@ -78,8 +78,8 @@ const styles = StyleSheet.create({
         marginHorizontal: 10,
         marginTop: 14,
         borderRadius: 12,
-        borderRadius:10,
-        borderWidth:0.5
+        borderRadius: 10,
+        borderWidth: 0.5
     },
 
     imagePlaceholder: {

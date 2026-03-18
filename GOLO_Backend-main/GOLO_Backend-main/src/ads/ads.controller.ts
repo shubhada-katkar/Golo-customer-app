@@ -1,12 +1,16 @@
 import {
   Controller, Get, Post, Put, Delete, Body, Param, Query,
-  UsePipes, ValidationPipe, Logger, HttpCode, HttpStatus, UseGuards
+  UsePipes, ValidationPipe, Logger, HttpCode, HttpStatus, UseGuards,
+  UploadedFile, UseInterceptors, Res, BadRequestException, Req
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ConfigService } from '@nestjs/config';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { AdsService } from './ads.service';
+import { CloudinaryService } from './cloudinary.service';
 import { CreateAdDto } from './dto/create-ad.dto';
 import { UpdateAdDto } from './dto/update-ad.dto';
 import { KAFKA_TOPICS } from '../common/constants/kafka-topics';
@@ -14,6 +18,7 @@ import { KafkaService } from '../kafka/kafka.service';
 import { v4 as uuidv4 } from 'uuid';
 import { UserRole } from '../users/schemas/user.schema';
 import { Optional } from '@nestjs/common';
+import { Request, Response } from 'express';
 
 @Controller('ads')
 export class AdsController {
@@ -21,6 +26,8 @@ export class AdsController {
 
   constructor(
     private readonly adsService: AdsService,
+    private readonly cloudinaryService: CloudinaryService,
+    private readonly configService: ConfigService,
     @Optional() private readonly kafkaService?: KafkaService
   ) { }
 
@@ -286,7 +293,7 @@ export class AdsController {
         'Education', 'Matrimonial', 'Vehicle', 'Business', 'Travel',
         'Astrology', 'Property', 'Public Notice', 'Lost & Found',
         'Service', 'Personal', 'Employment', 'Pets', 'Mobiles',
-        'Electronics & Home appliances', 'Furniture', 'Other'
+        'Electronics & Home appliances', 'Furniture', 'Others', 'Greetings'
       ];
 
       const categoryStats = await Promise.all(
@@ -332,6 +339,77 @@ export class AdsController {
       timestamp: new Date().toISOString(),
       uptime: process.uptime()
     };
+  }
+
+  /**
+   * Upload an ad image to Cloudinary (Authenticated users only)
+   */
+  @Post('upload/image')
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadAdImage(@UploadedFile() file?: any) {
+    if (!file) {
+      throw new BadRequestException('No file uploaded');
+    }
+
+    if (!file.mimetype?.startsWith('image/')) {
+      throw new BadRequestException('Only image files are allowed');
+    }
+
+    const imageUrl = await this.cloudinaryService.uploadImage(file.buffer, file.originalname);
+
+    return {
+      success: true,
+      data: {
+        url: imageUrl,
+      },
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  /**
+   * Share link endpoint. Tries app deep link first, then falls back to website ad page.
+   */
+  @Get('share/:adId')
+  async getAdShareLink(@Param('adId') adId: string, @Req() req: Request, @Res() res: Response) {
+    const shareScheme = this.configService.get<string>('config.share.appScheme') || 'golo';
+    const webBaseRaw = this.configService.get<string>('config.share.webBaseUrl') || '';
+    const webBase = webBaseRaw.replace(/\/+$/, '');
+
+    let resolvedAdId = adId;
+    try {
+      const ad = await this.adsService.getAdById(adId);
+      resolvedAdId = String((ad as any)?.adId || (ad as any)?._id || adId);
+    } catch {
+      resolvedAdId = adId;
+    }
+
+    const encodedAdId = encodeURIComponent(resolvedAdId);
+    const appDeepLink = `${shareScheme}://ad/${encodedAdId}`;
+    const origin = `${req.protocol}://${req.get('host')}`;
+    const finalFallback = webBase
+      ? `${webBase}/ad/${encodedAdId}`
+      : `${origin}/ads/ad-details/${encodedAdId}`;
+
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    return res.send(`<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Open Shared Ad</title>
+  </head>
+  <body style="font-family: Arial, sans-serif; padding: 20px;">
+    <p>Opening ad details...</p>
+    <p>If nothing happens, <a href="${finalFallback}">tap here</a>.</p>
+    <script>
+      window.location.href = ${JSON.stringify(appDeepLink)};
+      setTimeout(function () {
+        window.location.href = ${JSON.stringify(finalFallback)};
+      }, 1200);
+    </script>
+  </body>
+</html>`);
   }
 
   // ==================== USER ROUTES (Any logged-in user) ====================
@@ -427,7 +505,8 @@ export class AdsController {
   async getMyAds(
     @CurrentUser() user: any,
     @Query('page') page: string = '1',
-    @Query('limit') limit: string = '10'
+    @Query('limit') limit: string = '10',
+    @Query('category') category?: string,
   ) {
     this.logger.log(`REST: Getting ads for current user: ${user.id}`);
 
@@ -435,7 +514,7 @@ export class AdsController {
       const pageNum = parseInt(page, 10);
       const limitNum = parseInt(limit, 10);
 
-      const result = await this.adsService.getAdsByUser(user.id, pageNum, limitNum);
+      const result = await this.adsService.getAdsByUser(user.id, pageNum, limitNum, category);
 
       return {
         success: true,
@@ -456,6 +535,62 @@ export class AdsController {
         message: 'Failed to get your ads',
         error: error.message,
         timestamp: new Date().toISOString()
+      };
+    }
+  }
+
+  /**
+   * Get analytics for current user's ads
+   */
+  @Get('analytics/me')
+  @UseGuards(JwtAuthGuard)
+  async getMyAdsAnalytics(@CurrentUser() user: any) {
+    this.logger.log(`REST: Getting analytics for current user: ${user.id}`);
+
+    try {
+      const data = await this.adsService.getUserAnalytics(user.id);
+
+      return {
+        success: true,
+        data,
+        timestamp: new Date().toISOString(),
+      };
+    } catch (error) {
+      this.logger.error(`REST: Error getting user analytics: ${error.message}`);
+
+      return {
+        success: false,
+        message: 'Failed to get analytics',
+        error: error.message,
+        timestamp: new Date().toISOString(),
+      };
+    }
+  }
+
+  /**
+   * Get analytics for a specific ad owned by current user
+   */
+  @Get(':adId/analytics')
+  @UseGuards(JwtAuthGuard)
+  async getAdAnalytics(@Param('adId') adId: string, @CurrentUser() user: any) {
+    this.logger.log(`REST: Getting ad analytics for ad: ${adId}, user: ${user.id}`);
+
+    try {
+      const data = await this.adsService.getAdAnalytics(adId, user.id);
+
+      return {
+        success: true,
+        data,
+        timestamp: new Date().toISOString(),
+      };
+    } catch (error) {
+      this.logger.error(`REST: Error getting ad analytics: ${error.message}`);
+
+      return {
+        success: false,
+        message: 'Failed to get ad analytics',
+        error: error.message,
+        timestamp: new Date().toISOString(),
       };
     }
   }
@@ -622,18 +757,18 @@ export class AdsController {
   }
 
   // src/ads/ads.controller.ts
-@Get('test-kafka')
-async testKafka() {
-  try {
-    const result = await this.kafkaService.emit('test-topic', {
-      message: 'Hello from GOLO Backend!',
-      timestamp: new Date().toISOString()
-    });
-    return { success: true, message: 'Kafka message sent', result };
-  } catch (error) {
-    return { success: false, error: error.message };
+  @Get('test-kafka')
+  async testKafka() {
+    try {
+      const result = await this.kafkaService.emit('test-topic', {
+        message: 'Hello from GOLO Backend!',
+        timestamp: new Date().toISOString()
+      });
+      return { success: true, message: 'Kafka message sent', result };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
   }
-}
 
   /**
    * Delete ad via Kafka (async) - Authenticated users only
@@ -709,11 +844,11 @@ async testKafka() {
 
       if (this.kafkaService) {
         await this.kafkaService.emit(KAFKA_TOPICS.AD_PROMOTED, {
-        adId,
-        userId: user.id,
-        promotionPackage,
-        promotedUntil,
-        timestamp: new Date().toISOString()
+          adId,
+          userId: user.id,
+          promotionPackage,
+          promotedUntil,
+          timestamp: new Date().toISOString()
         }, uuidv4());
       } else {
         this.logger.warn('Kafka disabled - AD_PROMOTED event not emitted');
@@ -939,6 +1074,48 @@ async testKafka() {
       this.logger.error(`Error fetching ad details: ${error.message}`);
       return { success: false, message: 'Ad not found' };
     }
+  }
+
+  /**
+   * Track ad card click (viewer opened ad details)
+   */
+  @Post(':adId/analytics/card-click')
+  @HttpCode(HttpStatus.OK)
+  async trackAdCardClick(@Param('adId') adId: string) {
+    await this.adsService.incrementCardClick(adId);
+    return {
+      success: true,
+      message: 'Ad card click tracked',
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  /**
+   * Track contact click
+   */
+  @Post(':adId/analytics/contact-click')
+  @HttpCode(HttpStatus.OK)
+  async trackContactClick(@Param('adId') adId: string) {
+    await this.adsService.incrementContactClick(adId);
+    return {
+      success: true,
+      message: 'Contact click tracked',
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  /**
+   * Track wishlist save
+   */
+  @Post(':adId/analytics/wishlist-save')
+  @HttpCode(HttpStatus.OK)
+  async trackWishlistSave(@Param('adId') adId: string) {
+    await this.adsService.incrementWishlistSave(adId);
+    return {
+      success: true,
+      message: 'Wishlist save tracked',
+      timestamp: new Date().toISOString(),
+    };
   }
 
   /**

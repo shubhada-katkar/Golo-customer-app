@@ -1,61 +1,20 @@
-import { IsEnum, IsString, IsNumber, IsOptional, IsArray, IsBoolean, Min } from 'class-validator';
+import { IsEnum, IsString, IsNumber, IsOptional, IsBoolean, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class MobileDto {
+
   @IsString()
   brand: string;
 
   @IsString()
   model: string;
 
-  @IsString()
-  storage: string;
-
-  @IsString()
-  ram: string;
-
-  @IsString()
-  color: string;
-
-  @IsEnum(['New', 'Like New', 'Good', 'Fair', 'Broken'])
+  @IsEnum(['new', 'like new', 'fair'])
   condition: string;
 
   @IsOptional()
   @IsString()
-  batteryHealth?: string;
-
-  @IsOptional()
-  @IsString()
-  screenSize?: string;
-
-  @IsOptional()
-  @IsString()
-  processor?: string;
-
-  @IsOptional()
-  @IsString()
-  rearCamera?: string;
-
-  @IsOptional()
-  @IsString()
-  frontCamera?: string;
-
-  @IsOptional()
-  @IsString()
   warranty?: string;
-
-  @IsOptional()
-  @Type(() => Date)
-  warrantyExpiry?: Date;
-
-  @IsOptional()
-  @IsBoolean()
-  boxIncluded?: boolean;
-
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  accessories?: string[];
 
   @IsNumber()
   @Min(0)
@@ -63,28 +22,6 @@ export class MobileDto {
   price: number;
 
   @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Type(() => Number)
-  originalPrice?: number;
-
-  @IsOptional()
-  @IsString()
-  imeiNumber?: string;
-
-  @IsOptional()
   @IsBoolean()
-  dualSim?: boolean;
-
-  @IsOptional()
-  @IsBoolean()
-  hashas5G?: boolean;
-
-  @IsOptional()
-  @IsBoolean()
-  waterResistant?: boolean;
-
-  @IsOptional()
-  @IsBoolean()
-  fastCharging?: boolean;
+  negotiable?: boolean;
 }

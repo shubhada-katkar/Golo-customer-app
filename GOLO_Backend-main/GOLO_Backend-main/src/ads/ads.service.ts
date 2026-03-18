@@ -7,7 +7,7 @@ import {
   Optional,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, SortOrder } from 'mongoose';
+import { Model, SortOrder, Types } from 'mongoose';
 import { Ad, AdDocument } from './schemas/category-schemas/ad.schema';
 import { CreateAdDto } from './dto/create-ad.dto';
 import { UpdateAdDto } from './dto/update-ad.dto';
@@ -26,7 +26,7 @@ export class AdsService {
 
     // ✅ Kafka OPTIONAL
     @Optional() private readonly kafkaService?: KafkaService,
-  ) {}
+  ) { }
 
   /* ============================================================
      CREATE AD
@@ -90,20 +90,48 @@ export class AdsService {
       case 'Personal':
         categorySpecificData = createAdDto.personalData || {};
         break;
+      case 'Greetings':
+        categorySpecificData = createAdDto.greetingsData || {};
+        break;
+      case 'Others':
+        categorySpecificData = createAdDto.othersData || {};
+        break;
+      case 'Public Notice':
+        categorySpecificData = createAdDto.publicNoticeData || {};
+        break;
     }
 
     this.validateCategoryData(createAdDto.category, categorySpecificData);
 
+    const selectedDates = Array.isArray(createAdDto.selectedDates)
+      ? createAdDto.selectedDates
+        .map((d: any) => new Date(d))
+        .filter((d: Date) => !Number.isNaN(d.getTime()))
+        .sort((a: Date, b: Date) => a.getTime() - b.getTime())
+      : [];
+
+    const startDate = selectedDates.length > 0 ? selectedDates[0] : null;
+    const endDate = selectedDates.length > 0 ? selectedDates[selectedDates.length - 1] : null;
+
     const expiryDate =
+      endDate ||
       createAdDto.expiryDate ||
       new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
+    const now = new Date();
+    const resolvedStatus = expiryDate && new Date(expiryDate) < now ? 'expired' : 'active';
+
     const adData: any = {
       ...createAdDto,
+      selectedDates,
       categorySpecificData,
       adId: uuidv4(),
-      status: 'active',
+      status: resolvedStatus,
       views: 0,
+      cardClicks: 0,
+      uniqueVisitors: 0,
+      contactClicks: 0,
+      wishlistSaves: 0,
       expiryDate,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -159,11 +187,17 @@ export class AdsService {
   ============================================================ */
 
   async getAdById(adId: string): Promise<Ad> {
-    // Try to find by _id first (MongoDB ObjectId), then fall back to adId field
-    let ad = await this.adModel.findById(adId).exec();
+    // Try _id lookup only when adId is a valid ObjectId; otherwise use UUID-based adId lookup.
+    let ad: Ad | null = null;
+
+    if (Types.ObjectId.isValid(adId)) {
+      ad = await this.adModel.findById(adId).exec();
+    }
+
     if (!ad) {
       ad = await this.adModel.findOne({ adId }).exec();
     }
+
     if (!ad) throw new NotFoundException(`Ad ${adId} not found`);
     return ad;
   }
@@ -268,17 +302,149 @@ export class AdsService {
     return { ads, total };
   }
 
-  async getAdsByUser(userId: string, page = 1, limit = 10): Promise<{ ads: Ad[]; total: number }> {
-    const skip = (page - 1) * limit;
-    const query = { userId, status: 'active' };
 
+  async getAdsByUser(
+    userId: string,
+    page = 1,
+    limit = 10,
+    category?: string
+  ): Promise<{ ads: Ad[]; total: number }> {
+    await this.refreshDateDrivenStatuses();
+
+    const skip = (page - 1) * limit;
+    const query: any = {
+      userId,
+      status: 'active'
+    };
+    // Apply category filter if provided
+    if (category && category !== 'null') {
+      query.category = category;
+    }
     const [ads, total] = await Promise.all([
-      this.adModel.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).exec(),
+      this.adModel
+        .find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .exec(),
+
       this.adModel.countDocuments(query),
     ]);
-
     return { ads, total };
   }
+
+  async getUserAnalytics(userId: string): Promise<any> {
+    await this.refreshDateDrivenStatuses();
+
+    const ads = await this.adModel
+      .find({ userId, status: { $ne: 'deleted' } })
+      .sort({ createdAt: -1 })
+      .lean()
+      .exec();
+
+    const totals = ads.reduce(
+      (acc: any, ad: any) => {
+        acc.totalAds += 1;
+        if (ad.status === 'active') acc.activeAds += 1;
+        acc.adCardClicks += Number(ad.cardClicks || 0);
+        acc.uniqueVisitors += Number(ad.uniqueVisitors || ad.views || 0);
+        acc.contactClicks += Number(ad.contactClicks || 0);
+        acc.wishlistSaves += Number(ad.wishlistSaves || 0);
+        return acc;
+      },
+      {
+        totalAds: 0,
+        activeAds: 0,
+        adCardClicks: 0,
+        uniqueVisitors: 0,
+        contactClicks: 0,
+        wishlistSaves: 0,
+      },
+    );
+
+    const categoryMap = ads.reduce((acc: any, ad: any) => {
+      const category = ad.category || 'Others';
+      acc[category] = (acc[category] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const categoryDistribution = Object.entries(categoryMap)
+      .map(([name, count]) => ({ name, population: count }))
+      .sort((a, b) => Number(b.population) - Number(a.population));
+
+    const topAdsByViews = [...ads]
+      .sort((a: any, b: any) => Number(b.views || 0) - Number(a.views || 0))
+      .slice(0, 5)
+      .map((ad: any) => ({
+        adId: ad.adId || String(ad._id),
+        label: ad.title || ad.category || 'Ad',
+        views: Number(ad.views || 0),
+      }));
+
+    const adsList = ads.slice(0, 20).map((ad: any) => ({
+      adId: ad.adId || String(ad._id),
+      name: ad.title || 'Untitled Ad',
+      date: ad.createdAt,
+      status: ad.status || 'active',
+      category: ad.category || 'Others',
+    }));
+
+    return {
+      stats: totals,
+      topAdsByViews,
+      categoryDistribution,
+      adsList,
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
+  async getAdAnalytics(adId: string, userId: string): Promise<any> {
+    await this.refreshDateDrivenStatuses();
+
+    const ad = await this.getAdById(adId);
+
+    if (String((ad as any).userId) !== String(userId)) {
+      throw new ForbiddenException('You can only view analytics for your own ad');
+    }
+
+    const clicks = Number((ad as any).cardClicks || 0);
+    const visitors = Number((ad as any).uniqueVisitors || (ad as any).views || 0);
+    const contacts = Number((ad as any).contactClicks || 0);
+    const wishlist = Number((ad as any).wishlistSaves || 0);
+
+    const ctr = visitors > 0 ? (clicks / visitors) * 100 : 0;
+    const visitorsRate = clicks > 0 ? (visitors / clicks) * 100 : 0;
+    const wishlistRate = visitors > 0 ? (wishlist / visitors) * 100 : 0;
+
+    return {
+      ad: {
+        adId: (ad as any).adId || String((ad as any)._id),
+        title: (ad as any).title,
+        createdAt: (ad as any).createdAt,
+        status: (ad as any).status,
+        category: (ad as any).category,
+      },
+      stats: {
+        clicks,
+        visitors,
+        contacts,
+        wishlist,
+      },
+      funnel: {
+        adClicks: clicks,
+        visitors,
+        contacts,
+        wishlist,
+      },
+      rates: {
+        ctr,
+        visitorsRate,
+        wishlistRate,
+      },
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
 
   async getFeaturedDeals(limit = 10): Promise<Ad[]> {
     const now = new Date();
@@ -342,9 +508,65 @@ export class AdsService {
 
   async incrementViewCount(adId: string): Promise<void> {
     try {
-      await this.adModel.findOneAndUpdate({ adId }, { $inc: { views: 1 }, $set: { updatedAt: new Date() } }).exec();
+      const ad = await this.getAdById(adId);
+      await this.adModel
+        .updateOne(
+          { _id: (ad as any)._id },
+          { $inc: { views: 1, uniqueVisitors: 1 }, $set: { updatedAt: new Date() } },
+        )
+        .exec();
     } catch (error: any) {
       this.logger.error(`Failed to increment view count for ${adId}: ${error.message}`);
+    }
+  }
+
+  async incrementCardClick(adId: string): Promise<void> {
+    await this.incrementAnalyticsMetric(adId, 'cardClicks');
+  }
+
+  async incrementContactClick(adId: string): Promise<void> {
+    await this.incrementAnalyticsMetric(adId, 'contactClicks');
+  }
+
+  async incrementWishlistSave(adId: string): Promise<void> {
+    await this.incrementAnalyticsMetric(adId, 'wishlistSaves');
+  }
+
+  private async refreshDateDrivenStatuses(): Promise<void> {
+    const now = new Date();
+
+    await this.adModel
+      .updateMany(
+        {
+          status: { $nin: ['deleted', 'rejected', 'pending'] },
+          expiryDate: { $exists: true, $lt: now },
+        },
+        { $set: { status: 'expired', updatedAt: now } },
+      )
+      .exec();
+
+    await this.adModel
+      .updateMany(
+        {
+          status: { $nin: ['deleted', 'rejected', 'pending'] },
+          expiryDate: { $exists: true, $gte: now },
+        },
+        { $set: { status: 'active', updatedAt: now } },
+      )
+      .exec();
+  }
+
+  private async incrementAnalyticsMetric(adId: string, metricField: string): Promise<void> {
+    try {
+      const ad = await this.getAdById(adId);
+      await this.adModel
+        .updateOne(
+          { _id: (ad as any)._id },
+          { $inc: { [metricField]: 1 }, $set: { updatedAt: new Date() } },
+        )
+        .exec();
+    } catch (error: any) {
+      this.logger.error(`Failed to increment ${metricField} for ${adId}: ${error.message}`);
     }
   }
 

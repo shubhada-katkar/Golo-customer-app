@@ -6,13 +6,17 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 import { User, UserSchema } from './schemas/user.schema';
+import { EmailOtp, EmailOtpSchema } from './schemas/email-otp.schema';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { KafkaModule } from '../kafka/kafka.module';
 import { AdsModule } from 'src/ads/ads.module';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
+    MongooseModule.forFeature([
+      { name: User.name, schema: UserSchema },
+      { name: EmailOtp.name, schema: EmailOtpSchema },
+    ]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -42,7 +46,7 @@ import { AdsModule } from 'src/ads/ads.module';
       inject: [ConfigService],
     }),
     KafkaModule, // Keep existing forwardRef
-    // forwardRef(() => AdsModule), 
+    forwardRef(() => AdsModule),
   ],
   controllers: [UsersController],
   providers: [UsersService, JwtStrategy],

@@ -33,134 +33,134 @@ export default function Electronics({ formData, setFormData, category, onPreviou
     );
 
     return (
-       <View>
-                {/* Header */}
-                <View
+        <View>
+            {/* Header */}
+            <View
+                style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    paddingHorizontal: 5,
+                    paddingBottom: 10,
+                }}
+            >
+                <Text style={styles.composeTitle}>Electronics and Home Appliances</Text>
+
+                <TouchableOpacity
                     style={{
                         flexDirection: "row",
-                        justifyContent: "space-between",
                         alignItems: "center",
-                        paddingHorizontal: 5,
-                        paddingBottom: 10,
+                        paddingHorizontal: 10,
+                        paddingVertical: 4,
+                        backgroundColor: "#108136",
+                        borderRadius: 10,
                     }}
+                    onPress={onPrevious}
                 >
-                    <Text style={styles.composeTitle}>Electronics and Home Appliances</Text>
-
-                    <TouchableOpacity
+                    <AntDesign name="arrow-left" size={18} color="#ffffff" />
+                    <Text
                         style={{
-                            flexDirection: "row",
-                            alignItems: "center",
-                            paddingHorizontal: 10,
-                            paddingVertical: 4,
-                            backgroundColor: "#108136",
-                            borderRadius: 10,
+                            fontFamily: "Medium",
+                            fontSize: 14,
+                            marginLeft: 6,
+                            color: "#ffffff",
+                            lineHeight: Math.round(14 * 1.5),
                         }}
-                        onPress={onPrevious}
                     >
-                        <AntDesign name="arrow-left" size={18} color="#ffffff" />
-                        <Text
-                            style={{
-                                fontFamily: "Medium",
-                                fontSize: 14,
-                                marginLeft: 6,
-                                color: "#ffffff",
-                                lineHeight: Math.round(14 * 1.5),
-                            }}
-                        >
-                            Previous
-                        </Text>
+                        Previous
+                    </Text>
+                </TouchableOpacity>
+            </View>
+
+            <View style={styles.formCard}>
+
+                <Text style={styles.label}>Electronics Type</Text>
+                <TextInput
+                    style={styles.input}
+                    value={formData.electronicsType || ""}
+                    onChangeText={(text) =>
+                        setFormData({ ...formData, electronicsType: text })
+                    }
+                    placeholder="e.g.TV, Washing Machine.."
+                />
+
+                <Text style={styles.label}>Brand</Text>
+                <TextInput
+                    style={styles.input}
+                    value={formData.brand || ""}
+                    onChangeText={(text) =>
+                        setFormData({ ...formData, brand: text })
+                    }
+                    placeholder="e.g. Samsung, LG.."
+                />
+
+                <Text style={styles.label}>Model Name / Number</Text>
+                <TextInput
+                    style={styles.input}
+                    value={formData.modelNumber || ""}
+                    onChangeText={(text) =>
+                        setFormData({ ...formData, modelNumber: text })
+                    }
+                    placeholder="Enter model name or number"
+                />
+
+                <Text style={styles.label}>Warranty Remaining</Text>
+                <TextInput
+                    style={styles.input}
+                    value={formData.warrantyRemaining || ""}
+                    onChangeText={(text) =>
+                        setFormData({ ...formData, warrantyRemaining: text })
+                    }
+                    placeholder="Enter warranty remaining in months"
+                />
+
+                <Text style={styles.label}>Capacity / Size</Text>
+                <TextInput
+                    style={styles.input}
+                    value={formData.capacity || ""}
+                    onChangeText={(text) =>
+                        setFormData({ ...formData, capacity: text })
+                    }
+                    placeholder="e.g. 8.0 kg, 55 inch.."
+                />
+
+                <Text style={styles.label}>Condition</Text>
+                <View style={styles.segmentRow}>
+                    <ConditionButton label="New" value="new" />
+                    <ConditionButton label="Like new" value="like new" />
+                    <ConditionButton label="Fair" value="fair" />
+                </View>
+
+                <View style={{ flexDirection: "row", alignItems: "center", marginTop: 20, justifyContent: "space-between" }}>
+                    <Text style={[styles.label, { marginTop: 0 }]}>
+                        Price negotiable
+                    </Text>
+                    <TouchableOpacity
+                        style={styles.checkbox}
+                        onPress={() =>
+                            setFormData({ ...formData, negotiable: !formData.negotiable })
+                        }
+                    >
+                        {formData.negotiable && <View style={styles.checkboxTick} />}
                     </TouchableOpacity>
                 </View>
 
-                <View style={styles.formCard}>
+                <Text style={styles.label}>Price</Text>
+                <TextInput
+                    style={styles.input}
+                    value={formData.price || ""}
+                    onChangeText={(text) =>
+                        setFormData({ ...formData, price: text })
+                    }
+                    placeholder="Enter price in INR"
+                />
 
-                    <Text style={styles.label}>Electronics Type</Text>
-                    <TextInput
-                        style={styles.input}
-                        value={formData.electronicsType || ""}
-                        onChangeText={(text) =>
-                            setFormData({ ...formData, electronicsType: text })
-                        }
-                        placeholder="e.g.TV, Washing Machine.."
-                    />
+            </View>
 
-                    <Text style={styles.label}>Brand</Text>
-                    <TextInput
-                        style={styles.input}
-                        value={formData.brand || ""}
-                        onChangeText={(text) =>
-                            setFormData({ ...formData, brand: text })
-                        }
-                        placeholder="e.g. Samsung, LG.."
-                    />
-
-                    <Text style={styles.label}>Model Name / Number</Text>
-                    <TextInput
-                        style={styles.input}
-                        value={formData.modelNumber || ""}
-                        onChangeText={(text) =>
-                            setFormData({ ...formData, modelNumber: text })
-                        }
-                        placeholder="Enter model name or number"
-                    />
-
-                    <Text style={styles.label}>Warranty Remaining</Text>
-                    <TextInput
-                        style={styles.input}
-                        value={formData.warrantyRemaining || ""}
-                        onChangeText={(text) =>
-                            setFormData({ ...formData, warrantyRemaining: text })
-                        }
-                        placeholder="Enter warranty remaining in months"
-                    />
-                    
-                    <Text style={styles.label}>Capacity / Size</Text>
-                    <TextInput
-                        style={styles.input}
-                        value={formData.capacity || ""}
-                        onChangeText={(text) =>
-                            setFormData({ ...formData, capacity: text })
-                        }
-                        placeholder="e.g. 8.0 kg, 55 inch.."
-                    />
-
-                    <Text style={styles.label}>Condition</Text>
-                    <View style={styles.segmentRow}>
-                        <ConditionButton label="New" value="new" />
-                        <ConditionButton label="Like new" value="like new" />
-                        <ConditionButton label="Fair" value="fair" />
-                    </View>
-
-                    <View style={{ flexDirection: "row", alignItems: "center", marginTop: 20, justifyContent: "space-between" }}>
-                        <Text style={[styles.label, { marginTop: 0 }]}>
-                            Price negotiable
-                        </Text>
-                        <TouchableOpacity
-                            style={styles.checkbox}
-                            onPress={() =>
-                                setFormData({ ...formData, negotiable: !formData.negotiable })
-                            }
-                        >
-                            {formData.negotiable && <View style={styles.checkboxTick} />}
-                        </TouchableOpacity>
-                    </View>
-
-                    <Text style={styles.label}>Price</Text>
-                    <TextInput
-                        style={styles.input}
-                        value={formData.price || ""}
-                        onChangeText={(text) =>
-                            setFormData({ ...formData, price: text })
-                        }
-                        placeholder="Enter price in INR"
-                    />
-
-                </View>
-
-            <TouchableOpacity style={styles.nextBtn} onPress={() => {navigation.navigate("Preview", {template, category, formData, price, selectedDays, selectedLocations});}}>
+            <TouchableOpacity style={styles.nextBtn} onPress={() => { navigation.navigate("Preview", { template, category, formData, price, selectedDays, selectedLocations }); }}>
                 <Text style={styles.nextText}>See Preview</Text>
             </TouchableOpacity>
-           </View>
+        </View>
     );
 }
 

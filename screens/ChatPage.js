@@ -1,13 +1,190 @@
-import React, { useContext, useRef } from "react";
-import { View, StyleSheet, Image, Text, TouchableOpacity, ScrollView, TextInput } from "react-native";
+import React, { useCallback, useContext, useRef, useState } from "react";
+import {
+    View,
+    StyleSheet,
+    Image,
+    Text,
+    TouchableOpacity,
+    ScrollView,
+    ActivityIndicator,
+    RefreshControl,
+    Alert,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useFocusEffect } from "@react-navigation/native";
 import { ThemeContext } from "../theme/ThemeContext";
 import Topbar from "../components/Topbar";
 import ChojaBottom from "../components/ChojaBottom";
 import { MaterialIcons } from "@expo/vector-icons";
+import { connectChatSocket, listConversations } from "../services/chatService";
 
-export default function ChatPage({navigation}) {
+export default function ChatPage({ navigation, route }) {
     const { colors } = useContext(ThemeContext);
+    const [conversations, setConversations] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+    const socketRef = useRef(null);
+
+    const shareAd = route?.params?.shareAd || null;
+
+    const loadConversations = useCallback(async (isPullToRefresh = false) => {
+        try {
+            if (isPullToRefresh) {
+                setRefreshing(true);
+            } else {
+                setLoading(true);
+            }
+
+            const data = await listConversations();
+            const conversationList = Array.isArray(data) ? data : [];
+
+            const talkedUsersOnly = conversationList.filter((conversation) =>
+                Number(conversation?.messagesCount || 0) > 0 ||
+                !!String(conversation?.lastMessageText || "").trim(),
+            );
+
+            setConversations(talkedUsersOnly);
+        } catch (error) {
+            Alert.alert("Chat Error", error.message || "Failed to load chats");
+        } finally {
+            setLoading(false);
+            setRefreshing(false);
+        }
+    }, []);
+
+    useFocusEffect(
+        useCallback(() => {
+            loadConversations(false);
+
+            const setupSocket = async () => {
+                try {
+                    const socket = await connectChatSocket();
+                    socketRef.current = socket;
+
+                    socket.on("conversation_updated", (payload) => {
+                        if (!payload?.conversationId) return;
+
+                        setConversations((previous) => {
+                            const index = previous.findIndex((item) => item.id === payload.conversationId);
+                            if (index === -1) {
+                                loadConversations(false);
+                                return previous;
+                            }
+
+                            const updated = [...previous];
+                            updated[index] = {
+                                ...updated[index],
+                                lastMessageText: payload.lastMessageText || updated[index].lastMessageText,
+                                lastMessageAt: payload.lastMessageAt || updated[index].lastMessageAt,
+                                lastMessageAdId: payload.lastMessageAdId || updated[index].lastMessageAdId,
+                                lastMessageAdTitle: payload.lastMessageAdTitle || updated[index].lastMessageAdTitle,
+                                messagesCount: Number(updated[index].messagesCount || 0) + 1,
+                            };
+
+                            return updated.sort(
+                                (a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime(),
+                            );
+                        });
+                    });
+                } catch (error) {
+                    console.log("chat list socket connect failed", error.message);
+                }
+            };
+
+            setupSocket();
+
+            return () => {
+                socketRef.current?.disconnect();
+                socketRef.current = null;
+            };
+        }, [loadConversations]),
+    );
+
+    const openConversation = (conversation) => {
+        const pendingShare = shareAd;
+
+        if (pendingShare) {
+            navigation.setParams({ shareAd: null });
+        }
+
+        navigation.navigate("ChatScreen", {
+            conversationId: conversation.id,
+            conversation,
+            shareAd: pendingShare,
+        });
+    };
+
+    const formatTime = (timeValue) => {
+        if (!timeValue) return "";
+        const date = new Date(timeValue);
+        if (Number.isNaN(date.getTime())) return "";
+
+        return date.toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+        });
+    };
+
+    const renderConversationList = () => {
+        if (loading) {
+            return (
+                <View style={styles.centerWrap}>
+                    <ActivityIndicator size="large" color="#157a4f" />
+                </View>
+            );
+        }
+
+        if (conversations.length === 0) {
+            return (
+                <View style={styles.centerWrap}>
+                    <Text style={[styles.emptyText, { color: colors.text }]}>No chats yet</Text>
+                    <Text style={[styles.emptySubText, { color: colors.text }]}>Start a chat from any ad</Text>
+                </View>
+            );
+        }
+
+        return (
+            <ScrollView
+                contentContainerStyle={{ paddingBottom: 90 }}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={() => loadConversations(true)}
+                    />
+                }
+            >
+                {conversations.map((conversation) => (
+                    <TouchableOpacity
+                        key={conversation.id}
+                        style={styles.chatCard}
+                        onPress={() => openConversation(conversation)}
+                    >
+                        <Image
+                            source={
+                                conversation?.otherUser?.avatar
+                                    ? { uri: conversation.otherUser.avatar }
+                                    : require("../assets/profile.png")
+                            }
+                            style={styles.avatar}
+                        />
+
+                        <View style={{ flex: 1 }}>
+                            <Text style={[styles.name, { color: colors.text }]} numberOfLines={1}>
+                                {conversation?.otherUser?.name || "Unknown User"}
+                            </Text>
+                            <Text style={[styles.message, { color: colors.text }]} numberOfLines={1}>
+                                {conversation?.lastMessageText || "Tap to open chat"}
+                            </Text>
+                        </View>
+
+                        <View style={{ alignItems: "flex-end" }}>
+                            <Text style={styles.time}>{formatTime(conversation?.lastMessageAt)}</Text>
+                        </View>
+                    </TouchableOpacity>
+                ))}
+            </ScrollView>
+        );
+    };
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
@@ -28,33 +205,17 @@ export default function ChatPage({navigation}) {
                 <Text style={{ fontSize: 24, color: colors.text, fontFamily: "SemiBold", lineHeight: Math.round(24 * 1.2) }}>Chats</Text>
             </View>
 
+            {shareAd && (
+                <View style={styles.shareHintWrap}>
+                    <Text style={styles.shareHintText}>
+                        Select a chat to forward: {shareAd?.title || "this ad"}
+                    </Text>
+                </View>
+            )}
+
             <View style={{ flexDirection: "row", backgroundColor: colors.divider, height: 1, color: colors.divider, marginTop: 10 }} />
 
-            <ScrollView contentContainerStyle={{ paddingBottom: 60 }}>
-                {[1, 2, 3, 4, 5, 6, 7, 8].map((item, index) => (
-                    <TouchableOpacity key={index} style={styles.chatCard} onPress={() => navigation.navigate("ChatScreen")}>
-                        {/* Profile Image */}
-                        <Image
-                            source={require("../assets/profile.png")}
-                            style={styles.avatar}
-                        />
-
-                        {/* Chat Content */}
-                        <View style={{ flex: 1 }}>
-                            <Text style={[styles.name,{color:colors.text}]}>Priya Sharma</Text>
-                            <Text style={[styles.message,{color:colors.text}]}>Pls take a look at the images.</Text>
-                        </View>
-
-                        {/* Time + Badge */}
-                        <View style={{ alignItems: "flex-end" }}>
-                            <Text style={styles.time}>18.31</Text>
-                            <View style={styles.badge}>
-                                <Text style={styles.badgeText}>5</Text>
-                            </View>
-                        </View>
-                    </TouchableOpacity>
-                ))}
-            </ScrollView>
+            {renderConversationList()}
 
 
             <SafeAreaView
@@ -73,11 +234,47 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         paddingHorizontal: 14
     },
+
+    centerWrap: {
+        flex: 1,
+        alignItems: "center",
+        justifyContent: "center",
+        paddingHorizontal: 20,
+    },
+
+    emptyText: {
+        fontSize: 18,
+        fontFamily: "SemiBold",
+    },
+
+    emptySubText: {
+        marginTop: 4,
+        fontSize: 14,
+        opacity: 0.8,
+        fontFamily: "Medium",
+    },
+
     chatCard: {
         flexDirection: "row",
         alignItems: "center",
         paddingVertical: 12,
         paddingHorizontal: 14,
+        borderBottomWidth: 1,
+        borderBottomColor: "#e6e6e6",
+    },
+
+    shareHintWrap: {
+        backgroundColor: "#f5b849",
+        marginHorizontal: 12,
+        borderRadius: 8,
+        paddingVertical: 8,
+        paddingHorizontal: 10,
+    },
+
+    shareHintText: {
+        color: "#1e1e1e",
+        fontFamily: "Medium",
+        fontSize: 13,
     },
 
     avatar: {
@@ -102,22 +299,6 @@ const styles = StyleSheet.create({
     time: {
         fontSize: 12,
         color: "#999",
-    },
-
-    badge: {
-        marginTop: 6,
-        backgroundColor: "#5E5CE6",
-        width: 22,
-        height: 22,
-        borderRadius: 11,
-        alignItems: "center",
-        justifyContent: "center",
-    },
-
-    badgeText: {
-        color: "#fff",
-        fontSize: 12,
-        fontFamily: "SemiBold",
     },
 
 })

@@ -5,54 +5,30 @@ export type ElectronicsDocument = Electronics & Document;
 
 @Schema({ _id: false, timestamps: false })
 export class Electronics {
-  @Prop({ required: true, enum: [
-    'TV', 'Refrigerator', 'Washing Machine', 'Microwave', 'Air Conditioner',
-    'Laptop', 'Desktop', 'Tablet', 'Camera', 'Speaker', 'Headphones',
-    'Gaming Console', 'Printer', 'Router', 'Smart Watch', 'Other'
-  ]})
-  productType: string;
 
   @Prop({ required: true })
+  electronicsType: string;
+
+  @Prop()
   brand: string;
 
-  @Prop({ required: true })
-  model: string;
+  @Prop()
+  modelNumber: string;
 
   @Prop()
-  yearOfPurchase: number;
+  warrantyRemaining: string;
 
   @Prop()
+  capacity: string;
+
+  @Prop({ enum: ['new', 'like new', 'fair'] })
   condition: string;
-
-  @Prop({ type: Map, of: String })
-  specifications: Map<string, string>;
-
-  @Prop()
-  warranty: string;
-
-  @Prop()
-  warrantyExpiry: Date;
-
-  @Prop({ type: [String] })
-  accessories: string[];
-
-  @Prop({ required: true })
-  price: number;
-
-  @Prop()
-  originalPrice: number;
 
   @Prop()
   negotiable: boolean;
 
-  @Prop()
-  billAvailable: boolean;
-
-  @Prop()
-  boxAvailable: boolean;
-
-  @Prop()
-  powerSupply: string;
+  @Prop({ required: true })
+  price: string;
 }
 
 export const ElectronicsSchema = SchemaFactory.createForClass(Electronics);

@@ -1,13 +1,32 @@
-import React, { useContext, useRef } from "react";
-import { View, StyleSheet, Text, TouchableOpacity, ScrollView, TextInput } from "react-native";
+import React, { useCallback, useContext, useState } from "react";
+import { View, StyleSheet, Text, TouchableOpacity, ScrollView, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useFocusEffect } from "@react-navigation/native";
 import { ThemeContext } from "../theme/ThemeContext";
 import Topbar from "../components/Topbar";
 import ChojaBottom from "../components/ChojaBottom";
 import { MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { getFavoriteAds, toggleFavoriteAd } from "../services/favoritesService";
 
-export default function Fav({navigation}) {
+export default function Fav({ navigation }) {
     const { colors } = useContext(ThemeContext);
+    const [favorites, setFavorites] = useState([]);
+
+    const loadFavorites = useCallback(async () => {
+        const items = await getFavoriteAds();
+        setFavorites(items);
+    }, []);
+
+    useFocusEffect(
+        useCallback(() => {
+            loadFavorites();
+        }, [loadFavorites]),
+    );
+
+    const handleRemoveFavorite = async (item) => {
+        await toggleFavoriteAd(item);
+        loadFavorites();
+    };
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
@@ -31,28 +50,37 @@ export default function Fav({navigation}) {
             <View style={{ flexDirection: "row", backgroundColor: colors.divider, height: 1, color: colors.divider, marginTop: 10 }} />
 
             <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
-                {[1, 2, 3, 4, 5, 6].map((item, index) => (
-                    <View key={index} style={[styles.card, { backgroundColor: colors.card }]}>
-                        {/* Grey placeholder square */}
-                        <View style={styles.imagePlaceholder} />
+                {favorites.length === 0 ? (
+                    <View style={{ padding: 24, alignItems: "center" }}>
+                        <Text style={{ color: colors.text, fontFamily: "Medium" }}>No favorite ads yet</Text>
+                    </View>
+                ) : favorites.map((item) => (
+                    <TouchableOpacity
+                        key={item.adId}
+                        style={[styles.card, { backgroundColor: colors.card }]}
+                        onPress={() => navigation.navigate("AdDetails", { adId: item._id || item.adId })}
+                    >
+                        {item?.image ? (
+                            <Image source={{ uri: item.image }} style={styles.imagePlaceholder} />
+                        ) : null}
 
-                        {/* Text Content */}
-                        <View style={{ flex: 1, marginLeft: 12 }}>
-                            <Text style={{ fontSize: 16, fontFamily: "SemiBold", color: colors.text }}>
-                                Moon cafe
+                        <View style={{ flex: 1, marginLeft: item?.image ? 12 : 0 }}>
+                            <Text style={{ fontSize: 16, fontFamily: "SemiBold", color: colors.text }} numberOfLines={1}>
+                                {item.title || "Ad"}
                             </Text>
-                            <Text style={{ fontSize: 13, color: colors.text }}>
-                                Rajarampuri, 5 km away from your place.
+                            <Text style={{ fontSize: 13, color: colors.text }} numberOfLines={1}>
+                                {item.location || "No location"}
                             </Text>
                         </View>
 
-                        {/* Outline Heart */}
-                        <MaterialCommunityIcons
-                            name="heart-outline"
-                            size={26}
-                            color={colors.text}
-                        />
-                    </View>
+                        <TouchableOpacity onPress={() => handleRemoveFavorite(item)}>
+                            <MaterialCommunityIcons
+                                name="heart"
+                                size={26}
+                                color="#e74c3c"
+                            />
+                        </TouchableOpacity>
+                    </TouchableOpacity>
                 ))}
             </ScrollView>
 
@@ -78,8 +106,7 @@ const styles = StyleSheet.create({
         marginHorizontal: 10,
         marginTop: 14,
         borderRadius: 12,
-        borderRadius:10,
-        borderWidth:0.5
+        borderWidth: 0.5
     },
 
     imagePlaceholder: {

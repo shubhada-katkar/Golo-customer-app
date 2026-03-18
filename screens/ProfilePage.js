@@ -7,7 +7,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemeContext } from "../theme/ThemeContext";
 import Topbar from "../components/Topbar";
 import ChojaBottom from "../components/ChojaBottom";
-import { MaterialIcons } from "@expo/vector-icons";
+import { Entypo, MaterialIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
 
@@ -25,11 +25,13 @@ export default function ProfilePage({ navigation }) {
 
     const [editName, setEditName] = useState(false);
     const [editPhone, setEditPhone] = useState(false);
-    const [editEmail, setEditEmail] = useState(false);
 
     const nameRef = useRef(null);
     const phoneRef = useRef(null);
     const emailRef = useRef(null);
+
+    {/*Dropdown*/ }
+    const [drop, setdrop] = useState(false);
 
     // ================= FETCH PROFILE =================
     const fetchProfile = async () => {
@@ -107,7 +109,6 @@ export default function ProfilePage({ navigation }) {
             const formData = new FormData();
             formData.append("name", username);
             formData.append("phone", phone);
-            formData.append("email", email);
 
             if (profileImage && profileImage.startsWith("file")) {
                 formData.append("image", {
@@ -120,7 +121,6 @@ export default function ProfilePage({ navigation }) {
                 method: "PUT",
                 headers: {
                     Authorization: `Bearer ${token}`,
-                    "Content-Type": "multipart/form-data",
                 },
                 body: formData,
             });
@@ -203,55 +203,113 @@ export default function ProfilePage({ navigation }) {
 
                 <Topbar />
                 <View style={styles.row1}>
-                    <TouchableOpacity onPress={() => navigation.goBack()}>
+                    <TouchableOpacity onPress={() => navigation.goBack()}
+                        style={{padding:10, borderRadius:20}}>
                         <MaterialIcons
                             name="arrow-back-ios"
                             size={26}
                             color={colors.text}
-                            style={{ padding: 10 }}
                         />
                     </TouchableOpacity>
-                    <Text style={{ fontSize: 24, color: colors.text, fontFamily: "SemiBold", lineHeight: Math.round(24 * 1.5) }}>
-                        Profile
-                    </Text>
+
+                    <View style={{
+                        flex: 1, flexDirection: "row", justifyContent: "space-between",
+                        alignItems: "center", marginRight: 14
+                    }}>
+                        <Text style={{ fontSize: 24, color: colors.text, fontFamily: "SemiBold", lineHeight: Math.round(24 * 1.5) }}>
+                            Profile
+                        </Text>
+
+                        <Entypo name="dots-three-vertical" size={22} color={colors.text}
+                            onPress={() => setdrop(!drop)} />
+                    </View>
+
                 </View>
+
+                {drop && (
+                    <View style={styles.dropdownOverlay}>
+                        <TouchableOpacity
+                            style={styles.overlayBackground}
+                            onPress={() => setdrop(false)}
+                        />
+
+                        <View style={[styles.dropdownMenu, { backgroundColor: colors.background }]}>
+
+                            <TouchableOpacity
+                                style={styles.dropdownItem}
+                                onPress={() => {
+                                    setdrop(false);
+                                    navigation.navigate("Analytics");
+                                }}>
+                                <Text style={[styles.dropdownText, { color: "#157a4f" }]}>
+                                    Analytics
+                                </Text>
+                            </TouchableOpacity>
+
+                            <View style={{ height: 0.5, backgroundColor: colors.divider }} />
+
+                            <TouchableOpacity
+                                style={styles.dropdownItem}
+                                onPress={() => {
+                                    setdrop(false);
+                                    navigation.navigate("Claimed");
+                                }}>
+                                <Text style={[styles.dropdownText, { color: "#f5b849" }]}>
+                                    Claimed Offers
+                                </Text>
+                            </TouchableOpacity>
+
+                            <View style={{ height: 0.5, backgroundColor: colors.divider }} />
+
+                            <TouchableOpacity
+                                style={styles.dropdownItem}
+                                onPress={() => {
+                                    setdrop(false);
+                                    navigation.navigate("Transaction");
+                                }}>
+                                <Text style={[styles.dropdownText, { color: "#7a7a7a" }]}>
+                                    Transaction History
+                                </Text>
+                            </TouchableOpacity>
+
+
+                            <View style={{ height: 0.5, backgroundColor: colors.divider }} />
+
+                            <View style={styles.dropdownItem}>
+                                <Text style={[styles.dropdownText, { color: colors.text }]}>
+                                    Dark Mode
+                                </Text>
+
+                                <Switch
+                                    value={theme === "dark"}
+                                    onValueChange={toggleTheme}
+                                    thumbColor={theme === "dark" ? "#157a4f" : "#f4f3f4"}
+                                    trackColor={{ false: "#ccc", true: "#141414" }}
+                                />
+                            </View>
+
+                            <View style={{ height: 0.5, backgroundColor: colors.divider }} />
+
+                            <TouchableOpacity
+                                style={[styles.dropdownItem, { flexDirection: "row", alignItems: "center", justifyContent: "flex-start", gap: 5 }]}
+                                onPress={() => {
+                                    setdrop(false);
+                                    confirmLogout();
+                                }}>
+                                <Text style={[styles.dropdownText, { color: "#f86868" }]}>
+                                    Logout
+                                </Text>
+                                <MaterialIcons name="exit-to-app" size={20} color="#f86868" style={{ top: -2 }} />
+                            </TouchableOpacity>
+
+                        </View>
+                    </View>
+                )}
 
                 <ScrollView
                     contentContainerStyle={{ paddingBottom: 110 }}
                     keyboardShouldPersistTaps="handled"
                     showsVerticalScrollIndicator={false} >
-
-
-                    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-                        <TouchableOpacity onPress={confirmLogout}
-                            style={{
-                                flexDirection: "row", alignItems: "center", paddingLeft: 8
-                            }}>
-                            <MaterialIcons name="exit-to-app" size={20} color="#f86868" />
-                            <Text style={{
-                                fontSize: 18, color: "#f86868", fontFamily: "Medium",
-                                lineHeight: Math.round(18 * 1.5)
-                            }}> Logout</Text>
-                        </TouchableOpacity>
-
-                        <View
-                            style={{
-                                flexDirection: "row", alignItems: "center"
-                            }}>
-                            <Text style={{
-                                fontSize: 18, color: colors.text, fontFamily: "Medium",
-                                lineHeight: Math.round(18 * 1.5)
-                            }}> Dark Mode</Text>
-                            <Switch
-                                value={theme === "dark"}
-                                onValueChange={toggleTheme}
-                                thumbColor={theme === "dark" ? "#157a4f" : "#f4f3f4"}
-                                trackColor={{ false: "#ccc", true: "#141414" }}
-                                ios_backgroundColor="#ccc"
-                                style={{ transform: [{ scaleX: 1.17 }, { scaleY: 1.17 }], paddingLeft: 8 }}
-                            />
-                        </View>
-                    </View>
 
                     <View style={{ height: 0.5, backgroundColor: colors.divider, marginTop: 10 }} />
 
@@ -334,33 +392,12 @@ export default function ProfilePage({ navigation }) {
                             <TextInput
                                 ref={emailRef}
                                 value={email}
-                                onChangeText={setEmail}
-                                editable={editEmail}
+                                editable={false}
                                 style={[
                                     styles.input,
-                                    !editEmail && styles.disabledInput,
-                                    { paddingRight: 40 }
+                                    styles.disabledInput,
                                 ]} />
-                            <TouchableOpacity style={styles.editIcon}
-                                onPress={() => {
-                                    setEditEmail(true);
-                                    setEditName(false);
-                                    setEditPhone(false);
-                                    setTimeout(() => emailRef.current?.focus(), 100);
-                                }}  >
-                                <MaterialIcons name="edit" size={22} style={{ marginLeft: 8, color: colors.text }} />
-                            </TouchableOpacity>
                         </View>
-
-
-                        <TouchableOpacity
-                            style={styles.saveButton}
-                            onPress={()=>navigation.navigate("Claimed")}
-                            disabled={saving} >
-                            <Text style={{ color: "white", fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) }}>
-                                Claimed Offers
-                            </Text>
-                        </TouchableOpacity>
 
                         {/* SAVE BUTTON */}
                         <TouchableOpacity
@@ -392,6 +429,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         marginTop: 10,
         fontFamily: "Medium",
+        lineHeight: Math.round(16 * 1.5),
     },
     inputRow: {
         flexDirection: "row",
@@ -402,13 +440,15 @@ const styles = StyleSheet.create({
         flex: 1,
         borderRadius: 10,
         paddingHorizontal: 14,
-        paddingRight: 40, 
+        paddingRight: 40,
         borderWidth: 0.5,
         fontSize: 14,
         backgroundColor: "#e0e0e0",
+        fontFamily: "Medium",
+        lineHeight: Math.round(16 * 1.5),
     },
     saveButton: {
-        marginTop: 20,
+        marginTop: 40,
         backgroundColor: "#f5b849",
         padding: 12,
         borderRadius: 10,
@@ -443,4 +483,44 @@ const styles = StyleSheet.create({
         top: "50%",
         transform: [{ translateY: -10 }],
     },
+
+    dropdownOverlay: {
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 1000,
+    },
+
+    overlayBackground: {
+        flex: 1,
+    },
+
+    dropdownMenu: {
+        position: "absolute",
+        top: 126,
+        right: 0,
+        width: 230,
+        elevation: 6,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+    },
+
+    dropdownItem: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        paddingVertical: 14,
+        paddingHorizontal: 14,
+    },
+
+    dropdownText: {
+        fontSize: 16,
+        fontFamily: "Medium",
+        lineHeight: Math.round(16 * 1.5),
+    },
+
 });

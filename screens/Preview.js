@@ -10,7 +10,7 @@ const { width, height } = Dimensions.get("window");
 import { useRef, useEffect } from "react";
 
 export default function Preview({ navigation, route }) {
-    const { category, template, formData, selectedDays, selectedLocations, price } = route.params || {};
+    const { category, template, formData, selectedDays, selectedLocations, selectedDates, startDate, endDate, price } = route.params || {};
     const sliderRef = useRef(null);
     const [activeIndex, setActiveIndex] = useState(0);
 
@@ -354,7 +354,17 @@ export default function Preview({ navigation, route }) {
                 <TouchableOpacity
                     style={styles.button}
                     onPress={() => {
-                        navigation.navigate("Payment", { template, selectedDays, selectedLocations, price, formData, category });
+                        navigation.navigate("Payment", {
+                            template,
+                            selectedDays,
+                            selectedLocations,
+                            selectedDates,
+                            startDate,
+                            endDate,
+                            price,
+                            formData,
+                            category,
+                        });
                     }}
                 >
                     <Text style={{ color: "#ffffff", fontSize: 16, fontFamily: "Medium", lineHeight: Math.round(16 * 1.2) }}>

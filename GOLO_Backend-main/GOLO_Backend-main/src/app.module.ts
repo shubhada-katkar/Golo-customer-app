@@ -5,6 +5,7 @@ import configuration from './config/configuration';
 import { KafkaModule } from './kafka/kafka.module';
 import { AdsModule } from './ads/ads.module';
 import { UsersModule } from './users/users.module';
+import { ChatsModule } from './chats/chats.module';
 
 const logger = new Logger('MongoDB');
 
@@ -42,6 +43,7 @@ const logger = new Logger('MongoDB');
     KafkaModule,
     AdsModule,
     UsersModule,
+    ChatsModule,
   ],
 })
 export class AppModule { }

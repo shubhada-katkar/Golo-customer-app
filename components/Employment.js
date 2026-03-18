@@ -7,24 +7,25 @@ export default function Employment({ formData, setFormData, category, onPrevious
   if (category?.id !== "employment") return null;
   const navigation = useNavigation();
 
-  const ConditionButton = ({ label, value }) => (
+  const ConditionButton = ({ label, value, field }) => (
     <TouchableOpacity
       style={[
         styles.segmentBtn,
-        formData.condition === value && styles.segmentBtnSelected,
+        formData[field] === value && styles.segmentBtnSelected,
       ]}
-      onPress={() => setFormData({ ...formData, condition: value })}
+      onPress={() => setFormData({ ...formData, [field]: value })}
     >
       <Text
         style={[
           styles.segmentText,
-          formData.condition === value && styles.segmentTextSelected,
+          formData[field] === value && styles.segmentTextSelected,
         ]}
       >
         {label}
       </Text>
     </TouchableOpacity>
   );
+
   return (
     <View>
       {/* Header */}
@@ -69,16 +70,16 @@ export default function Employment({ formData, setFormData, category, onPrevious
 
         <Text style={styles.label}>Employment Type</Text>
         <View style={styles.segmentRow}>
-          <ConditionButton label="Full Time" value="full time" />
-          <ConditionButton label="Part Time" value="part time" />
-          <ConditionButton label="Contract" value="contract" />
+          <ConditionButton label="Full Time" value="full time" field="employmentType" />
+          <ConditionButton label="Part Time" value="part time" field="employmentType" />
+          <ConditionButton label="Contract" value="contract" field="employmentType" />
         </View>
 
         <Text style={styles.label}>Experience Level</Text>
         <View style={styles.segmentRow}>
-          <ConditionButton label="Entry Level" value="entry level" />
-          <ConditionButton label="Mid Level" value="mid level" />
-          <ConditionButton label="Senior Level" value="senior level" />
+          <ConditionButton label="Entry Level" value="entry level" field="experienceLevel" />
+          <ConditionButton label="Mid Level" value="mid level" field="experienceLevel" />
+          <ConditionButton label="Senior Level" value="senior level" field="experienceLevel" />
         </View>
 
         <Text style={styles.label}>Industry</Text>

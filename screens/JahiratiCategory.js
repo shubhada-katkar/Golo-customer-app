@@ -7,6 +7,8 @@ import {
     SimpleLineIcons, Entypo, FontAwesome6,
     Ionicons, Feather
 } from "@expo/vector-icons";
+import { Dimensions } from "react-native";
+const { width, height } = Dimensions.get("window");
 
 export default function JahiratiCategory({ navigation }) {
     const [selectedCategory, setSelectedCategory] = useState(null);
@@ -32,11 +34,11 @@ export default function JahiratiCategory({ navigation }) {
                     </Text>
                 </View>
 
-                <Text style={{ fontSize: 16, marginLeft: 48, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) }}>
+                <Text style={{ fontSize: width * 0.04, marginLeft: 48, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) }}>
                     Post Your Ads Instantly Online
                 </Text>
 
-                <Text style={{ marginTop: 10, marginLeft: 10, fontSize: 16, fontFamily: "Italic" }}>
+                <Text style={{ marginTop: 10, marginLeft: 10, fontSize: width * 0.04, fontFamily: "Italic" }}>
                     Select Ad Categories</Text>
 
                 {/*Row : 1*/}
@@ -57,8 +59,8 @@ export default function JahiratiCategory({ navigation }) {
                         </Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity style={getCategoryStyle("Vehicles")}
-                        onPress={() => setSelectedCategory({ id: "vehicles", label: "Vehicles" })}>
+                    <TouchableOpacity style={getCategoryStyle("Vehicle")}
+                        onPress={() => setSelectedCategory({ id: "vehicles", label: "Vehicle" })}>
                         <AntDesign name="car" size={20} />
                         <Text style={styles.text}>
                             Vehicles
@@ -103,8 +105,8 @@ export default function JahiratiCategory({ navigation }) {
                         </Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity style={getCategoryStyle("Electronics & Home")}
-                        onPress={() => setSelectedCategory({ id: "electronics_home", label: "Electronics & Home" })}>
+                    <TouchableOpacity style={getCategoryStyle("Electronics & Home appliances")}
+                        onPress={() => setSelectedCategory({ id: "electronics_home", label: "Electronics & Home appliances" })}>
                         <MaterialCommunityIcons name="microwave" size={21} />
                         <Text style={styles.text}>
                             Electronics & Home
@@ -130,11 +132,11 @@ export default function JahiratiCategory({ navigation }) {
                         </Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity style={getCategoryStyle("LostandFound")}
-                        onPress={() => setSelectedCategory({ id: "lostandfound", label: "LostandFound" })}>
+                    <TouchableOpacity style={getCategoryStyle("Lost & Found")}
+                        onPress={() => setSelectedCategory({ id: "lostandfound", label: "Lost & Found" })}>
                         <FontAwesome6 name="people-carry-box" size={20} />
                         <Text style={styles.text}>
-                            Lost and Found
+                            Lost & Found
                         </Text>
                     </TouchableOpacity>
 
@@ -177,8 +179,8 @@ export default function JahiratiCategory({ navigation }) {
                 {/*Row : 6*/}
                 <View style={styles.rows}>
 
-                    <TouchableOpacity style={getCategoryStyle("PublicNotice")}
-                        onPress={() => setSelectedCategory({ id: "publicnotice", label: "PublicNotice" })}>
+                    <TouchableOpacity style={getCategoryStyle("Public Notice")}
+                        onPress={() => setSelectedCategory({ id: "publicnotice", label: "Public Notice" })}>
                         <AntDesign name="info-circle" size={20} />
                         <Text style={styles.text}>
                             Public Notice
@@ -229,16 +231,16 @@ const styles = StyleSheet.create({
     },
     rows: {
         flexDirection: "row",
-        gap: 5,
-        marginTop: 18,
+        justifyContent: "space-between",
+        marginTop: height * 0.02,
         alignItems: "center",
-        paddingHorizontal: 5.8
+        paddingHorizontal: width * 0.02
     },
     component: {
         backgroundColor: "#ffffff",
         alignItems: "center",
-        height: 68,
-        width: 124,
+        height: height * 0.085,
+        width: width * 0.30,
         borderRadius: 10,
         justifyContent: "center"
     },
@@ -252,11 +254,11 @@ const styles = StyleSheet.create({
         backgroundColor: "#dadada"
     },
     button: {
-        paddingVertical: 12,
-        paddingHorizontal: 38,
+        paddingVertical: height * 0.018,
+        paddingHorizontal: width * 0.12,
         backgroundColor: "#157a4f",
         alignSelf: "center",
         borderRadius: 10,
-        marginTop: 30
+        marginTop: height * 0.04
     }
 })

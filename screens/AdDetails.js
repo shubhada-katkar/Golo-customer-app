@@ -14,6 +14,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Linking } from 'react-native';
+import { getAdId, isFavoriteAdId, toggleFavoriteAd } from '../services/favoritesService';
+import { trackAdCardClick, trackContactClick, trackWishlistSave } from '../services/analyticsService';
 
 const { width, height } = Dimensions.get('window');
 
@@ -22,8 +25,29 @@ export default function AdDetails({ route, navigation }) {
   const [ad, setAd] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [isFavorite, setIsFavorite] = useState(false);
   const sliderRef = useRef(null);
   const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
+  const handleOpenChat = () => {
+    navigation.navigate('ChatScreen', {
+      adId: ad?.adId || ad?._id || adId,
+      sellerId: ad?.userId || ad?.user?.id,
+      sellerName: ad?.contactInfo?.name || 'Seller',
+    });
+  };
+
+  const handleCall = (phone) => {
+    if (!phone) return;
+
+    // Remove +91 if present
+    const cleanedNumber = phone.replace('+91', '');
+
+    const currentAdId = ad?.adId || ad?._id || adId;
+    trackContactClick(currentAdId);
+
+    Linking.openURL(`tel:${cleanedNumber}`);
+  };
+
 
   useEffect(() => {
     const fetchAdDetails = async () => {
@@ -39,6 +63,7 @@ export default function AdDetails({ route, navigation }) {
 
         if (json.success && json.data) {
           setAd(json.data);
+          trackAdCardClick(adId);
         } else {
           Alert.alert('Error', json.message || 'Failed to load ad details');
           navigation.goBack();
@@ -55,15 +80,85 @@ export default function AdDetails({ route, navigation }) {
     fetchAdDetails();
   }, [adId, BASE_URL]);
 
-  const handleShare = async () => {
+  useEffect(() => {
+    const loadFavoriteState = async () => {
+      const currentAdId = getAdId(ad) || adId;
+      if (!currentAdId) return;
+      const value = await isFavoriteAdId(currentAdId);
+      setIsFavorite(value);
+    };
+
+    loadFavoriteState();
+  }, [ad, adId]);
+
+  const handleToggleFavorite = async () => {
     try {
-      await Share.share({
-        message: `Check out this ad: ${ad?.title}\n${ad?.description}\n\nPrice: ₹${ad?.price || 'N/A'}`,
-        title: ad?.title,
-      });
-    } catch (err) {
-      console.error('Share error:', err);
+      const payload = ad
+        ? {
+          ...ad,
+          adId: ad?.adId || ad?._id || adId,
+          images: ad?.images || [],
+        }
+        : { adId };
+
+      const result = await toggleFavoriteAd(payload);
+      setIsFavorite(result.isFavorite);
+
+      if (result.isFavorite) {
+        const currentAdId = ad?.adId || ad?._id || adId;
+        trackWishlistSave(currentAdId);
+      }
+    } catch (error) {
+      Alert.alert('Favorite Error', error.message || 'Failed to update favorites');
     }
+  };
+
+  const handleShareInChat = () => {
+    navigation.navigate('ChatPage', {
+      shareAd: {
+        adId: ad?.adId || ad?._id || adId,
+        _id: ad?._id,
+        title: ad?.title,
+        description: ad?.description,
+        price: ad?.price,
+        image: ad?.images?.[0] || null,
+      },
+    });
+  };
+
+  const handleShareExternally = async () => {
+    try {
+      const resolvedAdId = ad?.adId || ad?._id || adId;
+      if (!resolvedAdId) {
+        Alert.alert('Share Error', 'Ad details are not available yet');
+        return;
+      }
+
+      const shareUrl = `${BASE_URL}/ads/share/${encodeURIComponent(resolvedAdId)}`;
+      const deepLink = `golo://ad/${encodeURIComponent(resolvedAdId)}`;
+
+      const message = [
+        `Check this ad on GOLO: ${ad?.title || 'Ad'}`,
+        shareUrl,
+        `App link: ${deepLink}`,
+      ].join('\n');
+
+      await Share.share({
+        message,
+        url: shareUrl,
+        title: ad?.title || 'Shared Ad',
+      });
+    } catch (error) {
+      Alert.alert('Share Error', error?.message || 'Unable to share this ad right now');
+    }
+  };
+
+  const handleShare = () => {
+    Alert.alert('Share Ad', 'Choose where to share this ad', [
+      { text: 'In GOLO Chat', onPress: handleShareInChat },
+      { text: 'WhatsApp / Messages', onPress: handleShareExternally },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
   };
 
   if (loading) {
@@ -99,9 +194,17 @@ export default function AdDetails({ route, navigation }) {
             <MaterialIcons name="arrow-back-ios" size={26} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Ad Details</Text>
-          <TouchableOpacity onPress={handleShare}>
-            <Ionicons name="share-social" size={24} />
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <TouchableOpacity onPress={handleToggleFavorite}>
+              <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={24} color={isFavorite ? '#e74c3c' : '#111'} />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleShare}>
+              <Ionicons name="share-social" size={24} />
+            </TouchableOpacity>
+            <TouchableOpacity>
+              <Ionicons name="flag-outline" size={24} color="#ce3d3d" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -195,7 +298,10 @@ export default function AdDetails({ route, navigation }) {
                 <View style={styles.sellerDetails}>
                   <Text style={styles.sellerName}>{ad.contactInfo?.name || 'Anonymous'}</Text>
                   {ad.contactInfo?.phone && (
-                    <TouchableOpacity style={styles.callBtn}>
+                    <TouchableOpacity
+                      style={styles.callBtn}
+                      onPress={() => handleCall(ad.contactInfo.phone)}
+                    >
                       <Text style={styles.callBtnText}>📞 {ad.contactInfo.phone}</Text>
                     </TouchableOpacity>
                   )}
@@ -268,10 +374,13 @@ export default function AdDetails({ route, navigation }) {
 
         {/* Action Buttons */}
         <View style={styles.actionBar}>
-          <TouchableOpacity style={styles.chatButtonLarge}>
+          <TouchableOpacity style={styles.chatButtonLarge} onPress={handleOpenChat}>
             <Text style={styles.chatButtonText}>💬 Chat with Seller</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.callButtonLarge}>
+          <TouchableOpacity
+            style={styles.callButtonLarge}
+            onPress={() => handleCall(ad.contactInfo?.phone)}
+          >
             <Text style={styles.callButtonText}>📞 Call Seller</Text>
           </TouchableOpacity>
         </View>
@@ -291,7 +400,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontFamily: 'Medium',
-    lineHeight:Math.round(18*1.5)
+    lineHeight: Math.round(18 * 1.5)
   },
   scrollContent: {
     paddingBottom: 20,
@@ -316,8 +425,8 @@ const styles = StyleSheet.create({
   imageCounterText: {
     color: '#fff',
     fontSize: 12,
-    fontFamily:"Medium",
-    lineHeight:Math.round(12*1.5)
+    fontFamily: "Medium",
+    lineHeight: Math.round(12 * 1.5)
   },
   contentCard: {
     backgroundColor: '#fff',
@@ -333,13 +442,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 22,
     marginBottom: 8,
-    fontFamily:"Medium",
-    lineHeight:Math.round(22*1.5)
+    fontFamily: "Medium",
+    lineHeight: Math.round(22 * 1.5)
   },
   price: {
     fontSize: 18,
-    fontFamily:"Medium",
-    lineHeight:Math.round(18*1.5),
+    fontFamily: "Medium",
+    lineHeight: Math.round(18 * 1.5),
     color: '#157a4f',
   },
   categoryRow: {
@@ -356,8 +465,8 @@ const styles = StyleSheet.create({
   badgeText: {
     fontSize: 12,
     color: '#fff',
-    fontFamily:"Medium",
-    lineHeight:Math.round(12*1.5)
+    fontFamily: "Medium",
+    lineHeight: Math.round(12 * 1.5)
   },
   metaRow: {
     flexDirection: 'row',
@@ -375,8 +484,8 @@ const styles = StyleSheet.create({
   metaText: {
     fontSize: 12,
     color: '#666',
-    fontFamily:"Medium",
-    lineHeight:Math.round(12*1.5)
+    fontFamily: "Medium",
+    lineHeight: Math.round(12 * 1.5)
   },
   section: {
     marginTop: 16,
@@ -387,14 +496,14 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     marginBottom: 10,
-    fontFamily:"Medium",
-    lineHeight:Math.round(16*1.5)
+    fontFamily: "Medium",
+    lineHeight: Math.round(16 * 1.5)
   },
   description: {
     fontSize: 14,
     color: '#555',
-    fontFamily:"Medium",
-    lineHeight:Math.round(14*1.5)
+    fontFamily: "Medium",
+    lineHeight: Math.round(14 * 1.5)
   },
   sellerInfo: {
     flexDirection: 'row',
@@ -415,8 +524,8 @@ const styles = StyleSheet.create({
   sellerName: {
     fontSize: 14,
     marginBottom: 6,
-    fontFamily:"Medium",
-    lineHeight:Math.round(14*1.5)
+    fontFamily: "Medium",
+    lineHeight: Math.round(14 * 1.5)
   },
   callBtn: {
     backgroundColor: '#157a4f',
@@ -428,8 +537,8 @@ const styles = StyleSheet.create({
   callBtnText: {
     color: '#fff',
     fontSize: 12,
-    fontFamily:"Medium",
-    lineHeight:Math.round(12*1.5)
+    fontFamily: "Medium",
+    lineHeight: Math.round(12 * 1.5)
   },
   detailRow: {
     flexDirection: 'row',
@@ -441,14 +550,14 @@ const styles = StyleSheet.create({
   detailLabel: {
     fontSize: 12,
     color: '#999',
-    fontFamily:"Medium",
-    lineHeight:Math.round(12*1.5)
+    fontFamily: "Medium",
+    lineHeight: Math.round(12 * 1.5)
   },
   detailValue: {
     fontSize: 12,
     color: '#333',
-    fontFamily:"Medium",
-    lineHeight:Math.round(12*1.5)
+    fontFamily: "Medium",
+    lineHeight: Math.round(12 * 1.5)
   },
   footerMeta: {
     marginTop: 16,
@@ -460,8 +569,8 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#999',
     marginBottom: 4,
-    fontFamily:"Medium",
-    lineHeight:Math.round(11*1.5)
+    fontFamily: "Medium",
+    lineHeight: Math.round(11 * 1.5)
   },
   actionBar: {
     position: 'absolute',
@@ -485,8 +594,8 @@ const styles = StyleSheet.create({
   chatButtonText: {
     color: '#fff',
     fontSize: 14,
-    fontFamily:"Medium",
-    lineHeight:Math.round(14*1.5)
+    fontFamily: "Medium",
+    lineHeight: Math.round(14 * 1.5)
   },
   callButtonLarge: {
     flex: 1,
@@ -498,8 +607,8 @@ const styles = StyleSheet.create({
   callButtonText: {
     color: '#fff',
     fontSize: 14,
-    fontFamily:"Medium",
-    lineHeight:Math.round(14*1.5)
+    fontFamily: "Medium",
+    lineHeight: Math.round(14 * 1.5)
   },
   closeBtn: {
     marginTop: 16,

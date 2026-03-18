@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsEmail, IsEnum, IsUrl } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsEmail, IsPhoneNumber, IsEnum, IsUrl } from 'class-validator';
 
 export class ContactInfoDto {
   @IsString()
@@ -6,7 +6,7 @@ export class ContactInfoDto {
   name: string;
 
   @IsString()
-  @IsNotEmpty()
+  @IsPhoneNumber()
   phone: string;
 
   @IsOptional()

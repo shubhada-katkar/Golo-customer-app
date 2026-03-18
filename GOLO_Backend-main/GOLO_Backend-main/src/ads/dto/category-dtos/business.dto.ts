@@ -1,9 +1,6 @@
-import { IsEnum, IsString, IsNumber, IsOptional, IsArray, IsEmail, Min, IsUrl } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsString, IsOptional, IsArray, IsUrl } from 'class-validator';
 
 export class BusinessDto {
-  @IsEnum(['Promotion', 'Partnership', 'Investment', 'Sale', 'Franchise'])
-  type: string;
 
   @IsString()
   businessName: string;
@@ -13,10 +10,29 @@ export class BusinessDto {
   businessType?: string;
 
   @IsOptional()
-  @IsNumber()
-  @Min(1800)
-  @Type(() => Number)
-  establishedYear?: number;
+  @IsString()
+  serviceOffered?: string;
+
+  @IsOptional()
+  @IsString()
+  gstNumber?: string;
+
+  @IsOptional()
+  @IsUrl()
+  websiteUrl?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsUrl({}, { each: true })
+  socialMediaLinks?: string[];
+
+  @IsOptional()
+  @IsString()
+  campaignName?: string;
+
+  @IsOptional()
+  @IsString()
+  validTill?: string;
 
   @IsOptional()
   @IsString()
@@ -24,54 +40,5 @@ export class BusinessDto {
 
   @IsOptional()
   @IsString()
-  location?: string;
-
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Type(() => Number)
-  investment?: number;
-
-  @IsOptional()
-  @IsString()
-  expectedReturn?: string;
-
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Type(() => Number)
-  employees?: number;
-
-  @IsOptional()
-  @IsString()
-  turnover?: string;
-
-  @IsOptional()
-  @IsString()
-  profitMargin?: string;
-
-  @IsOptional()
-  @IsUrl()
-  website?: string;
-
-  @IsOptional()
-  @IsString()
-  contactPerson?: string;
-
-  @IsOptional()
-  @IsString()
-  contactNumber?: string;
-
-  @IsOptional()
-  @IsEmail()
-  email?: string;
-
-  @IsOptional()
-  @IsArray()
-  @IsUrl({}, { each: true })
-  images?: string[];
-
-  @IsOptional()
-  @IsString()
-  documents?: string;
+  shopAddress?: string;
 }

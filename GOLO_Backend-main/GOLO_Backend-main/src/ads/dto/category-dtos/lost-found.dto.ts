@@ -1,54 +1,29 @@
-import { IsEnum, IsString, IsOptional, IsArray, IsEmail, IsUrl, IsDate } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsEnum, IsString, IsOptional, IsDateString } from 'class-validator';
 
 export class LostFoundDto {
-  @IsEnum(['Lost', 'Found'])
-  type: string;
+
+  @IsEnum(['lost', 'found'])
+  condition: string;
 
   @IsString()
   itemName: string;
 
-  @IsOptional()
   @IsString()
-  category?: string;
+  itemType: string;
 
-  @IsOptional()
+  @IsDateString()
+  date: string;
+
   @IsString()
-  brand?: string;
+  location: string;
 
-  @IsOptional()
   @IsString()
-  color?: string;
-
-  @IsOptional()
-  @IsString()
-  distinctiveFeatures?: string;
-
-  @IsOptional()
-  @IsString()
-  lostFoundLocation?: string;
-
-  @IsOptional()
-  @Type(() => Date)
-  lostFoundDate?: Date;
+  description: string;
 
   @IsOptional()
   @IsString()
   reward?: string;
 
-  @IsOptional()
   @IsString()
-  contactName?: string;
-
-  @IsString()
-  contactNumber: string;
-
-  @IsOptional()
-  @IsEmail()
-  email?: string;
-
-  @IsOptional()
-  @IsArray()
-  @IsUrl({}, { each: true })
-  images?: string[];
+  contactDetails: string;
 }

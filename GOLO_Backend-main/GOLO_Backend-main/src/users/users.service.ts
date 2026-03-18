@@ -4,6 +4,7 @@ import { Model } from 'mongoose';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { User, UserDocument, UserRole } from './schemas/user.schema';
+import { EmailOtp, EmailOtpDocument } from './schemas/email-otp.schema';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { UserResponseDto } from './dto/user-response.dto';
@@ -11,15 +12,18 @@ import { KafkaService } from '../kafka/kafka.service';
 import { KAFKA_TOPICS } from '../common/constants/kafka-topics';
 import { ConfigService } from '@nestjs/config';
 import twilio from 'twilio';
+import * as nodemailer from 'nodemailer';
 
 @Injectable()
 export class UsersService {
   private readonly logger = new Logger(UsersService.name);
 
   private twilioClient: any;
+  private mailTransporter?: nodemailer.Transporter;
 
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
+    @InjectModel(EmailOtp.name) private emailOtpModel: Model<EmailOtpDocument>,
     private jwtService: JwtService,
     private configService: ConfigService,
     @Optional() private kafkaService?: KafkaService,
@@ -34,15 +38,32 @@ export class UsersService {
     } else {
       this.logger.warn('Twilio credentials missing; SMS functionality disabled');
     }
+
+    const emailUser = this.configService.get<string>('config.email.user') || this.configService.get<string>('EMAIL');
+    const emailPass = this.configService.get<string>('config.email.pass') || this.configService.get<string>('EMAIL_PASS');
+
+    if (emailUser && emailPass) {
+      this.mailTransporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: emailUser,
+          pass: emailPass,
+        },
+      });
+    } else {
+      this.logger.warn('Email credentials missing; OTP email functionality disabled');
+    }
   }
 
   // ==================== PUBLIC METHODS ====================
 
   async register(registerDto: RegisterDto): Promise<UserResponseDto> {
-    this.logger.log(`Registering new user: ${registerDto.email}`);
+    const normalizedEmail = this.normalizeEmail(registerDto.email);
+    this.logger.log(`Registering new user: ${normalizedEmail}`);
+    await this.assertVerifiedRegistrationOtp(normalizedEmail, registerDto.otp);
     
     // Check if user exists
-    const existingUser = await this.userModel.findOne({ email: registerDto.email }).exec();
+    const existingUser = await this.userModel.findOne({ email: normalizedEmail }).exec();
     if (existingUser) {
       throw new ConflictException('User with this email already exists');
     }
@@ -53,9 +74,10 @@ export class UsersService {
     // Create user (always USER role by default)
     const user = new this.userModel({
       name: registerDto.name,
-      email: registerDto.email,
+      email: normalizedEmail,
       password: hashedPassword,
       role: UserRole.USER,
+      isEmailVerified: true,
       profile: {
         phone: registerDto.phone,
       },
@@ -66,6 +88,7 @@ export class UsersService {
     });
 
     const savedUser = await user.save();
+  await this.emailOtpModel.deleteOne({ email: normalizedEmail, purpose: 'registration' }).exec();
 
     // Emit Kafka event
     if (this.kafkaService) {
@@ -83,17 +106,22 @@ export class UsersService {
   }
 
   async login(loginDto: LoginDto, ip?: string): Promise<{ accessToken: string; refreshToken: string; user: UserResponseDto }> {
-    this.logger.log(`Login attempt: ${loginDto.email}`);
+    const normalizedEmail = this.normalizeEmail(loginDto.email);
+    this.logger.log(`Login attempt: ${normalizedEmail}`);
     
-    const user = await this.userModel.findOne({ email: loginDto.email }).exec();
+    const user = await this.userModel.findOne({ email: normalizedEmail }).exec();
     if (!user) {
-      this.logger.warn(`Login failed - user not found: ${loginDto.email}`);
+      this.logger.warn(`Login failed - user not found: ${normalizedEmail}`);
       throw new UnauthorizedException('Invalid credentials');
+    }
+
+    if (!user.isEmailVerified) {
+      throw new ForbiddenException('Verify your email before logging in');
     }
 
     const isPasswordValid = await bcrypt.compare(loginDto.password, user.password);
     if (!isPasswordValid) {
-      this.logger.warn(`Login failed - invalid password: ${loginDto.email}`);
+      this.logger.warn(`Login failed - invalid password: ${normalizedEmail}`);
       throw new UnauthorizedException('Invalid credentials');
     }
 
@@ -191,7 +219,12 @@ export class UsersService {
     return this.toResponseDto(user);
   }
 
-  async updateProfile(userId: string, updateData: any): Promise<UserResponseDto> {
+  async updateProfile(
+    userId: string,
+    updateData: any,
+    file?: { buffer: Buffer; originalname?: string },
+    cloudinaryService?: any,
+  ): Promise<UserResponseDto> {
     this.logger.log(`Updating profile for user: ${userId}`);
     this.logger.debug(`Update data received: ${JSON.stringify(updateData)}`);
     
@@ -218,8 +251,22 @@ export class UsersService {
     if (updateData.profile?.city) allowedUpdates['profile.city'] = updateData.profile.city;
     if (updateData.profile?.state) allowedUpdates['profile.state'] = updateData.profile.state;
     if (updateData.profile?.pincode) allowedUpdates['profile.pincode'] = updateData.profile.pincode;
-    if (updateData.profile?.avatar) allowedUpdates['profile.avatar'] = updateData.profile.avatar;
     if (updateData.profile?.bio) allowedUpdates['profile.bio'] = updateData.profile.bio;
+
+    // Handle image upload to Cloudinary
+    if (file && cloudinaryService) {
+      try {
+        const imageUrl = await cloudinaryService.uploadImage(file.buffer, `user-${userId}-avatar`);
+        allowedUpdates['profile.avatar'] = imageUrl;
+        this.logger.log(`Profile image uploaded to Cloudinary: ${imageUrl}`);
+      } catch (error) {
+        this.logger.error(`Cloudinary upload failed: ${error.message}`);
+        throw new InternalServerErrorException('Failed to upload profile image');
+      }
+    } else if (updateData.profile?.avatar) {
+      // Fallback for backward compatibility (non-file avatar URLs)
+      allowedUpdates['profile.avatar'] = updateData.profile.avatar;
+    }
 
     this.logger.debug(`Allowed updates: ${JSON.stringify(allowedUpdates)}`);
 
@@ -397,6 +444,91 @@ export class UsersService {
     return Math.floor(100000 + Math.random() * 900000).toString();
   }
 
+  async sendRegistrationOtp(email: string): Promise<any> {
+    const normalizedEmail = this.normalizeEmail(email);
+    const existingUser = await this.userModel.findOne({ email: normalizedEmail }).exec();
+
+    if (existingUser?.isEmailVerified) {
+      throw new ConflictException('User with this email already exists');
+    }
+
+    const otp = this.generateOTP();
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+
+    await this.emailOtpModel.findOneAndUpdate(
+      { email: normalizedEmail, purpose: 'registration' },
+      {
+        $set: {
+          otp,
+          expiresAt,
+          verified: false,
+        },
+        $setOnInsert: {
+          email: normalizedEmail,
+          purpose: 'registration',
+        },
+      },
+      {
+        upsert: true,
+        new: true,
+      },
+    ).exec();
+
+    await this.sendOtpEmail(
+      normalizedEmail,
+      otp,
+      'GOLO registration OTP',
+      'Use this OTP to verify your GOLO account registration.',
+    );
+
+    return {
+      email: normalizedEmail,
+      expiresIn: 300,
+    };
+  }
+
+  async verifyRegistrationOtp(email: string, otp: string): Promise<any> {
+    const normalizedEmail = this.normalizeEmail(email);
+    const entry = await this.emailOtpModel.findOne({ email: normalizedEmail, purpose: 'registration' }).exec();
+    const existingUser = await this.userModel.findOne({ email: normalizedEmail }).exec();
+
+    if (!entry) {
+      throw new BadRequestException('No OTP found. Please request a new one.');
+    }
+
+    if (new Date() > entry.expiresAt) {
+      await this.emailOtpModel.deleteOne({ _id: entry._id }).exec();
+      throw new BadRequestException('OTP has expired. Please request a new one.');
+    }
+
+    if (entry.otp !== otp) {
+      throw new UnauthorizedException('Invalid OTP');
+    }
+
+    await this.emailOtpModel.updateOne(
+      { _id: entry._id },
+      {
+        $set: {
+          verified: true,
+        },
+      },
+    ).exec();
+
+    if (existingUser && !existingUser.isEmailVerified) {
+      await this.userModel.updateOne(
+        { _id: existingUser._id },
+        {
+          $set: {
+            isEmailVerified: true,
+            updatedAt: new Date(),
+          },
+        },
+      ).exec();
+    }
+
+    return { email: normalizedEmail, verified: true };
+  }
+
   async sendPasswordChangeOTP(userId: string): Promise<any> {
     this.logger.log(`Sending password change OTP for user: ${userId}`);
     
@@ -417,11 +549,6 @@ export class UsersService {
       }
       
       this.logger.debug(`User found: ${user.email}`);
-      this.logger.debug(`User phone: ${user.profile?.phone || 'NOT SET'}`);
-      
-      if (!user.profile?.phone) {
-        throw new BadRequestException('Phone number not found in profile. Please update your phone number first.');
-      }
 
       const otp = this.generateOTP();
       const expiryTime = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
@@ -440,25 +567,15 @@ export class UsersService {
         { new: true }
       ).exec();
 
-      // send via Twilio if available
-      if (this.twilioClient) {
-        try {
-          await this.twilioClient.messages.create({
-            body: `Your GOLO OTP is ${otp}`,
-            from: this.configService.get('TWILIO_PHONE'),
-            to: `+91${user.profile.phone}`,
-          });
-          this.logger.log(`SMS OTP sent via Twilio to ${user.profile.phone}`);
-        } catch (smsErr) {
-          this.logger.error(`Twilio SMS error: ${smsErr.message}`);
-        }
-      } else {
-        this.logger.log(`OTP for ${user.email}: ${otp} (expires in 5 minutes)`);
-        console.log(`[DEBUG] OTP ${otp} sent to ${user.profile.phone}`);
-      }
+      await this.sendOtpEmail(
+        user.email,
+        otp,
+        'GOLO password change OTP',
+        'Use this OTP to confirm your password change request.',
+      );
 
       return {
-        message: 'OTP sent to registered phone number',
+        message: 'OTP sent to registered email',
         expiresIn: 300, // 5 minutes in seconds
       };
     } catch (error) {
@@ -545,7 +662,162 @@ export class UsersService {
     return this.toResponseDto(updatedUser);
   }
 
+  async sendForgotPasswordOtp(email: string): Promise<any> {
+    const normalizedEmail = this.normalizeEmail(email);
+    const user = await this.userModel.findOne({ email: normalizedEmail }).exec();
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const otp = this.generateOTP();
+    const expiryTime = new Date(Date.now() + 5 * 60 * 1000);
+
+    await this.userModel.findByIdAndUpdate(
+      user._id,
+      {
+        $set: {
+          passwordChangeOTP: otp,
+          passwordChangeOTPExpiry: expiryTime,
+          passwordChangeOTPVerified: false,
+          updatedAt: new Date(),
+        },
+      },
+    ).exec();
+
+    await this.sendOtpEmail(
+      normalizedEmail,
+      otp,
+      'GOLO forgot password OTP',
+      'Use this OTP to reset your GOLO account password.',
+    );
+
+    return {
+      email: normalizedEmail,
+      expiresIn: 300,
+    };
+  }
+
+  async verifyForgotPasswordOtp(email: string, otp: string): Promise<any> {
+    const normalizedEmail = this.normalizeEmail(email);
+    const user = await this.userModel.findOne({ email: normalizedEmail }).exec();
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (!user.passwordChangeOTP) {
+      throw new BadRequestException('No OTP found. Please request a new one.');
+    }
+
+    if (!user.passwordChangeOTPExpiry || new Date() > user.passwordChangeOTPExpiry) {
+      throw new BadRequestException('OTP has expired. Please request a new one.');
+    }
+
+    if (user.passwordChangeOTP !== otp) {
+      throw new UnauthorizedException('Invalid OTP');
+    }
+
+    await this.userModel.findByIdAndUpdate(user._id, {
+      $set: {
+        passwordChangeOTPVerified: true,
+        updatedAt: new Date(),
+      },
+    }).exec();
+
+    return { email: normalizedEmail, verified: true };
+  }
+
+  async resetPasswordWithOtp(email: string, otp: string, newPassword: string): Promise<UserResponseDto> {
+    const normalizedEmail = this.normalizeEmail(email);
+    const user = await this.userModel.findOne({ email: normalizedEmail }).exec();
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (!user.passwordChangeOTPVerified) {
+      throw new BadRequestException('OTP not verified. Please verify OTP first.');
+    }
+
+    if (!user.passwordChangeOTPExpiry || new Date() > user.passwordChangeOTPExpiry) {
+      throw new BadRequestException('OTP has expired. Please request a new one.');
+    }
+
+    if (user.passwordChangeOTP !== otp) {
+      throw new UnauthorizedException('OTP mismatch');
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    const updatedUser = await this.userModel.findByIdAndUpdate(
+      user._id,
+      {
+        $set: {
+          password: hashedPassword,
+          passwordChangeOTP: null,
+          passwordChangeOTPExpiry: null,
+          passwordChangeOTPVerified: false,
+          refreshTokens: [],
+          updatedAt: new Date(),
+        },
+      },
+      { new: true },
+    ).exec();
+
+    return this.toResponseDto(updatedUser);
+  }
+
   // ==================== HELPER METHODS ====================
+
+  private normalizeEmail(email: string): string {
+    return email.trim().toLowerCase();
+  }
+
+  private async assertVerifiedRegistrationOtp(email: string, otp: string): Promise<void> {
+    const entry = await this.emailOtpModel.findOne({ email, purpose: 'registration' }).exec();
+
+    if (!entry) {
+      throw new BadRequestException('Send OTP to your email before registering.');
+    }
+
+    if (new Date() > entry.expiresAt) {
+      await this.emailOtpModel.deleteOne({ _id: entry._id }).exec();
+      throw new BadRequestException('OTP has expired. Please request a new one.');
+    }
+
+    if (!entry.verified || entry.otp !== otp) {
+      throw new BadRequestException('Verify your email OTP before registering.');
+    }
+  }
+
+  private async sendOtpEmail(email: string, otp: string, subject: string, purpose: string): Promise<void> {
+    if (!this.mailTransporter) {
+      throw new InternalServerErrorException('Email service is not configured');
+    }
+
+    const fromAddress =
+      this.configService.get<string>('config.email.from') ||
+      this.configService.get<string>('EMAIL_FROM') ||
+      this.configService.get<string>('config.email.user') ||
+      this.configService.get<string>('EMAIL');
+
+    await this.mailTransporter.sendMail({
+      from: fromAddress,
+      to: email,
+      subject,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 24px; color: #1f2937;">
+          <h2 style="margin: 0 0 12px; color: #157a4f;">GOLO verification</h2>
+          <p style="margin: 0 0 16px; font-size: 15px; line-height: 1.5;">${purpose}</p>
+          <div style="letter-spacing: 8px; font-size: 28px; font-weight: 700; background: #f3f4f6; padding: 16px 20px; border-radius: 12px; text-align: center; color: #111827;">
+            ${otp}
+          </div>
+          <p style="margin: 16px 0 0; font-size: 13px; color: #6b7280;">This OTP expires in 5 minutes.</p>
+        </div>
+      `,
+    });
+  }
 
   private toResponseDto(user: UserDocument): UserResponseDto {
     return {

@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React from "react";
 import {
     View,
     Text,
@@ -9,11 +9,20 @@ import {
 import { AntDesign } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 
-export default function LostandFound({ formData, setFormData, category, onPrevious, template, price, selectedDays, selectedLocations }) {
+export default function LostandFound({
+    formData,
+    setFormData,
+    category,
+    onPrevious,
+    template,
+    price,
+    selectedDays,
+    selectedLocations,
+}) {
     if (category?.id !== "lostandfound") return null;
     const navigation = useNavigation();
 
-    const ConditionButton = ({ label, value }) => (
+    const StatusButton = ({ label, value }) => (
         <TouchableOpacity
             style={[
                 styles.segmentBtn,
@@ -34,101 +43,83 @@ export default function LostandFound({ formData, setFormData, category, onPrevio
 
     return (
         <View>
-            {/* Header */}
-            <View
-                style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    paddingHorizontal: 5,
-                    paddingBottom: 10,
-                }}
-            >
-                <Text style={styles.composeTitle}>Lost and Found</Text>
 
-                <TouchableOpacity
-                    style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        paddingHorizontal: 10,
-                        paddingVertical: 4,
-                        backgroundColor: "#108136",
-                        borderRadius: 10,
-                    }}
-                    onPress={onPrevious}
-                >
-                    <AntDesign name="arrow-left" size={18} color="#ffffff" />
-                    <Text
-                        style={{
-                            fontFamily: "Medium",
-                            fontSize: 16,
-                            marginLeft: 6,
-                            color: "#ffffff",
-                            lineHeight: Math.round(16 * 1.5),
-                        }}
-                    >
-                        Previous
-                    </Text>
+            {/* Header */}
+            <View style={styles.header}>
+                <Text style={styles.composeTitle}>Lost & Found</Text>
+
+                <TouchableOpacity style={styles.prevBtn} onPress={onPrevious}>
+                    <AntDesign name="arrow-left" size={18} color="#fff" />
+                    <Text style={styles.prevText}>Previous</Text>
                 </TouchableOpacity>
             </View>
 
             <View style={styles.formCard}>
 
-                <Text style={styles.label}>Status</Text>
+                {/* Status */}
+                <Text style={styles.label}>Status *</Text>
                 <View style={styles.segmentRow}>
-                    <ConditionButton label="Lost" value="lost" />
-                    <ConditionButton label="Found" value="found" />
+                    <StatusButton label="Lost" value="lost" />
+                    <StatusButton label="Found" value="found" />
                 </View>
 
-
-                <Text style={styles.label}>Item Name</Text>
+                {/* Item Name */}
+                <Text style={styles.label}>Item Name *</Text>
                 <TextInput
                     style={styles.input}
-                    value={formData.lostandfound || ""}
+                    value={formData.itemName || ""}
                     onChangeText={(text) =>
-                        setFormData({ ...formData, lostandfound: text })
+                        setFormData({ ...formData, itemName: text })
                     }
-                    placeholder="Enter name of item"
+                    placeholder="e.g. Wallet, Mobile Phone"
                 />
 
-                <Text style={styles.label}>Item Type</Text>
+                {/* Item Type */}
+                <Text style={styles.label}>Item Type *</Text>
                 <TextInput
                     style={styles.input}
-                    value={formData.itemtype || ""}
+                    value={formData.itemType || ""}
                     onChangeText={(text) =>
-                        setFormData({ ...formData, itemtype: text })
+                        setFormData({ ...formData, itemType: text })
                     }
-                    placeholder="Enter type of item"
+                    placeholder="e.g. Electronics, Documents"
                 />
 
-                <Text style={styles.label}>Date</Text>
+                {/* Date */}
+                <Text style={styles.label}>Date *</Text>
                 <TextInput
                     style={styles.input}
                     value={formData.date || ""}
                     onChangeText={(text) =>
                         setFormData({ ...formData, date: text })
                     }
+                    placeholder="YYYY-MM-DD"
                 />
 
-                <Text style={styles.label}>Location</Text>
+                {/* Location */}
+                <Text style={styles.label}>Location *</Text>
                 <TextInput
                     style={styles.input}
                     value={formData.location || ""}
                     onChangeText={(text) =>
                         setFormData({ ...formData, location: text })
                     }
+                    placeholder="Where item was lost/found"
                 />
 
-                <Text style={styles.label}>Description</Text>
+                {/* Description */}
+                <Text style={styles.label}>Description *</Text>
                 <TextInput
-                    style={styles.input}
+                    style={[styles.input, styles.textArea]}
+                    multiline
                     value={formData.description || ""}
                     onChangeText={(text) =>
                         setFormData({ ...formData, description: text })
                     }
-                    placeholder="Enter description of item"
+                    placeholder="Describe the item"
                 />
 
+                {/* Reward */}
                 <Text style={styles.label}>Reward (Optional)</Text>
                 <TextInput
                     style={styles.input}
@@ -136,22 +127,35 @@ export default function LostandFound({ formData, setFormData, category, onPrevio
                     onChangeText={(text) =>
                         setFormData({ ...formData, reward: text })
                     }
-                    placeholder="Enter reward amount (optional)"
+                    placeholder="Optional reward amount"
                 />
 
-                <Text style={styles.label}>Contact Details</Text>
+                {/* Contact Details */}
+                <Text style={styles.label}>Contact Details *</Text>
                 <TextInput
                     style={styles.input}
-                    value={formData.contactdetails || ""}
+                    value={formData.contactDetails || ""}
                     onChangeText={(text) =>
-                        setFormData({ ...formData, contactdetails: text })
+                        setFormData({ ...formData, contactDetails: text })
                     }
-                    placeholder="Enter contact details"
+                    placeholder="Phone number or email"
                 />
 
             </View>
 
-            <TouchableOpacity style={styles.nextBtn} onPress={() => { navigation.navigate("Preview", { template, category, formData, price, selectedDays, selectedLocations }); }}>
+            <TouchableOpacity
+                style={styles.nextBtn}
+                onPress={() =>
+                    navigation.navigate("Preview", {
+                        template,
+                        category,
+                        formData,
+                        price,
+                        selectedDays,
+                        selectedLocations,
+                    })
+                }
+            >
                 <Text style={styles.nextText}>See Preview</Text>
             </TouchableOpacity>
         </View>
@@ -160,27 +164,88 @@ export default function LostandFound({ formData, setFormData, category, onPrevio
 
 const styles = StyleSheet.create({
 
-    composeTitle: { fontSize: 18, fontFamily: "Medium", lineHeight: Math.round(18 * 1.5) },
-    formCard: { backgroundColor: "#fff", paddingHorizontal: 16, borderRadius: 10, paddingBottom: 18 },
-    label: { fontSize: 16, marginTop: 16, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
-    value: { fontSize: 16, color: "#555", fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
-    input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10, marginTop: 6 },
-    textArea: { height: 80, textAlignVertical: "top" },
-    switchRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 12 },
-
-    uploadBox: {
-        borderWidth: 1,
-        borderStyle: "dashed",
-        borderColor: "#aaa",
-        borderRadius: 10,
-        padding: 16,
+    header: {
+        flexDirection: "row",
+        justifyContent: "space-between",
         alignItems: "center",
-        marginTop: 8,
+        paddingHorizontal: 5,
+        paddingBottom: 10,
     },
-    uploadText: { marginTop: 6, color: "#555", fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
-    orText: { marginVertical: 6, color: "#999", fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
-    cameraBtn: { backgroundColor: "#157a4f", paddingVertical: 8, paddingHorizontal: 18, borderRadius: 8 },
-    cameraText: { color: "#fff", fontFamily: "Medium", lineHeight: Math.round(14 * 1.5) },
+
+    composeTitle: {
+        fontSize: 18,
+        fontFamily: "Medium",
+    },
+
+    prevBtn: {
+        flexDirection: "row",
+        alignItems: "center",
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        backgroundColor: "#108136",
+        borderRadius: 10,
+    },
+
+    prevText: {
+        fontFamily: "Medium",
+        fontSize: 16,
+        marginLeft: 6,
+        color: "#fff",
+    },
+
+    formCard: {
+        backgroundColor: "#fff",
+        paddingHorizontal: 16,
+        borderRadius: 10,
+        paddingBottom: 18,
+    },
+
+    label: {
+        fontSize: 16,
+        marginTop: 16,
+        fontFamily: "Medium",
+    },
+
+    input: {
+        borderWidth: 1,
+        borderColor: "#ddd",
+        borderRadius: 8,
+        padding: 10,
+        marginTop: 6,
+    },
+
+    textArea: {
+        height: 80,
+        textAlignVertical: "top",
+    },
+
+    segmentRow: {
+        flexDirection: "row",
+        marginTop: 6,
+    },
+
+    segmentBtn: {
+        flex: 1,
+        borderWidth: 1,
+        borderColor: "#ddd",
+        paddingVertical: 8,
+        alignItems: "center",
+    },
+
+    segmentBtnSelected: {
+        backgroundColor: "#f5b849",
+        borderColor: "#bd8e38",
+    },
+
+    segmentText: {
+        fontSize: 15,
+        fontFamily: "Medium",
+        color: "#444",
+    },
+
+    segmentTextSelected: {
+        color: "#fff",
+    },
 
     nextBtn: {
         flexDirection: "row",
@@ -189,54 +254,12 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         alignItems: "center",
         marginVertical: 20,
-        justifyContent: "center"
-    },
-    nextText: { color: "#fff", fontSize: 16, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
-
-    pickerWrap: {
-        borderWidth: 1,
-        borderColor: "#ddd",
-        borderRadius: 8,
-        overflow: "hidden",
-    },
-
-    segmentRow: {
-        flexDirection: "row",
-        marginTop: 6,
-    },
-    segmentBtn: {
-        flex: 1,
-        borderWidth: 1,
-        borderColor: "#ddd",
-        paddingVertical: 8,
-        alignItems: "center",
-    },
-    segmentBtnSelected: {
-        backgroundColor: "#f5b849",
-        borderColor: "#bd8e38",
-    },
-    segmentText: {
-        fontSize: 15,
-        fontFamily: "Medium",
-        color: "#444",
-        lineHeight: Math.round(15 * 1.5),
-    },
-    segmentTextSelected: {
-        color: "#fff",
-    },
-
-    checkbox: {
-        width: 26,
-        height: 26,
-        borderWidth: 1,
-        borderColor: "#444",
         justifyContent: "center",
-        alignItems: "center",
     },
-    checkboxTick: {
-        width: 16,
-        height: 16,
-        borderRadius: 4,
-        backgroundColor: "#f5b849",
+
+    nextText: {
+        color: "#fff",
+        fontSize: 16,
+        fontFamily: "Medium",
     },
 });

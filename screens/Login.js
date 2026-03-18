@@ -118,6 +118,13 @@ export default function Login({ navigation }) {
           </View>
 
           <TouchableOpacity
+            onPress={() => navigation.navigate("ForgotPassword")}
+            style={styles.forgotPasswordLink}
+          >
+            <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
             onPress={handleLogin}
             style={[styles.button, loading && { opacity: 0.6 }]}
             disabled={loading}
@@ -178,6 +185,16 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: "#4caf50",
     paddingHorizontal: 10,
+    fontFamily: "Medium",
+  },
+
+  forgotPasswordLink: {
+    alignSelf: "flex-end",
+  },
+
+  forgotPasswordText: {
+    fontSize: 14,
+    color: "#157a4f",
     fontFamily: "Medium",
   },
 

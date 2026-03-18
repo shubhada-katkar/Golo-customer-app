@@ -115,7 +115,7 @@ export default function ChotyaJahirati({ selectedCategory }) {
         <FlatList
             data={ads}
             keyExtractor={(item, index) =>
-                item._id || item.adId || index.toString()
+                `${item._id || item.adId}-${index}`
             }
             renderItem={renderItem}
             contentContainerStyle={{

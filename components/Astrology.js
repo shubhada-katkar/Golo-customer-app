@@ -147,7 +147,7 @@ export default function Astrology({ formData, setFormData, category, onPrevious,
                     style={styles.input}
                     value={formData.language || ""}
                     onChangeText={(text) =>
-                        setFormData({ ...formData, languageage: text })
+                        setFormData({ ...formData, language: text })
                     }
                     placeholder="e.g. English, Hindi"
                 />
@@ -206,7 +206,7 @@ export default function Astrology({ formData, setFormData, category, onPrevious,
 
             </View>
 
-            <TouchableOpacity style={styles.nextBtn} onPress={() => {navigation.navigate("Preview", {template, category, formData, selectedDays, selectedLocations, price});}}>
+            <TouchableOpacity style={styles.nextBtn} onPress={() => { navigation.navigate("Preview", { template, category, formData, selectedDays, selectedLocations, price }); }}>
                 <Text style={styles.nextText}>See Preview</Text>
             </TouchableOpacity>
         </View>

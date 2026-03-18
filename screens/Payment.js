@@ -6,8 +6,52 @@ import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+function isRemoteUrl(value) {
+    return typeof value === "string" && /^https?:\/\//i.test(value);
+}
+
+function getFileMetaFromUri(uri) {
+    const fileName = uri?.split("/")?.pop() || `ad-${Date.now()}.jpg`;
+    const match = /\.([a-zA-Z0-9]+)$/.exec(fileName);
+    const ext = (match?.[1] || "jpg").toLowerCase();
+    const mimeType = ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : "image/jpeg";
+
+    return { fileName, mimeType };
+}
+
+async function uploadAdImageToCloud(uri, token, baseUrl) {
+    if (!uri) return null;
+    if (isRemoteUrl(uri)) return uri;
+
+    const { fileName, mimeType } = getFileMetaFromUri(uri);
+
+    const uploadBody = new FormData();
+    uploadBody.append("file", {
+        uri,
+        name: fileName,
+        type: mimeType,
+    });
+
+    const response = await fetch(`${baseUrl}/ads/upload/image`, {
+        method: "POST",
+        headers: {
+            "Authorization": `Bearer ${token}`,
+        },
+        body: uploadBody,
+    });
+
+    const data = await response.json().catch(() => ({}));
+    const imageUrl = data?.data?.url;
+
+    if (!response.ok || !imageUrl) {
+        throw new Error(data?.message || "Failed to upload ad image");
+    }
+
+    return imageUrl;
+}
+
 export default function Payment({ navigation, route }) {
-    const { template, selectedDays, selectedLocations, price, formData, category } = route.params || {};
+    const { template, selectedDays, selectedLocations, selectedDates, startDate, endDate, price, formData, category } = route.params || {};
     const [isFeatured, setIsFeatured] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -45,6 +89,19 @@ export default function Payment({ navigation, route }) {
             }
 
             const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
+            if (!BASE_URL) {
+                throw new Error("EXPO_PUBLIC_API_URL is not configured");
+            }
+
+            const selectedImages = formData?.images?.length
+                ? formData.images
+                : (formData?.image ? [formData.image] : []);
+
+            const uploadedImages = [];
+            for (const img of selectedImages) {
+                const uploaded = await uploadAdImageToCloud(img, token, BASE_URL);
+                if (uploaded) uploadedImages.push(uploaded);
+            }
 
             // Format phone to E.164 (prepend +91 if needed)
             const rawPhone = formData?.contact || "";
@@ -58,7 +115,7 @@ export default function Payment({ navigation, route }) {
                 subCategory: category?.label || "Education",
                 userId: userId,
                 userType: "Customer",
-                images: formData?.images?.length ? formData.images : (formData?.image ? [formData.image] : ["https://placeholder.com/image.jpg"]),
+                images: uploadedImages,
                 price: Number(formData?.price || 0),
                 location: formData?.location || "Not specified",
                 contactInfo: {
@@ -68,27 +125,10 @@ export default function Payment({ navigation, route }) {
                 },
                 templateId: Number(template !== undefined ? (typeof template === 'string' ? template.replace('card', '') : template) : 1),
                 cities: selectedLocations || [],
+                selectedDates: Array.isArray(selectedDates) ? selectedDates : [],
+                expiryDate: endDate || undefined,
                 isPromoted: isFeatured,
             };
-
-            // Inject category specific data if it's Education
-            if (category?.label === "Education") {
-                payload.educationData = {
-                    institutionType: formData?.institutionType || "School",
-                    institutionName: formData?.institutionName || "",
-                    courseName: formData?.courseName || undefined,
-                    duration: formData?.duration || undefined,
-                    fees: formData?.fees ? Number(formData.fees) : undefined,
-                    eligibility: formData?.eligibility || undefined,
-                    contactPerson: formData?.contactPerson || undefined,
-                    contactNumber: formData?.contactNumber || undefined,
-                    email: formData?.eduEmail || undefined,
-                    affiliatedTo: formData?.affiliatedTo || undefined,
-                    website: formData?.website || undefined,
-                    establishedYear: formData?.establishedYear ? Number(formData.establishedYear) : undefined,
-                    studentCapacity: formData?.studentCapacity ? Number(formData.studentCapacity) : undefined,
-                };
-            }
 
             console.log("Submitting payload:", JSON.stringify(payload, null, 2));
 

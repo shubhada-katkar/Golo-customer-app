@@ -9,25 +9,6 @@ export default function Greetings({ formData, setFormData, category, onPrevious,
   const [selectedTab, setSelectedTab] = useState("greetings");
   const navigation = useNavigation();
 
-  const ConditionButton = ({ label, value }) => (
-    <TouchableOpacity
-      style={[
-        styles.segmentBtn,
-        formData.condition === value && styles.segmentBtnSelected,
-      ]}
-      onPress={() => setFormData({ ...formData, condition: value })}
-    >
-      <Text
-        style={[
-          styles.segmentText,
-          formData.condition === value && styles.segmentTextSelected,
-        ]}
-      >
-        {label}
-      </Text>
-    </TouchableOpacity>
-  );
-
   return (
     <View>
       {/* Header */}
@@ -223,7 +204,7 @@ export default function Greetings({ formData, setFormData, category, onPrevious,
             <Text style={styles.label}>Short Biography / Life Summary</Text>
             <TextInput
               style={styles.input}
-              value={formData.sumamry || ""}
+              value={formData.summary || ""}
               onChangeText={(text) =>
                 setFormData({ ...formData, summary: text })
               }
@@ -233,9 +214,9 @@ export default function Greetings({ formData, setFormData, category, onPrevious,
             <Text style={styles.label}>Funeral / Prayer Meetings Details(Optional)</Text>
             <TextInput
               style={styles.input}
-              value={formData.sumamry || ""}
+              value={formData.funeralDetails || ""}
               onChangeText={(text) =>
-                setFormData({ ...formData, summary: text })
+                setFormData({ ...formData, funeralDetails: text })
               }
               placeholder="Venue, Date, Time and Other Details"
             />

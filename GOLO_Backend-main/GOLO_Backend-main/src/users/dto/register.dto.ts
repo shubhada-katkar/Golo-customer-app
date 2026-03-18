@@ -13,6 +13,11 @@ export class RegisterDto {
   @MinLength(6)
   password: string;
 
+  @IsString()
+  @IsNotEmpty()
+  @Matches(/^\d{6}$/, { message: 'OTP must be a 6 digit code' })
+  otp: string;
+
   @IsOptional()
   @Matches(/^\+?\d{7,15}$/, { message: 'Invalid phone number' })
   phone?: string;

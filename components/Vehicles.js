@@ -9,18 +9,18 @@ export default function Vehicles({ formData, setFormData, category, onPrevious, 
   const [selectedTab, setSelectedTab] = useState("sell");
   const navigation = useNavigation();
 
-  const ConditionButton = ({ label, value }) => (
+  const ConditionButton = ({ label, value, field }) => (
     <TouchableOpacity
       style={[
         styles.segmentBtn,
-        formData.condition === value && styles.segmentBtnSelected,
+        formData[field] === value && styles.segmentBtnSelected,
       ]}
-      onPress={() => setFormData({ ...formData, condition: value })}
+      onPress={() => setFormData({ ...formData, [field]: value })}
     >
       <Text
         style={[
           styles.segmentText,
-          formData.condition === value && styles.segmentTextSelected,
+          formData[field] === value && styles.segmentTextSelected,
         ]}
       >
         {label}
@@ -77,7 +77,7 @@ export default function Vehicles({ formData, setFormData, category, onPrevious, 
           ]}
           onPress={() => {
             setSelectedTab("sell");
-            setFormData({ ...formData, noticeType: "sell" });
+            setFormData({ ...formData, type: "Sell" });
           }}
         >
           <Text
@@ -97,7 +97,7 @@ export default function Vehicles({ formData, setFormData, category, onPrevious, 
           ]}
           onPress={() => {
             setSelectedTab("rent");
-            setFormData({ ...formData, noticeType: "rent" });
+            setFormData({ ...formData, type: "Rent" });
           }}
         >
           <Text
@@ -176,9 +176,9 @@ export default function Vehicles({ formData, setFormData, category, onPrevious, 
             <Text style={styles.label}>KM Driven</Text>
             <TextInput
               style={styles.input}
-              value={formData.kmDriven || ""}
+              value={formData.kilometersDriven || ""}
               onChangeText={(text) =>
-                setFormData({ ...formData, kmDriven: text })
+                setFormData({ ...formData, kilometersDriven: text })
               }
               placeholder="Enter KM driven of the vehicle"
             />
@@ -200,8 +200,8 @@ export default function Vehicles({ formData, setFormData, category, onPrevious, 
 
             <Text style={styles.label}>Transmission</Text>
             <View style={styles.segmentRow}>
-              <ConditionButton label="Manual" value="manual" />
-              <ConditionButton label="Automatic" value="automatic" />
+              <ConditionButton label="Manual" value="Manual" field="transmission" />
+              <ConditionButton label="Automatic" value="Automatic" field="transmission" />
             </View>
 
             <Text style={styles.label}>Ownership</Text>
@@ -220,25 +220,25 @@ export default function Vehicles({ formData, setFormData, category, onPrevious, 
 
             <Text style={styles.label}>RC Available</Text>
             <View style={styles.segmentRow}>
-              <ConditionButton label="Yes" value="yes" />
-              <ConditionButton label="No" value="no" />
+              <ConditionButton label="Yes" value="yes" field="rcAvailable" />
+              <ConditionButton label="No" value="no" field="rcAvailable" />
             </View>
 
             <Text style={styles.label}>Insurance Valid Till</Text>
             <TextInput
               style={styles.input}
-              value={formData.insuranceValidTill || ""}
+              value={formData.insurance || ""}
               onChangeText={(text) =>
-                setFormData({ ...formData, insuranceValidTill: text })
+                setFormData({ ...formData, insurance: text })
               }
               placeholder="Enter insurance valid till date"
             />
 
             <Text style={styles.label}>Condition</Text>
             <View style={styles.segmentRow}>
-              <ConditionButton label="Excellent" value="excellent" />
-              <ConditionButton label="Very Good" value="veryGood" />
-              <ConditionButton label="Good" value="good" />
+              <ConditionButton label="Excellent" value="excellent" field="condition" />
+              <ConditionButton label="Very Good" value="veryGood" field="condition" />
+              <ConditionButton label="Good" value="good" field="condition" />
             </View>
 
             <Text style={styles.label}>Price</Text>
@@ -303,9 +303,9 @@ export default function Vehicles({ formData, setFormData, category, onPrevious, 
 
             <Text style={styles.label}>Includes Driver</Text>
             <View style={styles.segmentRow}>
-              <ConditionButton label="Yes" value="yes" />
-              <ConditionButton label="No" value="no" />
-              <ConditionButton label="Both" value="both" />
+              <ConditionButton label="Yes" value="yes" field="includesDriver" />
+              <ConditionButton label="No" value="no" field="includesDriver" />
+              <ConditionButton label="Both" value="both" field="includesDriver" />
             </View>
 
             <Text style={styles.label}>Min Rental Duration (Days)</Text>

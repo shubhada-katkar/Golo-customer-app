@@ -1,8 +1,16 @@
-import { IsString, IsNumber, IsOptional, IsArray, IsEmail, Min, Max, IsEnum } from 'class-validator';
+import {
+  IsString,
+  IsNumber,
+  IsOptional,
+  Min,
+  Max,
+  IsEnum
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class MatrimonialDto {
-  @IsString()
+
+  @IsEnum(['self', 'relative', 'friend', 'other'])
   profileFor: string;
 
   @IsString()
@@ -14,16 +22,8 @@ export class MatrimonialDto {
   @Type(() => Number)
   age: number;
 
-  @IsEnum(['Male', 'Female', 'Other'])
+  @IsEnum(['male', 'female', 'other'])
   gender: string;
-
-  @IsOptional()
-  @IsString()
-  height?: string;
-
-  @IsOptional()
-  @IsString()
-  weight?: string;
 
   @IsOptional()
   @IsString()
@@ -39,10 +39,6 @@ export class MatrimonialDto {
 
   @IsOptional()
   @IsString()
-  motherTongue?: string;
-
-  @IsOptional()
-  @IsString()
   education?: string;
 
   @IsOptional()
@@ -55,42 +51,17 @@ export class MatrimonialDto {
 
   @IsOptional()
   @IsString()
-  city?: string;
+  height?: string;
 
   @IsOptional()
   @IsString()
-  state?: string;
+  location?: string;
 
   @IsOptional()
   @IsString()
-  country?: string;
+  aboutMe?: string;
 
   @IsOptional()
   @IsString()
-  about?: string;
-
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  hobbies?: string[];
-
-  @IsOptional()
-  @IsString()
-  diet?: string;
-
-  @IsOptional()
-  @IsString()
-  drink?: string;
-
-  @IsOptional()
-  @IsString()
-  smoke?: string;
-
-  @IsOptional()
-  @IsString()
-  contactNumber?: string;
-
-  @IsOptional()
-  @IsEmail()
-  email?: string;
+  partnerPreference?: string;
 }

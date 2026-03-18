@@ -1,64 +1,44 @@
-import { IsEnum, IsString, IsNumber, IsOptional, IsArray, IsEmail, IsUrl, Min } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsBoolean, IsString, IsOptional, IsEnum } from 'class-validator';
 
 export class AstrologyDto {
-  @IsEnum(['Consultation', 'Horoscope', 'Puja', 'Remedies'])
-  serviceType: string;
+
+  @IsOptional()
+  @IsBoolean()
+  horoscope?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  kundli?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  vaastu?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  palm?: boolean;
 
   @IsOptional()
   @IsString()
-  astrologerName?: string;
-
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Type(() => Number)
-  experience?: number;
+  experience?: string;
 
   @IsOptional()
   @IsString()
-  specialization?: string;
+  language?: string;
 
   @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  languages?: string[];
+  @IsEnum(['call', 'email'])
+  contactMethod?: string;
 
   @IsOptional()
-  @IsString()
-  consultationMode?: string;
-
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  @Type(() => Number)
-  charges?: number;
+  @IsEnum(['online', 'offline'])
+  demoAvailable?: string;
 
   @IsOptional()
   @IsString()
-  duration?: string;
+  fee?: string;
 
   @IsOptional()
   @IsString()
-  availableTimings?: string;
-
-  @IsOptional()
-  @IsString()
-  qualification?: string;
-
-  @IsOptional()
-  @IsString()
-  contactNumber?: string;
-
-  @IsOptional()
-  @IsEmail()
-  email?: string;
-
-  @IsOptional()
-  @IsUrl()
-  website?: string;
-
-  @IsOptional()
-  @IsString()
-  about?: string;
+  availabilityTime?: string;
 }

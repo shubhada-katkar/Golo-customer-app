@@ -8,15 +8,6 @@ export default function Travel({ formData, setFormData, category, onPrevious, te
   if (category?.id !== "travel") return null;
   const navigation = useNavigation();
 
-  const Radio = ({ label, selected, onPress }) => (
-    <TouchableOpacity style={styles.radioRow} onPress={onPress}>
-      <View style={styles.radioOuter}>
-        {selected ? <View style={styles.radioInner} /> : null}
-      </View>
-      <Text style={styles.radioLabel}>{label}</Text>
-    </TouchableOpacity>
-  );
-
   return (
     <View>
       {/* Header */}

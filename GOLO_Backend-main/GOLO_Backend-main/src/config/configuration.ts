@@ -56,5 +56,24 @@ export default registerAs('config', () => {
       expiresIn: process.env.JWT_EXPIRATION || '15m',
       refreshExpiresIn: process.env.JWT_REFRESH_EXPIRATION || '7d',
     },
+
+    cloudinary: {
+      url: process.env.CLOUDINARY_URL,
+      cloudName: process.env.CLOUDINARY_CLOUD_NAME,
+      apiKey: process.env.CLOUDINARY_API_KEY,
+      apiSecret: process.env.CLOUDINARY_API_SECRET,
+      uploadFolder: process.env.CLOUDINARY_UPLOAD_FOLDER || 'golo/ads',
+    },
+
+    share: {
+      appScheme: process.env.APP_DEEP_LINK_SCHEME || 'golo',
+      webBaseUrl: process.env.AD_SHARE_WEB_BASE_URL || '',
+    },
+
+    email: {
+      user: process.env.EMAIL,
+      pass: process.env.EMAIL_PASS,
+      from: process.env.EMAIL_FROM || process.env.EMAIL,
+    },
   };
 });

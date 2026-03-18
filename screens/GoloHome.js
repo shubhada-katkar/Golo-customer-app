@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useRef } from "react";
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -25,6 +25,13 @@ export default function GoloHome() {
         { icon: "cube-outline", label: "Furniture" },
         { icon: "ellipsis-horizontal-outline", label: "Other" },
     ];
+    const scrollRef = useRef(null);
+    const sortedCategories = selectedCategory
+        ? [
+            categories.find(c => c.label === selectedCategory),
+            ...categories.filter(c => c.label !== selectedCategory),
+        ]
+        : categories;
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
@@ -50,15 +57,27 @@ export default function GoloHome() {
                             flexDirection: "row",
                             alignItems: "center"
                         }}>
-                            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                            <ScrollView
+                                ref={scrollRef}
+                                horizontal
+                                showsHorizontalScrollIndicator={false}
+                            >
                                 <View style={styles.chipsRow}>
-                                    {categories.map((item, index) => (
+                                    {sortedCategories.map((item, index) => (
                                         <CategoryChip
                                             key={index}
                                             icon={item.icon}
                                             label={item.label}
                                             isActive={selectedCategory === item.label}
-                                            onPress={() => setSelectedCategory(item.label)}
+                                            onPress={() => {
+                                                if (selectedCategory === item.label) {
+                                                    setSelectedCategory(null);
+                                                } else {
+                                                    setSelectedCategory(item.label);
+                                                    setShowAllCategories(false);
+                                                    scrollRef.current?.scrollTo({ x: 0, animated: true });
+                                                }
+                                            }}
                                         />
                                     ))}
                                 </View>
@@ -76,10 +95,18 @@ export default function GoloHome() {
                                 <Text style={[styles.headerText, { color: colors.primary, paddingVertical: 4, bottom: 5 }]}>Hide Categories</Text>
                             </TouchableOpacity>
                             <View style={styles.categoryGrid}>
-                                {categories.map((item, index) => (
+                                {sortedCategories.map((item, index) => (
                                     <TouchableOpacity
                                         key={index}
-                                        onPress={() => setSelectedCategory(item.label)}
+                                        onPress={() => {
+                                            if (selectedCategory === item.label) {
+                                                setSelectedCategory(null);
+                                            } else {
+                                                setSelectedCategory(item.label);
+                                                setShowAllCategories(false);
+                                                scrollRef.current?.scrollTo({ x: 0, animated: true });
+                                            }
+                                        }}
                                         style={[
                                             styles.gridItem,
                                             selectedCategory === item.label && { backgroundColor: "#FFD700" }

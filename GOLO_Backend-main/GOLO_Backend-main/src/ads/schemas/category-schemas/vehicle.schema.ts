@@ -5,6 +5,7 @@ export type VehicleDocument = Vehicle & Document;
 
 @Schema({ _id: false, timestamps: false })
 export class Vehicle {
+
   @Prop({ required: true, enum: ['Rent', 'Sell'] })
   type: string;
 
@@ -12,64 +13,57 @@ export class Vehicle {
   vehicleType?: string;
 
   @Prop()
+  vehicleType2?: string;
+
+  @Prop()
   brand?: string;
+
+  @Prop()
+  brand2?: string;
 
   @Prop()
   model?: string;
 
   @Prop()
-  brandModel?: string;
-
-  @Prop()
-  rentAmount?: number;
-
-  @Prop()
-  securityDeposit?: number;
-
-  @Prop({ enum: ['Yes', 'No', 'Both'] })
-  includesDriver?: string;
-
-  @Prop()
-  minRentalDuration?: string;
+  variant?: string;
 
   @Prop()
   year?: number;
 
-  @Prop({ enum: ['Petrol', 'Diesel', 'Electric', 'Hybrid', 'CNG'] })
+  @Prop()
+  kilometersDriven?: number;
+
+  @Prop()
   fuelType?: string;
 
   @Prop({ enum: ['Manual', 'Automatic'] })
   transmission?: string;
 
   @Prop()
-  kilometersDriven?: number;
+  ownership?: string;
+
+  @Prop()
+  insurance?: string;
+
+  @Prop()
+  condition?: string;
 
   @Prop()
   price?: number;
 
-  @Prop()
-  color: string;
+  // Rent fields
 
   @Prop()
-  insurance: string;
+  perDayRentAmount?: number;
 
   @Prop()
-  registrationNumber: string;
+  securityDeposit?: number;
+
+  @Prop({ enum: ['yes', 'no', 'both'] })
+  includesDriver?: string;
 
   @Prop()
-  ownerNumber: number;
-
-  @Prop({ type: [String] })
-  features: string[];
-
-  @Prop()
-  condition: string;
-
-  @Prop()
-  emiAvailable: boolean;
-
-  @Prop()
-  exchangeAvailable: boolean;
+  minRentalDuration?: string;
 }
 
 export const VehicleSchema = SchemaFactory.createForClass(Vehicle);

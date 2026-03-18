@@ -14,6 +14,9 @@ import { Travel, TravelSchema } from './travel.schema';
 import { Astrology, AstrologySchema } from './astrology.schema';
 import { Employment, EmploymentSchema } from './employment.schema';
 import { LostFound, LostFoundSchema } from './lost-found.schema';
+import { Greetings, GreetingsSchema } from './greetings.schema';
+import { Others, OthersSchema } from './others.schema'
+import { PublicNotice, PublicNoticeSchema } from './public-notice.schema';
 
 export type AdDocument = Ad & Document;
 
@@ -33,7 +36,7 @@ export class Ad {
       'Education', 'Matrimonial', 'Vehicle', 'Business', 'Travel',
       'Astrology', 'Property', 'Public Notice', 'Lost & Found',
       'Service', 'Personal', 'Employment', 'Pets', 'Mobiles',
-      'Electronics & Home appliances', 'Furniture', 'Other'
+      'Electronics & Home appliances', 'Furniture', 'Others', 'Greetings'
     ]
   })
   category: string;
@@ -120,6 +123,9 @@ export class Ad {
     | Astrology
     | Employment
     | LostFound
+    | Greetings
+    | Others
+    | PublicNotice
     | any;
 
 
@@ -146,6 +152,18 @@ export class Ad {
 
   @Prop({ default: 0 })
   views: number;
+
+  @Prop({ default: 0 })
+  cardClicks: number;
+
+  @Prop({ default: 0 })
+  uniqueVisitors: number;
+
+  @Prop({ default: 0 })
+  contactClicks: number;
+
+  @Prop({ default: 0 })
+  wishlistSaves: number;
 
   @Prop({ type: [String] })
   tags: string[];

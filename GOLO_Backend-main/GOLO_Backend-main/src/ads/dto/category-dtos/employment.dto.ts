@@ -1,40 +1,32 @@
-import { IsEnum, IsString, IsNumber, IsOptional, IsArray, IsEmail, IsUrl, Min, IsDate } from 'class-validator';
+import {
+  IsEnum,
+  IsString,
+  IsOptional,
+  IsNumber,
+  IsBoolean,
+  Min,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class EmploymentDto {
-  @IsEnum(['Full Time', 'Part Time', 'Contract', 'Internship', 'Freelance'])
-  jobType: string;
 
-  @IsString()
-  jobTitle: string;
+  @IsEnum(['full time', 'part time', 'contract'])
+  employmentType: string;
 
-  @IsString()
-  companyName: string;
+  @IsEnum(['entry level', 'mid level', 'senior level'])
+  experienceLevel: string;
 
   @IsOptional()
   @IsString()
-  location?: string;
+  industry?: string;
 
   @IsOptional()
   @IsString()
-  experienceRequired?: string;
+  salaryRangeMin?: string;
 
   @IsOptional()
   @IsString()
-  salary?: string;
-
-  @IsOptional()
-  @IsString()
-  qualifications?: string;
-
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  skills?: string[];
-
-  @IsOptional()
-  @IsString()
-  description?: string;
+  salaryRangeMax?: string;
 
   @IsOptional()
   @IsNumber()
@@ -43,22 +35,18 @@ export class EmploymentDto {
   vacancies?: number;
 
   @IsOptional()
-  @Type(() => Date)
-  lastDateToApply?: Date;
+  @IsBoolean()
+  insurance?: boolean;
 
   @IsOptional()
-  @IsString()
-  contactPerson?: string;
+  @IsBoolean()
+  paidoff?: boolean;
 
   @IsOptional()
-  @IsString()
-  contactNumber?: string;
+  @IsBoolean()
+  workFromHome?: boolean;
 
   @IsOptional()
-  @IsEmail()
-  email?: string;
-
-  @IsOptional()
-  @IsUrl()
-  website?: string;
+  @IsBoolean()
+  annualBonus?: boolean;
 }
