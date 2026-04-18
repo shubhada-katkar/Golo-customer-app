@@ -1,0 +1,29 @@
+stages:
+  - lint
+  - build
+
+# 1. LINT & TEST
+lint-and-test:
+  stage: lint
+  image: node:20-alpine
+  script:
+    - npm ci
+    - npm run lint
+    - npm test
+  only:
+    - branches
+    - merge_requests
+
+# 2. BUILD ANDROID (AAB)
+build-android:
+  stage: build
+  image: openjdk:17
+  script:
+    - cd android
+    - chmod +x gradlew
+    - ./gradlew bundleRelease
+  artifacts:
+    paths:
+      - android/app/build/outputs/bundle/release/app-release.aab
+  needs:
+    - lint-and-test
