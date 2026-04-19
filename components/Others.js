@@ -3,7 +3,7 @@ import { View, Text, TextInput, StyleSheet, ScrollView, TouchableOpacity } from 
 import { AntDesign } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 
-export default function Others({ formData, setFormData, category, onPrevious, template, price, selectedDays, selectedLocations }) {
+export default function Others({ formData, setFormData, category, onPrevious, template, price, selectedDays, selectedLocations, selectedDates, startDate, endDate }) {
   if (category?.id !== "others") return null;
   const navigation = useNavigation();
 
@@ -80,7 +80,7 @@ export default function Others({ formData, setFormData, category, onPrevious, te
         />
       </View>
 
-            <TouchableOpacity style={styles.nextBtn} onPress={() => {navigation.navigate("Preview", {template, category, formData, price, selectedDays, selectedLocations});}}>
+            <TouchableOpacity style={styles.nextBtn} onPress={() => {navigation.navigate("Preview", {template, category, formData, price, selectedDays, selectedLocations, selectedDates, startDate, endDate });}}>
                 <Text style={styles.nextText}>See Preview</Text>
             </TouchableOpacity>
     </View>
@@ -122,3 +122,4 @@ const styles = StyleSheet.create({
   },
   nextText: { color: "#fff", fontSize: 16, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
 });
+

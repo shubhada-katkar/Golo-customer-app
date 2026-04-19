@@ -231,7 +231,7 @@ export default function Registration({ navigation }) {
                     style={styles.profileImage}
                   />
                   <View style={styles.cameraIcon}>
-                    <MaterialIcons name="camera-alt" size={22} color="#ffffff" />
+                    <MaterialIcons name="camera-alt" size={18} color="#ffffff" />
                   </View>
                 </View>
               </TouchableOpacity>
@@ -352,6 +352,7 @@ const styles = StyleSheet.create({
     fontSize: width * 0.056,
     color: "#ffffff",
     fontFamily: "Medium",
+    lineHeight: Math.round(width * 0.056 * 1.5),
   },
   card: {
     backgroundColor: "#ffffff",
@@ -367,6 +368,7 @@ const styles = StyleSheet.create({
     marginTop: 6,
     fontSize: 16,
     fontFamily: "Medium",
+    lineHeight: Math.round(16 * 1.5),
   },
   scrollContainer: {
     flexGrow: 1,
@@ -401,6 +403,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#157a4f",
     fontFamily: "SemiBold",
+    lineHeight: Math.round(13 * 1.5),
   },
   verifyBtn: {
     backgroundColor: "#157a4f",
@@ -415,6 +418,7 @@ const styles = StyleSheet.create({
     color: "#ffffff",
     fontFamily: "Medium",
     fontSize: 13,
+    lineHeight: Math.round(13 * 1.5),
   },
   secondaryButton: {
     borderWidth: 1,
@@ -428,11 +432,13 @@ const styles = StyleSheet.create({
     color: "#157a4f",
     fontFamily: "Medium",
     fontSize: 16,
+    lineHeight: Math.round(16 * 1.5),
   },
   helpText: {
     color: "#157a4f",
     fontSize: 13,
     fontFamily: "Medium",
+    lineHeight: Math.round(13 * 1.5),
     marginTop: 2,
   },
   button: {
@@ -473,8 +479,8 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 14,
     right: 16,
-    backgroundColor: "#4b4a4a",
-    padding: 3,
+    backgroundColor: "#5c5c5c",
+    padding: 4,
     borderRadius: 20,
   },
   profileImage: {
@@ -486,7 +492,6 @@ const styles = StyleSheet.create({
   avatarWrapper: {
     position: "relative",
     alignSelf: "center",
-    marginBottom: 8,
   },
   centerContainer: {
     alignItems: "center",
@@ -505,10 +510,12 @@ const styles = StyleSheet.create({
   loginPrompt: {
     fontSize: 16,
     fontFamily: "Medium",
+    lineHeight: Math.round(16 * 1.5),
   },
   loginLink: {
     fontSize: 16,
     color: "#4caf50",
     fontFamily: "Medium",
+    lineHeight: Math.round(16 * 1.5),
   },
 });

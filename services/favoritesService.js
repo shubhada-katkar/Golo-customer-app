@@ -1,6 +1,12 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const FAVORITES_KEY = "favoriteAds";
+const FAVORITES_KEY_PREFIX = "favoriteAds";
+
+async function getFavoritesStorageKey() {
+  const customerId = await AsyncStorage.getItem("customerId");
+  const scope = customerId ? String(customerId) : "guest";
+  return `${FAVORITES_KEY_PREFIX}:${scope}`;
+}
 
 function getAdId(ad) {
   return String(ad?.adId || ad?._id || "");
@@ -20,7 +26,8 @@ function toFavoritePayload(ad) {
 }
 
 async function getFavoriteAds() {
-  const raw = await AsyncStorage.getItem(FAVORITES_KEY);
+  const key = await getFavoritesStorageKey();
+  const raw = await AsyncStorage.getItem(key);
   if (!raw) return [];
 
   try {
@@ -32,7 +39,8 @@ async function getFavoriteAds() {
 }
 
 async function saveFavoriteAds(items) {
-  await AsyncStorage.setItem(FAVORITES_KEY, JSON.stringify(items));
+  const key = await getFavoritesStorageKey();
+  await AsyncStorage.setItem(key, JSON.stringify(items));
 }
 
 async function isFavoriteAdId(adId) {

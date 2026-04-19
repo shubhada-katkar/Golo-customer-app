@@ -4,7 +4,7 @@ import { AntDesign } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
 import { useNavigation } from "@react-navigation/native";
 
-export default function Travel({ formData, setFormData, category, onPrevious, template, price, selectedDays, selectedLocations }) {
+export default function Travel({ formData, setFormData, category, onPrevious, template, price, selectedDays, selectedLocations, selectedDates, startDate, endDate }) {
   if (category?.id !== "travel") return null;
   const navigation = useNavigation();
 
@@ -157,7 +157,7 @@ export default function Travel({ formData, setFormData, category, onPrevious, te
           placeholder="Exclusions"
         />
       </View>
-      <TouchableOpacity style={styles.nextBtn} onPress={() => { navigation.navigate("Preview", { template, category, formData, price, selectedDays, selectedLocations }); }}>
+      <TouchableOpacity style={styles.nextBtn} onPress={() => { navigation.navigate("Preview", { template, category, formData, price, selectedDays, selectedLocations, selectedDates, startDate, endDate }); }}>
         <Text style={styles.nextText}>See Preview</Text>
       </TouchableOpacity>
     </View>
@@ -205,3 +205,4 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
 });
+

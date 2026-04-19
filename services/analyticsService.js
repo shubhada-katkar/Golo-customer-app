@@ -46,13 +46,33 @@ async function authorizedFetch(path, options = {}) {
 async function publicPost(path) {
   const baseUrl = normalizeBaseUrl();
   if (!baseUrl) {
+    console.warn("[Analytics] Base URL not configured");
     return;
   }
 
   try {
-    await fetch(`${baseUrl}${path}`, { method: "POST" });
-  } catch {
+    const token = await getToken();
+    const fullUrl = `${baseUrl}${path}`;
+    console.log(`[Analytics] Tracking: POST ${fullUrl}`);
+    
+    const response = await fetch(fullUrl, { 
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      }
+    });
+    
+    if (!response.ok) {
+      console.warn(`[Analytics] Tracking failed: ${response.status} ${response.statusText}`);
+      const text = await response.text();
+      console.warn(`[Analytics] Response: ${text}`);
+    } else {
+      console.log(`[Analytics] Tracking successful: ${path}`);
+    }
+  } catch (error) {
     // Analytics tracking should never block user actions.
+    console.error(`[Analytics] Tracking error for ${path}:`, error.message);
   }
 }
 
@@ -69,28 +89,120 @@ async function getAdAnalytics(adId) {
   return authorizedFetch(`/ads/${safeAdId}/analytics`, { method: "GET" });
 }
 
+async function getPublicAdAnalytics(adId) {
+  if (!adId) {
+    throw new Error("Ad id is required");
+  }
+
+  const baseUrl = normalizeBaseUrl();
+  if (!baseUrl) {
+    throw new Error("API URL is not configured");
+  }
+
+  const safeAdId = encodeURIComponent(adId);
+  const response = await fetch(`${baseUrl}/ads/${safeAdId}/public-analytics`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok || data?.success === false) {
+    const message =
+      (Array.isArray(data?.message) ? data.message.join(", ") : data?.message) ||
+      "Failed to fetch ad analytics";
+    throw new Error(message);
+  }
+
+  return data?.data;
+}
+
 async function trackAdCardClick(adId) {
-  if (!adId) return;
+  if (!adId) {
+    console.warn('[Analytics] trackAdCardClick: adId is empty');
+    return;
+  }
+  console.log('[Analytics] trackAdCardClick called with:', adId);
   const safeAdId = encodeURIComponent(adId);
   await publicPost(`/ads/${safeAdId}/analytics/card-click`);
 }
 
 async function trackContactClick(adId) {
-  if (!adId) return;
+  if (!adId) {
+    console.warn('[Analytics] trackContactClick: adId is empty');
+    return;
+  }
+  console.log('[Analytics] trackContactClick called with:', adId);
   const safeAdId = encodeURIComponent(adId);
   await publicPost(`/ads/${safeAdId}/analytics/contact-click`);
 }
 
 async function trackWishlistSave(adId) {
-  if (!adId) return;
+  if (!adId) {
+    console.warn('[Analytics] trackWishlistSave: adId is empty');
+    return;
+  }
+  console.log('[Analytics] trackWishlistSave called with:', adId);
   const safeAdId = encodeURIComponent(adId);
   await publicPost(`/ads/${safeAdId}/analytics/wishlist-save`);
+}
+
+async function deleteAd(adId) {
+  if (!adId) {
+    throw new Error('Ad ID is required');
+  }
+
+  const token = await getToken();
+  if (!token) {
+    throw new Error("Please login to delete an ad");
+  }
+
+  const baseUrl = normalizeBaseUrl();
+  if (!baseUrl) {
+    throw new Error("EXPO_PUBLIC_API_URL is not configured");
+  }
+
+  const safeAdId = encodeURIComponent(adId);
+  const response = await fetch(`${baseUrl}/ads/${safeAdId}`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok || data?.success === false) {
+    const message =
+      (Array.isArray(data?.message) ? data.message.join(", ") : data?.message) ||
+      "Failed to delete ad";
+    throw new Error(message);
+  }
+
+  return data?.data;
+}
+
+async function updateAd(adId, payload = {}) {
+  if (!adId) {
+    throw new Error("Ad ID is required");
+  }
+
+  return authorizedFetch(`/ads/${encodeURIComponent(adId)}`, {
+    method: "PUT",
+    body: JSON.stringify(payload || {}),
+  });
 }
 
 export {
   getMyAnalytics,
   getAdAnalytics,
+  getPublicAdAnalytics,
   trackAdCardClick,
   trackContactClick,
   trackWishlistSave,
+  deleteAd,
+  updateAd,
 };

@@ -1,11 +1,17 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Alert, Share } from "react-native";
+import {
+    View, Text, StyleSheet, TouchableOpacity, Alert, Share,
+    TextInput, Modal, ScrollView
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Linking } from "react-native";
 import { getAdId, isFavoriteAdId, toggleFavoriteAd } from "../services/favoritesService";
 
 export default function Template3Card({ ad, navigation }) {
     const [isFavorite, setIsFavorite] = useState(false);
+    const [showReportModal, setShowReportModal] = useState(false);
+    const [selectedReason, setSelectedReason] = useState(null);
+    const [details, setDetails] = useState("");
 
     useEffect(() => {
         const loadFavoriteState = async () => {
@@ -32,6 +38,11 @@ export default function Template3Card({ ad, navigation }) {
             adId: ad?.adId || ad?._id,
             sellerId: ad?.userId || ad?.user?.id,
             sellerName: ad?.contactInfo?.name || "Seller",
+            adRef: {
+                adId: ad?.adId || ad?._id,
+                title: ad?.title || "Ad",
+                image: ad?.images?.[0] || null,
+            },
         });
     };
 
@@ -83,63 +94,150 @@ export default function Template3Card({ ad, navigation }) {
         Linking.openURL(`tel:${cleanedNumber}`);
     };
     return (
-        <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() => navigation.navigate("AdDetails", { adId: ad._id })}
-            style={styles.card}
-        >
-            <View style={styles.topRow}>
-                <TouchableOpacity onPress={handleFavoriteToggle}>
-                    <Ionicons name={isFavorite ? "heart" : "heart-outline"} size={18} color={isFavorite ? "#e74c3c" : "#222"} />
-                </TouchableOpacity>
-                <TouchableOpacity onPress={handleShare}>
-                    <Ionicons name="share-social-outline" size={18} />
-                </TouchableOpacity>
-                <TouchableOpacity>
-                    <Ionicons name="flag-outline" size={20} color="#ce3d3d" />
-                </TouchableOpacity>
-            </View>
-
-            <Text style={styles.timeText}>
-                {new Date(ad.createdAt || Date.now()).toLocaleString()}
-            </Text>
-
-            <Text style={styles.title}>{ad.title}</Text>
-
-            <Text numberOfLines={3} style={styles.desc}>
-                {ad.description}
-            </Text>
-
-            <View style={styles.metaRow}>
-                <View style={styles.metaItem}>
-                    <Ionicons name="location-outline" size={14} />
-                    <Text style={styles.metaText}>{ad.location || ad.city}</Text>
+        <>
+            <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => navigation.navigate("AdDetails", { adId: ad._id })}
+                style={styles.card}
+            >
+                <View style={styles.topRow}>
+                    <TouchableOpacity onPress={handleFavoriteToggle}>
+                        <Ionicons name={isFavorite ? "heart" : "heart-outline"} size={18} color={isFavorite ? "#e74c3c" : "#222"} />
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={handleShare}>
+                        <Ionicons name="share-social-outline" size={18} />
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => setShowReportModal(true)}>
+                        <Ionicons name="flag-outline" size={20} color="#ce3d3d" />
+                    </TouchableOpacity>
                 </View>
-                <View style={styles.metaItem}>
-                    <Ionicons name="person" size={14} />
-                    <Text style={styles.metaText}>{ad.contactInfo?.name}</Text>
-                </View>
-            </View>
 
-            <View style={styles.priceStrip}>
-                <Text style={styles.priceText}>
-                    {ad.price ? `₹${ad.price}` : "Price Not Mentioned"}
+                <Text style={styles.timeText}>
+                    {new Date(ad.createdAt || Date.now()).toLocaleString()}
                 </Text>
-            </View>
 
-            <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 10 }}>
-                <TouchableOpacity style={styles.chatBtn} onPress={handleOpenChat}>
-                    <Text style={styles.btnText}>Chat</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={styles.callBtn}
-                    onPress={() => handleCall(ad.contactInfo?.phone)}
-                >
-                    <Text style={styles.btnText}>Call</Text>
-                </TouchableOpacity>
-            </View>
+                <Text style={styles.title}>{ad.title}</Text>
 
-        </TouchableOpacity>
+                <Text numberOfLines={3} style={styles.desc}>
+                    {ad.description}
+                </Text>
+
+                <View style={styles.metaRow}>
+                    <View style={styles.metaItem}>
+                        <Ionicons name="location-outline" size={14} />
+                        <Text style={styles.metaText}>{ad.location || ad.city}</Text>
+                    </View>
+                    <View style={styles.metaItem}>
+                        <Ionicons name="person" size={14} />
+                        <Text style={styles.metaText}>{ad.contactInfo?.name}</Text>
+                    </View>
+                </View>
+
+                <View style={styles.priceStrip}>
+                    <Text style={styles.priceText}>
+                        {ad.price ? `₹${ad.price}` : "Price Not Mentioned"}
+                    </Text>
+                </View>
+
+                <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 10 }}>
+                    <TouchableOpacity style={styles.chatBtn} onPress={handleOpenChat}>
+                        <Text style={styles.btnText}>Chat</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={styles.callBtn}
+                        onPress={() => handleCall(ad.contactInfo?.phone)}
+                    >
+                        <Text style={styles.btnText}>Call</Text>
+                    </TouchableOpacity>
+                </View>
+
+            </TouchableOpacity>
+
+
+            <Modal visible={showReportModal} transparent animationType="slide">
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContainer}>
+
+                        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}
+                            keyboardShouldPersistTaps="handled">
+
+                            <Text style={styles.modalTitle}>Report This Ad</Text>
+                            <Text style={styles.modalSubtitle}>Help us review suspicious listings.</Text>
+
+
+                            <Text style={styles.title}>Why are you reporting this ad?</Text>
+
+                            {[
+                                "Spam or Misleading",
+                                "Inappropriate Content",
+                                "Fraud or Scam",
+                                "Duplicate Posting",
+                                "Other",
+                            ].map((reason, index) => (
+                                <TouchableOpacity
+                                    key={index}
+                                    style={styles.option}
+                                    onPress={() => setSelectedReason(reason)}
+                                >
+                                    <Text
+                                        style={{ fontSize: 12, lineHeight: Math.round(12 * 1.5), fontFamily: "Medium" }}
+                                    >{reason}</Text>
+                                    <View style={[
+                                        styles.radio,
+                                        selectedReason === reason && styles.radioSelected
+                                    ]} />
+                                </TouchableOpacity>
+                            ))}
+
+                            <Text style={{
+                                fontSize: 12,
+                                lineHeight: Math.round(12 * 1.5),
+                                fontFamily: "Medium", marginTop: 10
+                            }}>Additional Details</Text>
+
+                            <TextInput
+                                placeholder="Please provide more details..."
+                                value={details}
+                                onChangeText={setDetails}
+                                multiline
+                                style={styles.textArea}
+                            />
+
+                            <View style={{ flexDirection: "row", marginTop: 12 }}>
+                                <TouchableOpacity
+                                    style={styles.cancelBtn}
+                                    onPress={() => setShowReportModal(false)}
+                                >
+                                    <Text style={{
+                                        fontFamily: "SemiBold",
+                                        lineHeight: Math.round(14 * 1.2), fontSize: 14
+                                    }}>Cancel</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    style={styles.submitBtn}
+                                    onPress={() => {
+                                        console.log({
+                                            adId: ad._id,
+                                            selectedReason,
+                                            details
+                                        });
+                                        setShowReportModal(false);
+                                    }}
+                                >
+                                    <Text style={{
+                                        fontFamily: "SemiBold",
+                                        lineHeight: Math.round(14 * 1.2), fontSize: 14
+                                    }}>Submit</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </ScrollView>
+
+                    </View>
+                </View>
+            </Modal>
+
+        </>
     );
 }
 
@@ -224,5 +322,87 @@ const styles = StyleSheet.create({
         fontWeight: "600",
         fontFamily: "Medium",
         lineHeight: Math.round(14 * 1.5)
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: "rgba(0,0,0,0.5)",
+        justifyContent: "center",
+        padding: 20,
+    },
+
+    modalContainer: {
+        backgroundColor: "#fff",
+        borderRadius: 16,
+        padding: 16,
+    },
+
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: "600",
+        lineHeight: Math.round(18 * 1.5),
+        fontFamily: "Medium",
+    },
+
+    modalSubtitle: {
+        color: "#666",
+        marginBottom: 10,
+        fontFamily: "Medium",
+        lineHeight: Math.round(12 * 1.5),
+        fontSize: 12,
+    },
+
+    option: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        padding: 12,
+        borderWidth: 1,
+        borderColor: "#000000",
+        borderRadius: 10,
+        marginTop: 8,
+    },
+
+    radio: {
+        width: 18,
+        height: 18,
+        borderRadius: 9,
+        borderWidth: 2,
+        borderColor: "#000000",
+    },
+
+    radioSelected: {
+        backgroundColor: "#157a4f",
+        borderColor: "#157a4f",
+    },
+
+    textArea: {
+        borderWidth: 1,
+        borderColor: "#000000",
+        borderRadius: 10,
+        padding: 10,
+        height: 80,
+        marginTop: 8,
+        fontSize: 12,
+        lineHeight: Math.round(12 * 1.5),
+        fontFamily: "Medium",
+    },
+
+    cancelBtn: {
+        flex: 1,
+        padding: 12,
+        alignItems: "center",
+        borderWidth: 1,
+        borderColor: "#000000",
+        borderRadius: 10,
+        marginRight: 6,
+    },
+
+    submitBtn: {
+        flex: 1,
+        padding: 12,
+        alignItems: "center",
+        borderWidth: 1,
+        borderColor: "#000000",
+        borderRadius: 10,
+        marginRight: 6,
     },
 });

@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { ChatsService } from './chats.service';
@@ -65,6 +65,31 @@ export class ChatsController {
     return {
       success: true,
       message: 'Conversation deleted successfully',
+    };
+  }
+
+  @Delete('conversations/:conversationId/messages')
+  async clearChat(
+    @CurrentUser() user: any,
+    @Param('conversationId') conversationId: string,
+  ) {
+    await this.chatsService.clearChat(user.id, conversationId);
+    return {
+      success: true,
+      message: 'Chat cleared successfully',
+    };
+  }
+
+  @Patch('conversations/:conversationId/pin')
+  async togglePinChat(
+    @CurrentUser() user: any,
+    @Param('conversationId') conversationId: string,
+  ) {
+    const data = await this.chatsService.togglePinChat(user.id, conversationId);
+    return {
+      success: true,
+      message: data.pinned ? 'Chat pinned' : 'Chat unpinned',
+      data,
     };
   }
 }

@@ -169,17 +169,6 @@ export default function ChojaHome() {
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                        onPress={() => setTab("I Want")}
-                        style={[
-                            styles.tabButton,
-                            tab === "I Want" && styles.activeTab]} >
-                        <Text style={[
-                            styles.text,
-                            tab === "I Want" && styles.activeText]} >
-                            I Want </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
                         onPress={() => setTab("My Ads")}
                         style={[
                             styles.tabButton,
@@ -188,6 +177,17 @@ export default function ChojaHome() {
                             styles.text,
                             tab === "My Ads" && styles.activeText]} >
                             My Ads </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        onPress={() => setTab("I Want")}
+                        style={[
+                            styles.tabButton,
+                            tab === "I Want" && styles.activeTab]} >
+                        <Text style={[
+                            styles.text,
+                            tab === "I Want" && styles.activeText]} >
+                            I Want </Text>
                     </TouchableOpacity>
 
                 </View>

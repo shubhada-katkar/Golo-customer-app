@@ -5,12 +5,13 @@ import {
     StyleSheet,
     TextInput,
     TouchableOpacity,
-    ScrollView,
     ActivityIndicator,
     Alert,
+    FlatList,
+    Image,
     KeyboardAvoidingView,
     Platform,
-    Image,
+    Modal,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
@@ -24,6 +25,8 @@ import {
     startConversation,
     uploadChatImage,
     deleteConversation,
+    clearChat,
+    togglePinChat,
 } from "../services/chatService";
 
 export default function ChatScreen({ navigation, route }) {
@@ -42,11 +45,14 @@ export default function ChatScreen({ navigation, route }) {
     const [typingUserId, setTypingUserId] = useState(null);
     const [uploadingImage, setUploadingImage] = useState(false);
     const [otherUserId, setOtherUserId] = useState("");
+    const [showMenu, setShowMenu] = useState(false);
+    const [isPinned, setIsPinned] = useState(false);
 
     const socketRef = useRef(null);
     const scrollRef = useRef(null);
     const activeConversationIdRef = useRef(route?.params?.conversationId || null);
     const sharedAdSentRef = useRef(false);
+    const adRefSentRef = useRef(false);
 
     const sellerName = conversation?.otherUser?.name || route?.params?.sellerName || "Chat";
 
@@ -65,15 +71,21 @@ export default function ChatScreen({ navigation, route }) {
             }
 
             return [...previous, message].sort(
-                (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+                (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
             );
+        });
+    }, []);
+
+    const scrollToLatest = useCallback((animated = true) => {
+        requestAnimationFrame(() => {
+            scrollRef.current?.scrollToOffset({ offset: 0, animated });
         });
     }, []);
 
     const loadConversationMessages = useCallback(async (targetConversationId) => {
         const data = await listMessages(targetConversationId, 1, 100);
         const items = Array.isArray(data?.items) ? data.items : [];
-        setMessages(items);
+        setMessages(items.reverse());
     }, []);
 
     useEffect(() => {
@@ -110,10 +122,15 @@ export default function ChatScreen({ navigation, route }) {
                     setConversation(finalConversation || null);
                     setConversationId(finalConversationId);
                     setOtherUserId(finalConversation?.otherUser?.id || "");
+
+                    const pinned = Array.isArray(finalConversation?.pinnedBy)
+                        && finalConversation.pinnedBy.includes(String(auth.userId));
+                    setIsPinned(!!pinned);
                 }
                 activeConversationIdRef.current = finalConversationId;
 
                 await loadConversationMessages(finalConversationId);
+                scrollToLatest(false);
 
                 const socket = await connectChatSocket();
                 socketRef.current = socket;
@@ -130,6 +147,12 @@ export default function ChatScreen({ navigation, route }) {
                 socket.on("new_message", (message) => {
                     if (message?.conversationId !== finalConversationId) return;
                     addOrMergeMessage(message);
+                    scrollToLatest(true);
+
+                    // If chat is open and an incoming message arrives, mark it as read immediately.
+                    if (String(message?.senderId) !== String(auth.userId)) {
+                        socket.emit("mark_read", { conversationId: finalConversationId });
+                    }
                 });
 
                 socket.on("presence_state", (payload) => {
@@ -154,16 +177,21 @@ export default function ChatScreen({ navigation, route }) {
                     if (!payload?.conversationId || payload.conversationId !== finalConversationId) return;
                     if (!Array.isArray(payload.messageIds)) return;
 
+                    const readerId = String(payload.readerId || "");
+                    const messageIds = payload.messageIds.map((id) => String(id));
+
                     setMessages((previous) =>
                         previous.map((msg) => {
-                            if (!payload.messageIds.includes(msg.id)) return msg;
+                            if (!messageIds.includes(String(msg.id))) return msg;
 
-                            const existingReadBy = Array.isArray(msg.readBy) ? msg.readBy : [];
-                            if (existingReadBy.includes(payload.readerId)) return msg;
+                            const existingReadBy = Array.isArray(msg.readBy)
+                                ? msg.readBy.map((id) => String(id))
+                                : [];
+                            if (!readerId || existingReadBy.includes(readerId)) return msg;
 
                             return {
                                 ...msg,
-                                readBy: [...existingReadBy, payload.readerId],
+                                readBy: [...existingReadBy, readerId],
                             };
                         }),
                     );
@@ -195,20 +223,13 @@ export default function ChatScreen({ navigation, route }) {
     }, [
         addOrMergeMessage,
         loadConversationMessages,
+        scrollToLatest,
         navigation,
         route?.params?.conversation,
         route?.params?.conversationId,
         route?.params?.adId,
         route?.params?.sellerId,
     ]);
-
-    useEffect(() => {
-        if (messages.length > 0) {
-            setTimeout(() => {
-                scrollRef.current?.scrollToEnd({ animated: true });
-            }, 100);
-        }
-    }, [messages]);
 
     const emitTyping = useCallback((isTyping) => {
         if (!conversationId || !socketRef.current?.connected) return;
@@ -261,6 +282,7 @@ export default function ChatScreen({ navigation, route }) {
             });
 
             addOrMergeMessage(message);
+            scrollToLatest(true);
             setInputText("");
             socketRef.current?.emit("mark_read", { conversationId });
         } catch (error) {
@@ -316,6 +338,7 @@ export default function ChatScreen({ navigation, route }) {
             });
 
             addOrMergeMessage(message);
+            scrollToLatest(true);
             socketRef.current?.emit("mark_read", { conversationId });
         } catch (error) {
             Alert.alert("Attachment Failed", error.message || "Could not send image");
@@ -345,6 +368,7 @@ export default function ChatScreen({ navigation, route }) {
 
                 if (!cancelled) {
                     addOrMergeMessage(message);
+                    scrollToLatest(true);
                     navigation.setParams({ _sharedOnce: true, shareAd: null });
                 }
             } catch (error) {
@@ -360,11 +384,63 @@ export default function ChatScreen({ navigation, route }) {
         return () => {
             cancelled = true;
         };
-    }, [addOrMergeMessage, conversationId, navigation, route?.params?.shareAd, route?.params?._sharedOnce]);
+    }, [addOrMergeMessage, conversationId, navigation, route?.params?.shareAd, route?.params?._sharedOnce, scrollToLatest]);
+
+    // ─── Auto-send ad reference card when chat opens from an ad ───
+    useEffect(() => {
+        let cancelled = false;
+
+        const sendAdReference = async () => {
+            try {
+                const adRef = route?.params?.adRef;
+                if (!adRef || !conversationId) return;
+                if (route?.params?._adRefSent || adRefSentRef.current) return;
+
+                adRefSentRef.current = true;
+
+                const message = await sendMessage(conversationId, {
+                    text: `📌 Ad Reference: ${adRef.title || "Ad"}`,
+                    adId: adRef.adId,
+                    attachments: adRef.image
+                        ? [
+                            {
+                                name: "ad-thumbnail.jpg",
+                                mimeType: "image/jpeg",
+                                url: adRef.image,
+                                type: "image",
+                            },
+                        ]
+                        : [],
+                });
+
+                if (!cancelled) {
+                    addOrMergeMessage(message);
+                    scrollToLatest(true);
+                    navigation.setParams({ _adRefSent: true, adRef: null });
+                }
+            } catch (error) {
+                adRefSentRef.current = false;
+                if (!cancelled) {
+                    Alert.alert("Reference Failed", error.message || "Could not send ad reference");
+                }
+            }
+        };
+
+        sendAdReference();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [addOrMergeMessage, conversationId, navigation, route?.params?.adRef, route?.params?._adRefSent, scrollToLatest]);
 
     const isSharedAdMessage = (message) => {
         const text = String(message?.text || "").toLowerCase();
         return text.startsWith("shared an ad:");
+    };
+
+    const isAdRefMessage = (message) => {
+        const text = String(message?.text || "");
+        return text.startsWith("📌 Ad Reference:");
     };
 
     const formatTime = (dateValue) => {
@@ -393,7 +469,47 @@ export default function ChatScreen({ navigation, route }) {
         return "offline";
     };
 
+    const handleClearChat = () => {
+        setShowMenu(false);
+        if (!conversationId) return;
+
+        Alert.alert(
+            "Clear chat",
+            "All messages in this conversation will be cleared. Continue?",
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Clear",
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            await clearChat(conversationId);
+                            setMessages([]);
+                        } catch (error) {
+                            Alert.alert("Clear Failed", error.message || "Could not clear chat");
+                        }
+                    },
+                },
+            ],
+        );
+    };
+
+    const handlePinChat = async () => {
+        setShowMenu(false);
+        if (!conversationId) return;
+
+        try {
+            const result = await togglePinChat(conversationId);
+            const pinned = result?.pinned ?? !isPinned;
+            setIsPinned(pinned);
+            Alert.alert(pinned ? "Pinned" : "Unpinned", pinned ? "This chat has been pinned." : "This chat has been unpinned.");
+        } catch (error) {
+            Alert.alert("Pin Failed", error.message || "Could not update pin status");
+        }
+    };
+
     const handleDeleteChat = () => {
+        setShowMenu(false);
         if (!conversationId) return;
 
         Alert.alert(
@@ -431,9 +547,9 @@ export default function ChatScreen({ navigation, route }) {
 
         <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
             <KeyboardAvoidingView
-                style={styles.container}
-                behavior={Platform.OS === "ios" ? "padding" : "height"}
-                keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 70}
+                style={{ flex: 1 }}
+                behavior={Platform.OS === "ios" ? "padding" : undefined}
+                keyboardVerticalOffset={0}
             >
                 <View style={styles.header}>
                     <TouchableOpacity onPress={() => navigation.goBack()}>
@@ -443,71 +559,113 @@ export default function ChatScreen({ navigation, route }) {
                         <Text style={styles.headerTitle}>{sellerName}</Text>
                         <Text style={styles.presenceText}>{renderPresence()}</Text>
                     </View>
-                    <TouchableOpacity onPress={handleDeleteChat}>
-                        <Text style={styles.deleteText}>Delete</Text>
-                    </TouchableOpacity>
+                    <View>
+                        <TouchableOpacity onPress={() => setShowMenu(true)}>
+                            <Ionicons name="ellipsis-vertical" size={22} color={colors.text} />
+                        </TouchableOpacity>
+                    </View>
                 </View>
 
-                <ScrollView
-                    ref={scrollRef}
-                    contentContainerStyle={{ padding: 16, paddingBottom: 10 }}
-                    keyboardShouldPersistTaps="handled"
-                    onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}
-                >
-                    {messages.length === 0 && (
-                        <View style={styles.systemMsg}>
-                            <Text>No messages yet. Start the conversation.</Text>
+                {/* Dropdown Menu */}
+                <Modal visible={showMenu} transparent animationType="fade">
+                    <TouchableOpacity
+                        style={styles.menuOverlay}
+                        activeOpacity={1}
+                        onPress={() => setShowMenu(false)}
+                    >
+                        <View style={styles.menuDropdown}>
+                            <TouchableOpacity style={styles.menuItem} onPress={handleClearChat}>
+                                <Ionicons name="trash-bin-outline" size={18} color="#333" />
+                                <Text style={styles.menuItemText}>Clear Chat</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.menuItem} onPress={handlePinChat}>
+                                <Ionicons name={isPinned ? "pin" : "pin-outline"} size={18} color="#333" />
+                                <Text style={styles.menuItemText}>{isPinned ? "Unpin Chat" : "Pin Chat"}</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={[styles.menuItem, styles.menuItemLast]} onPress={handleDeleteChat}>
+                                <Ionicons name="close-circle-outline" size={18} color="#c0392b" />
+                                <Text style={[styles.menuItemText, { color: "#c0392b" }]}>Delete Chat</Text>
+                            </TouchableOpacity>
                         </View>
-                    )}
+                    </TouchableOpacity>
+                </Modal>
 
-                    {messages.map((message) => {
+                <View style={{ flexDirection: "row", backgroundColor: colors.divider, height: 1, color: colors.divider }} />
+
+                <FlatList
+                    ref={scrollRef}
+                    data={messages}
+                    keyExtractor={(item) => item.id.toString()}
+                    inverted
+                    contentContainerStyle={{
+                        padding: 16,
+                        paddingTop: 10,
+                    }}
+                    initialNumToRender={20}
+                    maxToRenderPerBatch={20}
+                    windowSize={10}
+                    removeClippedSubviews={true}
+                    keyboardShouldPersistTaps="handled"
+                    renderItem={({ item: message }) => {
                         const isMine = String(message.senderId) === String(currentUserId);
+                        const adRef = isAdRefMessage(message);
+
                         return (
-                            <View
-                                key={message.id}
-                                style={isMine ? styles.rightBubble : styles.leftBubble}
-                            >
-                                <Text style={{ color: isMine ? "#ffffff" : "#111111" }}>
-                                    {message.text || "Attachment"}
-                                </Text>
-
-                                {Array.isArray(message.attachments) && message.attachments.length > 0 && (
-                                    <View style={styles.attachmentsWrap}>
-                                        {message.attachments.map((attachment, index) => (
-                                            <Image
-                                                key={`${message.id}-att-${index}`}
-                                                source={{ uri: attachment.url }}
-                                                style={styles.attachmentImage}
-                                            />
-                                        ))}
-                                    </View>
-                                )}
-
-                                {!!message?.adTitle && isSharedAdMessage(message) && (
+                            <View style={isMine ? styles.rightBubble : styles.leftBubble}>
+                                {adRef ? (
                                     <TouchableOpacity
-                                        style={styles.sharedAdCard}
+                                        style={styles.adRefCard}
+                                        activeOpacity={0.7}
                                         onPress={() => {
-                                            if (!message?.adId) {
-                                                Alert.alert("Ad not available", "This shared ad cannot be opened.");
-                                                return;
+                                            const refAdId = message.adId || message.ad?.id;
+                                            if (refAdId) {
+                                                navigation.navigate("AdDetails", { adId: refAdId });
                                             }
-                                            navigation.navigate("AdDetails", { adId: message.adId });
                                         }}
                                     >
-                                        {message?.adImage ? (
-                                            <Image source={{ uri: message.adImage }} style={styles.sharedAdImage} />
+                                        {Array.isArray(message.attachments) && message.attachments.length > 0 && message.attachments[0]?.url ? (
+                                            <Image
+                                                source={{ uri: message.attachments[0].url }}
+                                                style={styles.adRefImage}
+                                            />
                                         ) : null}
-                                        <Text style={[styles.sharedAdTitle, { color: isMine ? "#ffffff" : "#111111" }]}>
-                                            {message.adTitle}
+                                        <Text style={[styles.adRefTitle, { color: isMine ? "#fff" : "#111" }]}>
+                                            {String(message.text || "").replace(/^📌 Ad Reference:\s*/, "")}
+                                        </Text>
+                                        <Text style={[styles.adRefHint, { color: isMine ? "#d0f0e3" : "#888" }]}>
+                                            Tap to view ad
                                         </Text>
                                     </TouchableOpacity>
+                                ) : (
+                                    <>
+                                        <Text style={{
+                                            color: isMine ? "#ffffff" : "#111111", fontFamily: "Medium",
+                                            fontSize: 12, lineHeight: Math.round(12 * 1.5)
+                                        }}>
+                                            {message.text || "Attachment"}
+                                        </Text>
+
+                                        {Array.isArray(message.attachments) && message.attachments.length > 0 && (
+                                            <View style={styles.attachmentsWrap}>
+                                                {message.attachments.map((attachment, index) => (
+                                                    <Image
+                                                        key={`${message.id}-att-${index}`}
+                                                        source={{ uri: attachment.url }}
+                                                        style={styles.attachmentImage}
+                                                    />
+                                                ))}
+                                            </View>
+                                        )}
+                                    </>
                                 )}
 
                                 <Text style={[styles.msgTime, { color: isMine ? "#d0f0e3" : "#555" }]}>
                                     {formatTime(message.createdAt)}
                                     {isMine && (
                                         <Text>
-                                            {Array.isArray(message.readBy) && otherUserId && message.readBy.includes(otherUserId)
+                                            {Array.isArray(message.readBy) &&
+                                                otherUserId &&
+                                                message.readBy.map((id) => String(id)).includes(String(otherUserId))
                                                 ? "  ✓✓"
                                                 : "  ✓"}
                                         </Text>
@@ -515,8 +673,8 @@ export default function ChatScreen({ navigation, route }) {
                                 </Text>
                             </View>
                         );
-                    })}
-                </ScrollView>
+                    }}
+                />
 
                 <View style={styles.inputRow}>
                     <TouchableOpacity onPress={handleAttachImage} disabled={uploadingImage || sending}>
@@ -531,6 +689,7 @@ export default function ChatScreen({ navigation, route }) {
                         style={styles.input}
                         value={inputText}
                         onChangeText={handleInputChange}
+                        onFocus={() => scrollToLatest(false)}
                         editable={!sending && !uploadingImage}
                     />
                     <TouchableOpacity onPress={handleSend} disabled={sending || uploadingImage}>
@@ -556,17 +715,57 @@ const styles = StyleSheet.create({
         alignItems: "center",
         gap: 10,
     },
-    headerTitle: { fontSize: 20 },
+    headerTitle: {
+        fontSize: 20,
+        fontFamily: "SemiBold",
+        lineHeight: Math.round(20 * 1.5),
+    },
+
     presenceText: {
         color: "#4d4d4d",
         fontSize: 12,
         marginTop: 2,
+        fontFamily: "Medium",
+        lineHeight: Math.round(12 * 1.5),
     },
 
-    deleteText: {
+    menuOverlay: {
+        flex: 1,
+    },
+
+    menuDropdown: {
+        position: "absolute",
+        top: 42,
+        right: 0,
+        backgroundColor: "#fff",
+        paddingVertical: 6,
+        minWidth: 180,
+        elevation: 6,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 6,
+    },
+
+    menuItem: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 10,
+        paddingVertical: 14,
+        paddingHorizontal: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: "#f0f0f0",
+    },
+
+    menuItemLast: {
+        borderBottomWidth: 0,
+    },
+
+    menuItemText: {
         fontSize: 14,
-        color: "#c0392b",
-        fontFamily: "SemiBold",
+        fontFamily: "Medium",
+        lineHeight: Math.round(14 * 1.5),
+        color: "#333",
     },
 
     systemMsg: {
@@ -599,6 +798,8 @@ const styles = StyleSheet.create({
         marginTop: 4,
         fontSize: 11,
         textAlign: "right",
+        fontFamily: "Medium",
+        lineHeight: Math.round(11 * 1.5),
     },
 
     attachmentsWrap: {
@@ -631,6 +832,36 @@ const styles = StyleSheet.create({
     sharedAdTitle: {
         fontSize: 13,
         fontFamily: "Medium",
+        lineHeight: Math.round(13 * 1.5),
+    },
+
+    adRefCard: {
+        borderWidth: 1,
+        borderColor: "rgba(255,255,255,0.25)",
+        borderRadius: 10,
+        padding: 6,
+        backgroundColor: "rgba(0,0,0,0.06)",
+    },
+
+    adRefImage: {
+        width: "100%",
+        height: 120,
+        borderRadius: 8,
+        marginBottom: 6,
+        backgroundColor: "#d4d4d4",
+    },
+
+    adRefTitle: {
+        fontSize: 14,
+        fontFamily: "SemiBold",
+        lineHeight: Math.round(14 * 1.5),
+    },
+
+    adRefHint: {
+        fontSize: 11,
+        marginTop: 4,
+        fontFamily: "Medium",
+        lineHeight: Math.round(11 * 1.5),
     },
 
     inputRow: {

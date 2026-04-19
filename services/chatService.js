@@ -3,7 +3,8 @@ import { io } from "socket.io-client";
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 const SOCKET_BASE_URL = process.env.EXPO_PUBLIC_CHAT_SOCKET_URL;
-const CHAT_UPLOAD_URL = process.env.EXPO_PUBLIC_CHAT_UPLOAD_URL || "https://0x0.st";
+const CHAT_UPLOAD_URL = process.env.EXPO_PUBLIC_CHAT_UPLOAD_URL || "";
+const CHAT_UPLOAD_PATH = process.env.EXPO_PUBLIC_CHAT_UPLOAD_PATH || "/ads/upload/image";
 
 function normalizeBaseUrl() {
   return (BASE_URL || "").replace(/\/+$/, "");
@@ -49,6 +50,40 @@ async function authorizedFetch(path, options = {}) {
   return data?.data;
 }
 
+async function authorizedMultipartFetch(path, formData) {
+  const { token } = await getAuthContext();
+  if (!token) {
+    throw new Error("Please login to use chat");
+  }
+
+  const baseUrl = normalizeBaseUrl();
+  if (!baseUrl) {
+    throw new Error("EXPO_PUBLIC_API_URL is not configured");
+  }
+
+  const requestUrl = /^https?:\/\//i.test(path)
+    ? path
+    : `${baseUrl}${path.startsWith("/") ? path : `/${path}`}`;
+
+  const response = await fetch(requestUrl, {
+    method: "POST",
+    body: formData,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || data?.success === false) {
+    const message =
+      (Array.isArray(data?.message) ? data.message.join(", ") : data?.message) ||
+      "Image upload failed";
+    throw new Error(message);
+  }
+
+  return data?.data || data;
+}
+
 async function listConversations() {
   return authorizedFetch("/chats/conversations", { method: "GET" });
 }
@@ -80,6 +115,20 @@ async function deleteConversation(conversationId) {
   const safeConversationId = encodeURIComponent(conversationId);
   return authorizedFetch(`/chats/conversations/${safeConversationId}`, {
     method: "DELETE",
+  });
+}
+
+async function clearChat(conversationId) {
+  const safeConversationId = encodeURIComponent(conversationId);
+  return authorizedFetch(`/chats/conversations/${safeConversationId}/messages`, {
+    method: "DELETE",
+  });
+}
+
+async function togglePinChat(conversationId) {
+  const safeConversationId = encodeURIComponent(conversationId);
+  return authorizedFetch(`/chats/conversations/${safeConversationId}/pin`, {
+    method: "PATCH",
   });
 }
 
@@ -120,22 +169,19 @@ async function uploadChatImage(localUri, fileName = "image.jpg", mimeType = "ima
     type: mimeType,
   });
 
-  const response = await fetch(CHAT_UPLOAD_URL, {
-    method: "POST",
-    body: formData,
-  });
+  const uploadResponse = await authorizedMultipartFetch(CHAT_UPLOAD_URL || CHAT_UPLOAD_PATH, formData);
+  const uploadedUrl =
+    uploadResponse?.url ||
+    uploadResponse?.secure_url ||
+    uploadResponse?.imageUrl ||
+    uploadResponse?.image?.url ||
+    "";
 
-  const text = (await response.text()).trim();
-
-  if (!response.ok || !text) {
-    throw new Error("Image upload failed");
+  if (!/^https?:\/\//i.test(uploadedUrl)) {
+    throw new Error("Upload did not return a valid image URL");
   }
 
-  if (!/^https?:\/\//i.test(text)) {
-    throw new Error("Upload did not return a public URL");
-  }
-
-  return text;
+  return uploadedUrl;
 }
 
 export {
@@ -145,6 +191,8 @@ export {
   listMessages,
   sendMessage,
   deleteConversation,
+  clearChat,
+  togglePinChat,
   uploadChatImage,
   connectChatSocket,
 };

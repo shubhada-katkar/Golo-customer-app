@@ -514,7 +514,7 @@ export class AdsController {
       const pageNum = parseInt(page, 10);
       const limitNum = parseInt(limit, 10);
 
-      const result = await this.adsService.getAdsByUser(user.id, pageNum, limitNum, category);
+      const result = await this.adsService.getAdsByUser(user.id, pageNum, limitNum, category, true);
 
       return {
         success: true,
@@ -596,6 +596,33 @@ export class AdsController {
   }
 
   /**
+   * Get public ad analytics (anyone can view views/stats)
+   */
+  @Get(':adId/public-analytics')
+  async getPublicAdAnalytics(@Param('adId') adId: string) {
+    this.logger.log(`REST: Getting public ad analytics for ad: ${adId}`);
+
+    try {
+      const data = await this.adsService.getPublicAdAnalytics(adId);
+
+      return {
+        success: true,
+        data,
+        timestamp: new Date().toISOString(),
+      };
+    } catch (error) {
+      this.logger.error(`REST: Error getting public ad analytics: ${error.message}`);
+
+      return {
+        success: false,
+        message: 'Failed to get ad analytics',
+        error: error.message,
+        timestamp: new Date().toISOString(),
+      };
+    }
+  }
+
+  /**
    * Get ads by specific user (public - anyone can view)
    */
   @Get('user/:userId')
@@ -610,7 +637,7 @@ export class AdsController {
       const pageNum = parseInt(page, 10);
       const limitNum = parseInt(limit, 10);
 
-      const result = await this.adsService.getAdsByUser(userId, pageNum, limitNum);
+      const result = await this.adsService.getAdsByUser(userId, pageNum, limitNum, undefined, false);
 
       return {
         success: true,
@@ -1081,8 +1108,10 @@ export class AdsController {
    */
   @Post(':adId/analytics/card-click')
   @HttpCode(HttpStatus.OK)
-  async trackAdCardClick(@Param('adId') adId: string) {
-    await this.adsService.incrementCardClick(adId);
+  async trackAdCardClick(@Param('adId') adId: string, @Req() req: Request) {
+    console.log(`[ANALYTICS ENDPOINT] Card click received for ad: ${adId}`);
+    const authHeader = typeof req.headers?.authorization === 'string' ? req.headers.authorization : undefined;
+    await this.adsService.incrementCardClick(adId, authHeader);
     return {
       success: true,
       message: 'Ad card click tracked',
@@ -1096,6 +1125,7 @@ export class AdsController {
   @Post(':adId/analytics/contact-click')
   @HttpCode(HttpStatus.OK)
   async trackContactClick(@Param('adId') adId: string) {
+    console.log(`[ANALYTICS ENDPOINT] Contact click received for ad: ${adId}`);
     await this.adsService.incrementContactClick(adId);
     return {
       success: true,
@@ -1110,6 +1140,7 @@ export class AdsController {
   @Post(':adId/analytics/wishlist-save')
   @HttpCode(HttpStatus.OK)
   async trackWishlistSave(@Param('adId') adId: string) {
+    console.log(`[ANALYTICS ENDPOINT] Wishlist save received for ad: ${adId}`);
     await this.adsService.incrementWishlistSave(adId);
     return {
       success: true,

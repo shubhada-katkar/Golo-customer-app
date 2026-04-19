@@ -32,6 +32,9 @@ export class Conversation {
   @Prop({ default: 0 })
   messagesCount: number;
 
+  @Prop({ type: [String], default: [] })
+  pinnedBy: string[];
+
   @Prop()
   createdAt: Date;
 

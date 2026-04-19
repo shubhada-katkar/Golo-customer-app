@@ -38,7 +38,7 @@ export default function JahiratiCategory({ navigation }) {
                     Post Your Ads Instantly Online
                 </Text>
 
-                <Text style={{ marginTop: 10, marginLeft: 10, fontSize: width * 0.04, fontFamily: "Italic" }}>
+                <Text style={{ marginTop: 10, marginLeft: 10, fontSize: width * 0.04, fontFamily: "Italic", lineHeight: Math.round(16 * 1.5) }}>
                     Select Ad Categories</Text>
 
                 {/*Row : 1*/}
@@ -171,7 +171,10 @@ export default function JahiratiCategory({ navigation }) {
                         onPress={() => setSelectedCategory({ id: "personal", label: "Personal" })}>
                         <MaterialIcons name="person" size={20} />
                         <Text style={styles.text}>
-                            Personal Achievements
+                            Personal
+                        </Text>
+                        <Text style={styles.text}>
+                            Achievements
                         </Text>
                     </TouchableOpacity>
                 </View>
@@ -246,7 +249,8 @@ const styles = StyleSheet.create({
     },
     text: {
         fontSize: 11,
-        fontFamily: "Medium"
+        fontFamily: "Medium",
+        lineHeight: Math.round(11 * 1.5),
     },
     selectedComponent: {
         borderWidth: 1.5,

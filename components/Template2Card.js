@@ -6,6 +6,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { Linking } from "react-native";
 import { getAdId, isFavoriteAdId, toggleFavoriteAd } from "../services/favoritesService";
+import { ScrollView } from "react-native-gesture-handler";
 
 export default function Template2Card({ ad, navigation }) {
     const [isFavorite, setIsFavorite] = useState(false);
@@ -38,6 +39,11 @@ export default function Template2Card({ ad, navigation }) {
             adId: ad?.adId || ad?._id,
             sellerId: ad?.userId || ad?.user?.id,
             sellerName: ad?.contactInfo?.name || "Seller",
+            adRef: {
+                adId: ad?.adId || ad?._id,
+                title: ad?.title || "Ad",
+                image: ad?.images?.[0] || null,
+            },
         });
     };
 
@@ -155,77 +161,82 @@ export default function Template2Card({ ad, navigation }) {
             </TouchableOpacity>
 
             <Modal visible={showReportModal} transparent animationType="slide">
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalContainer}>
 
-                        <Text style={styles.modalTitle}>Report This Ad</Text>
-                        <Text style={styles.modalSubtitle}>Help us review suspicious listings.</Text>
+                    <View style={styles.modalOverlay}>
+                        <View style={styles.modalContainer}>
 
-                        <View style={styles.reportBox}>
-                            <Text style={{ fontSize: 12, color: "#777", fontFamily: "Medium", lineHeight: Math.round(12 * 1.5) }}>REPORTING AD</Text>
-                            <Text style={styles.title}>{ad.title}</Text>
-                        </View>
+                            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}
+                                keyboardShouldPersistTaps="handled">
 
-                        <Text style={styles.title}>Why are you reporting this ad?</Text>
+                                <Text style={styles.modalTitle}>Report This Ad</Text>
+                                <Text style={styles.modalSubtitle}>Help us review suspicious listings.</Text>
 
-                        {[
-                            "Spam or Misleading",
-                            "Inappropriate Content",
-                            "Fraud or Scam",
-                            "Duplicate Posting",
-                            "Other",
-                        ].map((reason, index) => (
-                            <TouchableOpacity
-                                key={index}
-                                style={styles.option}
-                                onPress={() => setSelectedReason(reason)}
-                            >
-                                <Text style={{ fontSize: 13, lineHeight: Math.round(13 * 1.5), fontFamily: "Medium" }}>{reason}</Text>
-                                <View style={[
-                                    styles.radio,
-                                    selectedReason === reason && styles.radioSelected
-                                ]} />
-                            </TouchableOpacity>
-                        ))}
+                                <Text style={styles.title}>Why are you reporting this ad?</Text>
 
-                        <Text style={[styles.title, { paddingVertical: 10 }]}>Additional Details (Optional)</Text>
+                                {[
+                                    "Spam or Misleading",
+                                    "Inappropriate Content",
+                                    "Fraud or Scam",
+                                    "Duplicate Posting",
+                                    "Other",
+                                ].map((reason, index) => (
+                                    <TouchableOpacity
+                                        key={index}
+                                        style={styles.option}
+                                        onPress={() => setSelectedReason(reason)}
+                                    >
+                                        <Text style={{ fontSize: 12, lineHeight: Math.round(12 * 1.5), fontFamily: "Medium" }}>{reason}</Text>
+                                        <View style={[
+                                            styles.radio,
+                                            selectedReason === reason && styles.radioSelected
+                                        ]} />
+                                    </TouchableOpacity>
+                                ))}
 
-                        <TextInput
-                            placeholder="Please provide more details..."
-                            value={details}
-                            onChangeText={setDetails}
-                            multiline
-                            maxLength={500}
-                            style={styles.textArea}
-                        />
-
-                        <View style={styles.buttonRow}>
-                            <TouchableOpacity
-                                style={styles.cancelBtn}
-                                onPress={() => setShowReportModal(false)}
-                            >
                                 <Text style={{
-                                    fontFamily: "SemiBold",
-                                    lineHeight: Math.round(14 * 1.2), fontSize: 14
-                                }}>Cancel</Text>
-                            </TouchableOpacity>
+                                    fontSize: 12,
+                                    lineHeight: Math.round(12 * 1.5),
+                                    fontFamily: "Medium",
+                                    marginTop: 10
+                                }}>Additional Details (Optional)</Text>
 
-                            <TouchableOpacity
-                                style={styles.submitBtn}
-                                onPress={() => {
-                                    console.log({ adId: ad._id, selectedReason, details });
-                                    setShowReportModal(false);
-                                }}
-                            >
-                                <Text style={{
-                                    color: "#fff", fontFamily: "SemiBold",
-                                    lineHeight: Math.round(14 * 1.2), fontSize: 14
-                                }}>Submit Report</Text>
-                            </TouchableOpacity>
+                                <TextInput
+                                    placeholder="Please provide more details..."
+                                    value={details}
+                                    onChangeText={setDetails}
+                                    multiline
+                                    maxLength={500}
+                                    style={styles.textArea}
+                                />
+
+                                <View style={styles.buttonRow}>
+                                    <TouchableOpacity
+                                        style={styles.cancelBtn}
+                                        onPress={() => setShowReportModal(false)}
+                                    >
+                                        <Text style={{
+                                            fontFamily: "SemiBold",
+                                            lineHeight: Math.round(14 * 1.2), fontSize: 14
+                                        }}>Cancel</Text>
+                                    </TouchableOpacity>
+
+                                    <TouchableOpacity
+                                        style={styles.submitBtn}
+                                        onPress={() => {
+                                            console.log({ adId: ad._id, selectedReason, details });
+                                            setShowReportModal(false);
+                                        }}
+                                    >
+                                        <Text style={{
+                                            fontFamily: "SemiBold",
+                                            lineHeight: Math.round(14 * 1.2), fontSize: 14
+                                        }}>Submit Report</Text>
+                                    </TouchableOpacity>
+                                </View>
+
+                            </ScrollView>
                         </View>
-
                     </View>
-                </View>
             </Modal>
 
         </>
@@ -345,8 +356,8 @@ const styles = StyleSheet.create({
         color: "#666",
         marginBottom: 10,
         fontFamily: "Medium",
-        fontSize: 13,
-        lineHeight: Math.round(13 * 1.5)
+        fontSize: 12,
+        lineHeight: Math.round(12 * 1.5)
     },
 
     reportBox: {
@@ -361,7 +372,7 @@ const styles = StyleSheet.create({
         justifyContent: "space-between",
         padding: 12,
         borderWidth: 1,
-        borderColor: "#ddd",
+        borderColor: "#000000",
         borderRadius: 10,
         marginTop: 8,
     },
@@ -371,7 +382,7 @@ const styles = StyleSheet.create({
         height: 18,
         borderRadius: 9,
         borderWidth: 2,
-        borderColor: "#999",
+        borderColor: "#000000",
     },
 
     radioSelected: {
@@ -384,7 +395,7 @@ const styles = StyleSheet.create({
     },
     textArea: {
         borderWidth: 1,
-        borderColor: "#ddd",
+        borderColor: "#000000",
         borderRadius: 10,
         padding: 10,
         height: 80,
@@ -400,18 +411,17 @@ const styles = StyleSheet.create({
         alignItems: "center",
         borderRadius: 10,
         borderWidth: 1,
-        borderColor: "#ccc",
+        borderColor: "#000000",
         marginRight: 6,
     },
 
     submitBtn: {
         flex: 1,
-        backgroundColor: "#999",
         padding: 12,
         alignItems: "center",
         borderRadius: 10,
-        marginLeft: 6,
+        borderWidth: 1,
+        borderColor: "#000000",
+        marginRight: 6,
     },
-
-
 });

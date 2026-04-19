@@ -228,24 +228,11 @@ export class UsersService {
     this.logger.log(`Updating profile for user: ${userId}`);
     this.logger.debug(`Update data received: ${JSON.stringify(updateData)}`);
     
-    // Check if email is being changed and if it's already taken
-    if (updateData.email) {
-      this.logger.log(`Checking if email ${updateData.email} is already in use`);
-      const existingUser = await this.userModel.findOne({ 
-        email: updateData.email,
-        _id: { $ne: userId }
-      }).exec();
-      
-      if (existingUser) {
-        throw new ConflictException('Email is already in use');
-      }
-    }
-    
     // Only allow updating specific fields
     const allowedUpdates: any = {};
     
     if (updateData.name) allowedUpdates.name = updateData.name;
-    if (updateData.email) allowedUpdates.email = updateData.email;
+    if (updateData.phone) allowedUpdates['profile.phone'] = updateData.phone;
     if (updateData.profile?.phone) allowedUpdates['profile.phone'] = updateData.profile.phone;
     if (updateData.profile?.address) allowedUpdates['profile.address'] = updateData.profile.address;
     if (updateData.profile?.city) allowedUpdates['profile.city'] = updateData.profile.city;
@@ -281,6 +268,126 @@ export class UsersService {
     }
 
     return this.toResponseDto(user);
+  }
+
+  async sendEmailChangeOtp(userId: string, email: string): Promise<any> {
+    if (!email || !String(email).trim()) {
+      throw new BadRequestException('Email is required');
+    }
+
+    const user = await this.userModel.findById(userId).exec();
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const normalizedEmail = this.normalizeEmail(email);
+    if (normalizedEmail === this.normalizeEmail(user.email)) {
+      throw new BadRequestException('This is already your current email');
+    }
+
+    const existingUser = await this.userModel.findOne({
+      email: normalizedEmail,
+      _id: { $ne: userId },
+    }).exec();
+
+    if (existingUser) {
+      throw new ConflictException('Email is already in use');
+    }
+
+    const otp = this.generateOTP();
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+    const purpose = `email_change:${userId}`;
+
+    await this.emailOtpModel.findOneAndUpdate(
+      { email: normalizedEmail, purpose },
+      {
+        $set: {
+          otp,
+          expiresAt,
+          verified: false,
+        },
+        $setOnInsert: {
+          email: normalizedEmail,
+          purpose,
+        },
+      },
+      {
+        upsert: true,
+        new: true,
+      },
+    ).exec();
+
+    await this.sendOtpEmail(
+      normalizedEmail,
+      otp,
+      'GOLO email change OTP',
+      'Use this OTP to verify your new email for your GOLO account.',
+    );
+
+    return {
+      email: normalizedEmail,
+      expiresIn: 300,
+    };
+  }
+
+  async verifyEmailChangeOtp(userId: string, email: string, otp: string): Promise<UserResponseDto> {
+    if (!email || !String(email).trim()) {
+      throw new BadRequestException('Email is required');
+    }
+
+    if (!otp || !String(otp).trim()) {
+      throw new BadRequestException('OTP is required');
+    }
+
+    const user = await this.userModel.findById(userId).exec();
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const normalizedEmail = this.normalizeEmail(email);
+    const purpose = `email_change:${userId}`;
+
+    const entry = await this.emailOtpModel
+      .findOne({ email: normalizedEmail, purpose })
+      .exec();
+
+    if (!entry) {
+      throw new BadRequestException('No OTP found. Please request a new one.');
+    }
+
+    if (new Date() > entry.expiresAt) {
+      await this.emailOtpModel.deleteOne({ _id: entry._id }).exec();
+      throw new BadRequestException('OTP has expired. Please request a new one.');
+    }
+
+    if (entry.otp !== otp) {
+      throw new UnauthorizedException('Invalid OTP');
+    }
+
+    const existingUser = await this.userModel.findOne({
+      email: normalizedEmail,
+      _id: { $ne: userId },
+    }).exec();
+
+    if (existingUser) {
+      throw new ConflictException('Email is already in use');
+    }
+
+    const updatedUser = await this.userModel.findByIdAndUpdate(
+      userId,
+      {
+        $set: {
+          email: normalizedEmail,
+          isEmailVerified: true,
+          updatedAt: new Date(),
+        },
+      },
+      { new: true },
+    ).exec();
+
+    await this.emailOtpModel.deleteOne({ _id: entry._id }).exec();
+
+    return this.toResponseDto(updatedUser);
   }
 
   async findById(userId: string): Promise<UserResponseDto> {
@@ -342,6 +449,47 @@ export class UsersService {
       
       this.logger.error(`Unexpected error getting user ${userId}: ${error.message}`);
       throw new InternalServerErrorException('Failed to get user');
+    }
+  }
+
+  async getPublicUserById(userId: string): Promise<any> {
+    try {
+      this.logger.log(`Getting public user by ID: ${userId}`);
+      
+      if (!userId || !userId.match(/^[0-9a-fA-F]{24}$/)) {
+        throw new BadRequestException('Invalid user ID format');
+      }
+      
+      const user = await this.userModel.findById(userId).exec();
+      
+      if (!user) {
+        throw new NotFoundException(`User with ID ${userId} not found`);
+      }
+      
+      // Select safe fields to expose to guests
+      return {
+        id: user._id.toString(),
+        name: user.name,
+        role: user.role,
+        profile: {
+          avatar: user.profile?.avatar || null,
+          phone: user.profile?.phone || null,
+          city: user.profile?.city || null,
+          state: user.profile?.state || null,
+          bio: user.profile?.bio || null,
+        },
+        createdAt: user.createdAt,
+      };
+      
+    } catch (error) {
+      if (error.name === 'CastError') {
+        throw new BadRequestException('Invalid user ID format');
+      }
+      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+        throw error;
+      }
+      
+      throw new InternalServerErrorException('Failed to get public user stats');
     }
   }
 

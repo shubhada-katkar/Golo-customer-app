@@ -6,6 +6,208 @@ import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+const CATEGORY_DTO_FIELD_BY_LABEL = {
+    Vehicle: "vehicleData",
+    Property: "propertyData",
+    Service: "serviceData",
+    Mobiles: "mobileData",
+    "Electronics & Home appliances": "electronicsData",
+    Furniture: "furnitureData",
+    Education: "educationData",
+    Pets: "petsData",
+    Matrimonial: "matrimonialData",
+    Business: "businessData",
+    Travel: "travelData",
+    Astrology: "astrologyData",
+    Employment: "employmentData",
+    "Lost & Found": "lostFoundData",
+    Personal: "personalData",
+    Greetings: "greetingsData",
+    Others: "othersData",
+    "Public Notice": "publicNoticeData",
+};
+
+const CATEGORY_PAYLOAD_RULES = {
+    vehicleData: {
+        allow: [
+            "type", "vehicleType", "vehicleType2", "brand", "brand2", "model", "variant",
+            "year", "kilometersDriven", "fuelType", "transmission", "ownership", "insurance",
+            "condition", "price", "perDayRentAmount", "securityDeposit", "includesDriver", "minRentalDuration",
+        ],
+        number: ["year", "kilometersDriven", "price", "perDayRentAmount", "securityDeposit"],
+    },
+    propertyData: {
+        allow: [
+            "noticeType", "propertyType", "bhk", "builtUpArea", "bathrooms", "floor", "propertyAge",
+            "furnishing", "condition", "facingSide", "price", "monthlyRentAmount", "securityDeposit",
+            "maintenanceAmount", "availableFrom", "tenantType", "leaseDuration",
+        ],
+        string: [
+            "noticeType", "propertyType", "bhk", "builtUpArea", "bathrooms", "floor", "propertyAge",
+            "furnishing", "condition", "facingSide", "price", "monthlyRentAmount", "securityDeposit",
+            "maintenanceAmount", "availableFrom", "tenantType", "leaseDuration",
+        ],
+    },
+    serviceData: {
+        allow: ["serviceCategory", "experience", "serviceArea", "availableTime", "charges", "emergencyService", "serviceBio"],
+        boolean: ["emergencyService"],
+    },
+    mobileData: {
+        allow: ["brand", "model", "condition", "warranty", "price", "negotiable"],
+        number: ["price"],
+        boolean: ["negotiable"],
+    },
+    electronicsData: {
+        allow: ["electronicsType", "brand", "modelNumber", "warrantyRemaining", "capacity", "condition", "negotiable", "price"],
+        string: ["electronicsType", "brand", "modelNumber", "warrantyRemaining", "capacity", "condition", "price"],
+        boolean: ["negotiable"],
+    },
+    furnitureData: {
+        allow: ["furnitureType", "material", "size", "condition", "negotiable", "price"],
+        number: ["price"],
+        boolean: ["negotiable"],
+    },
+    educationData: {
+        allow: ["courseType", "modeOfEducation", "demoAvailable", "class", "subject", "institute", "duration", "fees", "experience", "qualification"],
+        number: ["fees"],
+    },
+    petsData: {
+        allow: ["species", "breed", "age", "gender", "weight", "friendly", "quiet", "active", "protective", "kidfriendly", "specialDiet"],
+        boolean: ["friendly", "quiet", "active", "protective", "kidfriendly"],
+    },
+    matrimonialData: {
+        allow: ["profileFor", "name", "age", "gender", "maritalStatus", "religion", "caste", "education", "occupation", "annualIncome", "height", "location", "aboutMe", "partnerPreference"],
+        number: ["age"],
+    },
+    businessData: {
+        allow: ["businessName", "businessType", "serviceOffered", "gstNumber", "websiteUrl", "socialMediaLinks", "campaignName", "validTill", "description", "shopAddress"],
+        array: ["socialMediaLinks"],
+    },
+    travelData: {
+        allow: ["courseType", "destination", "duration", "travelDate", "price", "availableSeats", "pickupLocation", "inclusions", "exclusions"],
+        string: ["price"],
+    },
+    astrologyData: {
+        allow: ["horoscope", "kundli", "vaastu", "palm", "experience", "language", "contactMethod", "demoAvailable", "fee", "availabilityTime"],
+        boolean: ["horoscope", "kundli", "vaastu", "palm"],
+    },
+    employmentData: {
+        allow: ["employmentType", "experienceLevel", "industry", "salaryRangeMin", "salaryRangeMax", "vacancies", "insurance", "paidoff", "workFromHome", "annualBonus"],
+        number: ["vacancies"],
+        boolean: ["insurance", "paidoff", "workFromHome", "annualBonus"],
+    },
+    lostFoundData: {
+        allow: ["condition", "itemName", "itemType", "date", "location", "description", "reward", "contactDetails"],
+    },
+    personalData: {
+        allow: ["name", "gender", "age", "achievementTitle", "description", "contact"],
+    },
+    greetingsData: {
+        allow: ["noticeType", "relationType", "name", "age", "year", "wishes", "from", "name2", "age2", "year2", "summary", "funeralDetails"],
+    },
+    othersData: {
+        allow: ["title", "description", "price"],
+        string: ["price"],
+    },
+    publicNoticeData: {
+        allow: ["noticetype", "issuingAuthority", "referenceNumber", "publishDate", "expiryDate", "detailedNotice", "pdf"],
+    },
+};
+
+function toBoolean(value) {
+    if (typeof value === "boolean") return value;
+    if (typeof value === "string") {
+        const normalized = value.trim().toLowerCase();
+        if (normalized === "true" || normalized === "yes" || normalized === "1") return true;
+        if (normalized === "false" || normalized === "no" || normalized === "0") return false;
+    }
+    return undefined;
+}
+
+function sanitizeCategoryPayload(dtoField, rawPayload = {}, fallbackPriceNumber = 0) {
+    const rules = CATEGORY_PAYLOAD_RULES[dtoField];
+    if (!rules) return rawPayload;
+
+    const allowed = new Set(rules.allow || []);
+    const numeric = new Set(rules.number || []);
+    const booleanFields = new Set(rules.boolean || []);
+    const stringFields = new Set(rules.string || []);
+    const arrayFields = new Set(rules.array || []);
+
+    const cleaned = {};
+
+    Object.entries(rawPayload || {}).forEach(([key, value]) => {
+        if (!allowed.has(key)) return;
+        if (value == null) return;
+        if (typeof value === "string" && value.trim() === "") return;
+
+        if (numeric.has(key)) {
+            const parsed = Number(value);
+            if (!Number.isFinite(parsed)) return;
+            cleaned[key] = parsed;
+            return;
+        }
+
+        if (booleanFields.has(key)) {
+            const parsed = toBoolean(value);
+            if (typeof parsed !== "boolean") return;
+            cleaned[key] = parsed;
+            return;
+        }
+
+        if (arrayFields.has(key)) {
+            if (!Array.isArray(value)) return;
+            cleaned[key] = value.filter((item) => typeof item === "string" && item.trim().length > 0);
+            return;
+        }
+
+        if (stringFields.has(key)) {
+            cleaned[key] = String(value);
+            return;
+        }
+
+        cleaned[key] = value;
+    });
+
+    if (dtoField === "electronicsData" && !cleaned.price) {
+        cleaned.price = String(fallbackPriceNumber || 0);
+    }
+
+    if (dtoField === "furnitureData" && cleaned.price == null) {
+        cleaned.price = Number.isFinite(Number(fallbackPriceNumber)) ? Number(fallbackPriceNumber) : 0;
+    }
+
+    if (dtoField === "mobileData" && cleaned.price == null) {
+        cleaned.price = Number.isFinite(Number(fallbackPriceNumber)) ? Number(fallbackPriceNumber) : 0;
+    }
+
+    return cleaned;
+}
+
+function buildCategoryFormPayload(formData = {}) {
+    const EXCLUDED_KEYS = new Set([
+        "heading",
+        "body",
+        "price",
+        "location",
+        "contact",
+        "contactPerson",
+        "institutionName",
+        "image",
+        "images",
+    ]);
+
+    return Object.entries(formData).reduce((acc, [key, value]) => {
+        if (EXCLUDED_KEYS.has(key)) return acc;
+        if (value == null) return acc;
+        if (typeof value === "string" && value.trim() === "") return acc;
+        if (Array.isArray(value) && value.length === 0) return acc;
+
+        acc[key] = value;
+        return acc;
+    }, {});
+}
+
 function isRemoteUrl(value) {
     return typeof value === "string" && /^https?:\/\//i.test(value);
 }
@@ -55,6 +257,50 @@ export default function Payment({ navigation, route }) {
     const [isFeatured, setIsFeatured] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    const normalizeDateInput = (value) => {
+        if (!value) return null;
+        const parsed = new Date(value);
+        return Number.isNaN(parsed.getTime()) ? null : parsed;
+    };
+
+    const buildSelectedDates = () => {
+        if (Array.isArray(selectedDates) && selectedDates.length > 0) {
+            return selectedDates;
+        }
+
+        const start = normalizeDateInput(startDate);
+        const end = normalizeDateInput(endDate);
+        if (start && end) {
+            const range = [];
+            const cursor = new Date(start);
+            cursor.setHours(0, 0, 0, 0);
+            const finalDate = new Date(end);
+            finalDate.setHours(0, 0, 0, 0);
+
+            while (cursor <= finalDate) {
+                range.push(cursor.toISOString().split("T")[0]);
+                cursor.setDate(cursor.getDate() + 1);
+            }
+            return range;
+        }
+
+        if (Number.isFinite(Number(selectedDays)) && Number(selectedDays) > 0) {
+            const range = [];
+            const cursor = new Date();
+            cursor.setHours(0, 0, 0, 0);
+            const daysCount = Number(selectedDays);
+
+            for (let i = 0; i < daysCount; i += 1) {
+                const next = new Date(cursor);
+                next.setDate(cursor.getDate() + i);
+                range.push(next.toISOString().split("T")[0]);
+            }
+            return range;
+        }
+
+        return [];
+    };
+
 
     const STANDARD_FEE = Number(price || 0);     // base price from previous screen
     const FEATURED_FEE = 100;                   // featured ad cost
@@ -97,6 +343,23 @@ export default function Payment({ navigation, route }) {
                 ? formData.images
                 : (formData?.image ? [formData.image] : []);
 
+            const categoryLabel = category?.label || "Education";
+            const categoryDtoField = CATEGORY_DTO_FIELD_BY_LABEL[categoryLabel];
+            const parsedPrice = Number(formData?.price || 0);
+            const rawCategoryFormPayload = buildCategoryFormPayload(formData || {});
+            const categoryFormPayload = sanitizeCategoryPayload(
+                categoryDtoField,
+                rawCategoryFormPayload,
+                parsedPrice,
+            );
+
+            if (categoryDtoField === "lostFoundData" && !categoryFormPayload.location) {
+                const lostFoundLocation = String(formData?.location || "").trim();
+                if (lostFoundLocation) {
+                    categoryFormPayload.location = lostFoundLocation;
+                }
+            }
+
             const uploadedImages = [];
             for (const img of selectedImages) {
                 const uploaded = await uploadAdImageToCloud(img, token, BASE_URL);
@@ -108,15 +371,19 @@ export default function Payment({ navigation, route }) {
             const phone = rawPhone.startsWith("+") ? rawPhone : `+91${rawPhone.replace(/\s/g, "")}`;
 
             // Build the payload matching CreateAdDto
+            const resolvedSelectedDates = buildSelectedDates();
+            const resolvedExpiryDate = endDate
+                || (resolvedSelectedDates.length > 0 ? resolvedSelectedDates[resolvedSelectedDates.length - 1] : undefined);
+
             const payload = {
                 title: formData?.heading || "Ad Title",
                 description: formData?.body || "Ad Description",
-                category: category?.label || "Education",
-                subCategory: category?.label || "Education",
+                category: categoryLabel,
+                subCategory: categoryLabel,
                 userId: userId,
                 userType: "Customer",
                 images: uploadedImages,
-                price: Number(formData?.price || 0),
+                price: parsedPrice,
                 location: formData?.location || "Not specified",
                 contactInfo: {
                     name: formData?.institutionName || formData?.contactPerson || "User",
@@ -125,9 +392,10 @@ export default function Payment({ navigation, route }) {
                 },
                 templateId: Number(template !== undefined ? (typeof template === 'string' ? template.replace('card', '') : template) : 1),
                 cities: selectedLocations || [],
-                selectedDates: Array.isArray(selectedDates) ? selectedDates : [],
-                expiryDate: endDate || undefined,
+                selectedDates: resolvedSelectedDates,
+                expiryDate: resolvedExpiryDate,
                 isPromoted: isFeatured,
+                ...(categoryDtoField ? { [categoryDtoField]: categoryFormPayload } : {}),
             };
 
             console.log("Submitting payload:", JSON.stringify(payload, null, 2));

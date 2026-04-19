@@ -115,7 +115,7 @@ export default function Card2({ category, formData, setFormData, onNext }) {
 
         {/* Show selected image with change button */}
         {formData.image ? (
-          <View style={{ marginTop: 12, position: "relative", alignSelf: "flex-start" }}>
+          <View style={{ marginTop: 12, position: "relative" }}>
             <Image
               source={{ uri: formData.image }}
               style={{ width: "100%", height: 180, borderRadius: 10 }}

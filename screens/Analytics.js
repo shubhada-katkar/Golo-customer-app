@@ -50,20 +50,79 @@ export default function Analytics({ navigation }) {
     return () => clearInterval(interval);
   }, [fetchAnalytics]);
 
-  const stats = useMemo(() => {
-    const statsData = analytics?.stats || {};
-    return [
-      { title: "Total Ads", value: statsData.totalAds || 0 },
-      { title: "Active Ads", value: statsData.activeAds || 0 },
-      { title: "Ad Card Clicks", value: statsData.adCardClicks || 0 },
-      { title: "Unique Visitors", value: statsData.uniqueVisitors || 0 },
-      { title: "Contact Clicks", value: statsData.contactClicks || 0 },
-      { title: "Wishlist Saves", value: statsData.wishlistSaves || 0 },
-    ];
+  const normalizedAds = useMemo(() => {
+    if (Array.isArray(analytics?.ads)) return analytics.ads;
+
+    const legacyAds = Array.isArray(analytics?.adsList) ? analytics.adsList : [];
+    return legacyAds.map((item) => ({
+      adId: item.adId || item.id,
+      title: item.name,
+      category: item.category,
+      status: item.status,
+      createdAt: item.date,
+      views: 0,
+      uniqueVisitors: 0,
+      contactClicks: 0,
+      wishlistCount: 0,
+    }));
   }, [analytics]);
 
+  const stats = useMemo(() => {
+    const summary = analytics?.summary || null;
+    const statsData = analytics?.stats || {};
+
+    const derivedFromAds = normalizedAds.reduce(
+      (acc, ad) => {
+        acc.totalAds += 1;
+        if (String(ad.status || "").toLowerCase() === "active") acc.activeAds += 1;
+        acc.adCardClicks += Number(ad.views || 0);
+        acc.uniqueVisitors += Number(ad.uniqueVisitors || 0);
+        acc.contactClicks += Number(ad.contactClicks || 0);
+        acc.wishlistSaves += Number(ad.wishlistCount || 0);
+        return acc;
+      },
+      {
+        totalAds: 0,
+        activeAds: 0,
+        adCardClicks: 0,
+        uniqueVisitors: 0,
+        contactClicks: 0,
+        wishlistSaves: 0,
+      },
+    );
+
+    const resolvedStats = summary
+      ? {
+          totalAds: Number(summary.totalAds || 0),
+          activeAds: Number(summary.activeAds || 0),
+          adCardClicks: Number(summary.totalViews || 0),
+          uniqueVisitors: Number(summary.uniqueVisitors || 0),
+          contactClicks: Number(summary.totalContactClicks || 0),
+          wishlistSaves: Number(summary.totalWishlistSaves || 0),
+        }
+      : (Object.keys(statsData).length ? statsData : derivedFromAds);
+
+    return [
+      { title: "Total Ads", value: resolvedStats.totalAds || 0 },
+      { title: "Active Ads", value: resolvedStats.activeAds || 0 },
+      { title: "Ad Card Clicks", value: resolvedStats.adCardClicks || 0 },
+      { title: "Unique Visitors", value: resolvedStats.uniqueVisitors || 0 },
+      { title: "Contact Clicks", value: resolvedStats.contactClicks || 0 },
+      { title: "Wishlist Saves", value: resolvedStats.wishlistSaves || 0 },
+    ];
+  }, [analytics, normalizedAds]);
+
   const topAdsViews = useMemo(() => {
-    const topAds = analytics?.topAdsByViews || [];
+    const topAds = (Array.isArray(analytics?.topAdsByViews) && analytics.topAdsByViews.length > 0)
+      ? analytics.topAdsByViews
+      : [...normalizedAds]
+          .sort((a, b) => Number(b.views || 0) - Number(a.views || 0))
+          .slice(0, 5)
+          .map((item) => ({
+            adId: item.adId,
+            label: item.title || item.category || "Ad",
+            views: Number(item.views || 0),
+          }));
 
     return {
       labels: topAds.length ? topAds.map((item) => item.label?.slice(0, 14) || "Ad") : ["No Data"],
@@ -76,7 +135,15 @@ export default function Analytics({ navigation }) {
   }, [analytics]);
 
   const categoryData = useMemo(() => {
-    const categories = analytics?.categoryDistribution || [];
+    const categories = (Array.isArray(analytics?.categoryDistribution) && analytics.categoryDistribution.length > 0)
+      ? analytics.categoryDistribution
+      : Object.entries(
+          normalizedAds.reduce((acc, ad) => {
+            const category = ad?.category || "Others";
+            acc[category] = (acc[category] || 0) + 1;
+            return acc;
+          }, {}),
+        ).map(([name, population]) => ({ name, population }));
     const fallback = [
       {
         name: "No Data",
@@ -98,9 +165,16 @@ export default function Analytics({ navigation }) {
       legendFontSize: 12,
       legendFontFamily: "Medium",
     }));
-  }, [analytics]);
+  }, [analytics, normalizedAds]);
 
-  const adsList = analytics?.adsList || [];
+  const adsList = normalizedAds.map((item) => ({
+    adId: item.adId || item.id,
+    id: item.id || item._id,
+    name: item.title || item.name || "Ad",
+    date: item.createdAt || item.date,
+    status: item.status,
+    category: item.category,
+  }));
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
@@ -186,6 +260,7 @@ export default function Analytics({ navigation }) {
           <Text style={styles.headerText}>Ad</Text>
           <Text style={styles.headerText}>Date</Text>
           <Text style={styles.headerText}>Status</Text>
+          <Text style={styles.headerText}>Action</Text>
         </View>
 
         {!adsList.length && (
@@ -194,17 +269,12 @@ export default function Analytics({ navigation }) {
           </View>
         )}
 
-        {adsList.map((ad) => (
-          <TouchableOpacity
-            key={String(ad.adId || ad.id)}
+        {adsList.map((ad) => {
+          const resolvedAdId = ad.adId || ad.id;
+          return (
+          <View
+            key={String(resolvedAdId)}
             style={styles.tableRow}
-            onPress={() =>
-              navigation.navigate("AdAnalytics", {
-                adId: ad.adId,
-                adName: ad.name,
-                postedDate: ad.date,
-              })
-            }
           >
             <View style={{ flex: 1 }}>
               <Text style={styles.adName}>{ad.name}</Text>
@@ -225,8 +295,35 @@ export default function Analytics({ navigation }) {
             >
               {ad.status ? `${String(ad.status).charAt(0).toUpperCase()}${String(ad.status).slice(1)}` : "-"}
             </Text>
-          </TouchableOpacity>
-        ))}
+
+            <View style={styles.actionCell}>
+              <TouchableOpacity
+                style={styles.actionIconBtn}
+                onPress={() =>
+                  navigation.navigate("AdAnalytics", {
+                    adId: resolvedAdId,
+                    adName: ad.name,
+                    postedDate: ad.date,
+                  })
+                }
+              >
+                <MaterialIcons name="visibility" size={20} color="#1f7a53" />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.actionIconBtn}
+                onPress={() =>
+                  navigation.navigate("AdEdit", {
+                    adId: resolvedAdId,
+                  })
+                }
+              >
+                <MaterialIcons name="edit" size={20} color="#3b82f6" />
+              </TouchableOpacity>
+            </View>
+          </View>
+          );
+        })}
 
       </ScrollView>
 
@@ -342,12 +439,26 @@ const styles = StyleSheet.create({
     lineHeight: Math.round(14 * 1.5),
   },
 
+  actionCell: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: 8,
+    minWidth: 70,
+  },
+
+  actionIconBtn: {
+    paddingHorizontal: 4,
+    paddingVertical: 4,
+  },
+
   tableRow: {
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 12,
     borderBottomWidth: 0.5,
     borderColor: "#eee",
+    flex: 1,
   },
 
   cell: {

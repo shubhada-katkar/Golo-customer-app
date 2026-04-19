@@ -180,6 +180,28 @@ export class UsersController {
     };
   }
 
+  @Post('email-change/send-otp')
+  @UseGuards(JwtAuthGuard)
+  async sendEmailChangeOtp(@CurrentUser() user: any, @Body() body: any) {
+    const result = await this.usersService.sendEmailChangeOtp(user.id, body?.email);
+    return {
+      success: true,
+      message: 'OTP sent to your new email',
+      data: result,
+    };
+  }
+
+  @Post('email-change/verify-otp')
+  @UseGuards(JwtAuthGuard)
+  async verifyEmailChangeOtp(@CurrentUser() user: any, @Body() body: any) {
+    const profile = await this.usersService.verifyEmailChangeOtp(user.id, body?.email, body?.otp);
+    return {
+      success: true,
+      message: 'Email changed successfully',
+      data: profile,
+    };
+  }
+
   @Get('all')
   @UseGuards(JwtAuthGuard)
   async getAllUsers(
@@ -216,6 +238,22 @@ async debugCheckUser(@Param('id') id: string) {
 }
 
   // 🔴 FIXED: Dynamic route - must come AFTER all specific routes
+  @Get('public/:id')
+  async getPublicUserById(@Param('id') id: string) {
+    try {
+      const user = await this.usersService.getPublicUserById(id);
+      return {
+        success: true,
+        data: user,
+      };
+    } catch (error) {
+      if (error.name === 'NotFoundException' || error.status === 404) {
+        throw new NotFoundException(error.message);
+      }
+      throw error;
+    }
+  }
+
   @Get(':id')
   @UseGuards(JwtAuthGuard)
   async getUserById(@Param('id') id: string) {

@@ -1,7 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, Dimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import OtpInput from "../components/OtpInput";
+import { ThemeContext } from "../theme/ThemeContext";
+import {AntDesign} from "@expo/vector-icons";
 
 const { width } = Dimensions.get("window");
 
@@ -12,6 +14,7 @@ export default function ForgotPassword({ navigation }) {
   const [otpSent, setOtpSent] = useState(false);
   const [sendLoading, setSendLoading] = useState(false);
   const [verifyLoading, setVerifyLoading] = useState(false);
+  const colors = useContext(ThemeContext);
 
   const isValidEmail = (value) => /\S+@\S+\.\S+/.test(value);
 
@@ -90,12 +93,12 @@ export default function ForgotPassword({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <View style={styles.container}>
-        <Text style={styles.title}>Forgot Password</Text>
-        <Text style={styles.subtitle}>Enter your email, verify the OTP, then set a new password.</Text>
+        <Text style={[styles.title, { color: colors.text }]}>Forgot Password</Text>
+        <Text style={[styles.subtitle, { color: colors.text }]}>Enter your email, verify the OTP, then set a new password.</Text>
 
-        <Text style={styles.label}>Email</Text>
+        <Text style={[styles.label, { color: colors.text }]}>Email</Text>
         <View style={styles.emailRow}>
           <TextInput
             value={email}
@@ -116,7 +119,7 @@ export default function ForgotPassword({ navigation }) {
 
         {otpSent ? (
           <>
-            <Text style={styles.label}>OTP</Text>
+            <Text style={[styles.label, { color: colors.text }]}>OTP</Text>
             <OtpInput value={otp} onChangeOtp={setOtp} />
             <TouchableOpacity
               style={[styles.verifyButton, verifyLoading && styles.buttonDisabled]}
@@ -128,7 +131,9 @@ export default function ForgotPassword({ navigation }) {
           </>
         ) : null}
 
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        <TouchableOpacity onPress={() => navigation.goBack()}
+          style={{ flexDirection: "row", gap: 4, alignSelf: "center", marginTop: 24 }}>
+          <AntDesign name="arrow-left" size={16} color={"#157a4f"} />
           <Text style={styles.backText}>Back to login</Text>
         </TouchableOpacity>
       </View>
@@ -139,7 +144,6 @@ export default function ForgotPassword({ navigation }) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#fff8eb",
   },
   container: {
     flex: 1,
@@ -147,16 +151,14 @@ const styles = StyleSheet.create({
     paddingTop: 48,
   },
   title: {
-    fontSize: width * 0.08,
+    fontSize: width * 0.07,
     fontFamily: "SemiBold",
-    color: "#1f2937",
     lineHeight: width * 0.1,
   },
   subtitle: {
     marginTop: 10,
     fontSize: 15,
     lineHeight: Math.round(15 * 1.5),
-    color: "#4b5563",
     fontFamily: "Medium",
   },
   label: {
@@ -164,7 +166,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     fontSize: 16,
     fontFamily: "Medium",
-    color: "#111827",
     lineHeight: Math.round(16 * 1.5),
   },
   emailRow: {
@@ -217,10 +218,9 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   backText: {
-    marginTop: 24,
     color: "#157a4f",
     fontSize: 15,
     fontFamily: "Medium",
-    lineHeight: Math.round(15 * 1.5),
+    lineHeight: Math.round(15 * 1),
   },
 });

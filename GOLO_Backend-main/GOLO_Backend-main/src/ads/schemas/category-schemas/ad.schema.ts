@@ -159,6 +159,9 @@ export class Ad {
   @Prop({ default: 0 })
   uniqueVisitors: number;
 
+  @Prop({ type: [String], default: [] })
+  visitorEmails: string[];
+
   @Prop({ default: 0 })
   contactClicks: number;
 
@@ -223,5 +226,5 @@ AdSchema.index({ category: 1, status: 1, createdAt: -1 });
 AdSchema.index({ location: 1, category: 1 });
 AdSchema.index({ price: 1 });
 AdSchema.index({ city: 1, category: 1 });
-AdSchema.index({ expiryDate: 1 }, { expireAfterSeconds: 0 });
+AdSchema.index({ expiryDate: 1 });
 AdSchema.index({ isPromoted: 1, promotedUntil: 1 });

@@ -9,7 +9,7 @@ import {
 import { AntDesign } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 
-export default function Service({ formData, setFormData, category, onPrevious, template, price, selectedDays, selectedLocations }) {
+export default function Service({ formData, setFormData, category, onPrevious, template, price, selectedDays, selectedLocations, selectedDates, startDate, endDate }) {
     if (category?.id !== "service") return null;
     const navigation = useNavigation();
 
@@ -131,7 +131,7 @@ export default function Service({ formData, setFormData, category, onPrevious, t
 
             </View>
 
-            <TouchableOpacity style={styles.nextBtn} onPress={() => { navigation.navigate("Preview", { template, category, formData, price, selectedDays, selectedLocations }); }}>
+            <TouchableOpacity style={styles.nextBtn} onPress={() => { navigation.navigate("Preview", { template, category, formData, price, selectedDays, selectedLocations, selectedDates, startDate, endDate }); }}>
                 <Text style={styles.nextText}>See Preview</Text>
             </TouchableOpacity>
         </View>
@@ -188,3 +188,4 @@ const styles = StyleSheet.create({
         backgroundColor: "#f5b849",
     },
 });
+

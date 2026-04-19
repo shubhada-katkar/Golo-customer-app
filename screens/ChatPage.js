@@ -15,14 +15,15 @@ import { useFocusEffect } from "@react-navigation/native";
 import { ThemeContext } from "../theme/ThemeContext";
 import Topbar from "../components/Topbar";
 import ChojaBottom from "../components/ChojaBottom";
-import { MaterialIcons } from "@expo/vector-icons";
-import { connectChatSocket, listConversations } from "../services/chatService";
+import { MaterialIcons, Ionicons, Entypo } from "@expo/vector-icons";
+import { connectChatSocket, listConversations, getAuthContext } from "../services/chatService";
 
 export default function ChatPage({ navigation, route }) {
     const { colors } = useContext(ThemeContext);
     const [conversations, setConversations] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [currentUserId, setCurrentUserId] = useState("");
     const socketRef = useRef(null);
 
     const shareAd = route?.params?.shareAd || null;
@@ -38,10 +39,19 @@ export default function ChatPage({ navigation, route }) {
             const data = await listConversations();
             const conversationList = Array.isArray(data) ? data : [];
 
-            const talkedUsersOnly = conversationList.filter((conversation) =>
-                Number(conversation?.messagesCount || 0) > 0 ||
-                !!String(conversation?.lastMessageText || "").trim(),
-            );
+            const auth = await getAuthContext();
+            const userId = auth?.userId || "";
+            if (userId) setCurrentUserId(userId);
+            
+            const talkedUsersOnly = conversationList;
+
+            // Sort pinned conversations to the top
+            talkedUsersOnly.sort((a, b) => {
+                const aPinned = Array.isArray(a.pinnedBy) && a.pinnedBy.includes(userId) ? 1 : 0;
+                const bPinned = Array.isArray(b.pinnedBy) && b.pinnedBy.includes(userId) ? 1 : 0;
+                if (aPinned !== bPinned) return bPinned - aPinned;
+                return new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime();
+            });
 
             setConversations(talkedUsersOnly);
         } catch (error) {
@@ -169,9 +179,11 @@ export default function ChatPage({ navigation, route }) {
                         />
 
                         <View style={{ flex: 1 }}>
-                            <Text style={[styles.name, { color: colors.text }]} numberOfLines={1}>
-                                {conversation?.otherUser?.name || "Unknown User"}
-                            </Text>
+                            <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                                <Text style={[styles.name, { color: colors.text, flex: 1 }]} numberOfLines={1}>
+                                    {conversation?.otherUser?.name || "Unknown User"}
+                                </Text>
+                            </View>
                             <Text style={[styles.message, { color: colors.text }]} numberOfLines={1}>
                                 {conversation?.lastMessageText || "Tap to open chat"}
                             </Text>
@@ -180,6 +192,9 @@ export default function ChatPage({ navigation, route }) {
                         <View style={{ alignItems: "flex-end" }}>
                             <Text style={styles.time}>{formatTime(conversation?.lastMessageAt)}</Text>
                         </View>
+                        {Array.isArray(conversation.pinnedBy) && conversation.pinnedBy.includes(currentUserId) && (
+                            <Entypo name="pin" size={20} color="#f5b846ff" style={{ left: 5 }} />
+                        )}
                     </TouchableOpacity>
                 ))}
             </ScrollView>
@@ -288,6 +303,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontFamily: "SemiBold",
         color: "#111",
+        lineHeight: Math.round(16 * 1.2)
     },
 
     message: {

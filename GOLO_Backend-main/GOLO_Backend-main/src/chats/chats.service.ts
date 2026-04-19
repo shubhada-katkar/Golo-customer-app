@@ -140,6 +140,7 @@ export class ChatsService {
         lastMessageAdTitle: conversation.lastMessageAdTitle || conversation.adTitle || ad?.title || null,
         lastMessageAt: conversation.lastMessageAt,
         messagesCount: conversation.messagesCount || 0,
+        pinnedBy: conversation.pinnedBy || [],
         createdAt: conversation.createdAt,
         updatedAt: conversation.updatedAt,
       };
@@ -336,6 +337,43 @@ export class ChatsService {
     }
 
     return conversation;
+  }
+
+  async clearChat(userId: string, conversationId: string) {
+    const conversation = await this.getConversationForUser(userId, conversationId);
+
+    await this.messageModel
+      .deleteMany({ conversationId: this.toConversationId(conversation._id) })
+      .exec();
+
+    conversation.lastMessageText = '';
+    conversation.messagesCount = 0;
+    await conversation.save();
+
+    this.logger.log(`Chat ${conversationId} cleared by user ${userId}`);
+  }
+
+  async togglePinChat(userId: string, conversationId: string) {
+    const conversation = await this.getConversationForUser(userId, conversationId);
+    const userIdStr = String(userId);
+    const isPinned = Array.isArray(conversation.pinnedBy) && conversation.pinnedBy.includes(userIdStr);
+
+    if (isPinned) {
+      conversation.pinnedBy = conversation.pinnedBy.filter((id) => id !== userIdStr);
+    } else {
+      if (!Array.isArray(conversation.pinnedBy)) {
+        conversation.pinnedBy = [];
+      }
+      conversation.pinnedBy.push(userIdStr);
+    }
+
+    await conversation.save();
+
+    this.logger.log(
+      `Chat ${conversationId} ${isPinned ? 'unpinned' : 'pinned'} by user ${userId}`,
+    );
+
+    return { pinned: !isPinned };
   }
 
   async deleteConversation(userId: string, conversationId: string) {

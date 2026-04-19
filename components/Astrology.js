@@ -3,7 +3,7 @@ import { View, Text, TextInput, StyleSheet, TouchableOpacity } from "react-nativ
 import { AntDesign, MaterialIcons, Feather } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 
-export default function Astrology({ formData, setFormData, category, onPrevious, template, selectedDays, selectedLocations, price }) {
+export default function Astrology({ formData, setFormData, category, onPrevious, template, selectedDays, selectedLocations, selectedDates, startDate, endDate, price }) {
     if (category?.id !== "astrology") return null;
     const navigation = useNavigation();
 
@@ -206,7 +206,7 @@ export default function Astrology({ formData, setFormData, category, onPrevious,
 
             </View>
 
-            <TouchableOpacity style={styles.nextBtn} onPress={() => { navigation.navigate("Preview", { template, category, formData, selectedDays, selectedLocations, price }); }}>
+            <TouchableOpacity style={styles.nextBtn} onPress={() => { navigation.navigate("Preview", { template, category, formData, selectedDays, selectedLocations, selectedDates, startDate, endDate, price }); }}>
                 <Text style={styles.nextText}>See Preview</Text>
             </TouchableOpacity>
         </View>
@@ -307,3 +307,4 @@ const styles = StyleSheet.create({
     },
     radioLabel: { fontSize: 15, fontFamily: "Medium", lineHeight: Math.round(15 * 1.5) },
 });
+

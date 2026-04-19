@@ -18,6 +18,9 @@ export default function LostandFound({
     price,
     selectedDays,
     selectedLocations,
+    selectedDates,
+    startDate,
+    endDate,
 }) {
     if (category?.id !== "lostandfound") return null;
     const navigation = useNavigation();
@@ -153,6 +156,9 @@ export default function LostandFound({
                         price,
                         selectedDays,
                         selectedLocations,
+                        selectedDates,
+                        startDate,
+                        endDate,
                     })
                 }
             >
@@ -263,3 +269,4 @@ const styles = StyleSheet.create({
         fontFamily: "Medium",
     },
 });
+

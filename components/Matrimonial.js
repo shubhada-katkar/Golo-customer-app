@@ -4,7 +4,7 @@ import { AntDesign } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
 import { useNavigation } from "@react-navigation/native";
 
-export default function Matrimonial({ formData, setFormData, category, onPrevious, template, price, selectedDays, selectedLocations }) {
+export default function Matrimonial({ formData, setFormData, category, onPrevious, template, price, selectedDays, selectedLocations, selectedDates, startDate, endDate }) {
   if (category?.id !== "matrimonial") return null;
   const navigation = useNavigation();
 
@@ -206,7 +206,7 @@ export default function Matrimonial({ formData, setFormData, category, onPreviou
 
       </View>
 
-      <TouchableOpacity style={styles.nextBtn} onPress={() => { navigation.navigate("Preview", { template, category, formData, price, selectedDays, selectedLocations }); }}>
+      <TouchableOpacity style={styles.nextBtn} onPress={() => { navigation.navigate("Preview", { template, category, formData, price, selectedDays, selectedLocations, selectedDates, startDate, endDate }); }}>
         <Text style={styles.nextText}>See Preview</Text>
       </TouchableOpacity>
 
@@ -248,3 +248,4 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
 });
+

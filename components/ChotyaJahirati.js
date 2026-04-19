@@ -5,6 +5,8 @@ import {
     StyleSheet,
     ActivityIndicator,
     FlatList,
+    KeyboardAvoidingView,
+    Platform,
 } from "react-native";
 import { ThemeContext } from "../theme/ThemeContext";
 import { useNavigation } from "@react-navigation/native";
@@ -112,25 +114,27 @@ export default function ChotyaJahirati({ selectedCategory }) {
     }
 
     return (
-        <FlatList
-            data={ads}
-            keyExtractor={(item, index) =>
-                `${item._id || item.adId}-${index}`
-            }
-            renderItem={renderItem}
-            contentContainerStyle={{
-                paddingHorizontal: 16,
-                paddingBottom: 100,
-            }}
-            showsVerticalScrollIndicator={false}
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+            <FlatList
+                data={ads}
+                keyExtractor={(item, index) =>
+                    `${item._id || item.adId}-${index}`
+                }
+                renderItem={renderItem}
+                contentContainerStyle={{
+                    paddingHorizontal: 16,
+                    paddingBottom: 70,
+                }}
+                showsVerticalScrollIndicator={false}
 
-            onEndReached={loadMoreAds}
-            onEndReachedThreshold={0.5}
+                onEndReached={loadMoreAds}
+                onEndReachedThreshold={0.5}
 
-            ListFooterComponent={
-                loadingMore ? <ActivityIndicator size="small" /> : null
-            }
-        />
+                ListFooterComponent={
+                    loadingMore ? <ActivityIndicator size="small" /> : null
+                }
+            />
+        </KeyboardAvoidingView>
     );
 }
 const styles = StyleSheet.create({

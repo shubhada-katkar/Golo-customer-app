@@ -1,11 +1,11 @@
 import React, { useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Topbar from "../components/Topbar";
 import ChojaBottom from "../components/ChojaBottom";
 import { ThemeContext } from "../theme/ThemeContext";
 import { MaterialIcons } from "@expo/vector-icons";
-import { getAdAnalytics } from "../services/analyticsService";
+import { deleteAd, getAdAnalytics } from "../services/analyticsService";
 
 const StatCard = ({ title, value, subtitle }) => (
     <View style={styles.card}>
@@ -39,6 +39,7 @@ export default function AdAnalytics({ navigation, route }) {
     const [analytics, setAnalytics] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const fetchAnalytics = useCallback(async () => {
         if (!adId) {
@@ -74,11 +75,44 @@ export default function AdAnalytics({ navigation, route }) {
 
     const rates = analytics?.rates || {};
     const adInfo = analytics?.ad || {};
+    const resolvedAdId = adInfo?.adId || adId;
 
     const postedDateValue = adInfo.createdAt || routeParams.postedDate;
     const postedDate = postedDateValue
         ? new Date(postedDateValue).toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" })
         : "-";
+
+    const handleDeleteAd = useCallback(() => {
+        if (!resolvedAdId) {
+            Alert.alert("Error", "Ad ID is missing");
+            return;
+        }
+
+        Alert.alert(
+            "Delete Ad",
+            `Are you sure you want to delete "${adInfo.title || routeParams.adName || "this ad"}"? This action cannot be undone.`,
+            [
+                { text: "Cancel", style: "cancel" },
+                {
+                    text: "Delete",
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            setIsDeleting(true);
+                            await deleteAd(resolvedAdId);
+                            Alert.alert("Success", "Ad deleted successfully", [
+                                { text: "OK", onPress: () => navigation.goBack() },
+                            ]);
+                        } catch (err) {
+                            Alert.alert("Error", err?.message || "Failed to delete ad");
+                        } finally {
+                            setIsDeleting(false);
+                        }
+                    },
+                },
+            ],
+        );
+    }, [resolvedAdId, adInfo.title, routeParams.adName, navigation]);
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
@@ -97,7 +131,14 @@ export default function AdAnalytics({ navigation, route }) {
                     </View>
 
                 </TouchableOpacity>
-                <Text style={{ fontSize: 22, color: colors.text, fontFamily: "SemiBold", lineHeight: Math.round(22 * 1.5) }}>Ad Analytics</Text>
+                <Text style={{ fontSize: 22, color: colors.text, fontFamily: "SemiBold", lineHeight: Math.round(22 * 1.5), flex: 1 }}>Ad Analytics</Text>
+                <TouchableOpacity onPress={handleDeleteAd} disabled={isDeleting} style={styles.deleteBtn}>
+                    {isDeleting ? (
+                        <ActivityIndicator size="small" color="#d14343" />
+                    ) : (
+                        <MaterialIcons name="delete-outline" size={24} color="#d14343" />
+                    )}
+                </TouchableOpacity>
             </View>
 
             <View style={{ flexDirection: "row", backgroundColor: colors.divider, height: 1, color: colors.divider, marginTop: 10 }} />
@@ -137,23 +178,6 @@ export default function AdAnalytics({ navigation, route }) {
                     <StatCard title="Wishlist Saves" value={data.wishlist} />
                 </View>
 
-                {/* FUNNEL */}
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Engagement Funnel</Text>
-
-                    {[
-                        { label: "Ad Clicks", value: data.clicks },
-                        { label: "Visitors", value: data.visitors },
-                        { label: "Contacts", value: data.contacts },
-                        { label: "Wishlist", value: data.wishlist },
-                    ].map((item, i) => (
-                        <View key={i} style={styles.funnelRow}>
-                            <Text style={styles.funnelText}>{item.label}</Text>
-                            <Text style={{ fontSize: 12, lineHeight: Math.round(12 * 1.5), fontFamily: "Medium" }}>
-                                {item.value}</Text>
-                        </View>
-                    ))}
-                </View>
 
                 {/* PERFORMANCE */}
                 <View style={styles.section}>
@@ -206,6 +230,9 @@ const styles = StyleSheet.create({
         alignItems: "center",
         flexDirection: "row",
         paddingHorizontal: 14
+    },
+    deleteBtn: {
+        padding: 8,
     },
     container: {
         flex: 1,

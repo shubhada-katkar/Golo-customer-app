@@ -19,12 +19,18 @@ export default function ProfilePage({ navigation }) {
     const [username, setUsername] = useState("");
     const [phone, setPhone] = useState("");
     const [email, setEmail] = useState("");
+    const [originalEmail, setOriginalEmail] = useState("");
 
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [sendingEmailOtp, setSendingEmailOtp] = useState(false);
+    const [verifyingEmailOtp, setVerifyingEmailOtp] = useState(false);
 
     const [editName, setEditName] = useState(false);
     const [editPhone, setEditPhone] = useState(false);
+    const [editEmail, setEditEmail] = useState(false);
+    const [emailOtpSent, setEmailOtpSent] = useState(false);
+    const [emailOtp, setEmailOtp] = useState("");
 
     const nameRef = useRef(null);
     const phoneRef = useRef(null);
@@ -64,6 +70,7 @@ export default function ProfilePage({ navigation }) {
             setUsername(profile.name || "");
             setPhone(profile.profile?.phone || "");
             setEmail(profile.email || "");
+            setOriginalEmail(profile.email || "");
             // image url may not exist
             setProfileImage(profile.profile?.avatar || null);
 
@@ -139,6 +146,91 @@ export default function ProfilePage({ navigation }) {
         } catch (err) {
             setSaving(false);
             Alert.alert("Error", "Update failed");
+        }
+    };
+
+    const handleSendEmailOtp = async () => {
+        const trimmedEmail = String(email || "").trim().toLowerCase();
+        if (!trimmedEmail) {
+            Alert.alert("Error", "Please enter email");
+            return;
+        }
+
+        if (trimmedEmail === String(originalEmail || "").trim().toLowerCase()) {
+            Alert.alert("Info", "Please enter a different email to change");
+            return;
+        }
+
+        try {
+            setSendingEmailOtp(true);
+            const token = await AsyncStorage.getItem("customerToken");
+
+            const res = await fetch(`${BASE_URL}/users/email-change/send-otp`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ email: trimmedEmail }),
+            });
+
+            const data = await res.json();
+            if (!res.ok || data?.success === false) {
+                throw new Error(data?.message || "Failed to send OTP");
+            }
+
+            setEmailOtpSent(true);
+            Alert.alert("OTP Sent", "We sent an OTP to your new email.");
+        } catch (error) {
+            Alert.alert("Error", error.message || "Failed to send OTP");
+        } finally {
+            setSendingEmailOtp(false);
+        }
+    };
+
+    const handleVerifyEmailOtp = async () => {
+        const trimmedEmail = String(email || "").trim().toLowerCase();
+        const trimmedOtp = String(emailOtp || "").trim();
+
+        if (!trimmedEmail) {
+            Alert.alert("Error", "Please enter email");
+            return;
+        }
+
+        if (!trimmedOtp) {
+            Alert.alert("Error", "Please enter OTP");
+            return;
+        }
+
+        try {
+            setVerifyingEmailOtp(true);
+            const token = await AsyncStorage.getItem("customerToken");
+
+            const res = await fetch(`${BASE_URL}/users/email-change/verify-otp`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ email: trimmedEmail, otp: trimmedOtp }),
+            });
+
+            const data = await res.json();
+            if (!res.ok || data?.success === false) {
+                throw new Error(data?.message || "Failed to verify OTP");
+            }
+
+            const updatedEmail = data?.data?.email || trimmedEmail;
+            setEmail(updatedEmail);
+            setOriginalEmail(updatedEmail);
+            setEditEmail(false);
+            setEmailOtpSent(false);
+            setEmailOtp("");
+            Alert.alert("Success", "Email changed successfully");
+        } catch (error) {
+            Alert.alert("Error", error.message || "Failed to verify OTP");
+        } finally {
+            setVerifyingEmailOtp(false);
         }
     };
 
@@ -353,6 +445,8 @@ export default function ProfilePage({ navigation }) {
                                     setEditName(true);
                                     setEditPhone(false);
                                     setEditEmail(false);
+                                    setEmailOtpSent(false);
+                                    setEmailOtp("");
                                     setTimeout(() => nameRef.current?.focus(), 100);
                                 }}
                             >
@@ -380,24 +474,82 @@ export default function ProfilePage({ navigation }) {
                                     setEditPhone(true);
                                     setEditName(false);
                                     setEditEmail(false);
+                                    setEmailOtpSent(false);
+                                    setEmailOtp("");
                                     setTimeout(() => phoneRef.current?.focus(), 100);
                                 }}  >
                                 <MaterialIcons name="edit" size={22} style={{ marginLeft: 8, color: colors.text }} />
                             </TouchableOpacity>
                         </View>
 
-                        {/* EMAIL (NON EDITABLE) */}
+                        {/* EMAIL */}
                         <Text style={[styles.text, { color: colors.text }]}>Email</Text>
                         <View style={styles.inputWrapper}>
                             <TextInput
                                 ref={emailRef}
                                 value={email}
-                                editable={false}
+                                onChangeText={setEmail}
+                                editable={editEmail}
+                                keyboardType="email-address"
+                                autoCapitalize="none"
                                 style={[
                                     styles.input,
-                                    styles.disabledInput,
+                                    !editEmail && styles.disabledInput,
+                                    { paddingRight: 40 }
                                 ]} />
+
+                            <TouchableOpacity
+                                style={styles.editIcon}
+                                onPress={() => {
+                                    setEditEmail(true);
+                                    setEditName(false);
+                                    setEditPhone(false);
+                                    setEmailOtpSent(false);
+                                    setEmailOtp("");
+                                    setTimeout(() => emailRef.current?.focus(), 100);
+                                }}
+                            >
+                                <MaterialIcons name="edit" size={22} style={{ marginLeft: 8, color: colors.text }} />
+                            </TouchableOpacity>
                         </View>
+
+                        {editEmail && (
+                            <View style={{ marginTop: 10 }}>
+                                <TouchableOpacity
+                                    style={[styles.saveButton, { marginTop: 0, backgroundColor: "#f5b849" }]}
+                                    onPress={handleSendEmailOtp}
+                                    disabled={sendingEmailOtp}
+                                >
+                                    <Text style={{ color: "#fff", fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) }}>
+                                        {sendingEmailOtp ? "Sending OTP..." : "Verify Email"}
+                                    </Text>
+                                </TouchableOpacity>
+
+                                {emailOtpSent && (
+                                    <>
+                                        <Text style={[styles.text, { color: colors.text, marginTop: 12 }]}>Enter OTP</Text>
+                                        <TextInput
+                                            value={emailOtp}
+                                            onChangeText={setEmailOtp}
+                                            placeholder="Enter 6-digit OTP"
+                                            keyboardType="number-pad"
+                                            maxLength={6}
+                                            style={styles.input}
+                                        />
+
+                                        <TouchableOpacity
+                                            style={[styles.saveButton, { marginTop: 12 }]}
+                                            onPress={handleVerifyEmailOtp}
+                                            disabled={verifyingEmailOtp}
+                                        >
+                                            <Text style={{ color: "white", fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) }}>
+                                                {verifyingEmailOtp ? "Verifying..." : "Submit OTP"}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    </>
+                                )}
+                            </View>
+                        )}
 
                         {/* SAVE BUTTON */}
                         <TouchableOpacity

@@ -15,6 +15,8 @@ import { KafkaService } from '../kafka/kafka.service';
 import { KAFKA_TOPICS } from '../common/constants/kafka-topics';
 import { v4 as uuidv4 } from 'uuid';
 import { User, UserDocument } from '../users/schemas/user.schema';
+import { ConfigService } from '@nestjs/config';
+import { verify } from 'jsonwebtoken';
 
 @Injectable()
 export class AdsService {
@@ -23,6 +25,7 @@ export class AdsService {
   constructor(
     @InjectModel(Ad.name) private readonly adModel: Model<AdDocument>,
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
+    private readonly configService: ConfigService,
 
     // ✅ Kafka OPTIONAL
     @Optional() private readonly kafkaService?: KafkaService,
@@ -35,8 +38,8 @@ export class AdsService {
   async createAd(createAdDto: CreateAdDto): Promise<Ad> {
     this.logger.log(`Creating new ad for user: ${createAdDto.userId}`);
 
-    const userExists = await this.verifyUser(createAdDto.userId);
-    if (!userExists) {
+    const postingUser = await this.userModel.findById(String(createAdDto.userId)).lean().exec();
+    if (!postingUser) {
       throw new BadRequestException(
         `User with ID ${createAdDto.userId} not found.`,
       );
@@ -125,6 +128,10 @@ export class AdsService {
       ...createAdDto,
       selectedDates,
       categorySpecificData,
+      contactInfo: {
+        ...(createAdDto as any)?.contactInfo,
+        name: postingUser?.name || (createAdDto as any)?.contactInfo?.name || '',
+      },
       adId: uuidv4(),
       status: resolvedStatus,
       views: 0,
@@ -209,21 +216,25 @@ export class AdsService {
     sortBy = 'createdAt',
     sortOrder = 'desc',
   ): Promise<{ ads: Ad[]; total: number }> {
+    await this.refreshDateDrivenStatuses();
+
     const skip = (page - 1) * limit;
 
     const sort: { [key: string]: SortOrder } = {};
     sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
 
+    const visibilityQuery = this.buildPublicVisibilityQuery();
+
     const [ads, total] = await Promise.all([
       this.adModel
-        .find({ category, status: 'active' })
+        .find({ ...visibilityQuery, category })
         .sort(sort)
         .skip(skip)
         .limit(limit)
         .exec(),
       this.adModel.countDocuments({
+        ...visibilityQuery,
         category,
-        status: 'active',
       }),
     ]);
 
@@ -240,9 +251,11 @@ export class AdsService {
     page = 1,
     limit = 10,
   ): Promise<{ ads: Ad[]; total: number }> {
+    await this.refreshDateDrivenStatuses();
+
     const skip = (page - 1) * limit;
 
-    const mongoQuery: any = { status: 'active' };
+    const mongoQuery: any = this.buildPublicVisibilityQuery();
 
     if (filters?.category) mongoQuery.category = filters.category;
     if (filters?.location) mongoQuery.location = filters.location;
@@ -275,9 +288,11 @@ export class AdsService {
     page = 1,
     limit = 10,
   ): Promise<{ ads: Ad[]; total: number }> {
+    await this.refreshDateDrivenStatuses();
+
     const skip = (page - 1) * limit;
 
-    const geoQuery: any = { status: 'active' };
+    const geoQuery: any = this.buildPublicVisibilityQuery();
     if (category) geoQuery.category = category;
 
     // Try geo query if coordinates are stored
@@ -307,15 +322,18 @@ export class AdsService {
     userId: string,
     page = 1,
     limit = 10,
-    category?: string
+    category?: string,
+    includeExpired = false,
   ): Promise<{ ads: Ad[]; total: number }> {
     await this.refreshDateDrivenStatuses();
 
     const skip = (page - 1) * limit;
-    const query: any = {
-      userId,
-      status: 'active'
-    };
+    const query: any = { userId };
+    if (includeExpired) {
+      query.status = { $ne: 'deleted' };
+    } else {
+      Object.assign(query, this.buildPublicVisibilityQuery());
+    }
     // Apply category filter if provided
     if (category && category !== 'null') {
       query.category = category;
@@ -342,14 +360,38 @@ export class AdsService {
       .lean()
       .exec();
 
-    const totals = ads.reduce(
+    const normalizedAds = ads.map((ad: any) => {
+      const views = Number(ad.cardClicks || ad.views || 0);
+      const uniqueVisitors = Number(ad.uniqueVisitors || ad.views || 0);
+      const contactClicks = Number(ad.contactClicks || 0);
+      const wishlistCount = Number(ad.wishlistSaves || 0);
+
+      const clickThroughRate = views > 0 ? Number(((contactClicks / views) * 100).toFixed(2)) : 0;
+      const wishlistRate = views > 0 ? Number(((wishlistCount / views) * 100).toFixed(2)) : 0;
+
+      return {
+        ...(ad as any),
+        adId: ad.adId || String(ad._id),
+        views,
+        cardClicks: views,
+        uniqueVisitors,
+        contactClicks,
+        wishlistCount,
+        wishlistSaves: wishlistCount,
+        clickThroughRate,
+        wishlistRate,
+        image: Array.isArray(ad.images) && ad.images.length > 0 ? ad.images[0] : null,
+      };
+    });
+
+    const totals = normalizedAds.reduce(
       (acc: any, ad: any) => {
         acc.totalAds += 1;
         if (ad.status === 'active') acc.activeAds += 1;
-        acc.adCardClicks += Number(ad.cardClicks || 0);
-        acc.uniqueVisitors += Number(ad.uniqueVisitors || ad.views || 0);
+        acc.adCardClicks += Number(ad.views || 0);
+        acc.uniqueVisitors += Number(ad.uniqueVisitors || 0);
         acc.contactClicks += Number(ad.contactClicks || 0);
-        acc.wishlistSaves += Number(ad.wishlistSaves || 0);
+        acc.wishlistSaves += Number(ad.wishlistCount || 0);
         return acc;
       },
       {
@@ -362,7 +404,16 @@ export class AdsService {
       },
     );
 
-    const categoryMap = ads.reduce((acc: any, ad: any) => {
+    const summary = {
+      totalAds: totals.totalAds,
+      activeAds: totals.activeAds,
+      totalViews: totals.adCardClicks,
+      uniqueVisitors: totals.uniqueVisitors,
+      totalContactClicks: totals.contactClicks,
+      totalWishlistSaves: totals.wishlistSaves,
+    };
+
+    const categoryMap = normalizedAds.reduce((acc: any, ad: any) => {
       const category = ad.category || 'Others';
       acc[category] = (acc[category] || 0) + 1;
       return acc;
@@ -372,7 +423,7 @@ export class AdsService {
       .map(([name, count]) => ({ name, population: count }))
       .sort((a, b) => Number(b.population) - Number(a.population));
 
-    const topAdsByViews = [...ads]
+    const topAdsByViews = [...normalizedAds]
       .sort((a: any, b: any) => Number(b.views || 0) - Number(a.views || 0))
       .slice(0, 5)
       .map((ad: any) => ({
@@ -381,7 +432,7 @@ export class AdsService {
         views: Number(ad.views || 0),
       }));
 
-    const adsList = ads.slice(0, 20).map((ad: any) => ({
+    const adsList = normalizedAds.slice(0, 20).map((ad: any) => ({
       adId: ad.adId || String(ad._id),
       name: ad.title || 'Untitled Ad',
       date: ad.createdAt,
@@ -390,6 +441,11 @@ export class AdsService {
     }));
 
     return {
+      // New common shape used by web and app.
+      summary,
+      ads: normalizedAds,
+
+      // Backward-compatible shape used by current app screens.
       stats: totals,
       topAdsByViews,
       categoryDistribution,
@@ -445,20 +501,71 @@ export class AdsService {
     };
   }
 
+  async getPublicAdAnalytics(adId: string): Promise<any> {
+    await this.refreshDateDrivenStatuses();
+
+    const ad = await this.getAdById(adId);
+
+    const clicks = Number((ad as any).cardClicks || 0);
+    const visitors = Number((ad as any).uniqueVisitors || (ad as any).views || 0);
+    const contacts = Number((ad as any).contactClicks || 0);
+    const wishlist = Number((ad as any).wishlistSaves || 0);
+
+    const ctr = visitors > 0 ? (clicks / visitors) * 100 : 0;
+    const visitorsRate = clicks > 0 ? (visitors / clicks) * 100 : 0;
+    const wishlistRate = visitors > 0 ? (wishlist / visitors) * 100 : 0;
+
+    return {
+      ad: {
+        adId: (ad as any).adId || String((ad as any)._id),
+        title: (ad as any).title,
+        createdAt: (ad as any).createdAt,
+        status: (ad as any).status,
+        category: (ad as any).category,
+      },
+      stats: {
+        clicks,
+        visitors,
+        contacts,
+        wishlist,
+      },
+      funnel: {
+        adClicks: clicks,
+        visitors,
+        contacts,
+        wishlist,
+      },
+      rates: {
+        ctr,
+        visitorsRate,
+        wishlistRate,
+      },
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
 
   async getFeaturedDeals(limit = 10): Promise<Ad[]> {
+    await this.refreshDateDrivenStatuses();
+
     const now = new Date();
+    const visibilityQuery = this.buildPublicVisibilityQuery();
+
     return this.adModel
-      .find({ isPromoted: true, promotedUntil: { $gt: now }, status: 'active' })
+      .find({ ...visibilityQuery, isPromoted: true, promotedUntil: { $gt: now } })
       .sort({ promotedUntil: -1 })
       .limit(limit)
       .exec();
   }
 
   async getTrendingSearches(limit = 10): Promise<string[]> {
+    await this.refreshDateDrivenStatuses();
+
+    const visibilityQuery = this.buildPublicVisibilityQuery();
+
     // Return top ad titles as trending searches
     const docs = await this.adModel
-      .find({ status: 'active' })
+      .find(visibilityQuery)
       .sort({ views: -1 })
       .limit(limit)
       .select('title')
@@ -471,6 +578,10 @@ export class AdsService {
   }
 
   async getRecommendedDeals(userId: string | undefined, limit = 10): Promise<Ad[]> {
+    await this.refreshDateDrivenStatuses();
+
+    const visibilityQuery = this.buildPublicVisibilityQuery();
+
     // Simple recommendation: if user provided, try same city from user's profile
     if (userId) {
       try {
@@ -478,7 +589,7 @@ export class AdsService {
         const city = user?.profile?.city;
         if (city) {
           return this.adModel
-            .find({ city, status: 'active' })
+            .find({ ...visibilityQuery, city })
             .sort({ createdAt: -1 })
             .limit(limit)
             .exec();
@@ -489,13 +600,37 @@ export class AdsService {
     }
 
     // Fallback: most recent active ads
-    return this.adModel.find({ status: 'active' }).sort({ createdAt: -1 }).limit(limit).exec();
+    return this.adModel.find(visibilityQuery).sort({ createdAt: -1 }).limit(limit).exec();
   }
 
   async getPopularPlaces(limit = 10): Promise<string[]> {
+    await this.refreshDateDrivenStatuses();
+
+    const visibilityQuery = this.buildPublicVisibilityQuery();
+
+    const todayStart = visibilityQuery.$or?.[2]?.selectedDates?.$elemMatch?.$gte;
+    const todayEnd = visibilityQuery.$or?.[2]?.selectedDates?.$elemMatch?.$lte;
+
     // Aggregate top cities by ad count and return just city names
     const pipeline = [
-      { $match: { status: 'active', city: { $exists: true, $ne: null } } },
+      {
+        $match: {
+          status: 'active',
+          city: { $exists: true, $ne: null },
+          $or: [
+            { selectedDates: { $exists: false } },
+            { selectedDates: { $size: 0 } },
+            {
+              selectedDates: {
+                $elemMatch: {
+                  $gte: todayStart,
+                  $lte: todayEnd,
+                },
+              },
+            },
+          ],
+        },
+      },
       { $group: { _id: '$city', count: { $sum: 1 } } },
       { $sort: { count: -1 } },
       { $limit: limit },
@@ -512,7 +647,7 @@ export class AdsService {
       await this.adModel
         .updateOne(
           { _id: (ad as any)._id },
-          { $inc: { views: 1, uniqueVisitors: 1 }, $set: { updatedAt: new Date() } },
+          { $inc: { views: 1 }, $set: { updatedAt: new Date() } },
         )
         .exec();
     } catch (error: any) {
@@ -520,8 +655,29 @@ export class AdsService {
     }
   }
 
-  async incrementCardClick(adId: string): Promise<void> {
-    await this.incrementAnalyticsMetric(adId, 'cardClicks');
+  async incrementCardClick(adId: string, authHeader?: string): Promise<void> {
+    try {
+      const ad = await this.getAdById(adId);
+      const visitorEmail = await this.extractVisitorEmailFromAuthHeader(authHeader);
+      const currentVisitorEmails = Array.isArray((ad as any).visitorEmails) ? (ad as any).visitorEmails : [];
+      const normalizedCurrentEmails = currentVisitorEmails
+        .filter((email: any) => typeof email === 'string' && email.trim().length > 0)
+        .map((email: string) => email.trim().toLowerCase());
+
+      const updateOps: any = {
+        $inc: { cardClicks: 1 },
+        $set: { updatedAt: new Date() },
+      };
+
+      if (visitorEmail && !normalizedCurrentEmails.includes(visitorEmail)) {
+        updateOps.$inc.uniqueVisitors = 1;
+        updateOps.$addToSet = { visitorEmails: visitorEmail };
+      }
+
+      await this.adModel.updateOne({ _id: (ad as any)._id }, updateOps).exec();
+    } catch (error: any) {
+      this.logger.error(`[ANALYTICS] Failed to increment cardClicks for ${adId}: ${error.message}`, error.stack);
+    }
   }
 
   async incrementContactClick(adId: string): Promise<void> {
@@ -556,17 +712,87 @@ export class AdsService {
       .exec();
   }
 
+  private getTodayRange(): { start: Date; end: Date } {
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+
+    const end = new Date(start);
+    end.setHours(23, 59, 59, 999);
+
+    return { start, end };
+  }
+
+  private buildPublicVisibilityQuery(): any {
+    const { start, end } = this.getTodayRange();
+
+    return {
+      status: 'active',
+      $or: [
+        { selectedDates: { $exists: false } },
+        { selectedDates: { $size: 0 } },
+        {
+          selectedDates: {
+            $elemMatch: {
+              $gte: start,
+              $lte: end,
+            },
+          },
+        },
+      ],
+    };
+  }
+
   private async incrementAnalyticsMetric(adId: string, metricField: string): Promise<void> {
     try {
+      this.logger.log(`[ANALYTICS] Incrementing ${metricField} for ad: ${adId}`);
+      
       const ad = await this.getAdById(adId);
-      await this.adModel
+      this.logger.log(`[ANALYTICS] Found ad: ${(ad as any)._id} (adId: ${ad.adId})`);
+      
+      const result = await this.adModel
         .updateOne(
           { _id: (ad as any)._id },
           { $inc: { [metricField]: 1 }, $set: { updatedAt: new Date() } },
         )
         .exec();
+      
+      this.logger.log(`[ANALYTICS] Update result for ${metricField}: matched=${result.matchedCount}, modified=${result.modifiedCount}`);
+      
+      if (result.modifiedCount === 0) {
+        this.logger.warn(`[ANALYTICS] WARNING: Update did not modify any documents for ${metricField} on ad ${adId}`);
+      }
     } catch (error: any) {
-      this.logger.error(`Failed to increment ${metricField} for ${adId}: ${error.message}`);
+      this.logger.error(`[ANALYTICS] Failed to increment ${metricField} for ${adId}: ${error.message}`, error.stack);
+    }
+  }
+
+  private async extractVisitorEmailFromAuthHeader(authHeader?: string): Promise<string | null> {
+    try {
+      if (!authHeader || !authHeader.toLowerCase().startsWith('bearer ')) {
+        return null;
+      }
+
+      const token = authHeader.slice(7).trim();
+      if (!token) {
+        return null;
+      }
+
+      const secret = this.configService.get<string>('JWT_SECRET');
+      if (!secret) {
+        this.logger.warn('[ANALYTICS] JWT_SECRET is not configured, cannot verify visitor token');
+        return null;
+      }
+
+      const decoded = verify(token, secret) as any;
+      const email = typeof decoded?.email === 'string' ? decoded.email.trim().toLowerCase() : '';
+      if (!email) {
+        return null;
+      }
+
+      return email;
+    } catch (error: any) {
+      this.logger.warn(`[ANALYTICS] Could not decode visitor email from token: ${error.message}`);
+      return null;
     }
   }
 
