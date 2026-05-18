@@ -94,34 +94,6 @@ export default function PublicNotice({ formData, setFormData, category, onPrevio
           placeholder="e.g. City Council, Company Name"
         />
 
-        <Text style={styles.label}>Reference Number</Text>
-        <TextInput
-          style={styles.input}
-          value={formData.referenceNumber || ""}
-          onChangeText={(text) =>
-            setFormData({ ...formData, referenceNumber: text })
-          }
-          placeholder="Enter Reference or ID Number"
-        />
-
-        <Text style={styles.label}>Publish Date</Text>
-        <TextInput
-          style={styles.input}
-          value={formData.publishDate || ""}
-          onChangeText={(text) =>
-            setFormData({ ...formData, publishDate: text })
-          }
-        />
-
-        <Text style={styles.label}>Expiry Date</Text>
-        <TextInput
-          style={styles.input}
-          value={formData.expiryDate || ""}
-          onChangeText={(text) =>
-            setFormData({ ...formData, expiryDate: text })
-          }
-        />
-
         <Text style={styles.label}>Detailed Notice Text</Text>
         <TextInput
           style={styles.textArea}

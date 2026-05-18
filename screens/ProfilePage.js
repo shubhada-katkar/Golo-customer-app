@@ -20,6 +20,8 @@ export default function ProfilePage({ navigation }) {
     const [phone, setPhone] = useState("");
     const [email, setEmail] = useState("");
     const [originalEmail, setOriginalEmail] = useState("");
+    const [loyaltyPoints, setLoyaltyPoints] = useState(0);
+    const [loyaltyTier, setLoyaltyTier] = useState("Bronze");
 
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -71,6 +73,8 @@ export default function ProfilePage({ navigation }) {
             setPhone(profile.profile?.phone || "");
             setEmail(profile.email || "");
             setOriginalEmail(profile.email || "");
+            setLoyaltyPoints(profile.loyaltyPoints ?? 0);
+            setLoyaltyTier(profile.loyaltyTier || "Bronze");
             // image url may not exist
             setProfileImage(profile.profile?.avatar || null);
 
@@ -513,6 +517,12 @@ export default function ProfilePage({ navigation }) {
                             </TouchableOpacity>
                         </View>
 
+                        <View style={[styles.profileCard, { backgroundColor: colors.card, borderColor: colors.divider }]}> 
+                            <Text style={[styles.cardTitle, { color: colors.text }]}>Loyalty Status</Text>
+                            <Text style={[styles.cardValue, { color: colors.text }]}>{loyaltyPoints} points</Text>
+                            <Text style={[styles.cardSubtitle, { color: colors.text }]}>{loyaltyTier} tier</Text>
+                        </View>
+
                         {editEmail && (
                             <View style={{ marginTop: 10 }}>
                                 <TouchableOpacity
@@ -667,6 +677,25 @@ const styles = StyleSheet.create({
         alignItems: "center",
         paddingVertical: 14,
         paddingHorizontal: 14,
+    },
+    profileCard: {
+        borderWidth: 1,
+        borderRadius: 12,
+        padding: 16,
+        marginTop: 16,
+    },
+    cardTitle: {
+        fontSize: 16,
+        marginBottom: 8,
+        fontFamily: "SemiBold",
+    },
+    cardValue: {
+        fontSize: 32,
+        fontFamily: "SemiBold",
+    },
+    cardSubtitle: {
+        fontSize: 14,
+        marginTop: 6,
     },
 
     dropdownText: {

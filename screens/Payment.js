@@ -23,7 +23,7 @@ const CATEGORY_DTO_FIELD_BY_LABEL = {
     "Lost & Found": "lostFoundData",
     Personal: "personalData",
     Greetings: "greetingsData",
-    Others: "othersData",
+    Others: "otherData",
     "Public Notice": "publicNoticeData",
 };
 
@@ -102,17 +102,16 @@ const CATEGORY_PAYLOAD_RULES = {
     personalData: {
         allow: ["name", "gender", "age", "achievementTitle", "description", "contact"],
     },
-    greetingsData: {
-        allow: ["noticeType", "relationType", "name", "age", "year", "wishes", "from", "name2", "age2", "year2", "summary", "funeralDetails"],
-    },
-    othersData: {
+    otherData: {
         allow: ["title", "description", "price"],
         string: ["price"],
     },
     publicNoticeData: {
-        allow: ["noticetype", "issuingAuthority", "referenceNumber", "publishDate", "expiryDate", "detailedNotice", "pdf"],
+        allow: ["noticetype", "issuingAuthority", "detailedNotice", "pdf"],
     },
-};
+    greetingsData: {
+        allow: ["noticeType", "relationType", "name", "age", "year", "wishes", "from", "name2", "age2", "year2", "summary", "funeralDetails", "message", "senderName", "occasion"],
+    },};
 
 function toBoolean(value) {
     if (typeof value === "boolean") return value;
@@ -221,7 +220,11 @@ function getFileMetaFromUri(uri) {
     return { fileName, mimeType };
 }
 
-async function uploadAdImageToCloud(uri, token, baseUrl) {
+const CLOUDINARY_CLOUD_NAME = process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME || "dcm1plq42";
+const CLOUDINARY_UPLOAD_PRESET = process.env.EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "choja_preset";
+const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
+
+async function uploadAdImageToCloud(uri) {
     if (!uri) return null;
     if (isRemoteUrl(uri)) return uri;
 
@@ -233,20 +236,19 @@ async function uploadAdImageToCloud(uri, token, baseUrl) {
         name: fileName,
         type: mimeType,
     });
+    uploadBody.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+    uploadBody.append("cloud_name", CLOUDINARY_CLOUD_NAME);
 
-    const response = await fetch(`${baseUrl}/ads/upload/image`, {
+    const response = await fetch(CLOUDINARY_UPLOAD_URL, {
         method: "POST",
-        headers: {
-            "Authorization": `Bearer ${token}`,
-        },
         body: uploadBody,
     });
 
     const data = await response.json().catch(() => ({}));
-    const imageUrl = data?.data?.url;
+    const imageUrl = data?.secure_url || data?.url;
 
     if (!response.ok || !imageUrl) {
-        throw new Error(data?.message || "Failed to upload ad image");
+        throw new Error(data?.error?.message || "Failed to upload ad image");
     }
 
     return imageUrl;
@@ -362,7 +364,7 @@ export default function Payment({ navigation, route }) {
 
             const uploadedImages = [];
             for (const img of selectedImages) {
-                const uploaded = await uploadAdImageToCloud(img, token, BASE_URL);
+                const uploaded = await uploadAdImageToCloud(img);
                 if (uploaded) uploadedImages.push(uploaded);
             }
 
@@ -416,7 +418,11 @@ export default function Payment({ navigation, route }) {
                 // Clear any navigation state or go root
                 navigation.navigate("ChojaHome"); // Or wherever you want to go after success
             } else {
-                Alert.alert("Failed", data.message || "Failed to post ad.");
+                let errorMessage = "Failed to post ad.";
+                if (data.message) {
+                    errorMessage = Array.isArray(data.message) ? data.message.join(" ") : data.message;
+                }
+                Alert.alert("Failed", errorMessage);
                 console.error("Ad creation error:", data);
             }
         } catch (error) {

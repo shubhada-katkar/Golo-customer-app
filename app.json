@@ -18,7 +18,8 @@
     },
     "android": {
       "edgeToEdgeEnabled": true,
-      "softwareKeyboardLayoutMode": "resize"
+      "softwareKeyboardLayoutMode": "resize",
+      "package": "com.shubhadakatkar.golocustomerapp"
     },
     "plugins": [
       "@react-native-community/datetimepicker",

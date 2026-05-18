@@ -1,16 +1,122 @@
-import React, { useContext, useState, useRef } from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
+import React, { useContext, useEffect, useRef, useState } from "react";
+import {
+    ActivityIndicator,
+    Image,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import * as Location from "expo-location";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import Slider from "@react-native-community/slider";
 import { ThemeContext } from "../theme/ThemeContext";
 import Topbar from "../components/Topbar";
 import GoloBottom from "../components/GoloBottom";
-import { useNavigation } from "@react-navigation/native";
+import { fetchAllOffers } from "../services/offersService";
+
+const normalizeCategoryText = (value) =>
+    String(value || "")
+        .toLowerCase()
+        .replace(/&/g, "and")
+        .replace(/[_-]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+
+const categoryMatches = (offer, selectedCategory) => {
+    if (!selectedCategory) {
+        return true;
+    }
+
+    const selected = normalizeCategoryText(selectedCategory);
+    const offerCategory = normalizeCategoryText(
+        offer?.bannerCategory || offer?.offerType || offer?.category || offer?.type
+    );
+
+    const aliases = {
+        "real estate": ["property", "real estate"],
+        other: ["other", "others"],
+    };
+
+    const accepted = aliases[selected] || [selected];
+    return accepted.some((term) => offerCategory.includes(term));
+};
+
+const getOfferImage = (item) =>
+    item?.imageUrl ||
+    item?.selectedProducts?.[0]?.imageUrl ||
+    item?.products?.[0]?.images?.[0] ||
+    item?.products?.[0]?.image?.url ||
+    "";
+
+const getOfferTitle = (item) => item?.bannerTitle || item?.title || "Untitled Offer";
+
+const getOfferSubtitle = (item) =>
+    item?.shopName ||
+    item?.merchantName ||
+    item?.businessName ||
+    item?.sellerName ||
+    item?.storeName ||
+    item?.merchant?.name ||
+    item?.merchant?.storeName ||
+    item?.selectedProducts?.[0]?.name ||
+    "Nearby merchant";
+
+const formatPrice = (value) => {
+    if (value === undefined || value === null || value === "") {
+        return null;
+    }
+
+    const numericValue = Number(value);
+    return Number.isFinite(numericValue) ? `Rs ${numericValue}` : String(value);
+};
+
+const getDiscountPrice = (item) =>
+    formatPrice(
+        item?.discountedPrice ||
+        item?.offerPrice ||
+        item?.salePrice ||
+        item?.finalPrice ||
+        item?.displayPrice
+    );
+
+const getOriginalPrice = (item) =>
+    formatPrice(
+        item?.originalPrice ||
+        item?.mrp ||
+        item?.price ||
+        item?.regularPrice ||
+        item?.totalPrice
+    );
+
+const getDistanceText = (value) => {
+    const distance = Number(value);
+    if (!Number.isFinite(distance) || distance < 0) {
+        return null;
+    }
+
+    return distance < 1
+        ? `${Math.round(distance * 1000)} m away`
+        : `${distance.toFixed(1)} km away`;
+};
 
 export default function GoloHome() {
-    const [selectedCategory, setSelectedCategory] = useState(null);
+    const navigation = useNavigation();
     const { colors } = useContext(ThemeContext);
+    const [selectedCategory, setSelectedCategory] = useState(null);
+    const [selectedDistanceKm, setSelectedDistanceKm] = useState(5);
     const [showAllCategories, setShowAllCategories] = useState(false);
+    const [offers, setOffers] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
+    const [locationStatus, setLocationStatus] = useState("loading");
+    const [userCoordinates, setUserCoordinates] = useState(null);
+    const scrollRef = useRef(null);
+
     const categories = [
         { icon: "school-outline", label: "Education" },
         { icon: "heart-outline", label: "Matrimonial" },
@@ -25,38 +131,169 @@ export default function GoloHome() {
         { icon: "cube-outline", label: "Furniture" },
         { icon: "ellipsis-horizontal-outline", label: "Other" },
     ];
-    const scrollRef = useRef(null);
+
     const sortedCategories = selectedCategory
         ? [
-            categories.find(c => c.label === selectedCategory),
-            ...categories.filter(c => c.label !== selectedCategory),
-        ]
+            categories.find((c) => c.label === selectedCategory),
+            ...categories.filter((c) => c.label !== selectedCategory),
+        ].filter(Boolean)
         : categories;
+
+    useEffect(() => {
+        let isMounted = true;
+
+        const getUserLocation = async () => {
+            try {
+                const { status } = await Location.requestForegroundPermissionsAsync();
+
+                if (!isMounted) {
+                    return;
+                }
+
+                if (status !== "granted") {
+                    setLocationStatus("denied");
+                    return;
+                }
+
+                const current = await Location.getCurrentPositionAsync({
+                    accuracy: Location.Accuracy.Balanced,
+                });
+
+                if (!isMounted) {
+                    return;
+                }
+
+                setUserCoordinates({
+                    lat: current?.coords?.latitude,
+                    lng: current?.coords?.longitude,
+                });
+                setLocationStatus("granted");
+            } catch (locationError) {
+                if (!isMounted) {
+                    return;
+                }
+                setLocationStatus("denied");
+                console.error("Location permission/fetch error:", locationError);
+            }
+        };
+
+        getUserLocation();
+
+        return () => {
+            isMounted = false;
+        };
+    }, []);
+
+    const fetchOffers = React.useCallback(async () => {
+        setLoading(true);
+
+        try {
+            setError("");
+            const offersData = await fetchAllOffers({
+                limit: 100,
+                page: 1,
+                radiusKm: selectedDistanceKm,
+                lat: userCoordinates?.lat,
+                lng: userCoordinates?.lng,
+            });
+            setOffers(offersData);
+        } catch (err) {
+            setOffers([]);
+            setError(err?.message || "Unable to load offers right now");
+            console.error("Fetch offers error:", err);
+        } finally {
+            setLoading(false);
+        }
+    }, [selectedDistanceKm, userCoordinates?.lat, userCoordinates?.lng]);
+
+    useFocusEffect(
+        React.useCallback(() => {
+            fetchOffers();
+        }, [fetchOffers])
+    );
+
+    const filteredOffers = offers
+        .filter((offer) => categoryMatches(offer, selectedCategory))
+        .sort((offerA, offerB) => {
+            const distanceA = Number(offerA?.distanceKm);
+            const distanceB = Number(offerB?.distanceKm);
+            const hasDistanceA = Number.isFinite(distanceA);
+            const hasDistanceB = Number.isFinite(distanceB);
+
+            if (hasDistanceA && hasDistanceB) {
+                return distanceA - distanceB;
+            }
+
+            if (hasDistanceA) {
+                return -1;
+            }
+
+            if (hasDistanceB) {
+                return 1;
+            }
+
+            return (
+                new Date(offerB?.createdAt || offerB?.updatedAt || 0).getTime() -
+                new Date(offerA?.createdAt || offerA?.updatedAt || 0).getTime()
+            );
+        });
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
             <Topbar />
-            <ScrollView contentContainerStyle={styles.container}>
 
-                {/* Discover What's Nearby */}
-                <View style={{ justifyContent: "space-between", flexDirection: "row", alignItems: "center", paddingBottom: 10 }}>
+            <ScrollView
+                contentContainerStyle={styles.container}
+                refreshControl={
+                    <RefreshControl refreshing={loading} onRefresh={fetchOffers} />
+                }
+                showsVerticalScrollIndicator={false}
+            >
+                <View style={styles.topRow}>
                     <View style={styles.headerRow}>
-                        <Ionicons name="star-outline" size={18} />
-                        <Text style={styles.headerText}>Discover What’s Nearby</Text>
+                        <Ionicons name="star-outline" size={16} />
+                        <Text style={styles.headerText}>Discover What's Nearby</Text>
                     </View>
-
                 </View>
 
-                <View style={{
-                    marginTop: 12,
-                    paddingHorizontal: 8,
-                }}>
+                <View style={styles.distanceSection}>
+                    <View style={styles.distanceHeaderRow}>
+                        <Text style={styles.distanceTitle}>Distance</Text>
+                        <Text style={styles.distanceValue}>Selected: {selectedDistanceKm} km</Text>
+                    </View>
+
+                    <View style={styles.sliderContainer}>
+                        <Slider
+                            style={styles.slider}
+                            minimumValue={1}
+                            maximumValue={50}
+                            step={1}
+                            value={selectedDistanceKm}
+                            onValueChange={(value) => setSelectedDistanceKm(Math.round(value))}
+                            minimumTrackTintColor="#157a4f"
+                            maximumTrackTintColor="#d9d9d9"
+                            thumbTintColor="#157a4f"
+                        />
+                        <View style={styles.sliderLabels}>
+                            <Text style={styles.sliderLabel}>1 km</Text>
+                            <Text style={styles.sliderLabel}>50 km</Text>
+                        </View>
+                    </View>
+
+                    {locationStatus !== "granted" ? (
+                        <Text style={styles.distanceHint}>
+                            Location is off. Showing all deals from app + web backend.
+                        </Text>
+                    ) : (
+                        <Text style={styles.distanceHint}>
+                            Showing offers within {selectedDistanceKm} km from your location.
+                        </Text>
+                    )}
+                </View>
+
+                <View style={styles.categorySection}>
                     {!showAllCategories ? (
-                        <View style={{
-                            height: 46,
-                            flexDirection: "row",
-                            alignItems: "center"
-                        }}>
+                        <View style={styles.categoryStrip}>
                             <ScrollView
                                 ref={scrollRef}
                                 horizontal
@@ -65,7 +302,7 @@ export default function GoloHome() {
                                 <View style={styles.chipsRow}>
                                     {sortedCategories.map((item, index) => (
                                         <CategoryChip
-                                            key={index}
+                                            key={`${item.label}-${index}`}
                                             icon={item.icon}
                                             label={item.label}
                                             isActive={selectedCategory === item.label}
@@ -84,20 +321,24 @@ export default function GoloHome() {
                             </ScrollView>
 
                             <TouchableOpacity onPress={() => setShowAllCategories(true)}>
-                                <View style={styles.headerRow}>
-                                    <Text style={[styles.headerText, { marginTop: -10, paddingLeft: 10 }]}>See All</Text>
-                                </View>
+                                <Text style={styles.seeAllText}>See All</Text>
                             </TouchableOpacity>
                         </View>
                     ) : (
                         <View>
-                            <TouchableOpacity onPress={() => setShowAllCategories(false)} style={{ alignSelf: "flex-end", marginRight: 6 }}>
-                                <Text style={[styles.headerText, { color: colors.primary, paddingVertical: 4, bottom: 5 }]}>Hide Categories</Text>
+                            <TouchableOpacity
+                                onPress={() => setShowAllCategories(false)}
+                                style={styles.hideCategoriesButton}
+                            >
+                                <Text style={[styles.headerText, { color: colors.primary }]}>
+                                    Hide Categories
+                                </Text>
                             </TouchableOpacity>
+
                             <View style={styles.categoryGrid}>
                                 {sortedCategories.map((item, index) => (
                                     <TouchableOpacity
-                                        key={index}
+                                        key={`${item.label}-${index}`}
                                         onPress={() => {
                                             if (selectedCategory === item.label) {
                                                 setSelectedCategory(null);
@@ -109,19 +350,18 @@ export default function GoloHome() {
                                         }}
                                         style={[
                                             styles.gridItem,
-                                            selectedCategory === item.label && { backgroundColor: "#FFD700" }
+                                            selectedCategory === item.label && styles.gridItemActive,
                                         ]}
                                     >
                                         <Ionicons
                                             name={item.icon}
                                             size={22}
-                                            color={selectedCategory === item.label ? "#000" : "#ffffff"}
+                                            color={selectedCategory === item.label ? "#000" : "#fff"}
                                         />
-
                                         <Text
                                             style={[
                                                 styles.gridText,
-                                                { color: selectedCategory === item.label ? "#000" : "#fff" }
+                                                { color: selectedCategory === item.label ? "#000" : "#fff" },
                                             ]}
                                         >
                                             {item.label}
@@ -133,18 +373,37 @@ export default function GoloHome() {
                     )}
                 </View>
 
-                {/* Cards */}
-                {[1, 2, 3].map((_, index) => (
-                    <ShopCard key={index} />
-                ))}
+                {loading && !offers.length ? (
+                    <View style={styles.centerState}>
+                        <ActivityIndicator size="small" color="#157a4f" />
+                        <Text style={styles.helperText}>Loading live offers...</Text>
+                    </View>
+                ) : filteredOffers.length ? (
+                    filteredOffers.map((item, index) => (
+                        <OfferCard
+                            key={item?.requestId || item?._id || item?.offerId || `offer-${index}`}
+                            item={item}
+                            navigation={navigation}
+                        />
+                    ))
+                ) : (
+                    <View style={styles.centerState}>
+                        <Text style={styles.emptyTitle}>
+                            {error || "No offers found"}
+                        </Text>
+                        <Text style={styles.helperText}>
+                            Pull down to refresh and check for new nearby deals.
+                        </Text>
+                    </View>
+                )}
             </ScrollView>
 
             <SafeAreaView
                 edges={["bottom"]}
-                style={{ position: "absolute", bottom: 0, width: "100%" }} >
+                style={{ position: "absolute", bottom: 0, width: "100%" }}
+            >
                 <GoloBottom />
             </SafeAreaView>
-
         </SafeAreaView>
     );
 }
@@ -154,70 +413,148 @@ const CategoryChip = ({ icon, label, isActive, onPress }) => (
         onPress={onPress}
         style={[
             styles.chip,
-            isActive && { backgroundColor: "#f1d94e", borderColor: "#000", borderWidth: 1.5 } // active color
+            isActive && { backgroundColor: "#f1d94e", borderColor: "#000", borderWidth: 1.5 },
         ]}
     >
-        <Ionicons
-            name={icon}
-            size={16}
-            color={isActive ? "#000" : "#fff"}
-        />
-        <Text
-            style={[
-                styles.chipText,
-                { color: isActive ? "#000" : "#fff" }
-            ]}
-        >
-            {label}
-        </Text>
+        <Ionicons name={icon} size={16} color={isActive ? "#000" : "#fff"} />
+        <Text style={[styles.chipText, { color: isActive ? "#000" : "#fff" }]}>{label}</Text>
     </TouchableOpacity>
 );
 
-const ShopCard = () => {
-    const navigation = useNavigation();
+const OfferCard = ({ item, navigation }) => {
+    const productImage = getOfferImage(item);
+    const title = getOfferTitle(item);
+    const subtitle = getOfferSubtitle(item);
+    const offerType = item?.bannerCategory || item?.offerType || item?.category || "-";
+    const endDate = item?.endDate || item?.validTo || null;
+    const requestStatus = item?.status || "active";
+    const normalizedStatus = String(requestStatus).replace(/_/g, " ");
+    const discountPrice = getDiscountPrice(item);
+    const originalPrice = getOriginalPrice(item);
+    const distanceText = getDistanceText(item?.distanceKm);
+
     return (
-        <View style={styles.card}>
+        <TouchableOpacity
+            activeOpacity={0.9}
+            style={styles.card}
+            onPress={() => navigation.navigate("OfferDetails", { offerData: item })}
+        >
+            <View style={styles.cardInner}>
+                {productImage ? (
+                    <Image source={{ uri: productImage }} style={styles.image} />
+                ) : (
+                    <View style={[styles.image, styles.imageFallback]}>
+                        <Ionicons name="image-outline" size={28} color="#8a8a8a" />
+                    </View>
+                )}
 
-            {/* Image Placeholder */}
-            <TouchableOpacity style={styles.imageBox} onPress={() => navigation.navigate("OfferDetails")}>
-                <Ionicons name="image-outline" size={40} color="#bdbdbd" />
-            </TouchableOpacity>
-
-            {/* Content */}
-            <View style={styles.cardContent}>
-                <Text style={styles.title}>JP International School Uniform</Text>
-                <Text style={styles.subtitle}>By Raina clothing shop</Text>
-
-                <View style={styles.priceRow}>
-                    <Text style={styles.discountPrice}>560rs Discounted price</Text>
-                    <Text style={styles.originalPrice}>1200rs Original Price</Text>
-                </View>
-
-                <View style={styles.metaRow}>
-                    <View style={styles.metaItem}>
-                        <Ionicons name="star" size={14} color="#f5a623" />
-                        <Text style={styles.metaText}>4.5 (89)</Text>
+                <View style={styles.cardContent}>
+                    <View style={styles.rowBetween}>
+                        <Text style={styles.title} numberOfLines={2}>
+                            {title}
+                        </Text>
+                        <Text
+                            style={[
+                                styles.statusText,
+                                requestStatus === "active" || requestStatus === "approved"
+                                    ? styles.statusPositive
+                                    : requestStatus === "under_review"
+                                        ? styles.statusPending
+                                        : styles.statusNegative,
+                            ]}
+                        >
+                            {normalizedStatus}
+                        </Text>
                     </View>
 
-                    <View style={styles.metaItem}>
-                        <Ionicons name="location-outline" size={14} />
-                        <Text style={styles.metaText}>0.3 km</Text>
+                    <Text style={styles.subtitle} numberOfLines={1}>
+                        By {subtitle}
+                    </Text>
+
+                    <Text style={styles.metaText}>Type: {offerType}</Text>
+
+                    <Text style={styles.validText}>
+                        Valid Till: {endDate ? new Date(endDate).toDateString() : "-"}
+                    </Text>
+
+                    <View style={{ flexDirection: "row",
+                        alignItems: "center", justifyContent: "space-between", flexWrap: "wrap"
+                    }} >
+
+                    {distanceText ? <Text style={styles.distanceMetaText}>{distanceText}</Text> : null}
+
+                    {(discountPrice || originalPrice) ? (
+                        <View style={styles.priceRow}>
+                            {discountPrice ? <Text style={styles.discountPrice}>{discountPrice}</Text> : null}
+                            {originalPrice ? <Text style={styles.originalPrice}>{originalPrice}</Text> : null}
+                        </View>
+                    ) : null}
                     </View>
 
-                    <View style={styles.metaItem}>
-                        <Ionicons name="time-outline" size={14} color="green" />
-                        <Text style={[styles.metaText, { color: "green" }]}>Open</Text>
-                    </View>
                 </View>
             </View>
-        </View>
+        </TouchableOpacity>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
         padding: 16,
-        paddingBottom: 60,
+        paddingBottom: 90,
+    },
+    topRow: {
+        justifyContent: "space-between",
+        flexDirection: "row",
+        alignItems: "center",
+        paddingBottom: 10,
+    },
+    distanceSection: {
+        marginBottom: 14,
+    },
+    distanceHeaderRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        marginBottom: 8,
+    },
+    distanceTitle: {
+        fontSize: 14,
+        fontFamily: "Medium",
+    },
+    distanceValue: {
+        fontSize: 13,
+        color: "#157a4f",
+        fontFamily: "Medium",
+    },
+    distanceChipsRow: {
+        paddingBottom: 6,
+    },
+    distanceChip: {
+        paddingHorizontal: 12,
+        paddingVertical: 7,
+        borderRadius: 18,
+        borderWidth: 1,
+        borderColor: "#d9d9d9",
+        marginRight: 8,
+        backgroundColor: "#fff",
+    },
+    distanceChipActive: {
+        backgroundColor: "#157a4f",
+        borderColor: "#157a4f",
+    },
+    distanceChipText: {
+        color: "#1f1f1f",
+        fontFamily: "Medium",
+        fontSize: 12,
+    },
+    distanceChipTextActive: {
+        color: "#fff",
+    },
+    distanceHint: {
+        marginTop: 4,
+        color: "#666",
+        fontSize: 12,
+        fontFamily: "Medium",
     },
     headerRow: {
         flexDirection: "row",
@@ -229,10 +566,20 @@ const styles = StyleSheet.create({
         fontFamily: "Medium",
         lineHeight: Math.round(16 * 1.5),
     },
-
+    categorySection: {
+        marginTop: 12,
+        paddingHorizontal: 8,
+        marginBottom: 18,
+    },
+    categoryStrip: {
+        height: 46,
+        flexDirection: "row",
+        alignItems: "center",
+    },
     chipsRow: {
         flexDirection: "row",
-        marginBottom: 20,
+        marginBottom: 10,
+        alignItems: "center",
     },
     chip: {
         flexDirection: "row",
@@ -244,48 +591,131 @@ const styles = StyleSheet.create({
         marginRight: 10,
     },
     chipText: {
-        color: "#fff",
         marginLeft: 6,
-        fontSize: 13,
+        fontSize: 12,
         fontFamily: "Medium",
-        lineHeight: Math.round(13 * 1.4),
+        lineHeight: Math.round(12 * 1.4),
     },
-
+    seeAllText: {
+        fontSize: 16,
+        fontFamily: "Medium",
+        paddingLeft: 10,
+        marginTop: -10,
+    },
+    hideCategoriesButton: {
+        alignSelf: "flex-end",
+        marginRight: 6,
+        bottom: 5,
+    },
+    categoryGrid: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        justifyContent: "space-between",
+    },
+    gridItem: {
+        width: "30%",
+        backgroundColor: "#000",
+        borderRadius: 10,
+        gap: 6,
+        paddingVertical: 8,
+        marginBottom: 10,
+        alignItems: "center",
+        flexDirection: "row",
+        justifyContent: "center",
+    },
+    gridItemActive: {
+        backgroundColor: "#FFD700",
+    },
+    gridText: {
+        fontSize: 12,
+        fontFamily: "Medium",
+        lineHeight: Math.round(12 * 1.5),
+        textAlign: "center",
+    },
     card: {
-        backgroundColor: "#FFFDF6",
-        borderRadius: 16,
-        marginBottom: 20,
-        overflow: "hidden",
-        elevation: 3,
+        borderRadius: 10,
+        minHeight: 120,
+        borderWidth: 1,
+        borderColor: "#ececec",
+        elevation: 5,
+        backgroundColor: "#fff",
+        justifyContent: "center",
+        paddingHorizontal: 10,
+        paddingVertical: 10,
+        marginBottom: 18,
     },
-
-    imageBox: {
-        height: 160,
-        backgroundColor: "#EDEAF3",
+    cardInner: {
+        flexDirection: "row",
+    },
+    image: {
+        width: 120,
+        height: 130,
+        backgroundColor: "#b8b8b8",
+        borderRadius: 12,
+    },
+    imageFallback: {
         alignItems: "center",
         justifyContent: "center",
     },
-
     cardContent: {
-        padding: 14,
+        flex: 1,
+        paddingHorizontal: 10,
     },
-
+    rowBetween: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "flex-start",
+        gap: 8,
+    },
     title: {
-        fontSize: 16,
+        flex: 1,
+        fontSize: 18,
         fontFamily: "Bold",
-        lineHeight: Math.round(16 * 1.4),
+        lineHeight: Math.round(18 * 1.5),
     },
     subtitle: {
-        fontSize: 13,
+        marginTop: 5,
         color: "#666",
-        marginVertical: 4,
         fontFamily: "Medium",
-        lineHeight: Math.round(13 * 1.4),
+        fontSize: 13,
+        lineHeight: Math.round(13 * 1.5),
     },
-
+    metaText: {
+        marginTop: 5,
+        fontFamily: "Medium",
+        fontSize: 12,
+        lineHeight: Math.round(12 * 1.5),
+    },
+    validText: {
+        fontSize: 12,
+        marginTop: 6,
+        color: "#555",
+        fontFamily: "Medium",
+    },
+    distanceMetaText: {
+        fontSize: 14,
+        marginTop: 4,
+        color: "#157a4f",
+        fontFamily: "Medium",
+        lineHeight: Math.round(14 * 1.5),
+    },
+    statusText: {
+        textTransform: "capitalize",
+        fontFamily: "Medium",
+    },
+    statusPositive: {
+        color: "green",
+    },
+    statusPending: {
+        color: "#b7791f",
+    },
+    statusNegative: {
+        color: "red",
+    },
     priceRow: {
         flexDirection: "row",
         alignItems: "center",
+        flexWrap: "wrap",
         marginTop: 6,
     },
     discountPrice: {
@@ -293,6 +723,7 @@ const styles = StyleSheet.create({
         marginRight: 10,
         fontSize: 14,
         fontFamily: "Medium",
+        lineHeight: Math.round(14 * 1.5),
     },
     originalPrice: {
         color: "red",
@@ -301,76 +732,20 @@ const styles = StyleSheet.create({
         fontFamily: "Medium",
         lineHeight: Math.round(12 * 1.4),
     },
-
-    metaRow: {
-        flexDirection: "row",
-        marginTop: 10,
-    },
-    metaItem: {
-        flexDirection: "row",
+    centerState: {
         alignItems: "center",
-        marginRight: 14,
+        justifyContent: "center",
+        paddingVertical: 40,
     },
-    metaText: {
-        marginLeft: 4,
-        fontSize: 12,
-        lineHeight: Math.round(12 * 1.4),
-        fontFamily: "Medium",
-    },
-
-    categoryGrid: {
-        flexDirection: "row",
-        flexWrap: "wrap",
-        justifyContent: "space-between",
-        marginBottom: 20,
-    },
-
-    chipsRow: {
-        flexDirection: "row",
-        marginBottom: 10,
-        alignItems: "center"
-    },
-
-    chip: {
-        flexDirection: "row",
-        alignItems: "center",
-        backgroundColor: "#000",
-        paddingHorizontal: 14,
-        paddingVertical: 8,
-        borderRadius: 20,
-        marginRight: 10,
-    },
-
-    chipText: {
-        color: "#fff",
-        marginLeft: 6,
-        fontSize: 12,
-        fontFamily: "Medium",
-        lineHeight: Math.round(12 * 1.4),
-    },
-    categoryGrid: {
-        flexDirection: "row",
-        flexWrap: "wrap",
-        justifyContent: "space-between",
-    },
-
-    gridItem: {
-        width: "30%", // 3 per row
-        backgroundColor: "#000000",
-        borderRadius: 10,
-        gap: 6,
-        paddingVertical: 8,
-        marginBottom: 10,
-        alignItems: "center",
-        flexDirection: "row",
-        justifyContent: "center"
-    },
-
-    gridText: {
-        fontSize: 12,
-        fontFamily: "Medium",
-        lineHeight: Math.round(12 * 1.5),
+    emptyTitle: {
         textAlign: "center",
-        color: "#fff"
+        fontSize: 16,
+        fontFamily: "Medium",
+    },
+    helperText: {
+        textAlign: "center",
+        marginTop: 8,
+        color: "#666",
+        fontFamily: "Medium",
     },
 });

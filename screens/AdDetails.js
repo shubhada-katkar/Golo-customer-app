@@ -81,7 +81,7 @@ const CATEGORY_DATA_FIELD_BY_LABEL = {
   'Lost & Found': 'lostFoundData',
   Personal: 'personalData',
   Greetings: 'greetingsData',
-  Others: 'othersData',
+  Others: 'otherData',
   'Public Notice': 'publicNoticeData',
 };
 

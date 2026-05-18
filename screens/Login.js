@@ -136,7 +136,7 @@ export default function Login({ navigation }) {
         </View>
 
         <View style={{ alignItems: "center", flexDirection: "row", marginTop: 10 }}>
-          <Text style={{ fontSize: 16, fontFamily: "Medium" }}>Don't Have An Account?</Text>
+          <Text style={{ fontSize: 16, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) }}>Don't Have An Account?</Text>
           <TouchableOpacity onPress={() => navigation.navigate("Registration") }>
             <Text style={styles.link}>Register Here</Text>
           </TouchableOpacity>
@@ -161,6 +161,7 @@ const styles = StyleSheet.create({
   text: {
     fontSize: width * 0.048,
     fontFamily: "Medium",
+    lineHeight: Math.round(width * 0.048 * 1.5),
   },
 
   input: {
@@ -186,6 +187,7 @@ const styles = StyleSheet.create({
     color: "#4caf50",
     paddingHorizontal: 10,
     fontFamily: "Medium",
+    lineHeight:Math.round(18 * 1.5)
   },
 
   forgotPasswordLink: {
@@ -196,6 +198,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#157a4f",
     fontFamily: "Medium",
+    lineHeight: Math.round(14 * 1.5),
   },
 
   inputpassword: {

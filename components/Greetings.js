@@ -9,6 +9,13 @@ export default function Greetings({ formData, setFormData, category, onPrevious,
   const [selectedTab, setSelectedTab] = useState("greetings");
   const navigation = useNavigation();
 
+  // Ensure noticeType is always set
+  React.useEffect(() => {
+    if (!formData.noticeType) {
+      setFormData({ ...formData, noticeType: "greetings" });
+    }
+  }, []);
+
   return (
     <View>
       {/* Header */}
@@ -58,7 +65,16 @@ export default function Greetings({ formData, setFormData, category, onPrevious,
           ]}
           onPress={() => {
             setSelectedTab("greetings");
-            setFormData({ ...formData, noticeType: "greetings" });
+            setFormData({ 
+              ...formData, 
+              noticeType: "greetings",
+              // Clear tribute-specific fields
+              name2: "",
+              age2: "",
+              year2: "",
+              summary: "",
+              funeralDetails: ""
+            });
           }}
         >
           <Text
@@ -78,7 +94,13 @@ export default function Greetings({ formData, setFormData, category, onPrevious,
           ]}
           onPress={() => {
             setSelectedTab("tribute");
-            setFormData({ ...formData, noticeType: "tribute" });
+            setFormData({ 
+              ...formData, 
+              noticeType: "tribute",
+              // Clear greetings-specific fields
+              relationType: "",
+              from: ""
+            });
           }}
         >
           <Text

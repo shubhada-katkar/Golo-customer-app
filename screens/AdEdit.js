@@ -39,8 +39,9 @@ const CATEGORY_DTO_FIELD_BY_LABEL = {
   "Lost & Found": "lostFoundData",
   Personal: "personalData",
   Greetings: "greetingsData",
-  Others: "othersData",
-  "Public Notice": "publicNoticeData",
+  "Greetings & Tributes": "greetingsData",
+  Others: "otherData",
+  Other: "otherData",
 };
 
 function getResolvedAdId(ad, fallbackAdId) {
@@ -65,7 +66,11 @@ function getFileMetaFromUri(uri) {
   return { fileName, mimeType };
 }
 
-async function uploadAdImageToCloud(uri, token, baseUrl) {
+const CLOUDINARY_CLOUD_NAME = process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME || "dcm1plq42";
+const CLOUDINARY_UPLOAD_PRESET = process.env.EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "choja_preset";
+const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
+
+async function uploadAdImageToCloud(uri) {
   if (!uri) return null;
   if (isRemoteUrl(uri)) return uri;
 
@@ -76,20 +81,19 @@ async function uploadAdImageToCloud(uri, token, baseUrl) {
     name: fileName,
     type: mimeType,
   });
+  uploadBody.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
+  uploadBody.append("cloud_name", CLOUDINARY_CLOUD_NAME);
 
-  const response = await fetch(`${baseUrl}/ads/upload/image`, {
+  const response = await fetch(CLOUDINARY_UPLOAD_URL, {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
     body: uploadBody,
   });
 
   const data = await response.json().catch(() => ({}));
-  const imageUrl = data?.data?.url;
+  const imageUrl = data?.secure_url || data?.url;
 
   if (!response.ok || !imageUrl) {
-    throw new Error(data?.message || "Failed to upload image");
+    throw new Error(data?.error?.message || "Failed to upload image");
   }
 
   return imageUrl;
@@ -348,7 +352,7 @@ export default function AdEdit({ route, navigation }) {
 
       const uploadedImages = [];
       for (const imageUri of images) {
-        const uploaded = await uploadAdImageToCloud(imageUri, token, baseUrl);
+        const uploaded = await uploadAdImageToCloud(imageUri);
         if (uploaded) uploadedImages.push(uploaded);
       }
 
