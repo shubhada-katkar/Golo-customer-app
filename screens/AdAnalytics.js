@@ -67,13 +67,17 @@ export default function AdAnalytics({ navigation, route }) {
     }, [fetchAnalytics]);
 
     const data = useMemo(() => ({
-        clicks: analytics?.stats?.clicks || 0,
-        visitors: analytics?.stats?.visitors || 0,
-        contacts: analytics?.stats?.contacts || 0,
-        wishlist: analytics?.stats?.wishlist || 0,
+        clicks: analytics?.stats?.clicks || analytics?.ad?.views || 0,
+        visitors: analytics?.stats?.visitors || analytics?.ad?.uniqueVisitors || 0,
+        contacts: analytics?.stats?.contacts || analytics?.ad?.contactClicks || 0,
+        wishlist: analytics?.stats?.wishlist || analytics?.ad?.wishlistCount || 0,
     }), [analytics]);
 
-    const rates = analytics?.rates || {};
+    const rates = analytics?.rates || {
+        ctr: analytics?.ad?.clickThroughRate || 0,
+        visitorsRate: 0,
+        wishlistRate: analytics?.ad?.wishlistRate || 0,
+    };
     const adInfo = analytics?.ad || {};
     const resolvedAdId = adInfo?.adId || adId;
 

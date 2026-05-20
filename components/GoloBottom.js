@@ -33,10 +33,10 @@ export default function GoloBottom() {
                 <Text style={{ textAlign: "auto", fontSize: 10, color: currentRoute === "ChojaHome" ? "#157a4f" : "black", fontFamily: "Medium" }}>Choja</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.bar} onPress={() => navigation.navigate("GoloChatPage")}>
-                <Ionicons name="chatbubble-ellipses-outline" size={24}
-                    color={currentRoute === "GoloChatPage" ? "#157a4f" : "black"} />
-                <Text style={{ textAlign: "auto", fontSize: 10, color: currentRoute === "GoloChatPage" ? "#157a4f" : "black", fontFamily: "Medium" }}>Chats</Text>
+            <TouchableOpacity style={styles.bar} onPress={() => navigation.navigate("Claimed")}>
+                <MaterialCommunityIcons name="sticker-check-outline" size={24}
+                    color={currentRoute === "Claimed" ? "#157a4f" : "black"} />
+                <Text style={{ textAlign: "auto", fontSize: 10, color: currentRoute === "Claimed" ? "#157a4f" : "black", fontFamily: "Medium" }}>Claimed</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.bar} onPress={()=>navigation.navigate("ProfilePage")}>

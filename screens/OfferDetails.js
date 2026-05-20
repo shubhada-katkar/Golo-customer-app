@@ -3,11 +3,13 @@ import {
     Alert,
     ActivityIndicator,
     Image,
+    Linking,
     Modal,
     ScrollView,
     StatusBar,
     StyleSheet,
     Text,
+    TextInput,
     TouchableOpacity,
     View,
 } from "react-native";
@@ -24,6 +26,7 @@ import {
     claimOfferVoucher,
     fetchVoucherById,
     findVoucherForOffer,
+    submitOfferReview,
 } from "../services/voucherService";
 
 const getOfferImage = (item) =>
@@ -44,12 +47,29 @@ const formatPrice = (value) => {
 
 const isMongoObjectId = (value) => /^[a-fA-F0-9]{24}$/.test(String(value || ""));
 
+const getProductsList = (offerData) => {
+    const products = offerData?.selectedProducts || offerData?.products || [];
+    return Array.isArray(products) ? products : [];
+};
+
+const getTermsAndConditions = (offerData) => {
+    return (
+        offerData?.termsAndConditions ||
+        offerData?.terms ||
+        offerData?.tc ||
+        "No specific terms and conditions provided."
+    );
+};
+
 export default function OfferDetails({ navigation, route }) {
     const { colors } = useContext(ThemeContext);
     const [showQR, setShowQR] = useState(false);
     const [voucher, setVoucher] = useState(null);
     const [claimLoading, setClaimLoading] = useState(false);
     const [claimCheckLoading, setClaimCheckLoading] = useState(false);
+    const [reviewText, setReviewText] = useState("");
+    const [reviewRating, setReviewRating] = useState(5);
+    const [reviewLoading, setReviewLoading] = useState(false);
     const qrRef = useRef();
 
     const offerData = route?.params?.offerData || {};
@@ -89,6 +109,7 @@ export default function OfferDetails({ navigation, route }) {
         offerData?.selectedProducts?.[0]?.description ||
         "Offer details will be available soon.";
     const phoneNumber =
+        offerData?.merchant?.contactNumber ||
         offerData?.contactNumber ||
         offerData?.phoneNumber ||
         offerData?.merchantPhone ||
@@ -103,8 +124,24 @@ export default function OfferDetails({ navigation, route }) {
         offerData?.merchant?.storeLocation ||
         "Location not available";
 
+    const products = getProductsList(offerData);
+    const termsAndConditions = getTermsAndConditions(offerData);
+
+    const handleCallMerchant = () => {
+        if (!phoneNumber) {
+            Alert.alert("Not Available", "Merchant phone number is not available.");
+            return;
+        }
+        Linking.openURL(`tel:${phoneNumber}`).catch((err) =>
+            Alert.alert("Error", "Unable to open phone dialer.")
+        );
+    };
+
     const resolveVoucherId = (voucherLike) =>
         voucherLike?.voucherId || voucherLike?._id || "";
+
+    const isVoucherRedeemed = (voucherLike) =>
+        String(voucherLike?.status || "").toLowerCase() === "redeemed";
 
     const hydrateVoucher = async (voucherLike) => {
         const fallbackVoucher = voucherLike || null;
@@ -197,6 +234,44 @@ export default function OfferDetails({ navigation, route }) {
         }
     };
 
+    const submitReview = async () => {
+        const content = String(reviewText || "").trim();
+        if (!content) {
+            Alert.alert("Write a review", "Please enter your feedback before submitting.");
+            return;
+        }
+
+        if (!isVoucherRedeemed(voucher)) {
+            Alert.alert(
+                "Review unavailable",
+                "Reviews can only be submitted after your voucher has been redeemed."
+            );
+            return;
+        }
+
+        const voucherId = resolveVoucherId(voucher);
+        if (!voucherId) {
+            Alert.alert("Unable to submit", "Voucher information is not available.");
+            return;
+        }
+
+        setReviewLoading(true);
+        try {
+            await submitOfferReview(voucherId, { rating: reviewRating, content });
+            setReviewText("");
+            setReviewRating(5);
+            await syncOfferClaimState();
+            Alert.alert("Thank you!", "Your review has been submitted.");
+        } catch (error) {
+            Alert.alert(
+                "Submit failed",
+                String(error?.message || "Unable to submit review right now.")
+            );
+        } finally {
+            setReviewLoading(false);
+        }
+    };
+
     const downloadQR = async () => {
         if (!voucher?.qrCode && !voucher?.qrImage) {
             Alert.alert("QR unavailable", "Please claim this offer first.");
@@ -273,11 +348,53 @@ export default function OfferDetails({ navigation, route }) {
                                 {validTill ? new Date(validTill).toDateString() : "-"}
                             </Text>
 
-                            <Text style={styles.label}>Description</Text>
-                            <Text style={styles.value}>{details}</Text>
-
                             <Text style={styles.label}>Location</Text>
                             <Text style={styles.value}>{locationText}</Text>
+
+                            {products.length > 0 && (
+                                <>
+                                    <Text style={styles.label}>Products Included</Text>
+                                    <View style={styles.productsContainer}>
+                                        {products.map((product, index) => {
+                                            const productImage =
+                                                product?.imageUrl ||
+                                                product?.image?.url ||
+                                                product?.images?.[0] ||
+                                                null;
+                                            const productName = product?.productName || product?.name || product?.title || `Product ${index + 1}`;
+
+                                            return (
+                                                <View key={index} style={styles.productCard}>
+                                                    {productImage ? (
+                                                        <Image
+                                                            source={{ uri: productImage }}
+                                                            style={styles.productImage}
+                                                        />
+                                                    ) : (
+                                                        <View style={styles.productImagePlaceholder}>
+                                                            <Ionicons
+                                                                name="image-outline"
+                                                                size={24}
+                                                                color="#9a9a9a"
+                                                            />
+                                                        </View>
+                                                    )}
+                                                    <Text style={styles.productName} numberOfLines={2}>
+                                                        {productName}
+                                                    </Text>
+                                                </View>
+                                            );
+                                        })}
+                                    </View>
+                                </>
+                            )}
+
+                            {termsAndConditions && termsAndConditions !== "No specific terms and conditions provided." && (
+                                <>
+                                    <Text style={styles.label}>Terms & Conditions</Text>
+                                    <Text style={styles.value}>{termsAndConditions}</Text>
+                                </>
+                            )}
                         </View>
 
                         <TouchableOpacity
@@ -300,18 +417,63 @@ export default function OfferDetails({ navigation, route }) {
                         </TouchableOpacity>
 
                         <View style={styles.bottomBar}>
-                            <TouchableOpacity style={styles.callBtn}>
+                            <TouchableOpacity 
+                                style={[styles.dirBtn, !phoneNumber && styles.disabledCallBtn]} 
+                                onPress={handleCallMerchant}
+                                disabled={!phoneNumber}
+                            >
                                 <Ionicons name="call" size={18} color="#fff" />
                                 <Text style={styles.bottomText}>
-                                    {phoneNumber ? ` Call ${phoneNumber}` : " Call/Text"}
+                                    {phoneNumber ? ` Call ${phoneNumber}` : " Number unavailable"}
                                 </Text>
                             </TouchableOpacity>
-
-                            <TouchableOpacity style={styles.dirBtn}>
-                                <Ionicons name="navigate" size={18} color="#000" />
-                                <Text style={styles.dirText}> Direction</Text>
-                            </TouchableOpacity>
                         </View>
+
+                        {isVoucherRedeemed(voucher) ? (
+                            <View style={styles.reviewContainer}>
+                                <Text style={styles.reviewLabel}>Write a review</Text>
+                                <Text style={styles.ratingLabel}>Rate your experience</Text>
+                                <View style={styles.ratingRow}>
+                                    {Array.from({ length: 5 }).map((_, starIndex) => (
+                                        <TouchableOpacity
+                                            key={starIndex}
+                                            onPress={() => !reviewLoading && setReviewRating(starIndex + 1)}
+                                            disabled={reviewLoading}
+                                        >
+                                            <Ionicons
+                                                name={starIndex < reviewRating ? "star" : "star-outline"}
+                                                size={28}
+                                                color={starIndex < reviewRating ? "#fbbf24" : "#9ca3af"}
+                                                style={styles.ratingStar}
+                                            />
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+                                <TextInput
+                                    style={styles.reviewInput}
+                                    placeholder="Write your review for the merchant or offer..."
+                                    placeholderTextColor="#6b7280"
+                                    value={reviewText}
+                                    onChangeText={setReviewText}
+                                    multiline
+                                    editable={!reviewLoading}
+                                />
+                                <TouchableOpacity
+                                    style={[
+                                        styles.reviewButton,
+                                        reviewLoading ? styles.disabledBtn : null,
+                                    ]}
+                                    onPress={submitReview}
+                                    disabled={reviewLoading}
+                                >
+                                    {reviewLoading ? (
+                                        <ActivityIndicator size="small" color="#fff" />
+                                    ) : (
+                                        <Text style={styles.reviewButtonText}>Submit Review</Text>
+                                    )}
+                                </TouchableOpacity>
+                            </View>
+                        ) : null}
                     </View>
                 </ScrollView>
 
@@ -341,6 +503,14 @@ export default function OfferDetails({ navigation, route }) {
                         <Text style={styles.tokenText}>
                             Voucher: {voucher?.voucherId || voucher?._id || "-"}
                         </Text>
+
+                        {voucher?.verificationCode && (
+                            <View style={styles.verificationCodeContainer}>
+                                <Text style={styles.verificationCodeLabel}>Or use this code if QR doesn't work:</Text>
+                                <Text style={styles.verificationCode}>{voucher.verificationCode}</Text>
+                                <Text style={styles.verificationCodeHint}>Share this code with the merchant</Text>
+                            </View>
+                        )}
 
                         <TouchableOpacity style={styles.downloadBtn} onPress={downloadQR}>
                             <Text style={styles.downloadText}>Download QR</Text>
@@ -479,18 +649,20 @@ const styles = StyleSheet.create({
     dirBtn: {
         flex: 1,
         flexDirection: "row",
-        backgroundColor: "#FBBF24",
+        backgroundColor: "#157a4f",
         padding: 12,
         borderRadius: 10,
         justifyContent: "center",
         alignItems: "center",
     },
+    disabledCallBtn: {
+        opacity: 0.5,
+    },
     bottomText: {
         color: "#fff",
         fontFamily: "SemiBold",
-    },
-    dirText: {
-        fontFamily: "SemiBold",
+        lineHeight: Math.round(14 * 1.5),
+        fontSize: 14,
     },
     modalContainer: {
         flex: 1,
@@ -513,6 +685,39 @@ const styles = StyleSheet.create({
     tokenText: {
         fontFamily: "Medium",
         lineHeight: Math.round(12 * 1.5),
+    },
+    verificationCodeContainer: {
+        marginTop: 16,
+        padding: 12,
+        backgroundColor: "#f0fdf4",
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: "#bbf7d0",
+        alignItems: "center",
+        width: "100%",
+    },
+    verificationCodeLabel: {
+        fontSize: 12,
+        fontFamily: "Medium",
+        color: "#059669",
+        marginBottom: 8,
+        textAlign: "center",
+        lineHeight: Math.round(12 * 1.5),
+    },
+    verificationCode: {
+        fontSize: 16,
+        fontFamily: "SemiBold",
+        color: "#047857",
+        letterSpacing: 2,
+        marginBottom: 6,
+        lineHeight: Math.round(16 * 1.5),
+    },
+    verificationCodeHint: {
+        fontSize: 11,
+        fontFamily: "Regular",
+        color: "#6b7280",
+        textAlign: "center",
+        lineHeight: Math.round(11 * 1.5),
     },
     downloadBtn: {
         marginTop: 15,
@@ -537,5 +742,91 @@ const styles = StyleSheet.create({
         width: 220,
         height: 220,
         resizeMode: "contain",
+    },
+    productsContainer: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        gap: 12,
+        marginTop: 8,
+    },
+    productCard: {
+        width: "48%",
+        backgroundColor: "#f9fafb",
+        borderRadius: 10,
+        padding: 10,
+        alignItems: "center",
+        borderWidth: 1,
+        borderColor: "#e5e7eb",
+    },
+    productImage: {
+        width: 80,
+        height: 80,
+        borderRadius: 8,
+        marginBottom: 8,
+        resizeMode: "cover",
+    },
+    productImagePlaceholder: {
+        width: 80,
+        height: 80,
+        borderRadius: 8,
+        marginBottom: 8,
+        backgroundColor: "#e5e7eb",
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    productName: {
+        fontSize: 12,
+        fontFamily: "Medium",
+        textAlign: "center",
+        color: "#333",
+        lineHeight: 16,
+    },
+    reviewContainer: {
+        marginTop: 20,
+        padding: 14,
+        borderRadius: 12,
+        backgroundColor: "#ffffff",
+        borderWidth: 1,
+        borderColor: "#e5e7eb",
+    },
+    reviewLabel: {
+        fontFamily: "SemiBold",
+        marginBottom: 10,
+        color: "#111827",
+    },
+    ratingLabel: {
+        fontFamily: "SemiBold",
+        marginBottom: 8,
+        color: "#111827",
+    },
+    ratingRow: {
+        flexDirection: "row",
+        marginBottom: 12,
+    },
+    ratingStar: {
+        marginHorizontal: 2,
+    },
+    reviewInput: {
+        minHeight: 100,
+        borderWidth: 1,
+        borderColor: "#d1d5db",
+        borderRadius: 10,
+        backgroundColor: "#f9fafb",
+        padding: 12,
+        color: "#111827",
+        textAlignVertical: "top",
+    },
+    reviewButton: {
+        marginTop: 12,
+        backgroundColor: "#f5b849",
+        borderRadius: 10,
+        paddingVertical: 14,
+        alignItems: "center",
+    },
+    reviewButtonText: {
+        fontFamily: "Bold",
+        color: "#fff",
+        fontSize: 14,
+        lineHeight: Math.round(14 * 1.5),
     },
 });

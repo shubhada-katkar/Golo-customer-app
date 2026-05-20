@@ -6,6 +6,7 @@ import {
     ScrollView,
     StyleSheet,
     Text,
+    TextInput,
     TouchableOpacity,
     View,
 } from "react-native";
@@ -63,6 +64,7 @@ const getOfferSubtitle = (item) =>
     item?.storeName ||
     item?.merchant?.name ||
     item?.merchant?.storeName ||
+    item?.selectedProducts?.[0]?.productName ||
     item?.selectedProducts?.[0]?.name ||
     "Nearby merchant";
 
@@ -110,6 +112,7 @@ export default function GoloHome() {
     const [selectedCategory, setSelectedCategory] = useState(null);
     const [selectedDistanceKm, setSelectedDistanceKm] = useState(5);
     const [showAllCategories, setShowAllCategories] = useState(false);
+    const [searchQuery, setSearchQuery] = useState("");
     const [offers, setOffers] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
@@ -212,8 +215,29 @@ export default function GoloHome() {
         }, [fetchOffers])
     );
 
+    const offerMatchesSearch = (offer, q) => {
+        const needle = String(q || "").trim().toLowerCase();
+        if (!needle) return true;
+        const title = String(offer?.bannerTitle || offer?.title || "").toLowerCase();
+        if (title.includes(needle)) return true;
+
+        const products = Array.isArray(offer?.selectedProducts)
+            ? offer.selectedProducts
+            : Array.isArray(offer?.products)
+                ? offer.products
+                : [];
+
+        for (let i = 0; i < products.length; i++) {
+            const p = products[i] || {};
+            const name = String(p?.productName || p?.name || p?.title || "").toLowerCase();
+            if (name.includes(needle)) return true;
+        }
+
+        return false;
+    };
+
     const filteredOffers = offers
-        .filter((offer) => categoryMatches(offer, selectedCategory))
+        .filter((offer) => categoryMatches(offer, selectedCategory) && offerMatchesSearch(offer, searchQuery))
         .sort((offerA, offerB) => {
             const distanceA = Number(offerA?.distanceKm);
             const distanceB = Number(offerB?.distanceKm);
@@ -274,9 +298,11 @@ export default function GoloHome() {
                             maximumTrackTintColor="#d9d9d9"
                             thumbTintColor="#157a4f"
                         />
-                        <View style={styles.sliderLabels}>
-                            <Text style={styles.sliderLabel}>1 km</Text>
-                            <Text style={styles.sliderLabel}>50 km</Text>
+                        <View style={{ flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 6}}>
+                            <Text style={{ fontSize: 12, fontFamily: "Medium", 
+                                lineHeight: Math.round(12 * 1.5) }}>1 km</Text>
+                            <Text style={{ fontSize: 12, fontFamily: "Medium", 
+                                lineHeight: Math.round(12 * 1.5) }}>50 km</Text>
                         </View>
                     </View>
 
@@ -289,6 +315,16 @@ export default function GoloHome() {
                             Showing offers within {selectedDistanceKm} km from your location.
                         </Text>
                     )}
+                </View>
+
+                <View style={styles.searchContainer}>
+                    <TextInput
+                        placeholder="Search offers or products"
+                        value={searchQuery}
+                        onChangeText={setSearchQuery}
+                        style={styles.searchInput}
+                        returnKeyType="search"
+                    />
                 </View>
 
                 <View style={styles.categorySection}>
@@ -416,8 +452,8 @@ const CategoryChip = ({ icon, label, isActive, onPress }) => (
             isActive && { backgroundColor: "#f1d94e", borderColor: "#000", borderWidth: 1.5 },
         ]}
     >
-        <Ionicons name={icon} size={16} color={isActive ? "#000" : "#fff"} />
-        <Text style={[styles.chipText, { color: isActive ? "#000" : "#fff" }]}>{label}</Text>
+        <Ionicons name={icon} size={16} color={isActive ? "#000" : "#000000"} />
+        <Text style={[styles.chipText, { color: isActive ? "#000" : "#000000" }]}>{label}</Text>
     </TouchableOpacity>
 );
 
@@ -584,11 +620,13 @@ const styles = StyleSheet.create({
     chip: {
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: "#000",
+        backgroundColor: "#ffffff",
         paddingHorizontal: 14,
         paddingVertical: 8,
         borderRadius: 20,
         marginRight: 10,
+        borderColor: "#000000",
+        borderWidth: 1,
     },
     chipText: {
         marginLeft: 6,
@@ -747,5 +785,17 @@ const styles = StyleSheet.create({
         marginTop: 8,
         color: "#666",
         fontFamily: "Medium",
+    },
+    searchContainer: {
+        top:-5,
+    },
+    searchInput: {
+        backgroundColor: "#f1f1f1",
+        paddingHorizontal: 12,
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: "#cacaca",
+        fontFamily: "Medium",
+        fontSize: 14,
     },
 });

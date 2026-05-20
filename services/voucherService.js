@@ -123,6 +123,32 @@ export const fetchVoucherById = async (voucherId) => {
   return payload?.data || null;
 };
 
+export const submitOfferReview = async (voucherId, payload = {}) => {
+  if (!voucherId) {
+    throw new Error("Voucher id is required to submit review");
+  }
+
+  const reviewPayload = {
+    rating: Number(payload.rating) || 5,
+    content: String(payload.content || "").trim(),
+  };
+
+  if (!reviewPayload.content) {
+    throw new Error("Please enter review content");
+  }
+
+  const result = await authorizedFetch(
+    `/reviews/vouchers/${encodeURIComponent(voucherId)}`,
+    {
+      method: "POST",
+      body: JSON.stringify(reviewPayload),
+    },
+    "Unable to submit review"
+  );
+
+  return result?.data || null;
+};
+
 export const findVoucherForOffer = async (offerId) => {
   if (!offerId) {
     return null;
@@ -158,4 +184,5 @@ export default {
   fetchMyVouchers,
   fetchVoucherById,
   findVoucherForOffer,
+  submitOfferReview,
 };

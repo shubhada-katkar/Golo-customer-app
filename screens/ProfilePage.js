@@ -348,22 +348,9 @@ export default function ProfilePage({ navigation }) {
                                 style={styles.dropdownItem}
                                 onPress={() => {
                                     setdrop(false);
-                                    navigation.navigate("Claimed");
-                                }}>
-                                <Text style={[styles.dropdownText, { color: "#f5b849" }]}>
-                                    Claimed Offers
-                                </Text>
-                            </TouchableOpacity>
-
-                            <View style={{ height: 0.5, backgroundColor: colors.divider }} />
-
-                            <TouchableOpacity
-                                style={styles.dropdownItem}
-                                onPress={() => {
-                                    setdrop(false);
                                     navigation.navigate("Transaction");
                                 }}>
-                                <Text style={[styles.dropdownText, { color: "#7a7a7a" }]}>
+                                <Text style={[styles.dropdownText, { color: "#ecbb31" }]}>
                                     Transaction History
                                 </Text>
                             </TouchableOpacity>

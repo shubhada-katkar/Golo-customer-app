@@ -77,7 +77,7 @@ async function publicPost(path) {
 }
 
 async function getMyAnalytics() {
-  return authorizedFetch("/ads/analytics/me", { method: "GET" });
+  return authorizedFetch("/ads/analytics/my", { method: "GET" });
 }
 
 async function getAdAnalytics(adId) {
@@ -85,8 +85,37 @@ async function getAdAnalytics(adId) {
     throw new Error("Ad id is required");
   }
 
-  const safeAdId = encodeURIComponent(adId);
-  return authorizedFetch(`/ads/${safeAdId}/analytics`, { method: "GET" });
+  const analytics = await authorizedFetch("/ads/analytics/my", { method: "GET" });
+  const ad = Array.isArray(analytics?.ads)
+    ? analytics.ads.find((item) => String(item.adId) === String(adId) || String(item.id) === String(adId))
+    : null;
+
+  if (!ad) {
+    throw new Error("Ad analytics not found");
+  }
+
+  const adViews = Number(ad?.views || 0);
+  const adUniqueVisitors = Number(ad?.uniqueVisitors || 0);
+  const adContactClicks = Number(ad?.contactClicks || 0);
+  const adWishlistCount = Number(ad?.wishlistCount || 0);
+  const adCtr = Number(ad?.clickThroughRate || 0);
+  const adWishlistRate = Number(ad?.wishlistRate || 0);
+
+  return {
+    ...analytics,
+    ad,
+    stats: {
+      clicks: adViews,
+      visitors: adUniqueVisitors,
+      contacts: adContactClicks,
+      wishlist: adWishlistCount,
+    },
+    rates: {
+      ctr: adCtr,
+      visitorsRate: 0,
+      wishlistRate: adWishlistRate,
+    },
+  };
 }
 
 async function getPublicAdAnalytics(adId) {

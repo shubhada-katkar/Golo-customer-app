@@ -421,7 +421,7 @@ export default function AdDetails({ route, navigation }) {
                   ref={sliderRef}
                   horizontal
                   pagingEnabled
-                  showsHorizontalScrollIndicator={false}
+                  showsHorizontalScrollIndicator={true}
                   onMomentumScrollEnd={(e) => {
                     const index = Math.round(e.nativeEvent.contentOffset.x / width);
                     setActiveImageIndex(index);

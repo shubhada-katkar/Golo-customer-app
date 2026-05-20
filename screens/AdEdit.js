@@ -17,7 +17,6 @@ import { LinearGradient } from "expo-linear-gradient";
 import * as ImagePicker from "expo-image-picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { updateAd } from "../services/analyticsService";
-import { submitReport } from "../services/reportService";
 import { ThemeContext } from "../theme/ThemeContext";
 import Topbar from "../components/Topbar";
 import ChojaBottom from "../components/ChojaBottom";
@@ -192,28 +191,7 @@ export default function AdEdit({ route, navigation }) {
     const [reporting, setReporting] = useState(false);
     const [reportReason, setReportReason] = useState("");
     const [showReportBox, setShowReportBox] = useState(false);
-    // Handler to submit ad report
-    const handleReportAd = async () => {
-      if (!ad) {
-        Alert.alert("Error", "Ad not loaded");
-        return;
-      }
-      if (!reportReason.trim()) {
-        Alert.alert("Validation", "Please enter a reason for reporting this ad.");
-        return;
-      }
-      setReporting(true);
-      try {
-        await submitReport("ad", getResolvedAdId(ad, adId), reportReason.trim(), "");
-        setShowReportBox(false);
-        setReportReason("");
-        Alert.alert("Reported", "Thank you for reporting. Our team will review this ad.");
-      } catch (error) {
-        Alert.alert("Report failed", error?.message || "Unable to submit report");
-      } finally {
-        setReporting(false);
-      }
-    };
+
   const { adId } = route.params || {};
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -404,46 +382,7 @@ export default function AdEdit({ route, navigation }) {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <Topbar />
-      {/* Report Ad Button */}
-      <View style={{ alignItems: "flex-end", margin: 10 }}>
-        <TouchableOpacity
-          style={{ backgroundColor: "#e53935", borderRadius: 8, paddingHorizontal: 14, paddingVertical: 8 }}
-          onPress={() => setShowReportBox((v) => !v)}
-        >
-          <Text style={{ color: "#fff", fontFamily: "Medium" }}>Report This Ad</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Report Reason Box */}
-      {showReportBox && (
-        <View style={{ backgroundColor: "#fff0f0", borderRadius: 10, margin: 10, padding: 12, borderWidth: 1, borderColor: "#e53935" }}>
-          <Text style={{ color: "#e53935", fontFamily: "Medium", marginBottom: 6 }}>Reason for reporting:</Text>
-          <TextInput
-            style={{ borderWidth: 1, borderColor: "#e53935", borderRadius: 8, padding: 8, backgroundColor: "#fff", marginBottom: 10 }}
-            value={reportReason}
-            onChangeText={setReportReason}
-            placeholder="Enter reason (required)"
-            multiline
-          />
-          <View style={{ flexDirection: "row", justifyContent: "flex-end", gap: 10 }}>
-            <TouchableOpacity
-              style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8, backgroundColor: "#cfcfcf", marginRight: 8 }}
-              onPress={() => { setShowReportBox(false); setReportReason(""); }}
-              disabled={reporting}
-            >
-              <Text style={{ color: "#333" }}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={{ paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8, backgroundColor: "#e53935" }}
-              onPress={handleReportAd}
-              disabled={reporting}
-            >
-              {reporting ? <ActivityIndicator color="#fff" /> : <Text style={{ color: "#fff" }}>Submit Report</Text>}
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
-
+  
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <MaterialIcons name="arrow-back-ios" size={26} />

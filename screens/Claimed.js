@@ -55,7 +55,7 @@ export default function Claimed({ navigation }) {
             <Topbar />
 
             <View style={styles.row1}>
-                <TouchableOpacity onPress={() => navigation.navigate("ChojaHome")}>
+                <TouchableOpacity onPress={() => navigation.goBack()}>
                     <View style={{ justifyContent: 'center' }}>
                         <MaterialIcons
                             name="arrow-back-ios"
