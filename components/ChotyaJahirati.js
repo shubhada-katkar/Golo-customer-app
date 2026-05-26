@@ -14,10 +14,37 @@ import { useNavigation } from "@react-navigation/native";
 import Template1Card from "../components/Template1Card";
 import Template2Card from "../components/Template2Card";
 import Template3Card from "../components/Template3Card";
+import { BASE_URL } from "../config";
 
-export default function ChotyaJahirati({ selectedCategory }) {
+const normalizeText = (value) =>
+    String(value || "").trim().toLowerCase().replace(/\s+/g, " ");
+
+const adMatchesSearch = (ad, query) => {
+    const needle = normalizeText(query);
+    if (!needle) return true;
+
+    const nameCandidates = [
+        ad?.adTitle,
+        ad?.title,
+        ad?.name,
+        ad?.bannerTitle,
+        ad?.businessName,
+    ];
+
+    const categoryCandidates = [
+        ad?.category,
+        ad?.adCategory,
+        ad?.bannerCategory,
+        ad?.type,
+        ad?.subCategory,
+    ];
+
+    const candidates = [...nameCandidates, ...categoryCandidates];
+    return candidates.some((value) => normalizeText(value).includes(needle));
+};
+
+export default function ChotyaJahirati({ selectedCategory, searchQuery = "" }) {
     const { colors } = useContext(ThemeContext);
-    const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
     const [ads, setAds] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -82,6 +109,8 @@ export default function ChotyaJahirati({ selectedCategory }) {
         }
     };
 
+    const filteredAds = ads.filter((ad) => adMatchesSearch(ad, searchQuery));
+
     const renderItem = ({ item }) => {
 
         const templateNumber = Number(item.templateId);
@@ -116,7 +145,7 @@ export default function ChotyaJahirati({ selectedCategory }) {
     return (
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
             <FlatList
-                data={ads}
+                data={filteredAds}
                 keyExtractor={(item, index) =>
                     `${item._id || item.adId}-${index}`
                 }
@@ -132,6 +161,11 @@ export default function ChotyaJahirati({ selectedCategory }) {
 
                 ListFooterComponent={
                     loadingMore ? <ActivityIndicator size="small" /> : null
+                }
+                ListEmptyComponent={
+                    <View style={styles.center}>
+                        <Text>No ads match your search.</Text>
+                    </View>
                 }
             />
         </KeyboardAvoidingView>

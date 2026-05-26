@@ -4,11 +4,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import OtpInput from "../components/OtpInput";
 import { ThemeContext } from "../theme/ThemeContext";
 import {AntDesign} from "@expo/vector-icons";
+import { BASE_URL } from "../config";
 
 const { width } = Dimensions.get("window");
 
 export default function ForgotPassword({ navigation }) {
-  const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);

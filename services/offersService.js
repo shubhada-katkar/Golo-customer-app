@@ -3,7 +3,21 @@ const BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://192.168.1.9:3002";
 const normalizeText = (value) =>
   String(value ?? "")
     .trim()
-    .toLowerCase();
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[_-]/g, " ")
+    .replace(/\s+/g, " ");
+
+const CATEGORY_ALIASES = {
+  "food & dining": "food & restaurants",
+  beauty: "beauty & wellness",
+  healthcare: "healthcare & medical",
+};
+
+const toCanonicalCategory = (value) => {
+  const normalized = normalizeText(value);
+  return CATEGORY_ALIASES[normalized] || normalized;
+};
 
 const isOfferLikeObject = (value) => {
   if (!value || typeof value !== "object") {
@@ -212,17 +226,24 @@ const buildOfferKey = (offer, index) =>
   `${offer?.title || "offer"}-${offer?.merchantName || "merchant"}-${index}`;
 
 const applyLocalFilters = (offers, { category, q }) => {
-  const categoryNeedle = normalizeText(category);
+  const categoryNeedle = toCanonicalCategory(category);
   const queryNeedle = normalizeText(q);
 
   return offers.filter((offer) => {
     if (categoryNeedle) {
-      const offerCategory = normalizeText(
-        offer?.bannerCategory || offer?.offerType || offer?.category
+      const candidates = [
+        offer?.bannerCategory,
+        offer?.offerType,
+        offer?.category,
+        offer?.merchant?.category,
+        offer?.merchant?.storeCategory,
+      ];
+
+      const hasCategoryMatch = candidates.some(
+        (candidate) => toCanonicalCategory(candidate) === categoryNeedle
       );
-      if (offerCategory !== categoryNeedle) {
-        return false;
-      }
+
+      if (!hasCategoryMatch) return false;
     }
 
     if (queryNeedle) {
@@ -312,6 +333,12 @@ export const fetchAllOffers = async (options = {}) => {
     const publicParams = new URLSearchParams();
     publicParams.append("limit", String(limit));
     publicParams.append("page", String(page));
+    if (category) {
+      publicParams.append("category", category);
+    }
+    if (q) {
+      publicParams.append("q", q);
+    }
 
     const [nearbyResult, publicResult] = await Promise.allSettled([
       fetchOfferList(`${BASE_URL}/banners/promotions/offers/nearby?${nearbyParams.toString()}`),

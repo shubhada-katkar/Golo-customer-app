@@ -5,6 +5,7 @@ import {
     Image,
     Linking,
     Modal,
+    Share,
     ScrollView,
     StatusBar,
     StyleSheet,
@@ -28,6 +29,7 @@ import {
     findVoucherForOffer,
     submitOfferReview,
 } from "../services/voucherService";
+import { isFavoriteOfferId, toggleFavoriteOffer } from "../services/offerFavoritesService";
 
 const getOfferImage = (item) =>
     item?.imageUrl ||
@@ -70,6 +72,7 @@ export default function OfferDetails({ navigation, route }) {
     const [reviewText, setReviewText] = useState("");
     const [reviewRating, setReviewRating] = useState(5);
     const [reviewLoading, setReviewLoading] = useState(false);
+    const [isFavorite, setIsFavorite] = useState(false);
     const qrRef = useRef();
 
     const offerData = route?.params?.offerData || {};
@@ -185,8 +188,57 @@ export default function OfferDetails({ navigation, route }) {
     useFocusEffect(
         useCallback(() => {
             syncOfferClaimState();
+            const loadFavoriteState = async () => {
+                const currentOfferId =
+                    offerData?.offerId || offerData?._id || offerData?.requestId || "";
+                if (!currentOfferId) {
+                    setIsFavorite(false);
+                    return;
+                }
+                const favoriteValue = await isFavoriteOfferId(currentOfferId);
+                setIsFavorite(favoriteValue);
+            };
+            loadFavoriteState();
         }, [syncOfferClaimState])
     );
+
+    const handleToggleFavorite = async () => {
+        try {
+            const result = await toggleFavoriteOffer(offerData);
+            setIsFavorite(result.isFavorite);
+            if (result.isFavorite) {
+                Alert.alert("Saved", "Offer added to favorites.");
+            } else {
+                Alert.alert("Removed", "Offer removed from favorites.");
+            }
+        } catch (error) {
+            Alert.alert("Favorite Error", error?.message || "Unable to update favorites right now.");
+        }
+    };
+
+    const handleShareOffer = async () => {
+        try {
+            const shareTitle = title || "Shared Offer";
+            const shareMessage = [
+                `Offer: ${title}`,
+                `By: ${merchant}`,
+                offerType ? `Type: ${offerType}` : null,
+                discountedPrice ? `Price: ${discountedPrice}` : null,
+                validTill ? `Valid Till: ${new Date(validTill).toDateString()}` : null,
+                locationText ? `Location: ${locationText}` : null,
+                details ? `Details: ${details}` : null,
+            ]
+                .filter(Boolean)
+                .join("\n");
+
+            await Share.share({
+                title: shareTitle,
+                message: shareMessage,
+            });
+        } catch (error) {
+            Alert.alert("Share Error", error?.message || "Unable to share this offer right now.");
+        }
+    };
 
     const handleClaim = async () => {
         if (!canClaimVoucher) {
@@ -311,8 +363,17 @@ export default function OfferDetails({ navigation, route }) {
                         style={{ paddingLeft: 6 }}
                     />
                     <View style={styles.headerRight}>
-                        <Ionicons name="heart-outline" size={22} style={styles.icon} />
-                        <Ionicons name="share-social-outline" size={22} />
+                        <TouchableOpacity onPress={handleToggleFavorite}>
+                            <Ionicons
+                                name={isFavorite ? "heart" : "heart-outline"}
+                                size={22}
+                                color={isFavorite ? "#e74c3c" : "#111"}
+                                style={styles.icon}
+                            />
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={handleShareOffer}>
+                            <Ionicons name="share-social-outline" size={22} />
+                        </TouchableOpacity>
                     </View>
                 </View>
 

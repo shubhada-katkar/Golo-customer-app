@@ -20,6 +20,7 @@ import { Linking } from 'react-native';
 import { getAdId, isFavoriteAdId, toggleFavoriteAd } from '../services/favoritesService';
 import { trackAdCardClick, trackContactClick, trackWishlistSave, getPublicAdAnalytics } from '../services/analyticsService';
 import { submitReport } from '../services/reportService';
+import { BASE_URL } from '../config';
 
 const { width, height } = Dimensions.get('window');
 
@@ -182,7 +183,7 @@ export default function AdDetails({ route, navigation }) {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
   const sliderRef = useRef(null);
-  const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
+
   const commonAdDetails = getCommonAdDetails(ad);
   const categoryDetails = getCategoryDetails(ad);
   const hasDetails = commonAdDetails.length > 0 || categoryDetails.length > 0;

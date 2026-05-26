@@ -15,8 +15,8 @@ export default function Topbar() {
                 style={{ height: 48, width: 48, resizeMode: "contain" }} />
 
             <View style={{ flexDirection: "column", paddingHorizontal: 12 }}>
-                <Text style={{ fontSize: 18, color: "#f9a641", fontFamily: "SemiBold", lineHeight: Math.round(18 * 1.2) }}>GOLO</Text>
-                <Text style={{ fontSize: 14, color: colors.activeTab, fontFamily: "Italic", lineHeight: Math.round(18 * 1.2) }}>Rajarampuri,Kolhapur</Text>
+                <Text style={{ fontSize: 20, color: "#f9a641", fontFamily: "SemiBold", lineHeight: Math.round(20 * 1.5) }}>GOLO</Text>
+                <Text style={{ fontSize: 12, color: colors.text, fontFamily: "Italic", lineHeight: Math.round(12 * 1.5) }}>Tap to switch to GOLO</Text>
             </View>
         </TouchableOpacity>
     );

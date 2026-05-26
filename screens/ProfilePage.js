@@ -10,10 +10,10 @@ import ChojaBottom from "../components/ChojaBottom";
 import { Entypo, MaterialIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
+import { BASE_URL } from "../config";
 
 export default function ProfilePage({ navigation }) {
     const { theme, colors, toggleTheme } = useContext(ThemeContext);
-    const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
     const [profileImage, setProfileImage] = useState(null);
     const [username, setUsername] = useState("");
@@ -69,12 +69,24 @@ export default function ProfilePage({ navigation }) {
             }
 
             const profile = data.data;
+            const totalLoyaltyPoints = typeof profile.loyaltyPoints === 'number'
+                ? profile.loyaltyPoints
+                : Object.values(profile.merchantLoyaltyPoints || {}).reduce(
+                    (sum, value) => sum + Number(value || 0),
+                    0,
+                  );
+            const derivedLoyaltyTier = profile.loyaltyTier ||
+                (totalLoyaltyPoints >= 20000 ? 'Platinum' :
+                totalLoyaltyPoints >= 5000 ? 'Gold' :
+                totalLoyaltyPoints >= 1000 ? 'Silver' :
+                'Bronze');
+
             setUsername(profile.name || "");
             setPhone(profile.profile?.phone || "");
             setEmail(profile.email || "");
             setOriginalEmail(profile.email || "");
-            setLoyaltyPoints(profile.loyaltyPoints ?? 0);
-            setLoyaltyTier(profile.loyaltyTier || "Bronze");
+            setLoyaltyPoints(totalLoyaltyPoints);
+            setLoyaltyTier(derivedLoyaltyTier);
             // image url may not exist
             setProfileImage(profile.profile?.avatar || null);
 

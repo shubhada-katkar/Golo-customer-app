@@ -20,31 +20,67 @@ import Topbar from "../components/Topbar";
 import GoloBottom from "../components/GoloBottom";
 import { fetchAllOffers } from "../services/offersService";
 
+const MAIN_STORE_CATEGORIES = [
+    "Food & Restaurants",
+    "Home Services",
+    "Beauty & Wellness",
+    "Healthcare & Medical",
+    "Hotels & Accommodation",
+    "Shopping & Retail",
+    "Education & Training",
+    "Real Estate",
+    "Events & Entertainment",
+    "Professional Services",
+    "Automotive Services",
+    "Home Improvement",
+    "Fitness & Sports",
+    "Daily Needs & Utilities",
+    "Local Businesses & Vendors",
+];
+
+const CATEGORY_ALIASES = {
+    "Food & Dining": "Food & Restaurants",
+    Beauty: "Beauty & Wellness",
+    Healthcare: "Healthcare & Medical",
+};
+
 const normalizeCategoryText = (value) =>
     String(value || "")
+        .trim()
         .toLowerCase()
         .replace(/&/g, "and")
         .replace(/[_-]/g, " ")
-        .replace(/\s+/g, " ")
-        .trim();
+        .replace(/\s+/g, " ");
+
+const getCanonicalCategory = (value) => {
+    if (typeof value !== "string") {
+        return "";
+    }
+
+    const trimmed = value.trim();
+    return CATEGORY_ALIASES[trimmed] || trimmed;
+};
 
 const categoryMatches = (offer, selectedCategory) => {
     if (!selectedCategory) {
         return true;
     }
 
-    const selected = normalizeCategoryText(selectedCategory);
-    const offerCategory = normalizeCategoryText(
-        offer?.bannerCategory || offer?.offerType || offer?.category || offer?.type
-    );
+    const selected = normalizeCategoryText(getCanonicalCategory(selectedCategory));
 
-    const aliases = {
-        "real estate": ["property", "real estate"],
-        other: ["other", "others"],
-    };
+    const offerCategoryCandidates = [
+        offer?.bannerCategory,
+        offer?.category,
+        offer?.offerType,
+        offer?.type,
+        offer?.merchant?.category,
+        offer?.merchant?.storeCategory,
+    ];
 
-    const accepted = aliases[selected] || [selected];
-    return accepted.some((term) => offerCategory.includes(term));
+    return offerCategoryCandidates.some((candidate) => {
+        const canonical = getCanonicalCategory(candidate);
+        return normalizeCategoryText(canonical) === selected;
+    });
 };
 
 const getOfferImage = (item) =>
@@ -120,20 +156,28 @@ export default function GoloHome() {
     const [userCoordinates, setUserCoordinates] = useState(null);
     const scrollRef = useRef(null);
 
-    const categories = [
-        { icon: "school-outline", label: "Education" },
-        { icon: "heart-outline", label: "Matrimonial" },
-        { icon: "megaphone-outline", label: "Business" },
-        { icon: "airplane-outline", label: "Travel" },
-        { icon: "sparkles-outline", label: "Astrology" },
-        { icon: "home-outline", label: "Real Estate" },
-        { icon: "construct-outline", label: "Service" },
-        { icon: "briefcase-outline", label: "Employment" },
-        { icon: "paw-outline", label: "Pets" },
-        { icon: "tv-outline", label: "Electronics" },
-        { icon: "cube-outline", label: "Furniture" },
-        { icon: "ellipsis-horizontal-outline", label: "Other" },
-    ];
+    const categoryIconMap = {
+        "Food & Restaurants": "restaurant-outline",
+        "Home Services": "construct-outline",
+        "Beauty & Wellness": "flower-outline",
+        "Healthcare & Medical": "medkit-outline",
+        "Hotels & Accommodation": "bed-outline",
+        "Shopping & Retail": "bag-handle-outline",
+        "Education & Training": "school-outline",
+        "Real Estate": "home-outline",
+        "Events & Entertainment": "musical-notes-outline",
+        "Professional Services": "briefcase-outline",
+        "Automotive Services": "car-outline",
+        "Home Improvement": "hammer-outline",
+        "Fitness & Sports": "barbell-outline",
+        "Daily Needs & Utilities": "cart-outline",
+        "Local Businesses & Vendors": "storefront-outline",
+    };
+
+    const categories = MAIN_STORE_CATEGORIES.map((label) => ({
+        label,
+        icon: categoryIconMap[label] || "pricetags-outline",
+    }));
 
     const sortedCategories = selectedCategory
         ? [
@@ -196,6 +240,7 @@ export default function GoloHome() {
                 limit: 100,
                 page: 1,
                 radiusKm: selectedDistanceKm,
+                category: selectedCategory || undefined,
                 lat: userCoordinates?.lat,
                 lng: userCoordinates?.lng,
             });
@@ -207,7 +252,7 @@ export default function GoloHome() {
         } finally {
             setLoading(false);
         }
-    }, [selectedDistanceKm, userCoordinates?.lat, userCoordinates?.lng]);
+    }, [selectedCategory, selectedDistanceKm, userCoordinates?.lat, userCoordinates?.lng]);
 
     useFocusEffect(
         React.useCallback(() => {
@@ -373,7 +418,7 @@ export default function GoloHome() {
 
                             <View style={styles.categoryGrid}>
                                 {sortedCategories.map((item, index) => (
-                                    <TouchableOpacity
+                                    <TouchableOpacity 
                                         key={`${item.label}-${index}`}
                                         onPress={() => {
                                             if (selectedCategory === item.label) {
@@ -390,14 +435,15 @@ export default function GoloHome() {
                                         ]}
                                     >
                                         <Ionicons
+                                        style={{ marginRight: 6 }}
                                             name={item.icon}
-                                            size={22}
-                                            color={selectedCategory === item.label ? "#000" : "#fff"}
+                                            size={18}
+                                            color={selectedCategory === item.label ? "#000" : "#000000"}
                                         />
                                         <Text
                                             style={[
                                                 styles.gridText,
-                                                { color: selectedCategory === item.label ? "#000" : "#fff" },
+                                                { color: selectedCategory === item.label ? "#000" : "#000000" },
                                             ]}
                                         >
                                             {item.label}
@@ -507,7 +553,7 @@ const OfferCard = ({ item, navigation }) => {
                         By {subtitle}
                     </Text>
 
-                    <Text style={styles.metaText}>Type: {offerType}</Text>
+                    <Text style={styles.metaText}>Offer Type: {offerType}</Text>
 
                     <Text style={styles.validText}>
                         Valid Till: {endDate ? new Date(endDate).toDateString() : "-"}
@@ -588,7 +634,7 @@ const styles = StyleSheet.create({
     },
     distanceHint: {
         marginTop: 4,
-        color: "#666",
+        color: "#505050",
         fontSize: 12,
         fontFamily: "Medium",
     },
@@ -601,14 +647,18 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontFamily: "Medium",
         lineHeight: Math.round(16 * 1.5),
+        paddingVertical: 5,
     },
     categorySection: {
         marginTop: 12,
-        paddingHorizontal: 8,
-        marginBottom: 18,
+        marginBottom: 16,
+        borderWidth:1,
+        borderColor: "#e0e0e0",
+        borderRadius: 10,
+        padding:10
     },
     categoryStrip: {
-        height: 46,
+        height: 45,
         flexDirection: "row",
         alignItems: "center",
     },
@@ -648,18 +698,21 @@ const styles = StyleSheet.create({
     categoryGrid: {
         flexDirection: "row",
         flexWrap: "wrap",
-        justifyContent: "space-between",
+        justifyContent: "center",
+        justifyContent: "space-around",
     },
     gridItem: {
-        width: "30%",
-        backgroundColor: "#000",
+        width: "49%",
+        backgroundColor: "#ffffff",
         borderRadius: 10,
-        gap: 6,
         paddingVertical: 8,
         marginBottom: 10,
         alignItems: "center",
         flexDirection: "row",
-        justifyContent: "center",
+        borderColor: "#000000",
+        borderWidth: 1,
+        paddingLeft: 6,
+        paddingRight: 22,
     },
     gridItemActive: {
         backgroundColor: "#FFD700",
@@ -773,7 +826,7 @@ const styles = StyleSheet.create({
     centerState: {
         alignItems: "center",
         justifyContent: "center",
-        paddingVertical: 40,
+        paddingVertical: 20,
     },
     emptyTitle: {
         textAlign: "center",
@@ -799,3 +852,4 @@ const styles = StyleSheet.create({
         fontSize: 14,
     },
 });
+

@@ -260,6 +260,7 @@ const styles = StyleSheet.create({
     emptyText: {
         fontSize: 18,
         fontFamily: "SemiBold",
+        lineHeight: Math.round(18 * 1.5),
     },
 
     emptySubText: {
@@ -267,6 +268,7 @@ const styles = StyleSheet.create({
         fontSize: 14,
         opacity: 0.8,
         fontFamily: "Medium",
+        lineHeight: Math.round(14 * 1.5),
     },
 
     chatCard: {
@@ -290,6 +292,7 @@ const styles = StyleSheet.create({
         color: "#1e1e1e",
         fontFamily: "Medium",
         fontSize: 13,
+        lineHeight: Math.round(13 * 1.5),
     },
 
     avatar: {
@@ -309,12 +312,15 @@ const styles = StyleSheet.create({
     message: {
         fontSize: 13,
         color: "#777",
+        lineHeight: Math.round(13 * 1.5),
         marginTop: 2,
+        fontFamily: "Medium",
     },
 
     time: {
         fontSize: 12,
         color: "#999",
+        lineHeight: Math.round(12 * 1.5),
+        fontFamily: "Medium",
     },
-
 })

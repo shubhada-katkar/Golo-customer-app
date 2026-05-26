@@ -6,6 +6,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { Linking } from "react-native";
 import { getAdId, isFavoriteAdId, toggleFavoriteAd } from "../services/favoritesService";
+import { baseUrl } from "../config";
 
 const { width, height } = Dimensions.get("window");
 
@@ -66,7 +67,6 @@ export default function Template1Card({ ad, navigation }) {
       const adIdentifier = ad?.adId || ad?._id;
       if (!adIdentifier) return;
 
-      const baseUrl = process.env.EXPO_PUBLIC_API_URL;
       const shareUrl = `${baseUrl}/ads/share/${encodeURIComponent(adIdentifier)}`;
       const deepLink = `golo://ad/${encodeURIComponent(adIdentifier)}`;
 

@@ -7,7 +7,7 @@
     "orientation": "portrait",
     "icon": "./assets/logo.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "splash": {
       "image": "./assets/logo.png",
       "resizeMode": "contain",
@@ -24,6 +24,11 @@
     "plugins": [
       "@react-native-community/datetimepicker",
       "expo-font"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "b4cff4df-51f4-4d7b-86d6-a6c7121d3b75"
+      }
+    }
   }
 }

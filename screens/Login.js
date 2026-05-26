@@ -4,11 +4,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Dimensions } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Entypo } from "@expo/vector-icons";
+import { BASE_URL } from "../config";
 
 const { width, height } = Dimensions.get("window");
 
 export default function Login({ navigation }) {
-  const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -138,7 +138,7 @@ export default function Login({ navigation }) {
         <View style={{ alignItems: "center", flexDirection: "row", marginTop: 10 }}>
           <Text style={{ fontSize: 16, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) }}>Don't Have An Account?</Text>
           <TouchableOpacity onPress={() => navigation.navigate("Registration") }>
-            <Text style={styles.link}>Register Here</Text>
+            <Text style={styles.link}>Sign Up</Text>
           </TouchableOpacity>
         </View>
       </View>

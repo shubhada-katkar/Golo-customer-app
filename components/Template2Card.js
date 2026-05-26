@@ -7,6 +7,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Linking } from "react-native";
 import { getAdId, isFavoriteAdId, toggleFavoriteAd } from "../services/favoritesService";
 import { ScrollView } from "react-native-gesture-handler";
+import { baseUrl } from "../config";
 
 export default function Template2Card({ ad, navigation }) {
     const [isFavorite, setIsFavorite] = useState(false);
@@ -65,7 +66,6 @@ export default function Template2Card({ ad, navigation }) {
             const adIdentifier = ad?.adId || ad?._id;
             if (!adIdentifier) return;
 
-            const baseUrl = process.env.EXPO_PUBLIC_API_URL;
             const shareUrl = `${baseUrl}/ads/share/${encodeURIComponent(adIdentifier)}`;
             const deepLink = `golo://ad/${encodeURIComponent(adIdentifier)}`;
 

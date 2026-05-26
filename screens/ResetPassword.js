@@ -2,11 +2,11 @@ import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, Dimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Entypo } from "@expo/vector-icons";
+import { BASE_URL } from "../config";
 
 const { width } = Dimensions.get("window");
 
 export default function ResetPassword({ navigation, route }) {
-  const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
   const email = route?.params?.email || "";
   const otp = route?.params?.otp || "";
   const [password, setPassword] = useState("");

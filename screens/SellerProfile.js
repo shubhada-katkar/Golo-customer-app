@@ -17,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { submitReport } from '../services/reportService';
+import { BASE_URL } from '../config';
 
 const { width } = Dimensions.get('window');
 
@@ -29,8 +30,6 @@ export default function SellerProfile({ route, navigation }) {
   const [showReportModal, setShowReportModal] = useState(false);
   const [selectedReason, setSelectedReason] = useState(null);
   const [details, setDetails] = useState("");
-
-  const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
   useEffect(() => {
     const fetchSellerData = async () => {

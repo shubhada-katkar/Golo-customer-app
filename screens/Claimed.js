@@ -13,7 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
 import { ThemeContext } from "../theme/ThemeContext";
 import Topbar from "../components/Topbar";
-import ChojaBottom from "../components/ChojaBottom";
+import GoloBottom from "../components/GoloBottom";
 import { MaterialIcons } from "@expo/vector-icons";
 import { fetchMyClaimedOffers } from "../services/voucherService";
 
@@ -108,8 +108,9 @@ export default function Claimed({ navigation }) {
                                 <Text style={{ fontSize: 16, fontFamily: "SemiBold", color: colors.text, lineHeight: Math.round(16 * 1.5) }} numberOfLines={1}>
                                     {item?.title || "Untitled Offer"}
                                 </Text>
+
                                 <Text style={{ fontSize: 12, color: colors.text, lineHeight: Math.round(12 * 1.5), fontFamily:"Medium" }} numberOfLines={1}>
-                                    {item?.merchantName || "Unknown Merchant"}
+                                   Deal by {item?.merchantName || "Unknown Merchant"}
                                 </Text>
                             </View>
                         </View>
@@ -120,7 +121,7 @@ export default function Claimed({ navigation }) {
             <SafeAreaView
                 edges={["bottom"]}
                 style={{ position: "absolute", bottom: 0, width: "100%" }} >
-                <ChojaBottom />
+                <GoloBottom />
             </SafeAreaView>
         </SafeAreaView>
     );

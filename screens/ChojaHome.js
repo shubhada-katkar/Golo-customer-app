@@ -31,6 +31,7 @@ const categories = [
 
 export default function ChojaHome() {
     const [selectedCategory, setSelectedCategory] = useState(null);
+    const [searchQuery, setSearchQuery] = useState("");
     const { colors } = useContext(ThemeContext);
     const inputRef = useRef(null);
     const [tab, setTab] = useState("Chotya Jahirati");
@@ -53,9 +54,14 @@ export default function ChojaHome() {
                     activeOpacity={1}
                     onPress={() => inputRef.current?.focus()} >
                     <TextInput
-                        ref={inputRef} placeholder="Search community..."
+                        ref={inputRef}
+                        placeholder="Search ads by name or category"
+                        value={searchQuery}
+                        onChangeText={setSearchQuery}
                         style={{ flex: 1, fontFamily: "Medium", fontSize: 14 }}
-                        textAlignVertical="center" />
+                        textAlignVertical="center"
+                        returnKeyType="search"
+                    />
 
                     <EvilIcons name="search" size={26} />
                 </TouchableOpacity>
@@ -194,9 +200,9 @@ export default function ChojaHome() {
             </View>
 
             <View style={{ flex: 1, marginTop: 10 }}>
-                {tab === "Chotya Jahirati" && <ChotyaJahirati selectedCategory={selectedCategory} />}
+                {tab === "Chotya Jahirati" && <ChotyaJahirati selectedCategory={selectedCategory} searchQuery={searchQuery} />}
                 {tab === "I Want" && <Iwant />}
-                {tab === "My Ads" && <MyAds selectedCategory={selectedCategory} />}
+                {tab === "My Ads" && <MyAds selectedCategory={selectedCategory} searchQuery={searchQuery} />}
             </View>
 
             <SafeAreaView

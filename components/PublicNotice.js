@@ -109,8 +109,7 @@ export default function PublicNotice({ formData, setFormData, category, onPrevio
           style={styles.uploadBox}
         >
           <AntDesign name="upload" size={40} color="#157a4f" />
-          <Text style={styles.uploadText}>Tap to Upload PDF</Text>
-          <Text style={styles.orText}>or</Text>
+          <Text style={styles.uploadText}>Upload a PDF</Text>
           <TouchableOpacity style={styles.cameraBtn} onPress={pickPDF}>
             <Text style={styles.cameraText}>Browse Files</Text>
           </TouchableOpacity>
@@ -148,7 +147,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 8,
   },
-  uploadText: { marginTop: 6, color: "#555", fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
+  uploadText: { color: "#555", fontFamily: "Medium", lineHeight: Math.round(16 * 1.5), paddingVertical: 8 },
   orText: { marginVertical: 6, color: "#999", fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
   cameraBtn: { backgroundColor: "#157a4f", paddingVertical: 8, paddingHorizontal: 18, borderRadius: 8 },
   cameraText: { color: "#fff", fontFamily: "Medium", lineHeight: Math.round(14 * 1.5) },

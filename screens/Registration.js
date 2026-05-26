@@ -5,7 +5,6 @@ import {
   Text,
   TextInput,
   StyleSheet,
-  Image,
   Dimensions,
   KeyboardAvoidingView,
   Platform,
@@ -14,131 +13,55 @@ import {
   Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import * as ImagePicker from "expo-image-picker";
-import { Entypo, MaterialIcons } from "@expo/vector-icons";
-import OtpInput from "../components/OtpInput";
+import { Entypo } from "@expo/vector-icons";
+import { BASE_URL } from "../config";
 
 const { width, height } = Dimensions.get("window");
 
 export default function Registration({ navigation }) {
-  const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
-  const [profileImage, setProfileImage] = useState(null);
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
-  const [otp, setOtp] = useState("");
-  const [emailVerified, setEmailVerified] = useState(false);
-  const [otpSent, setOtpSent] = useState(false);
   const [visiblepass, setvisiblepass] = useState(false);
-  const [sendOtpLoading, setSendOtpLoading] = useState(false);
-  const [verifyOtpLoading, setVerifyOtpLoading] = useState(false);
   const [registerLoading, setRegisterLoading] = useState(false);
 
   const isValidEmail = (value) => /\S+@\S+\.\S+/.test(value);
 
-  const handleEmailChange = (value) => {
-    setEmail(value);
-    setOtp("");
-    setOtpSent(false);
-    setEmailVerified(false);
+  const formatPhone = (value) => {
+    const cleaned = (value || "").replace(/\D/g, "");
+
+    if (!cleaned) {
+      return undefined;
+    }
+
+    // User enters 10 digits; we send E.164 to satisfy backend @IsPhoneNumber
+    if (cleaned.length === 10) {
+      return `+91${cleaned}`;
+    }
+
+    if (cleaned.length === 12 && cleaned.startsWith("91")) {
+      return `+${cleaned}`;
+    }
+
+    if (cleaned.length > 10 && value.trim().startsWith("+")) {
+      return value.trim();
+    }
+
+    return null;
   };
 
-  const pickImage = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-    if (status !== "granted") {
-      Alert.alert("Permission required", "Allow gallery access to choose a profile image.");
-      return;
+  const getErrorMessage = (message, fallback) => {
+    if (Array.isArray(message)) {
+      return message.filter(Boolean).join("\n");
     }
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.7,
-    });
-
-    if (!result.canceled) {
-      setProfileImage(result.assets[0].uri);
-    }
-  };
-
-  const handleSendOtp = async () => {
-    if (sendOtpLoading) {
-      return;
+    if (typeof message === "string" && message.trim().length > 0) {
+      return message;
     }
 
-    if (!isValidEmail(email.trim())) {
-      Alert.alert("Invalid email", "Enter a valid email before requesting OTP.");
-      return;
-    }
-
-    try {
-      setSendOtpLoading(true);
-      const response = await fetch(`${BASE_URL}/users/send-registration-otp`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim().toLowerCase() }),
-      });
-
-      const data = await response.json();
-      setSendOtpLoading(false);
-
-      if (!response.ok) {
-        Alert.alert("OTP failed", data.message || "Unable to send OTP right now.");
-        return;
-      }
-
-      setOtpSent(true);
-      setEmailVerified(false);
-      Alert.alert("OTP sent", "Check your email for the 6 digit OTP.");
-    } catch (error) {
-      setSendOtpLoading(false);
-      Alert.alert("Network error", "Unable to reach the server.");
-    }
-  };
-
-  const handleVerifyOtp = async () => {
-    if (verifyOtpLoading) {
-      return;
-    }
-
-    if (!isValidEmail(email.trim())) {
-      Alert.alert("Invalid email", "Enter a valid email first.");
-      return;
-    }
-
-    if (otp.length !== 6) {
-      Alert.alert("Invalid OTP", "Enter the 6 digit OTP sent to your email.");
-      return;
-    }
-
-    try {
-      setVerifyOtpLoading(true);
-      const response = await fetch(`${BASE_URL}/users/verify-registration-otp`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: email.trim().toLowerCase(),
-          otp,
-        }),
-      });
-
-      const data = await response.json();
-      setVerifyOtpLoading(false);
-
-      if (!response.ok) {
-        Alert.alert("OTP invalid", data.message || "Unable to verify OTP.");
-        return;
-      }
-
-      setEmailVerified(true);
-      Alert.alert("Email verified", "You can complete registration now.");
-    } catch (error) {
-      setVerifyOtpLoading(false);
-      Alert.alert("Network error", "Unable to reach the server.");
-    }
+    return fallback;
   };
 
   const handleRegister = async () => {
@@ -147,7 +70,7 @@ export default function Registration({ navigation }) {
     }
 
     if (!username.trim() || !email.trim() || !password.trim()) {
-      Alert.alert("Missing details", "Fill name, email, and password.");
+      Alert.alert("Missing details", "Fill all fields.");
       return;
     }
 
@@ -161,8 +84,9 @@ export default function Registration({ navigation }) {
       return;
     }
 
-    if (!emailVerified || otp.length !== 6) {
-      Alert.alert("Verify email", "Send and verify your email OTP before registering.");
+    const formattedPhone = formatPhone(phone);
+    if (formattedPhone === null) {
+      Alert.alert("Invalid phone", "Enter a valid 10-digit phone number.");
       return;
     }
 
@@ -174,9 +98,9 @@ export default function Registration({ navigation }) {
         body: JSON.stringify({
           name: username.trim(),
           email: email.trim().toLowerCase(),
-          phone: phone.trim(),
-          password: password.trim(),
-          otp,
+          phone: formattedPhone,
+          password,
+          accountType: "user",
         }),
       });
 
@@ -184,11 +108,14 @@ export default function Registration({ navigation }) {
       setRegisterLoading(false);
 
       if (!response.ok) {
-        Alert.alert("Registration failed", data.message || "Unable to register.");
+        Alert.alert(
+          "Registration failed",
+          getErrorMessage(data?.message, "Unable to register.")
+        );
         return;
       }
 
-      Alert.alert("Registration Successful", "You can log in with your verified account now.", [
+      Alert.alert("Registration Successful", "You can log in now.", [
         {
           text: "OK",
           onPress: () => navigation.navigate("Login"),
@@ -220,22 +147,6 @@ export default function Registration({ navigation }) {
             <Text style={styles.title}>Create Account</Text>
 
             <View style={styles.card}>
-              <TouchableOpacity onPress={pickImage} style={styles.avatarWrapper}>
-                <View style={{ position: "relative" }}>
-                  <Image
-                    source={
-                      profileImage
-                        ? { uri: profileImage }
-                        : require("../assets/profile.png")
-                    }
-                    style={styles.profileImage}
-                  />
-                  <View style={styles.cameraIcon}>
-                    <MaterialIcons name="camera-alt" size={18} color="#ffffff" />
-                  </View>
-                </View>
-              </TouchableOpacity>
-
               <Text style={styles.label}>Name</Text>
               <TextInput
                 style={styles.input}
@@ -244,50 +155,15 @@ export default function Registration({ navigation }) {
                 onChangeText={setUsername}
               />
 
-              <View style={styles.emailHeaderRow}>
-                <Text style={styles.label}>Email</Text>
-                {emailVerified ? <Text style={styles.verifiedText}>Verified</Text> : null}
-              </View>
-
-              <View style={styles.emailRow}>
-                <TextInput
-                  style={[styles.input, styles.emailInput]}
-                  value={email}
-                  onChangeText={handleEmailChange}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  placeholder="Enter email"
-                />
-                <TouchableOpacity
-                  style={[styles.verifyBtn, sendOtpLoading && styles.buttonDisabled]}
-                  onPress={handleSendOtp}
-                  disabled={sendOtpLoading}
-                >
-                  <Text style={styles.verifyBtnText}>{sendOtpLoading ? "..." : otpSent ? "Resend" : "Send OTP"}</Text>
-                </TouchableOpacity>
-              </View>
-
-              {(otpSent || emailVerified) ? (
-                <>
-                  <Text style={styles.label}>Email OTP</Text>
-                  <OtpInput value={otp} onChangeOtp={setOtp} editable={!emailVerified} />
-                  {!emailVerified ? (
-                    <TouchableOpacity
-                      style={[styles.secondaryButton, verifyOtpLoading && styles.buttonDisabled]}
-                      onPress={handleVerifyOtp}
-                      disabled={verifyOtpLoading}
-                    >
-                      {verifyOtpLoading ? (
-                        <ActivityIndicator color="#157a4f" />
-                      ) : (
-                        <Text style={styles.secondaryButtonText}>Verify OTP</Text>
-                      )}
-                    </TouchableOpacity>
-                  ) : (
-                    <Text style={styles.helpText}>Your email is verified. Registration will use this OTP.</Text>
-                  )}
-                </>
-              ) : null}
+              <Text style={styles.label}>Email</Text>
+              <TextInput
+                style={styles.input}
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                placeholder="Enter email"
+              />
 
               <Text style={styles.label}>Phone</Text>
               <TextInput
@@ -337,7 +213,7 @@ export default function Registration({ navigation }) {
             <View style={styles.loginRow}>
               <Text style={styles.loginPrompt}>Have An Account? </Text>
               <TouchableOpacity onPress={() => navigation.navigate("Login")}>
-                <Text style={styles.loginLink}>Login</Text>
+                <Text style={styles.loginLink}>Sign In</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -363,9 +239,10 @@ const styles = StyleSheet.create({
     borderWidth: 0.5,
     borderColor: "#000000",
     gap: 8,
+    paddingTop: 16,
   },
   label: {
-    marginTop: 6,
+    marginTop: 10,
     fontSize: 16,
     fontFamily: "Medium",
     lineHeight: Math.round(16 * 1.5),
@@ -385,62 +262,6 @@ const styles = StyleSheet.create({
     borderColor: "#000000",
     fontFamily: "Medium",
   },
-  emailRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  emailInput: {
-    flex: 1,
-  },
-  emailHeaderRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 6,
-  },
-  verifiedText: {
-    fontSize: 13,
-    color: "#157a4f",
-    fontFamily: "SemiBold",
-    lineHeight: Math.round(13 * 1.5),
-  },
-  verifyBtn: {
-    backgroundColor: "#157a4f",
-    paddingHorizontal: 12,
-    height: 48,
-    borderRadius: 8,
-    justifyContent: "center",
-    alignItems: "center",
-    minWidth: 92,
-  },
-  verifyBtnText: {
-    color: "#ffffff",
-    fontFamily: "Medium",
-    fontSize: 13,
-    lineHeight: Math.round(13 * 1.5),
-  },
-  secondaryButton: {
-    borderWidth: 1,
-    borderColor: "#157a4f",
-    borderRadius: 10,
-    paddingVertical: 12,
-    alignItems: "center",
-    marginTop: 4,
-  },
-  secondaryButtonText: {
-    color: "#157a4f",
-    fontFamily: "Medium",
-    fontSize: 16,
-    lineHeight: Math.round(16 * 1.5),
-  },
-  helpText: {
-    color: "#157a4f",
-    fontSize: 13,
-    fontFamily: "Medium",
-    lineHeight: Math.round(13 * 1.5),
-    marginTop: 2,
-  },
   button: {
     backgroundColor: "#157a4f",
     marginTop: 16,
@@ -452,7 +273,7 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 18,
     fontFamily: "Medium",
-    lineHeight: Math.round(18 * 1.6),
+    lineHeight: Math.round(18 * 1.5),
   },
   buttonDisabled: {
     opacity: 0.7,
@@ -474,24 +295,6 @@ const styles = StyleSheet.create({
   },
   eyeButton: {
     padding: 14,
-  },
-  cameraIcon: {
-    position: "absolute",
-    bottom: 14,
-    right: 16,
-    backgroundColor: "#5c5c5c",
-    padding: 4,
-    borderRadius: 20,
-  },
-  profileImage: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    alignSelf: "center",
-  },
-  avatarWrapper: {
-    position: "relative",
-    alignSelf: "center",
   },
   centerContainer: {
     alignItems: "center",
