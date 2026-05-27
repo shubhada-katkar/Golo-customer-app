@@ -3,12 +3,12 @@ import {
     ActivityIndicator,
     Image,
     RefreshControl,
-    ScrollView,
     StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
     View,
+    ScrollView
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
@@ -320,14 +320,15 @@ export default function GoloHome() {
             >
                 <View style={styles.topRow}>
                     <View style={styles.headerRow}>
-                        <Ionicons name="star-outline" size={16} />
-                        <Text style={styles.headerText}>Discover What's Nearby</Text>
+                        <Ionicons name="star-outline" size={16} style={{ color: colors.text }} />
+                        <Text style={[styles.headerText, { color: colors.text }]}>
+                            Discover What's Nearby</Text>
                     </View>
                 </View>
 
                 <View style={styles.distanceSection}>
                     <View style={styles.distanceHeaderRow}>
-                        <Text style={styles.distanceTitle}>Distance</Text>
+                        <Text style={[styles.distanceTitle, { color: colors.text }]}>Distance</Text>
                         <Text style={styles.distanceValue}>Selected: {selectedDistanceKm} km</Text>
                     </View>
 
@@ -344,19 +345,19 @@ export default function GoloHome() {
                             thumbTintColor="#157a4f"
                         />
                         <View style={{ flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 6}}>
-                            <Text style={{ fontSize: 12, fontFamily: "Medium", 
+                            <Text style={{ fontSize: 12, fontFamily: "Medium", color: colors.text,
                                 lineHeight: Math.round(12 * 1.5) }}>1 km</Text>
-                            <Text style={{ fontSize: 12, fontFamily: "Medium", 
+                            <Text style={{ fontSize: 12, fontFamily: "Medium", color: colors.text,
                                 lineHeight: Math.round(12 * 1.5) }}>50 km</Text>
                         </View>
                     </View>
 
                     {locationStatus !== "granted" ? (
-                        <Text style={styles.distanceHint}>
-                            Location is off. Showing all deals from app + web backend.
+                        <Text style={[styles.distanceHint, { color: colors.text }]}>
+                            Location is off. Showing all deals.
                         </Text>
                     ) : (
-                        <Text style={styles.distanceHint}>
+                        <Text style={[styles.distanceHint, { color: colors.text }]}>
                             Showing offers within {selectedDistanceKm} km from your location.
                         </Text>
                     )}
@@ -370,6 +371,11 @@ export default function GoloHome() {
                         style={styles.searchInput}
                         returnKeyType="search"
                     />
+                    {searchQuery.length > 0 && (
+                        <TouchableOpacity onPress={() => setSearchQuery("")} style={{ padding: 8 }}>
+                            <Ionicons name="close-circle" size={18} color="#555" />
+                        </TouchableOpacity>
+                    )}
                 </View>
 
                 <View style={styles.categorySection}>
@@ -402,7 +408,7 @@ export default function GoloHome() {
                             </ScrollView>
 
                             <TouchableOpacity onPress={() => setShowAllCategories(true)}>
-                                <Text style={styles.seeAllText}>See All</Text>
+                                <Text style={[styles.seeAllText, { color: colors.text }]}>See All</Text>
                             </TouchableOpacity>
                         </View>
                     ) : (
@@ -411,7 +417,7 @@ export default function GoloHome() {
                                 onPress={() => setShowAllCategories(false)}
                                 style={styles.hideCategoriesButton}
                             >
-                                <Text style={[styles.headerText, { color: colors.primary }]}>
+                                <Text style={[styles.headerText, { color: colors.text }]}>
                                     Hide Categories
                                 </Text>
                             </TouchableOpacity>
@@ -535,18 +541,6 @@ const OfferCard = ({ item, navigation }) => {
                         <Text style={styles.title} numberOfLines={2}>
                             {title}
                         </Text>
-                        <Text
-                            style={[
-                                styles.statusText,
-                                requestStatus === "active" || requestStatus === "approved"
-                                    ? styles.statusPositive
-                                    : requestStatus === "under_review"
-                                        ? styles.statusPending
-                                        : styles.statusNegative,
-                            ]}
-                        >
-                            {normalizedStatus}
-                        </Text>
                     </View>
 
                     <Text style={styles.subtitle} numberOfLines={1}>
@@ -559,18 +553,11 @@ const OfferCard = ({ item, navigation }) => {
                         Valid Till: {endDate ? new Date(endDate).toDateString() : "-"}
                     </Text>
 
-                    <View style={{ flexDirection: "row",
-                        alignItems: "center", justifyContent: "space-between", flexWrap: "wrap"
+                    <View style={{  alignSelf: "flex-end", justifyContent: "center" 
                     }} >
 
                     {distanceText ? <Text style={styles.distanceMetaText}>{distanceText}</Text> : null}
 
-                    {(discountPrice || originalPrice) ? (
-                        <View style={styles.priceRow}>
-                            {discountPrice ? <Text style={styles.discountPrice}>{discountPrice}</Text> : null}
-                            {originalPrice ? <Text style={styles.originalPrice}>{originalPrice}</Text> : null}
-                        </View>
-                    ) : null}
                     </View>
 
                 </View>
@@ -651,11 +638,12 @@ const styles = StyleSheet.create({
     },
     categorySection: {
         marginTop: 12,
-        marginBottom: 16,
+        marginBottom: 12,
         borderWidth:1,
         borderColor: "#e0e0e0",
         borderRadius: 10,
-        padding:10
+        paddingHorizontal:6,
+        paddingVertical:6
     },
     categoryStrip: {
         height: 45,
@@ -841,15 +829,18 @@ const styles = StyleSheet.create({
     },
     searchContainer: {
         top:-5,
-    },
-    searchInput: {
+        flexDirection: "row",
+        alignItems: "center",
         backgroundColor: "#f1f1f1",
-        paddingHorizontal: 12,
         borderRadius: 10,
         borderWidth: 1,
         borderColor: "#cacaca",
+    },
+    searchInput: {
+        flex: 1,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
         fontFamily: "Medium",
         fontSize: 14,
     },
 });
-

@@ -40,7 +40,7 @@ export default function SellerProfile({ route, navigation }) {
           return;
         }
 
-        const res = await fetch(`${BASE_URL}/users/public/${sellerId}`);
+        const res = await fetch(`${BASE_URL}/users/${sellerId}`);
         const json = await res.json();
 
         if (json.success && json.data) {
@@ -327,7 +327,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    marginBottom: 16,
   },
   memberSinceText: {
     fontSize: 13,
@@ -382,7 +381,7 @@ const styles = StyleSheet.create({
   },
   chatButtonLarge: {
     backgroundColor: '#157a4f',
-    padding: 16,
+    padding: 10,
     borderRadius: 12,
     flexDirection: 'row',
     alignItems: 'center',
@@ -392,13 +391,13 @@ const styles = StyleSheet.create({
   },
   chatButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 14,
     fontFamily: 'SemiBold',
-    lineHeight: Math.round(16 * 1.5)
+    lineHeight: Math.round(14 * 1.5)
   },
   callButtonLarge: {
     backgroundColor: '#f9a641',
-    padding: 16,
+    padding: 10,
     borderRadius: 12,
     flexDirection: 'row',
     alignItems: 'center',
@@ -407,9 +406,9 @@ const styles = StyleSheet.create({
   },
   callButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 14,
     fontFamily: 'SemiBold',
-    lineHeight: Math.round(16 * 1.5)
+    lineHeight: Math.round(14 * 1.5)
   },
   modalOverlay: {
     flex: 1,

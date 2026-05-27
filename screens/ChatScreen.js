@@ -12,7 +12,9 @@ import {
     KeyboardAvoidingView,
     Platform,
     Modal,
+    Keyboard,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -47,6 +49,8 @@ export default function ChatScreen({ navigation, route }) {
     const [otherUserId, setOtherUserId] = useState("");
     const [showMenu, setShowMenu] = useState(false);
     const [isPinned, setIsPinned] = useState(false);
+
+    const [keyboardVisible, setKeyboardVisible] = useState(false);
 
     const socketRef = useRef(null);
     const scrollRef = useRef(null);
@@ -123,9 +127,11 @@ export default function ChatScreen({ navigation, route }) {
                     setConversationId(finalConversationId);
                     setOtherUserId(finalConversation?.otherUser?.id || "");
 
-                    const pinned = Array.isArray(finalConversation?.pinnedBy)
-                        && finalConversation.pinnedBy.includes(String(auth.userId));
-                    setIsPinned(!!pinned);
+                    const pinnedKey = `pinned_chats_${auth.userId}`;
+                    const pinnedStr = await AsyncStorage.getItem(pinnedKey);
+                    const pinnedIds = pinnedStr ? JSON.parse(pinnedStr) : [];
+                    const pinned = pinnedIds.includes(finalConversationId);
+                    setIsPinned(pinned);
                 }
                 activeConversationIdRef.current = finalConversationId;
 
@@ -533,6 +539,26 @@ export default function ChatScreen({ navigation, route }) {
         );
     };
 
+    useEffect(() => {
+    const showSubscription = Keyboard.addListener("keyboardDidShow", () => { setKeyboardVisible(true);
+   // scroll to latest message when keyboard opens
+        setTimeout(() => {
+            scrollRef.current?.scrollToOffset({
+                offset: 0,
+                animated: true,
+            });
+        }, 100);
+    });
+    const hideSubscription = Keyboard.addListener("keyboardDidHide", () => {
+        setKeyboardVisible(false);
+    });
+
+    return () => {
+        showSubscription.remove();
+        hideSubscription.remove();
+    };
+}, []);
+
     if (loading) {
         return (
             <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
@@ -544,20 +570,19 @@ export default function ChatScreen({ navigation, route }) {
     }
 
     return (
-
         <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
             <KeyboardAvoidingView
                 style={{ flex: 1 }}
-                behavior={Platform.OS === "ios" ? "padding" : undefined}
-                keyboardVerticalOffset={0}
+                behavior={Platform.OS === "ios" ? "padding" : "height"}
+                keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
             >
                 <View style={styles.header}>
                     <TouchableOpacity onPress={() => navigation.goBack()}>
-                        <Ionicons name="arrow-back" size={26} style={{ padding: 5 }} />
+                        <Ionicons name="arrow-back" size={26} style={{ padding: 5, color: colors.text }} />
                     </TouchableOpacity>
                     <View style={{ flex: 1 }}>
-                        <Text style={styles.headerTitle}>{sellerName}</Text>
-                        <Text style={styles.presenceText}>{renderPresence()}</Text>
+                        <Text style={[styles.headerTitle, { color: colors.text }]}>{sellerName}</Text>
+                        <Text style={[styles.presenceText, { color: colors.text }]}>{renderPresence()}</Text>
                     </View>
                     <View>
                         <TouchableOpacity onPress={() => setShowMenu(true)}>
@@ -600,12 +625,20 @@ export default function ChatScreen({ navigation, route }) {
                     contentContainerStyle={{
                         padding: 16,
                         paddingTop: 10,
+                        paddingBottom: keyboardVisible ? 80 : 20,
                     }}
                     initialNumToRender={20}
                     maxToRenderPerBatch={20}
                     windowSize={10}
                     removeClippedSubviews={true}
                     keyboardShouldPersistTaps="handled"
+                    keyboardDismissMode="interactive"
+                    onContentSizeChange={() => {
+                     scrollRef.current?.scrollToOffset({
+                     offset: 0,
+                     animated: false,
+                      });
+                    }}
                     renderItem={({ item: message }) => {
                         const isMine = String(message.senderId) === String(currentUserId);
                         const adRef = isAdRefMessage(message);

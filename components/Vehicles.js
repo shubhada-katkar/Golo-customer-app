@@ -1,5 +1,7 @@
 import React, { useContext, useState } from "react";
-import { View, Text, TextInput, StyleSheet, TouchableOpacity } from "react-native";
+import {
+  View, Text, TextInput, StyleSheet, TouchableOpacity,
+} from "react-native";
 import { AntDesign } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
 import { useNavigation } from "@react-navigation/native";

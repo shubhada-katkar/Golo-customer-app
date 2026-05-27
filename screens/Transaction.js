@@ -67,10 +67,10 @@ export default function Transaction() {
 
   const renderItem = ({ item }) => (
     <View style={styles.tableRow}>
-      <Text style={styles.cell}>{item.paymentId}</Text>
-      <Text style={styles.cell}>{item.orderId}</Text>
-      <Text style={styles.cell}>{item.method}</Text>
-      <Text style={styles.cell}>{item.amount}</Text>
+      <Text style={[styles.cell, { color: colors.text }]}>{item.paymentId}</Text>
+      <Text style={[styles.cell, { color: colors.text }]}>{item.orderId}</Text>
+      <Text style={[styles.cell, { color: colors.text }]}>{item.method}</Text>
+      <Text style={[styles.cell, { color: colors.text }]}>{item.amount}</Text>
       <Text
         style={[
           styles.cell,
@@ -83,7 +83,7 @@ export default function Transaction() {
       >
         {item.status}
       </Text>
-      <Text style={styles.cell}>{item.date}</Text>
+      <Text style={[styles.cell, { color: colors.text }]}>{item.date}</Text>
     </View>
   );
 
@@ -102,7 +102,7 @@ export default function Transaction() {
           />
         </TouchableOpacity>
 
-        <Text style={styles.heading}>Transaction History</Text>
+        <Text style={[styles.heading, { color: colors.text }]}>Transaction History</Text>
       </View>
 
       <View style={styles.divider} />

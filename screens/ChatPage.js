@@ -91,9 +91,12 @@ export default function ChatPage({ navigation, route }) {
                                 messagesCount: Number(updated[index].messagesCount || 0) + 1,
                             };
 
-                            return updated.sort(
-                                (a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime(),
-                            );
+                            return updated.sort((a, b) => {
+                                const aPinned = Array.isArray(a.pinnedBy) && a.pinnedBy.includes(currentUserId) ? 1 : 0;
+                                const bPinned = Array.isArray(b.pinnedBy) && b.pinnedBy.includes(currentUserId) ? 1 : 0;
+                                if (aPinned !== bPinned) return bPinned - aPinned;
+                                return new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime();
+                            });
                         });
                     });
                 } catch (error) {

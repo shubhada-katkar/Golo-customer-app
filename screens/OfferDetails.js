@@ -73,6 +73,7 @@ export default function OfferDetails({ navigation, route }) {
     const [reviewRating, setReviewRating] = useState(5);
     const [reviewLoading, setReviewLoading] = useState(false);
     const [isFavorite, setIsFavorite] = useState(false);
+    const [favoriteLoading, setFavoriteLoading] = useState(false);
     const qrRef = useRef();
 
     const offerData = route?.params?.offerData || {};
@@ -203,6 +204,8 @@ export default function OfferDetails({ navigation, route }) {
     );
 
     const handleToggleFavorite = async () => {
+        if (favoriteLoading) return;
+        setFavoriteLoading(true);
         try {
             const result = await toggleFavoriteOffer(offerData);
             setIsFavorite(result.isFavorite);
@@ -213,6 +216,8 @@ export default function OfferDetails({ navigation, route }) {
             }
         } catch (error) {
             Alert.alert("Favorite Error", error?.message || "Unable to update favorites right now.");
+        } finally {
+            setFavoriteLoading(false);
         }
     };
 
@@ -360,19 +365,23 @@ export default function OfferDetails({ navigation, route }) {
                         name="arrow-back"
                         size={24}
                         onPress={() => navigation.goBack()}
-                        style={{ paddingLeft: 6 }}
+                        style={{ paddingLeft: 6, color: colors.text }}
                     />
                     <View style={styles.headerRight}>
-                        <TouchableOpacity onPress={handleToggleFavorite}>
-                            <Ionicons
-                                name={isFavorite ? "heart" : "heart-outline"}
-                                size={22}
-                                color={isFavorite ? "#e74c3c" : "#111"}
-                                style={styles.icon}
-                            />
+                        <TouchableOpacity onPress={handleToggleFavorite} disabled={favoriteLoading}>
+                            {favoriteLoading ? (
+                                <ActivityIndicator size="small" color="#e74c3c" style={styles.icon} />
+                            ) : (
+                                <Ionicons
+                                    name={isFavorite ? "heart" : "heart-outline"}
+                                    size={22}
+                                    color={isFavorite ? "#e74c3c" : colors.text}
+                                    style={styles.icon}
+                                />
+                            )}
                         </TouchableOpacity>
                         <TouchableOpacity onPress={handleShareOffer}>
-                            <Ionicons name="share-social-outline" size={22} />
+                            <Ionicons name="share-social-outline" size={22} style={{ color: colors.text }} />
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -389,14 +398,9 @@ export default function OfferDetails({ navigation, route }) {
                     </View>
 
                     <View style={styles.content}>
-                        <Text style={styles.title}>{title}</Text>
+                        <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
 
-                        <View style={styles.priceRow}>
-                            <Text style={styles.discount}>{discountedPrice}</Text>
-                            {originalPrice ? <Text style={styles.original}>{originalPrice}</Text> : null}
-                        </View>
-
-                        <Text style={styles.by}>By {merchant}</Text>
+                        <Text style={[styles.by, { color: colors.text }]}>By {merchant}</Text>
 
                         <View style={styles.card}>
                             <Text style={styles.cardTitle}>Offer Details</Text>
@@ -646,7 +650,6 @@ const styles = StyleSheet.create({
     },
     by: {
         marginTop: 4,
-        color: "#666",
         fontFamily: "Medium",
     },
     card: {

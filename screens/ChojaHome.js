@@ -63,6 +63,12 @@ export default function ChojaHome() {
                         returnKeyType="search"
                     />
 
+                    {searchQuery.length > 0 && (
+                        <TouchableOpacity onPress={() => setSearchQuery("")} style={{ padding: 4 }}>
+                            <Ionicons name="close-circle" size={18} color="#555" />
+                        </TouchableOpacity>
+                    )}
+
                     <EvilIcons name="search" size={26} />
                 </TouchableOpacity>
             </View>

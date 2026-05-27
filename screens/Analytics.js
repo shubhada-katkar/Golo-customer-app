@@ -198,9 +198,10 @@ export default function Analytics({ navigation }) {
       <View style={{ flexDirection: "row", backgroundColor: colors.divider, height: 1, color: colors.divider, marginTop: 10 }} />
 
 
-      <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 110 }}>
+      <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={{ paddingBottom: 110 }}>
 
-        <Text style={styles.subtitle}>Track performance of your posted ads</Text>
+        <Text style={[styles.subtitle, { color: colors.text }]}>
+          Track performance of your posted ads</Text>
         {loading && (
           <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
             <ActivityIndicator size="small" color="#1f7a53" />
@@ -220,7 +221,7 @@ export default function Analytics({ navigation }) {
         </View>
 
         {/* Bar Chart */}
-        <Text style={styles.sectionTitle}>Top Ads by Views</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Top Ads by Views</Text>
 
         <BarChart
           data={topAdsViews}
@@ -237,7 +238,7 @@ export default function Analytics({ navigation }) {
         />
 
         {/* Pie Chart */}
-        <Text style={styles.sectionTitle}>Ads by Category</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Ads by Category</Text>
 
         <PieChart
           data={categoryData}
@@ -254,18 +255,18 @@ export default function Analytics({ navigation }) {
 
 
         {/* Ads Table */}
-        <Text style={styles.sectionTitle}>Your Ads</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Your Ads</Text>
 
         <View style={styles.tableHeader}>
-          <Text style={styles.headerText}>Ad</Text>
-          <Text style={styles.headerText}>Date</Text>
-          <Text style={styles.headerText}>Status</Text>
-          <Text style={styles.headerText}>Action</Text>
+          <Text style={[styles.headerText, { color: colors.text }]}>Ad</Text>
+          <Text style={[styles.headerText, { color: colors.text }]}>Date</Text>
+          <Text style={[styles.headerText, { color: colors.text }]}>Status</Text>
+          <Text style={[styles.headerText, { color: colors.text }]}>Action</Text>
         </View>
 
         {!adsList.length && (
           <View style={{ paddingVertical: 14 }}>
-            <Text style={{ color: "#666", fontFamily: "Medium" }}>No ads posted yet.</Text>
+            <Text style={{ color: colors.text, fontFamily: "Medium" }}>No ads posted yet.</Text>
           </View>
         )}
 
@@ -277,11 +278,11 @@ export default function Analytics({ navigation }) {
             style={styles.tableRow}
           >
             <View style={{ flex: 1 }}>
-              <Text style={styles.adName}>{ad.name}</Text>
-              <Text style={styles.category}>{ad.category}</Text>
+              <Text style={[styles.adName, { color: colors.text }]}>{ad.name}</Text>
+              <Text style={[styles.category, { color: colors.text }]}>{ad.category}</Text>
             </View>
 
-            <Text style={styles.cell}>{formatDate(ad.date)}</Text>
+            <Text style={[styles.cell, { color: colors.text }]}>{formatDate(ad.date)}</Text>
 
             <Text
               style={[
@@ -364,7 +365,6 @@ const styles = StyleSheet.create({
 
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
     padding: 15,
   },
 
@@ -375,7 +375,6 @@ const styles = StyleSheet.create({
   },
 
   subtitle: {
-    color: "#666",
     fontSize: 14,
     marginBottom: 15,
     fontFamily:"Medium",

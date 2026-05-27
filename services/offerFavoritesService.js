@@ -9,8 +9,14 @@ async function getFavoritesStorageKey() {
   return `${FAVORITE_OFFERS_KEY_PREFIX}:${scope}`;
 }
 
+function isMongoObjectId(value) {
+  return /^[a-fA-F0-9]{24}$/.test(String(value || ""));
+}
+
 function getOfferId(offer) {
-  return String(offer?.offerId || offer?._id || offer?.requestId || "");
+  const candidateIds = [offer?._id, offer?.offerId, offer?.requestId];
+  const validId = candidateIds.find((value) => isMongoObjectId(value));
+  return String(validId || offer?._id || offer?.offerId || offer?.requestId || "");
 }
 
 function getOfferImage(offer) {
@@ -96,7 +102,32 @@ async function getFavoriteOffers() {
     if (response?.ok) {
       const json = await response.json();
       if (Array.isArray(json?.data)) {
-        return json.data.filter((item) => item._type === "offer" || Boolean(item.offerId) || Boolean(item.requestId));
+        // Map various server wishlist shapes into a consistent favorite-offer payload
+        const mapped = json.data
+          .map((item) => {
+            const candidate = item?.rawOffer || item?.offer || item?.item || item;
+            // If candidate looks like an offer/promotion, convert to favorite payload
+            // Only treat this as an offer if it clearly has an offer identifier
+            const promoType = (candidate?.promotionType || candidate?.promoTag || candidate?.type || "").toString().toLowerCase();
+            if (
+              candidate?.offerId ||
+              candidate?.requestId ||
+              item?._type === 'offer' ||
+              promoType === 'offer' ||
+              promoType.includes('offer')
+            ) {
+              return toFavoriteOfferPayload(candidate);
+            }
+            return null;
+          })
+          .filter(Boolean);
+
+        if (mapped.length) return mapped;
+
+        // Fallback: keep items that explicitly declare offer identifiers
+        return json.data.filter(
+          (item) => item._type === "offer" || Boolean(item.offerId) || Boolean(item.requestId)
+        );
       }
     }
   } catch (error) {
@@ -134,7 +165,13 @@ async function getFavoriteIds() {
   }
 
   const items = await getFavoriteOffers();
-  return items.map((item) => String(item.offerId || item._id || item.requestId || "")).filter(Boolean);
+  return items
+    .map((item) => {
+      const candidateIds = [item?._id, item?.offerId, item?.requestId];
+      const validId = candidateIds.find((value) => isMongoObjectId(value));
+      return String(validId || item?._id || item?.offerId || item?.requestId || "");
+    })
+    .filter(Boolean);
 }
 
 async function isFavoriteOfferId(offerId) {

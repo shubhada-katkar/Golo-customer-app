@@ -22,7 +22,6 @@ import Payment from './screens/Payment';
 import ChatScreen from './screens/ChatScreen';
 import GoloHome from './screens/GoloHome';
 import GoloFav from './screens/GoloFav';
-import GoloChatPage from './screens/GoloChatPage';
 import OfferDetails from './screens/OfferDetails';
 import Claimed from './screens/Claimed';
 import AdDetails from './screens/AdDetails';
@@ -96,7 +95,6 @@ export default function App() {
           <Stack.Screen name='ChatScreen' component={ChatScreen} />
           <Stack.Screen name='GoloHome' component={GoloHome} />
           <Stack.Screen name='GoloFav' component={GoloFav} />
-          <Stack.Screen name='GoloChatPage' component={GoloChatPage} />
           <Stack.Screen name="OfferDetails" component={OfferDetails} />
           <Stack.Screen name="Claimed" component={Claimed} />
           <Stack.Screen name="AdDetails" component={AdDetails} />

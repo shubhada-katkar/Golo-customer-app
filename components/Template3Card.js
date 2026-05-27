@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import {
     View, Text, StyleSheet, TouchableOpacity, Alert, Share,
-    TextInput, Modal, ScrollView
+    TextInput, Modal, ScrollView, ActivityIndicator
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Linking } from "react-native";
@@ -10,6 +10,7 @@ import { baseUrl } from "../config";
 
 export default function Template3Card({ ad, navigation }) {
     const [isFavorite, setIsFavorite] = useState(false);
+    const [favoriteLoading, setFavoriteLoading] = useState(false);
     const [showReportModal, setShowReportModal] = useState(false);
     const [selectedReason, setSelectedReason] = useState(null);
     const [details, setDetails] = useState("");
@@ -26,11 +27,15 @@ export default function Template3Card({ ad, navigation }) {
     }, [ad]);
 
     const handleFavoriteToggle = async () => {
+        if (favoriteLoading) return;
+        setFavoriteLoading(true);
         try {
             const result = await toggleFavoriteAd(ad);
             setIsFavorite(result.isFavorite);
         } catch (error) {
             console.log("favorite toggle failed", error.message);
+        } finally {
+            setFavoriteLoading(false);
         }
     };
 
@@ -101,8 +106,12 @@ export default function Template3Card({ ad, navigation }) {
                 style={styles.card}
             >
                 <View style={styles.topRow}>
-                    <TouchableOpacity onPress={handleFavoriteToggle}>
-                        <Ionicons name={isFavorite ? "heart" : "heart-outline"} size={18} color={isFavorite ? "#e74c3c" : "#222"} />
+                    <TouchableOpacity onPress={handleFavoriteToggle} disabled={favoriteLoading}>
+                        {favoriteLoading ? (
+                            <ActivityIndicator size="small" color="#e74c3c" />
+                        ) : (
+                            <Ionicons name={isFavorite ? "heart" : "heart-outline"} size={18} color={isFavorite ? "#e74c3c" : "#222"} />
+                        )}
                     </TouchableOpacity>
                     <TouchableOpacity onPress={handleShare}>
                         <Ionicons name="share-social-outline" size={18} />

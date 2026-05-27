@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect } from "react";
 import {
   View, Text, StyleSheet, TouchableOpacity, Image,
-  Dimensions, ScrollView, FlatList, Alert, Share, Modal, TextInput
+  Dimensions, ScrollView, FlatList, Alert, Share, Modal, TextInput, ActivityIndicator
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Linking } from "react-native";
@@ -12,6 +12,7 @@ const { width, height } = Dimensions.get("window");
 
 export default function Template1Card({ ad, navigation }) {
   const [isFavorite, setIsFavorite] = useState(false);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [selectedReason, setSelectedReason] = useState(null);
   const [details, setDetails] = useState("");
@@ -28,11 +29,15 @@ export default function Template1Card({ ad, navigation }) {
   }, [ad]);
 
   const handleFavoriteToggle = async () => {
+    if (favoriteLoading) return;
+    setFavoriteLoading(true);
     try {
       const result = await toggleFavoriteAd(ad);
       setIsFavorite(result.isFavorite);
     } catch (error) {
       console.log("favorite toggle failed", error.message);
+    } finally {
+      setFavoriteLoading(false);
     }
   };
 
@@ -150,8 +155,12 @@ export default function Template1Card({ ad, navigation }) {
         style={styles.card}
       >
         <View style={styles.topRow}>
-          <TouchableOpacity onPress={handleFavoriteToggle}>
-            <Ionicons name={isFavorite ? "heart" : "heart-outline"} size={18} color={isFavorite ? "#e74c3c" : "#222"} />
+          <TouchableOpacity onPress={handleFavoriteToggle} disabled={favoriteLoading}>
+            {favoriteLoading ? (
+              <ActivityIndicator size="small" color="#e74c3c" />
+            ) : (
+              <Ionicons name={isFavorite ? "heart" : "heart-outline"} size={18} color={isFavorite ? "#e74c3c" : "#222"} />
+            )}
           </TouchableOpacity>
           <TouchableOpacity onPress={handleShare}>
             <Ionicons name="share-social-outline" size={18} />
@@ -433,28 +442,23 @@ const styles = StyleSheet.create({
     fontFamily: "Medium",
     lineHeight: Math.round(14 * 1.5)
   },
-
-
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
     justifyContent: "center",
     padding: 20,
   },
-
   modalContainer: {
     backgroundColor: "#fff",
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
   },
-
   modalTitle: {
     fontSize: 18,
     fontFamily: "SemiBold",
     lineHeight: Math.round(18 * 1.2),
   },
-
   modalSubtitle: {
     color: "#666",
     marginBottom: 10,
@@ -462,14 +466,12 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: Math.round(13 * 1.5)
   },
-
   reportBox: {
     backgroundColor: "#f3f3f3",
     padding: 10,
     borderRadius: 8,
     marginBottom: 10,
   },
-
   option: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -479,7 +481,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginTop: 8,
   },
-
   radio: {
     width: 18,
     height: 18,
@@ -492,7 +493,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#157a4f",
     borderColor: "#157a4f",
   },
-
   textArea: {
     borderWidth: 1,
     borderColor: "#000000",
@@ -504,7 +504,6 @@ const styles = StyleSheet.create({
     lineHeight: Math.round(13 * 1.5),
     fontSize: 13,
   },
-
   cancelBtn: {
     flex: 1,
     padding: 12,
@@ -514,7 +513,6 @@ const styles = StyleSheet.create({
     borderColor: "#000000",
     marginRight: 6,
   },
-
   submitBtn: {
     flex: 1,
     padding: 12,
@@ -524,5 +522,4 @@ const styles = StyleSheet.create({
     borderColor: "#000000",
     marginRight: 6,
   },
-
 });

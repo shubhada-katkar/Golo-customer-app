@@ -1,5 +1,5 @@
 import React, { useCallback, useContext, useState } from "react";
-import { View, StyleSheet, Text, TouchableOpacity, ScrollView, Image } from "react-native";
+import { ActivityIndicator, RefreshControl, View, StyleSheet, Text, TouchableOpacity, ScrollView, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
 import { ThemeContext } from "../theme/ThemeContext";
@@ -11,10 +11,16 @@ import { getFavoriteAds, toggleFavoriteAd } from "../services/favoritesService";
 export default function Fav({ navigation }) {
     const { colors } = useContext(ThemeContext);
     const [favorites, setFavorites] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     const loadFavorites = useCallback(async () => {
-        const items = await getFavoriteAds();
-        setFavorites(items);
+        setLoading(true);
+        try {
+            const items = await getFavoriteAds();
+            setFavorites(items);
+        } finally {
+            setLoading(false);
+        }
     }, []);
 
     useFocusEffect(
@@ -49,15 +55,27 @@ export default function Fav({ navigation }) {
 
             <View style={{ flexDirection: "row", backgroundColor: colors.divider, height: 1, color: colors.divider, marginTop: 10 }} />
 
-            <ScrollView contentContainerStyle={{ paddingBottom: 120 }}>
-                {favorites.length === 0 ? (
+            <ScrollView
+                contentContainerStyle={{ paddingBottom: 120 }}
+                refreshControl={
+                    <RefreshControl refreshing={loading} onRefresh={loadFavorites} />
+                }
+            >
+                {loading ? (
+                    <View style={{ padding: 24, alignItems: "center" }}>
+                        <ActivityIndicator size="small" color={colors.primary} />
+                        <Text style={{ color: colors.text, fontFamily: "Medium", marginTop: 10 }}>
+                            Loading saved ads...
+                        </Text>
+                    </View>
+                ) : favorites.length === 0 ? (
                     <View style={{ padding: 24, alignItems: "center" }}>
                         <Text style={{ color: colors.text, fontFamily: "Medium" }}>No favorite ads yet</Text>
                     </View>
                 ) : favorites.map((item) => (
                     <TouchableOpacity
                         key={item.adId}
-                        style={[styles.card, { backgroundColor: colors.card }]}
+                        style={[styles.card]}
                         onPress={() => navigation.navigate("AdDetails", { adId: item._id || item.adId })}
                     >
                         {item?.image ? (
@@ -65,12 +83,12 @@ export default function Fav({ navigation }) {
                         ) : null}
 
                         <View style={{ flex: 1, marginLeft: item?.image ? 12 : 0 }}>
-                            <Text style={{ fontSize: 16, fontFamily: "SemiBold", color: colors.text,
+                            <Text style={{ fontSize: 16, fontFamily: "SemiBold", color: "#000000",
                                 lineHeight: Math.round(16 * 1.5)
                              }} numberOfLines={1}>
                                 {item.title || "Ad"}
                             </Text>
-                            <Text style={{ fontSize: 12, color: colors.text, lineHeight: Math.round(12 * 1.5),
+                            <Text style={{ fontSize: 12, color: "#000000", lineHeight: Math.round(12 * 1.5),
                                 fontFamily: "Medium"
                              }} numberOfLines={1}>
                                 {item.location || "No location"}
@@ -110,7 +128,8 @@ const styles = StyleSheet.create({
         marginHorizontal: 10,
         marginTop: 14,
         borderRadius: 12,
-        borderWidth: 0.5
+        borderWidth: 0.5,
+        backgroundColor: "#ffffff"
     },
 
     imagePlaceholder: {

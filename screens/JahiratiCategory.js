@@ -29,16 +29,16 @@ export default function JahiratiCategory({ navigation }) {
                             name="arrow-back-ios"
                             size={26} style={{ paddingHorizontal: 10 }} />
                     </TouchableOpacity>
-                    <Text style={{ fontSize: 22, fontFamily: "Medium", lineHeight: Math.round(22 * 1.4) }}>
+                    <Text style={{ fontSize: 22, fontFamily: "Medium", lineHeight: Math.round(22 * 1.5) }}>
                         Smart Jahirati
                     </Text>
                 </View>
 
-                <Text style={{ fontSize: width * 0.04, marginLeft: 48, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) }}>
+                <Text style={{ fontSize: width * 0.04, marginLeft: 48, fontFamily: "Medium", lineHeight: Math.round(width * 0.04 * 1.5) }}>
                     Post Your Ads Instantly Online
                 </Text>
 
-                <Text style={{ marginTop: 10, marginLeft: 10, fontSize: width * 0.04, fontFamily: "Italic", lineHeight: Math.round(16 * 1.5) }}>
+                <Text style={{ marginTop: 10, marginLeft: 10, fontSize: width * 0.04, fontFamily: "Italic", lineHeight: Math.round(width * 0.04 * 1.5) }}>
                     Select Ad Categories</Text>
 
                 {/*Row : 1*/}

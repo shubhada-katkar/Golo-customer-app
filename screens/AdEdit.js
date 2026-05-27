@@ -383,17 +383,17 @@ export default function AdEdit({ route, navigation }) {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <Topbar />
   
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <MaterialIcons name="arrow-back-ios" size={26} />
+      <View style={[styles.header, { backgroundColor: colors.background }]}>
+        <TouchableOpacity onPress={() => navigation.goBack()} >
+          <MaterialIcons name="arrow-back-ios" size={26} style={{ color: colors.text }} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Edit Ad</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Edit Ad</Text>
         <View style={{ width: 24 }} />
       </View>
 
-      <View style={{ height: 1, backgroundColor: "#050505" }} />
+      <View style={{ height: 1, backgroundColor: "#000000" }} />
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={styles.content} style={{ backgroundColor: colors.background }}>
 
         <Text style={[styles.sectionTitle, { marginTop: 10 }]}>Ad Details</Text>
 
@@ -541,7 +541,7 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 14,
-    paddingBottom: 85,
+    paddingBottom: 90,
   },
   label: {
     fontSize: 14,

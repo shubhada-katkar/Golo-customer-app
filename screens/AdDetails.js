@@ -154,15 +154,7 @@ function getCommonAdDetails(adData) {
 
   const details = [
     { label: 'Cities', value: adData.cities },
-    {
-      label: 'Selected Dates',
-      value: Array.isArray(adData.selectedDates)
-        ? adData.selectedDates.map((d) => {
-          const parsed = new Date(d);
-          return Number.isNaN(parsed.getTime()) ? null : parsed.toLocaleDateString();
-        }).filter(Boolean)
-        : null,
-    },
+
     { label: 'Posted On', value: adData.createdAt ? new Date(adData.createdAt).toLocaleDateString() : null },
     { label: 'Expires On', value: adData.expiryDate ? new Date(adData.expiryDate).toLocaleDateString() : null },
   ];
@@ -178,10 +170,12 @@ function getCommonAdDetails(adData) {
 export default function AdDetails({ route, navigation }) {
   const { adId } = route.params || {};
   const [ad, setAd] = useState(null);
+  const [seller, setSeller] = useState(null);
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
   const sliderRef = useRef(null);
 
   const commonAdDetails = getCommonAdDetails(ad);
@@ -191,11 +185,15 @@ export default function AdDetails({ route, navigation }) {
   const [selectedReason, setSelectedReason] = useState(null);
   const [details, setDetails] = useState("");
 
+  const sellerName = seller?.name || ad?.contactInfo?.name || 'Seller';
+  const sellerPhone = seller?.profile?.phone || ad?.contactInfo?.phone || '';
+  const sellerAvatar = seller?.profile?.avatar || null;
+
   const handleOpenChat = () => {
     navigation.navigate('ChatScreen', {
       adId: ad?.adId || ad?._id || adId,
       sellerId: ad?.userId || ad?.user?.id,
-      sellerName: ad?.contactInfo?.name || 'Seller',
+      sellerName,
       adRef: {
         adId: ad?.adId || ad?._id || adId,
         title: ad?.title || 'Ad',
@@ -237,6 +235,19 @@ export default function AdDetails({ route, navigation }) {
           console.log('[AdDetails] Tracking card click for ad:', currentAdId);
           trackAdCardClick(currentAdId);
 
+          const sellerId = json.data?.userId || json.data?.user?.id;
+          if (sellerId) {
+            try {
+              const sellerRes = await fetch(`${BASE_URL}/users/${encodeURIComponent(sellerId)}`);
+              const sellerJson = await sellerRes.json();
+              if (sellerJson.success && sellerJson.data) {
+                setSeller(sellerJson.data);
+              }
+            } catch (sellerErr) {
+              console.warn('[AdDetails] Failed to fetch seller info:', sellerErr.message);
+            }
+          }
+
           // Fetch analytics data to get unique visitors count
           try {
             const analyticsData = await getPublicAdAnalytics(currentAdId);
@@ -273,6 +284,8 @@ export default function AdDetails({ route, navigation }) {
   }, [ad, adId]);
 
   const handleToggleFavorite = async () => {
+    if (favoriteLoading) return;
+    setFavoriteLoading(true);
     try {
       const payload = ad
         ? {
@@ -292,6 +305,8 @@ export default function AdDetails({ route, navigation }) {
       }
     } catch (error) {
       Alert.alert('Favorite Error', error.message || 'Failed to update favorites');
+    } finally {
+      setFavoriteLoading(false);
     }
   };
 
@@ -356,11 +371,13 @@ export default function AdDetails({ route, navigation }) {
     try {
       await submitReport('AD', currentAdId, selectedReason, details);
       Alert.alert('Success', 'Ad reported successfully. Thank you for your feedback.', [
-        { text: 'OK', onPress: () => {
-          setShowReportModal(false);
-          setSelectedReason(null);
-          setDetails('');
-        }}
+        {
+          text: 'OK', onPress: () => {
+            setShowReportModal(false);
+            setSelectedReason(null);
+            setDetails('');
+          }
+        }
       ]);
     } catch (err) {
       Alert.alert('Error', err.message || 'Failed to submit report. Please try again.');
@@ -402,8 +419,12 @@ export default function AdDetails({ route, navigation }) {
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Ad Details</Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-              <TouchableOpacity onPress={handleToggleFavorite}>
-                <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={24} color={isFavorite ? '#e74c3c' : '#111'} />
+              <TouchableOpacity onPress={handleToggleFavorite} disabled={favoriteLoading}>
+                {favoriteLoading ? (
+                  <ActivityIndicator size="small" color="#e74c3c" />
+                ) : (
+                  <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={24} color={isFavorite ? '#e74c3c' : '#111'} />
+                )}
               </TouchableOpacity>
               <TouchableOpacity onPress={handleShare}>
                 <Ionicons name="share-social" size={24} />
@@ -521,7 +542,7 @@ export default function AdDetails({ route, navigation }) {
                   style={styles.sellerInfo}
                   onPress={() => {
                     const sellerId = ad?.userId || ad?.user?.id;
-                    if(sellerId) {
+                    if (sellerId) {
                       navigation.navigate('SellerProfile', {
                         sellerId,
                         adId: ad?.adId || ad?._id || adId,
@@ -534,18 +555,22 @@ export default function AdDetails({ route, navigation }) {
                   }}
                 >
                   <View style={styles.sellerAvatar}>
-                    <Ionicons name="person-circle" size={48} color="#157a4f" />
+                    {sellerAvatar ? (
+                      <Image source={{ uri: sellerAvatar }} style={styles.sellerAvatarImage} />
+                    ) : (
+                      <Ionicons name="person-circle" size={48} color="#157a4f" />
+                    )}
                   </View>
                   <View style={styles.sellerDetails}>
-                    <Text style={styles.sellerName}>{ad.contactInfo?.name || 'Anonymous'}</Text>
-                    {ad.contactInfo?.phone && (
+                    <Text style={styles.sellerName}>{sellerName || 'Anonymous'}</Text>
+                    {(sellerPhone || ad.contactInfo?.phone) && (
                       <TouchableOpacity
                         style={styles.callBtn}
                         onPress={() => {
-                          handleCall(ad.contactInfo.phone);
+                          handleCall(sellerPhone || ad.contactInfo?.phone);
                         }}
                       >
-                        <Text style={styles.callBtnText}>📞 {ad.contactInfo.phone}</Text>
+                        <Text style={styles.callBtnText}>📞 {sellerPhone || ad.contactInfo?.phone}</Text>
                       </TouchableOpacity>
                     )}
                   </View>
@@ -774,6 +799,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#f0f0f0',
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
+  },
+  sellerAvatarImage: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
   },
   sellerDetails: {
     flex: 1,

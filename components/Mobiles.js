@@ -1,5 +1,8 @@
 import React, { useContext } from "react";
-import { View, Text, TextInput, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
+import {
+  View, Text, TextInput, StyleSheet, ScrollView, TouchableOpacity,
+  KeyboardAvoidingView, Platform
+} from "react-native";
 import { AntDesign } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 

@@ -1,39 +1,52 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
+import { BASE_URL } from "../config";
 
 export async function submitReport(type, targetId, reason, details) {
   try {
-    let reporterId = await AsyncStorage.getItem("customerId");
-    if (!reporterId) {
-      reporterId = "Anonymous";
+    const token = await AsyncStorage.getItem("customerToken");
+    if (!token) {
+      throw new Error("Please login to submit a report");
     }
 
-    const payload = {
-      type,
-      targetId,
-      reporterId,
+    if (!targetId) {
+      throw new Error("Report target ID is required");
+    }
+
+    let url = "";
+    let payload = {
       reason,
-      details,
+      description: details || "",
     };
 
-    const response = await fetch(`${BASE_URL}/reports`, {
-      method: 'POST',
+    if (type === "AD") {
+      url = `${BASE_URL}/ads/${encodeURIComponent(targetId)}/report`;
+    } else if (type === "SELLER") {
+      url = `${BASE_URL}/users/${encodeURIComponent(targetId)}/report`;
+    } else {
+      throw new Error("Unsupported report type");
+    }
+
+    const response = await fetch(url, {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(payload),
     });
 
-    const data = await response.json();
+    const data = await response.json().catch(() => ({}));
 
-    if (!response.ok || !data.success) {
-      throw new Error(data.message || 'Failed to submit report');
+    if (!response.ok || data?.success === false) {
+      const message =
+        (Array.isArray(data?.message) ? data.message.join(", ") : data?.message) ||
+        "Failed to submit report";
+      throw new Error(message);
     }
 
     return data;
   } catch (error) {
-    console.error('Error submitting report:', error);
+    console.error("Error submitting report:", error);
     throw error;
   }
 }
