@@ -80,10 +80,16 @@ export const fetchMyVouchers = async (options = {}) => {
 };
 
 const normalizeClaimedOffer = (item) => ({
+  ...item,
   id: item?.id || item?._id || null,
-  title: item?.title || item?.offerTitle || "",
-  image: item?.image || item?.offerImage || null,
-  merchantName: item?.merchantName || "",
+  title: item?.title || item?.offerTitle || item?.bannerTitle || "",
+  image: item?.image || item?.offerImage || item?.imageUrl || null,
+  merchantName:
+    item?.merchantName ||
+    item?.shopName ||
+    item?.businessName ||
+    item?.storeName ||
+    "",
   claimedAt: item?.claimedAt || item?.createdAt || null,
 });
 

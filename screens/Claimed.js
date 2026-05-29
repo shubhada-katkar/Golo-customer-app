@@ -24,6 +24,40 @@ export default function Claimed({ navigation }) {
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState("");
 
+    const isOfferExpired = (offer) => {
+        if (!offer) return false;
+
+        const status = String(offer?.status || offer?.voucherStatus || "").toLowerCase();
+        if (status === "expired" || status === "expired_offer") {
+            return true;
+        }
+
+        const expiryValue =
+            offer?.endDate ||
+            offer?.validTo ||
+            offer?.expiresAt ||
+            offer?.expiryDate ||
+            offer?.expiry ||
+            offer?.offer?.endDate ||
+            offer?.offer?.validTo ||
+            offer?.offer?.expiresAt ||
+            offer?.offer?.expiryDate ||
+            offer?.offer?.expiry;
+
+        if (!expiryValue) {
+            return false;
+        }
+
+        const expiryDate = new Date(expiryValue);
+        if (Number.isNaN(expiryDate.getTime())) {
+            return false;
+        }
+
+        return expiryDate.getTime() < Date.now();
+    };
+
+    const activeClaimedOffers = claimedOffers.filter((item) => !isOfferExpired(item));
+
     const loadClaimedOffers = useCallback(async ({ isRefresh = false } = {}) => {
         try {
             if (isRefresh) {
@@ -90,14 +124,19 @@ export default function Claimed({ navigation }) {
                         <Text style={[styles.infoText, { color: "#D32F2F" }]}>{error}</Text>
                     ) : null}
 
-                    {!error && claimedOffers.length === 0 ? (
-                        <Text style={[styles.infoText, { color: colors.text }]}>
-                            No claimed offers yet.
+                    {!error && activeClaimedOffers.length === 0 ? (
+                        <Text style={[styles.infoText, { color: colors.text }]}> 
+                            No active claimed offers yet.
                         </Text>
                     ) : null}
 
-                    {claimedOffers.map((item, index) => (
-                        <View key={item?.id || index} style={[styles.card, { backgroundColor: colors.card, borderColor: colors.divider }]}>
+                    {activeClaimedOffers.map((item, index) => (
+                        <TouchableOpacity
+                            key={item?.id || index}
+                            onPress={() => navigation.navigate("OfferDetails", { offerData: item?.offer || item })}
+                            activeOpacity={0.8}
+                            style={[styles.card, { backgroundColor: colors.card, borderColor: colors.divider }]}
+                        >
                             {item?.image ? (
                                 <Image source={{ uri: item.image }} style={styles.offerImage} />
                             ) : (
@@ -113,7 +152,7 @@ export default function Claimed({ navigation }) {
                                    Deal by {item?.merchantName || "Unknown Merchant"}
                                 </Text>
                             </View>
-                        </View>
+                        </TouchableOpacity>
                     ))}
                 </ScrollView>
             )}

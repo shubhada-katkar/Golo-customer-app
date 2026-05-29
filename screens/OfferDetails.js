@@ -429,7 +429,12 @@ export default function OfferDetails({ navigation, route }) {
                                             const productName = product?.productName || product?.name || product?.title || `Product ${index + 1}`;
 
                                             return (
-                                                <View key={index} style={styles.productCard}>
+                                                <TouchableOpacity
+                                                    key={index}
+                                                    style={styles.productCard}
+                                                    activeOpacity={0.8}
+                                                    onPress={() => navigation.navigate("ProductDetail", { product })}
+                                                >
                                                     {productImage ? (
                                                         <Image
                                                             source={{ uri: productImage }}
@@ -447,7 +452,7 @@ export default function OfferDetails({ navigation, route }) {
                                                     <Text style={styles.productName} numberOfLines={2}>
                                                         {productName}
                                                     </Text>
-                                                </View>
+                                                </TouchableOpacity>
                                             );
                                         })}
                                     </View>

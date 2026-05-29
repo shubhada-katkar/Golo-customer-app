@@ -1,4 +1,5 @@
 import React, { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useFocusEffect } from '@react-navigation/native';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Topbar from "../components/Topbar";
@@ -66,17 +67,26 @@ export default function AdAnalytics({ navigation, route }) {
         return () => clearInterval(interval);
     }, [fetchAnalytics]);
 
-    const data = useMemo(() => ({
-        clicks: analytics?.stats?.clicks || analytics?.ad?.views || 0,
-        visitors: analytics?.stats?.visitors || analytics?.ad?.uniqueVisitors || 0,
-        contacts: analytics?.stats?.contacts || analytics?.ad?.contactClicks || 0,
-        wishlist: analytics?.stats?.wishlist || analytics?.ad?.wishlistCount || 0,
-    }), [analytics]);
+    useFocusEffect(
+      useCallback(() => {
+        fetchAnalytics();
+      }, [fetchAnalytics]),
+    );
 
-    const rates = analytics?.rates || {
-        ctr: analytics?.ad?.clickThroughRate || 0,
-        visitorsRate: 0,
-        wishlistRate: analytics?.ad?.wishlistRate || 0,
+    const data = useMemo(() => {
+        const adViews = Number(analytics?.ad?.views ?? analytics?.ad?.uniqueVisitors ?? analytics?.ad?.viewHistory?.length ?? 0);
+        return {
+            clicks: Number(analytics?.stats?.clicks ?? adViews),
+            visitors: Number(analytics?.stats?.visitors ?? analytics?.ad?.uniqueVisitors ?? adViews),
+            contacts: Number(analytics?.stats?.contacts ?? analytics?.ad?.contactClicks ?? 0),
+            wishlist: Number(analytics?.stats?.wishlist ?? analytics?.ad?.wishlistCount ?? 0),
+        };
+    }, [analytics]);
+
+    const rates = {
+        ctr: Number(analytics?.rates?.ctr ?? analytics?.ad?.clickThroughRate ?? 0),
+        visitorsRate: Number(analytics?.rates?.visitorsRate ?? 0),
+        wishlistRate: Number(analytics?.rates?.wishlistRate ?? analytics?.ad?.wishlistRate ?? 0),
     };
     const adInfo = analytics?.ad || {};
     const resolvedAdId = adInfo?.adId || adId;

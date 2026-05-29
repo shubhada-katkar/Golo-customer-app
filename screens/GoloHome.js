@@ -142,6 +142,24 @@ const getDistanceText = (value) => {
         : `${distance.toFixed(1)} km away`;
 };
 
+const isOfferCurrentlyActive = (offer) => {
+    const status = String(offer?.status || "").toLowerCase();
+    if (status === "expired") return false;
+
+    const now = Date.now();
+    const start = offer?.startDate ? new Date(offer.startDate).getTime() : null;
+    const end = offer?.endDate ? new Date(offer.endDate).getTime() : null;
+
+    if (start !== null && now < start) {
+        return false;
+    }
+    if (end !== null && now > end) {
+        return false;
+    }
+
+    return true;
+};
+
 export default function GoloHome() {
     const navigation = useNavigation();
     const { colors } = useContext(ThemeContext);
@@ -282,7 +300,12 @@ export default function GoloHome() {
     };
 
     const filteredOffers = offers
-        .filter((offer) => categoryMatches(offer, selectedCategory) && offerMatchesSearch(offer, searchQuery))
+        .filter(
+            (offer) =>
+                isOfferCurrentlyActive(offer) &&
+                categoryMatches(offer, selectedCategory) &&
+                offerMatchesSearch(offer, searchQuery)
+        )
         .sort((offerA, offerB) => {
             const distanceA = Number(offerA?.distanceKm);
             const distanceB = Number(offerB?.distanceKm);

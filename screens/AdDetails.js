@@ -18,11 +18,19 @@ import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Linking } from 'react-native';
 import { getAdId, isFavoriteAdId, toggleFavoriteAd } from '../services/favoritesService';
-import { trackAdCardClick, trackContactClick, trackWishlistSave, getPublicAdAnalytics } from '../services/analyticsService';
+import { trackAdCardClick, trackContactClick, trackWishlistSave } from '../services/analyticsService';
 import { submitReport } from '../services/reportService';
 import { BASE_URL } from '../config';
 
 const { width, height } = Dimensions.get('window');
+
+const REPORT_REASONS = [
+  { label: 'Spam or Misleading', value: 'spam' },
+  { label: 'Inappropriate Content', value: 'inappropriate' },
+  { label: 'Fraud or Scam', value: 'fraud' },
+  { label: 'Duplicate Posting', value: 'duplicate' },
+  { label: 'Other', value: 'other' },
+];
 
 const COMMON_AD_KEYS = new Set([
   '_id',
@@ -171,7 +179,6 @@ export default function AdDetails({ route, navigation }) {
   const { adId } = route.params || {};
   const [ad, setAd] = useState(null);
   const [seller, setSeller] = useState(null);
-  const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
@@ -190,12 +197,18 @@ export default function AdDetails({ route, navigation }) {
   const sellerAvatar = seller?.profile?.avatar || null;
 
   const handleOpenChat = () => {
+    const currentAdId = ad?.adId || ad?._id || adId;
+    if (currentAdId) {
+      console.log('[AdDetails] Tracking contact click for ad:', currentAdId);
+      trackContactClick(currentAdId);
+    }
+
     navigation.navigate('ChatScreen', {
-      adId: ad?.adId || ad?._id || adId,
+      adId: currentAdId,
       sellerId: ad?.userId || ad?.user?.id,
       sellerName,
       adRef: {
-        adId: ad?.adId || ad?._id || adId,
+        adId: currentAdId,
         title: ad?.title || 'Ad',
         image: ad?.images?.[0] || null,
       },
@@ -209,8 +222,10 @@ export default function AdDetails({ route, navigation }) {
     const cleanedNumber = phone.replace('+91', '');
 
     const currentAdId = ad?.adId || ad?._id || adId;
-    console.log('[AdDetails] Tracking contact click for ad:', currentAdId);
-    trackContactClick(currentAdId);
+    if (currentAdId) {
+      console.log('[AdDetails] Tracking contact click for ad:', currentAdId);
+      trackContactClick(currentAdId);
+    }
 
     Linking.openURL(`tel:${cleanedNumber}`);
   };
@@ -232,8 +247,10 @@ export default function AdDetails({ route, navigation }) {
           setAd(json.data);
           // Use the same adId extraction logic as other handlers
           const currentAdId = json.data?.adId || json.data?._id || adId;
-          console.log('[AdDetails] Tracking card click for ad:', currentAdId);
-          trackAdCardClick(currentAdId);
+          if (route?.params?.skipCardTrack !== true) {
+            console.log('[AdDetails] Tracking card click for ad:', currentAdId);
+            trackAdCardClick(currentAdId);
+          }
 
           const sellerId = json.data?.userId || json.data?.user?.id;
           if (sellerId) {
@@ -248,14 +265,6 @@ export default function AdDetails({ route, navigation }) {
             }
           }
 
-          // Fetch analytics data to get unique visitors count
-          try {
-            const analyticsData = await getPublicAdAnalytics(currentAdId);
-            setAnalytics(analyticsData);
-            console.log('[AdDetails] Analytics data fetched:', analyticsData);
-          } catch (analyticsErr) {
-            console.warn('[AdDetails] Failed to fetch analytics:', analyticsErr.message);
-          }
         } else {
           Alert.alert('Error', json.message || 'Failed to load ad details');
           navigation.goBack();
@@ -351,11 +360,7 @@ export default function AdDetails({ route, navigation }) {
   };
 
   const handleShare = () => {
-    Alert.alert('Share Ad', 'Choose where to share this ad', [
-      { text: 'In GOLO Chat', onPress: handleShareInChat },
-      { text: 'WhatsApp / Messages', onPress: handleShareExternally },
-      { text: 'Cancel', style: 'cancel' },
-    ]);
+    handleShareExternally();
   };
 
   const handleSubmitReport = async () => {
@@ -502,7 +507,7 @@ export default function AdDetails({ route, navigation }) {
                 </View>
                 <View style={styles.metaItem}>
                   <Ionicons name="eye-outline" size={16} color="#666" />
-                  <Text style={styles.metaText}>{analytics?.stats?.visitors || ad.uniqueVisitors || ad.viewCount || 0} views</Text>
+                  <Text style={styles.metaText}>{ad.views || ad.uniqueVisitors || ad.viewHistory?.length || ad.viewCount || 0} views</Text>
                 </View>
               </View>
 
@@ -607,22 +612,16 @@ export default function AdDetails({ route, navigation }) {
               <Text style={styles.modalSubtitle}>Help us review suspicious listings.</Text>
               <Text style={{ fontSize: 16, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) }}>Why are you reporting this ad?</Text>
 
-              {[
-                "Spam or Misleading",
-                "Inappropriate Content",
-                "Fraud or Scam",
-                "Duplicate Posting",
-                "Other",
-              ].map((reason, index) => (
+              {REPORT_REASONS.map((reason, index) => (
                 <TouchableOpacity
                   key={index}
                   style={styles.option}
-                  onPress={() => setSelectedReason(reason)}
+                  onPress={() => setSelectedReason(reason.value)}
                 >
-                  <Text style={{ fontSize: 13, lineHeight: Math.round(13 * 1.5), fontFamily: "Medium" }}>{reason}</Text>
+                  <Text style={{ fontSize: 13, lineHeight: Math.round(13 * 1.5), fontFamily: "Medium" }}>{reason.label}</Text>
                   <View style={[
                     styles.radio,
-                    selectedReason === reason && styles.radioSelected
+                    selectedReason === reason.value && styles.radioSelected
                   ]} />
                 </TouchableOpacity>
               ))}

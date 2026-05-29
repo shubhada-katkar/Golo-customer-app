@@ -1,4 +1,5 @@
 import React, { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useFocusEffect } from '@react-navigation/native';
 import {
   View, StyleSheet, Text, TouchableOpacity, ScrollView,
   ActivityIndicator, Dimensions
@@ -25,6 +26,17 @@ function formatDate(value) {
   });
 }
 
+function normalizeAdMetric(ad) {
+  return Number(ad?.views ?? ad?.uniqueVisitors ?? ad?.viewHistory?.length ?? 0);
+}
+
+function getStatusLabel(status) {
+  const effectiveStatus = String(status || "").toLowerCase();
+  if (effectiveStatus === "deleted") return "Expired";
+  if (!effectiveStatus) return "-";
+  return `${effectiveStatus.charAt(0).toUpperCase()}${effectiveStatus.slice(1)}`;
+}
+
 export default function Analytics({ navigation }) {
   const { colors } = useContext(ThemeContext);
   const [analytics, setAnalytics] = useState(null);
@@ -43,6 +55,12 @@ export default function Analytics({ navigation }) {
     }
   }, []);
 
+  useFocusEffect(
+    useCallback(() => {
+      fetchAnalytics();
+    }, [fetchAnalytics]),
+  );
+
   useEffect(() => {
     fetchAnalytics();
     const interval = setInterval(fetchAnalytics, 10000);
@@ -51,7 +69,15 @@ export default function Analytics({ navigation }) {
   }, [fetchAnalytics]);
 
   const normalizedAds = useMemo(() => {
-    if (Array.isArray(analytics?.ads)) return analytics.ads;
+    if (Array.isArray(analytics?.ads)) {
+      return analytics.ads.map((item) => ({
+        ...item,
+        views: normalizeAdMetric(item),
+        uniqueVisitors: Number(item?.uniqueVisitors ?? item?.views ?? item?.viewHistory?.length ?? 0),
+        contactClicks: Number(item?.contactClicks ?? 0),
+        wishlistCount: Number(item?.wishlistCount ?? 0),
+      }));
+    }
 
     const legacyAds = Array.isArray(analytics?.adsList) ? analytics.adsList : [];
     return legacyAds.map((item) => ({
@@ -60,10 +86,10 @@ export default function Analytics({ navigation }) {
       category: item.category,
       status: item.status,
       createdAt: item.date,
-      views: 0,
-      uniqueVisitors: 0,
-      contactClicks: 0,
-      wishlistCount: 0,
+      views: Number(item?.views ?? 0),
+      uniqueVisitors: Number(item?.uniqueVisitors ?? 0),
+      contactClicks: Number(item?.contactClicks ?? 0),
+      wishlistCount: Number(item?.wishlistCount ?? 0),
     }));
   }, [analytics]);
 
@@ -168,8 +194,8 @@ export default function Analytics({ navigation }) {
   }, [analytics, normalizedAds]);
 
   const adsList = normalizedAds.map((item) => ({
-    adId: item.adId || item.id,
-    id: item.id || item._id,
+    adId: item.adId ?? item.id ?? item._id,
+    id: item.id ?? item._id,
     name: item.title || item.name || "Ad",
     date: item.createdAt || item.date,
     status: item.status,
@@ -272,6 +298,8 @@ export default function Analytics({ navigation }) {
 
         {adsList.map((ad) => {
           const resolvedAdId = ad.adId || ad.id;
+          const statusLabel = getStatusLabel(ad.status);
+          const statusColor = String(ad.status || "").toLowerCase() === "active" ? "green" : "red";
           return (
           <View
             key={String(resolvedAdId)}
@@ -288,13 +316,13 @@ export default function Analytics({ navigation }) {
               style={[
                 styles.cell,
                 {
-                  color: String(ad.status || "").toLowerCase() === "active" ? "green" : "red",
+                  color: statusColor,
                   fontFamily: "Medium",
                   lineHeight: Math.round(13 * 1.5),
                 },
               ]}
             >
-              {ad.status ? `${String(ad.status).charAt(0).toUpperCase()}${String(ad.status).slice(1)}` : "-"}
+              {statusLabel}
             </Text>
 
             <View style={styles.actionCell}>

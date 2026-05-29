@@ -330,40 +330,13 @@ export const fetchAllOffers = async (options = {}) => {
       nearbyParams.append("radiusKm", String(radiusKm));
     }
 
-    const publicParams = new URLSearchParams();
-    publicParams.append("limit", String(limit));
-    publicParams.append("page", String(page));
-    if (category) {
-      publicParams.append("category", category);
-    }
-    if (q) {
-      publicParams.append("q", q);
-    }
+    nearbyParams.append("activeNow", "true");
 
-    const [nearbyResult, publicResult] = await Promise.allSettled([
-      fetchOfferList(`${BASE_URL}/banners/promotions/offers/nearby?${nearbyParams.toString()}`),
-      fetchOfferList(`${BASE_URL}/offers?${publicParams.toString()}`),
-    ]);
-
-    const nearbyOffers =
-      nearbyResult.status === "fulfilled" ? nearbyResult.value : [];
-    const publicOffers =
-      publicResult.status === "fulfilled" ? publicResult.value : [];
-
-    if (
-      nearbyResult.status === "rejected" &&
-      publicResult.status === "rejected"
-    ) {
-      throw new Error(
-        nearbyResult.reason?.message ||
-          publicResult.reason?.message ||
-          "Unable to fetch offers"
-      );
-    }
-
-    const merged = [...nearbyOffers, ...publicOffers].map((offer) =>
-      normalizeOfferRecord(offer)
+    const offersResult = await fetchOfferList(
+      `${BASE_URL}/offers/nearby?${nearbyParams.toString()}`
     );
+
+    const merged = offersResult.map((offer) => normalizeOfferRecord(offer));
 
     const uniqueByKey = new Map();
     merged.forEach((offer, index) => {

@@ -25,6 +25,7 @@ import GoloFav from './screens/GoloFav';
 import OfferDetails from './screens/OfferDetails';
 import Claimed from './screens/Claimed';
 import AdDetails from './screens/AdDetails';
+import ProductDetail from './screens/ProductDetail';
 import Analytics from './screens/Analytics';
 import Transaction from './screens/Transaction';
 import AdAnalytics from "./screens/AdAnalytics";
@@ -96,6 +97,7 @@ export default function App() {
           <Stack.Screen name='GoloHome' component={GoloHome} />
           <Stack.Screen name='GoloFav' component={GoloFav} />
           <Stack.Screen name="OfferDetails" component={OfferDetails} />
+          <Stack.Screen name="ProductDetail" component={ProductDetail} />
           <Stack.Screen name="Claimed" component={Claimed} />
           <Stack.Screen name="AdDetails" component={AdDetails} />
           <Stack.Screen name="Analytics" component={Analytics} />

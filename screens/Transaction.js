@@ -6,6 +6,7 @@ import {
   FlatList,
   ScrollView,
   TouchableOpacity,
+  useWindowDimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Topbar from "../components/Topbar";
@@ -50,7 +51,7 @@ const transactions = [
     status: "Failed",
     date: "09 Mar 2026",
   },
-    {
+  {
     id: "5",
     paymentId: "PAY12349",
     orderId: "ORD1005",
@@ -64,16 +65,49 @@ const transactions = [
 export default function Transaction() {
   const { colors } = useContext(ThemeContext);
   const navigation = useNavigation();
+  const { width } = useWindowDimensions();
+
+  // Responsive column width
+  const columnWidth = width < 400 ? 100 : width < 768 ? 120 : 150;
 
   const renderItem = ({ item }) => (
-    <View style={styles.tableRow}>
-      <Text style={[styles.cell, { color: colors.text }]}>{item.paymentId}</Text>
-      <Text style={[styles.cell, { color: colors.text }]}>{item.orderId}</Text>
-      <Text style={[styles.cell, { color: colors.text }]}>{item.method}</Text>
-      <Text style={[styles.cell, { color: colors.text }]}>{item.amount}</Text>
+    <View
+      style={[
+        styles.tableRow,
+        { borderBottomColor: colors.border || "#eee" },
+      ]}
+    >
+      <Text
+        style={[styles.cell, { color: colors.text, width: columnWidth }]}
+        numberOfLines={1}
+      >
+        {item.paymentId}
+      </Text>
+
+      <Text
+        style={[styles.cell, { color: colors.text, width: columnWidth }]}
+        numberOfLines={1}
+      >
+        {item.orderId}
+      </Text>
+
+      <Text
+        style={[styles.cell, { color: colors.text, width: columnWidth }]}
+        numberOfLines={1}
+      >
+        {item.method}
+      </Text>
+
+      <Text
+        style={[styles.cell, { color: colors.text, width: columnWidth }]}
+      >
+        {item.amount}
+      </Text>
+
       <Text
         style={[
           styles.cell,
+          { width: columnWidth },
           item.status === "Success"
             ? styles.success
             : item.status === "Pending"
@@ -83,12 +117,19 @@ export default function Transaction() {
       >
         {item.status}
       </Text>
-      <Text style={[styles.cell, { color: colors.text }]}>{item.date}</Text>
+
+      <Text
+        style={[styles.cell, { color: colors.text, width: columnWidth }]}
+      >
+        {item.date}
+      </Text>
     </View>
   );
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+    <SafeAreaView
+      style={{ flex: 1, backgroundColor: colors.background }}
+    >
       <Topbar />
 
       {/* Header */}
@@ -96,28 +137,55 @@ export default function Transaction() {
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <MaterialIcons
             name="arrow-back-ios"
-            size={26}
+            size={24}
             color={colors.text}
-            style={{ padding: 10 }}
+            style={{ padding: 8 }}
           />
         </TouchableOpacity>
 
-        <Text style={[styles.heading, { color: colors.text }]}>Transaction History</Text>
+        <Text
+          style={[
+            styles.heading,
+            {
+              color: colors.text,
+              fontSize: width < 400 ? 18 : 22,
+            },
+          ]}
+        >
+          Transaction History
+        </Text>
       </View>
 
-      <View style={styles.divider} />
+      <View
+        style={[
+          styles.divider,
+          { backgroundColor: colors.border || "#ccc" },
+        ]}
+      />
 
       <View style={styles.container}>
-        <ScrollView horizontal>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           <View>
             {/* Table Header */}
             <View style={styles.tableHeader}>
-              <Text style={styles.headerCell}>Payment ID</Text>
-              <Text style={styles.headerCell}>Order ID</Text>
-              <Text style={styles.headerCell}>Method</Text>
-              <Text style={styles.headerCell}>Amount</Text>
-              <Text style={styles.headerCell}>Status</Text>
-              <Text style={styles.headerCell}>Date</Text>
+              {[
+                "Payment ID",
+                "Order ID",
+                "Method",
+                "Amount",
+                "Status",
+                "Date",
+              ].map((title, index) => (
+                <Text
+                  key={index}
+                  style={[
+                    styles.headerCell,
+                    { width: columnWidth },
+                  ]}
+                >
+                  {title}
+                </Text>
+              ))}
             </View>
 
             {/* Table Body */}
@@ -125,6 +193,7 @@ export default function Transaction() {
               data={transactions}
               keyExtractor={(item) => item.id}
               renderItem={renderItem}
+              showsVerticalScrollIndicator={false}
             />
           </View>
         </ScrollView>
@@ -138,18 +207,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
     paddingHorizontal: 14,
+    paddingVertical: 6,
   },
 
   heading: {
-    fontSize: 22,
     fontFamily: "SemiBold",
-    lineHeight: Math.round(22 * 1.2),
+    lineHeight: 28,
+    flexShrink: 1,
   },
 
   divider: {
     height: 1,
-    backgroundColor: "#ccc",
-    marginTop: 10,
+    marginTop: 6,
   },
 
   container: {
@@ -160,50 +229,50 @@ const styles = StyleSheet.create({
   tableHeader: {
     flexDirection: "row",
     backgroundColor: "#eaeaea",
-    paddingVertical: 10,
+    paddingVertical: 12,
+    borderRadius: 8,
   },
 
   headerCell: {
-    width: 120,
-    fontFamily: "Medium",
+    fontFamily: "SemiBold",
     fontSize: 14,
-    lineHeight: Math.round(14 * 1.5),
     textAlign: "center",
+    paddingHorizontal: 5,
+    lineHeight: Math.round(14 * 1.5),
   },
 
   tableRow: {
     flexDirection: "row",
-    paddingVertical: 10,
+    paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: "#eee",
   },
 
   cell: {
-    width: 120,
     textAlign: "center",
     fontFamily: "Medium",
-    fontSize: 14,
-    lineHeight: Math.round(14 * 1.5),
+    fontSize: 13,
+    paddingHorizontal: 5,
+    lineHeight: Math.round(13 * 1.5),
   },
 
   success: {
     color: "green",
-    fontFamily: "Medium",
-    fontSize: 14,
-    lineHeight: Math.round(14 * 1.5),    
+    fontFamily: "SemiBold",
+    fontSize: 13,
+    lineHeight: Math.round(13 * 1.5),
   },
 
   pending: {
     color: "orange",
-    fontFamily: "Medium",
-    fontSize: 14,
-    lineHeight: Math.round(14 * 1.5),
+    fontFamily: "SemiBold",
+    fontSize: 13,
+    lineHeight: Math.round(13 * 1.5),
   },
 
   failed: {
     color: "red",
-    fontFamily: "Medium",
-    fontSize: 14,
-    lineHeight: Math.round(14 * 1.5),
+    fontFamily: "SemiBold",
+    fontSize: 13,
+    lineHeight:Math.round(13 * 1.5),
   },
 });

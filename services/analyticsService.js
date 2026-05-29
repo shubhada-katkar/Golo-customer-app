@@ -86,19 +86,23 @@ async function getAdAnalytics(adId) {
 
   const analytics = await authorizedFetch("/ads/analytics/my", { method: "GET" });
   const ad = Array.isArray(analytics?.ads)
-    ? analytics.ads.find((item) => String(item.adId) === String(adId) || String(item.id) === String(adId))
+    ? analytics.ads.find((item) =>
+        String(item.adId) === String(adId) ||
+        String(item.id) === String(adId) ||
+        String(item._id) === String(adId)
+      )
     : null;
 
   if (!ad) {
     throw new Error("Ad analytics not found");
   }
 
-  const adViews = Number(ad?.views || 0);
-  const adUniqueVisitors = Number(ad?.uniqueVisitors || 0);
-  const adContactClicks = Number(ad?.contactClicks || 0);
-  const adWishlistCount = Number(ad?.wishlistCount || 0);
-  const adCtr = Number(ad?.clickThroughRate || 0);
-  const adWishlistRate = Number(ad?.wishlistRate || 0);
+  const adViews = Number(ad?.views ?? ad?.uniqueVisitors ?? ad?.viewHistory?.length ?? 0);
+  const adUniqueVisitors = Number(ad?.uniqueVisitors ?? ad?.views ?? ad?.viewHistory?.length ?? 0);
+  const adContactClicks = Number(ad?.contactClicks ?? 0);
+  const adWishlistCount = Number(ad?.wishlistCount ?? 0);
+  const adCtr = Number(ad?.clickThroughRate ?? 0);
+  const adWishlistRate = Number(ad?.wishlistRate ?? 0);
 
   return {
     ...analytics,
@@ -128,7 +132,7 @@ async function getPublicAdAnalytics(adId) {
   }
 
   const safeAdId = encodeURIComponent(adId);
-  const response = await fetch(`${baseUrl}/ads/${safeAdId}/public-analytics`, {
+  const response = await fetch(`${baseUrl}/ads/${safeAdId}`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -153,8 +157,8 @@ async function trackAdCardClick(adId) {
     return;
   }
   console.log('[Analytics] trackAdCardClick called with:', adId);
-  const safeAdId = encodeURIComponent(adId);
-  await publicPost(`/ads/${safeAdId}/analytics/card-click`);
+  // Ad card clicks are counted via the public ad detail endpoint for authenticated users.
+  // The backend tracks unique visitors on GET /ads/:adId, so no separate analytics route exists.
 }
 
 async function trackContactClick(adId) {
@@ -164,7 +168,7 @@ async function trackContactClick(adId) {
   }
   console.log('[Analytics] trackContactClick called with:', adId);
   const safeAdId = encodeURIComponent(adId);
-  await publicPost(`/ads/${safeAdId}/analytics/contact-click`);
+  await publicPost(`/ads/${safeAdId}/click`);
 }
 
 async function trackWishlistSave(adId) {

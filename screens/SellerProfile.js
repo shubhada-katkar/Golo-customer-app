@@ -21,6 +21,16 @@ import { BASE_URL } from '../config';
 
 const { width } = Dimensions.get('window');
 
+const SELLER_REPORT_REASONS = [
+  { label: 'Harassment', value: 'harassment' },
+  { label: 'Abuse', value: 'abuse' },
+  { label: 'Fraud', value: 'fraud' },
+  { label: 'Scam', value: 'scam' },
+  { label: 'Fake Account', value: 'fake_account' },
+  { label: 'Spam', value: 'spam' },
+  { label: 'Other', value: 'other' },
+];
+
 export default function SellerProfile({ route, navigation }) {
   const { sellerId, adId, adTitle, adImage } = route.params || {};
   const [seller, setSeller] = useState(null);
@@ -211,25 +221,19 @@ export default function SellerProfile({ route, navigation }) {
 
               <Text style={styles.modalSubtitle}>Please tell us why you are reporting this seller. Your report will be kept anonymous.</Text>
 
-              {[
-                "Suspicious behavior",
-                "Offensive or abusive language",
-                "Spam or scam attempt",
-                "Posting deceptive ads",
-                "Other",
-              ].map((reason, index) => (
+              {SELLER_REPORT_REASONS.map((reason, index) => (
                 <TouchableOpacity
                   key={index}
                   style={styles.option}
-                  onPress={() => setSelectedReason(reason)}
+                  onPress={() => setSelectedReason(reason.value)}
                 >
                   <Text style={{
                     fontSize: 14, fontFamily: "Medium",
                     lineHeight: Math.round(14 * 1.5)
-                  }}>{reason}</Text>
+                  }}>{reason.label}</Text>
                   <View style={[
                     styles.radio,
-                    selectedReason === reason && styles.radioSelected
+                    selectedReason === reason.value && styles.radioSelected
                   ]} />
                 </TouchableOpacity>
               ))}

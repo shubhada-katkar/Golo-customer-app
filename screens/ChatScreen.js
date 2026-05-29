@@ -14,7 +14,6 @@ import {
     Modal,
     Keyboard,
 } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -28,7 +27,6 @@ import {
     uploadChatImage,
     deleteConversation,
     clearChat,
-    togglePinChat,
 } from "../services/chatService";
 
 export default function ChatScreen({ navigation, route }) {
@@ -48,7 +46,6 @@ export default function ChatScreen({ navigation, route }) {
     const [uploadingImage, setUploadingImage] = useState(false);
     const [otherUserId, setOtherUserId] = useState("");
     const [showMenu, setShowMenu] = useState(false);
-    const [isPinned, setIsPinned] = useState(false);
 
     const [keyboardVisible, setKeyboardVisible] = useState(false);
 
@@ -127,11 +124,6 @@ export default function ChatScreen({ navigation, route }) {
                     setConversationId(finalConversationId);
                     setOtherUserId(finalConversation?.otherUser?.id || "");
 
-                    const pinnedKey = `pinned_chats_${auth.userId}`;
-                    const pinnedStr = await AsyncStorage.getItem(pinnedKey);
-                    const pinnedIds = pinnedStr ? JSON.parse(pinnedStr) : [];
-                    const pinned = pinnedIds.includes(finalConversationId);
-                    setIsPinned(pinned);
                 }
                 activeConversationIdRef.current = finalConversationId;
 
@@ -500,20 +492,6 @@ export default function ChatScreen({ navigation, route }) {
         );
     };
 
-    const handlePinChat = async () => {
-        setShowMenu(false);
-        if (!conversationId) return;
-
-        try {
-            const result = await togglePinChat(conversationId);
-            const pinned = result?.pinned ?? !isPinned;
-            setIsPinned(pinned);
-            Alert.alert(pinned ? "Pinned" : "Unpinned", pinned ? "This chat has been pinned." : "This chat has been unpinned.");
-        } catch (error) {
-            Alert.alert("Pin Failed", error.message || "Could not update pin status");
-        }
-    };
-
     const handleDeleteChat = () => {
         setShowMenu(false);
         if (!conversationId) return;
@@ -603,10 +581,7 @@ export default function ChatScreen({ navigation, route }) {
                                 <Ionicons name="trash-bin-outline" size={18} color="#333" />
                                 <Text style={styles.menuItemText}>Clear Chat</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity style={styles.menuItem} onPress={handlePinChat}>
-                                <Ionicons name={isPinned ? "pin" : "pin-outline"} size={18} color="#333" />
-                                <Text style={styles.menuItemText}>{isPinned ? "Unpin Chat" : "Pin Chat"}</Text>
-                            </TouchableOpacity>
+
                             <TouchableOpacity style={[styles.menuItem, styles.menuItemLast]} onPress={handleDeleteChat}>
                                 <Ionicons name="close-circle-outline" size={18} color="#c0392b" />
                                 <Text style={[styles.menuItemText, { color: "#c0392b" }]}>Delete Chat</Text>

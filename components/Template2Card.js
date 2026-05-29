@@ -6,8 +6,34 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { Linking } from "react-native";
 import { getAdId, isFavoriteAdId, toggleFavoriteAd } from "../services/favoritesService";
+import { trackAdCardClick, trackContactClick } from "../services/analyticsService";
+import { submitReport } from "../services/reportService";
 import { ScrollView } from "react-native-gesture-handler";
-import { baseUrl } from "../config";
+import { BASE_URL } from "../config";
+
+const GENERIC_SELLER_NAMES = new Set(["seller", "user", "anonymous", "unknown"]);
+
+const getAdSellerName = (ad) =>
+  ad?.sellerName ||
+  ad?.user?.name ||
+  ad?.contactInfo?.name ||
+  ad?.contactInfo?.sellerName ||
+  ad?.name ||
+  null;
+
+const isGenericSellerName = (name) => {
+  if (!name) return true;
+  const text = String(name).trim().toLowerCase();
+  return GENERIC_SELLER_NAMES.has(text);
+};
+
+const REPORT_REASONS = [
+    { label: "Spam or Misleading", value: "spam" },
+    { label: "Inappropriate Content", value: "inappropriate" },
+    { label: "Fraud or Scam", value: "fraud" },
+    { label: "Duplicate Posting", value: "duplicate" },
+    { label: "Other", value: "other" },
+];
 
 export default function Template2Card({ ad, navigation }) {
     const [isFavorite, setIsFavorite] = useState(false);
@@ -15,6 +41,38 @@ export default function Template2Card({ ad, navigation }) {
     const [showReportModal, setShowReportModal] = useState(false);
     const [selectedReason, setSelectedReason] = useState(null);
     const [details, setDetails] = useState("");
+    const [sellerName, setSellerName] = useState(() => getAdSellerName(ad) || "Seller");
+
+    useEffect(() => {
+        const initialName = getAdSellerName(ad);
+        if (initialName && !isGenericSellerName(initialName)) {
+            setSellerName(initialName);
+            return;
+        }
+
+        const sellerId = ad?.userId || ad?.user?.id;
+        if (!sellerId) {
+            setSellerName(initialName || "Seller");
+            return;
+        }
+
+        const fetchSellerName = async () => {
+            try {
+                const response = await fetch(`${BASE_URL}/users/${encodeURIComponent(sellerId)}`);
+                const json = await response.json();
+                if (json?.success && json?.data?.name) {
+                    setSellerName(json.data.name);
+                } else {
+                    setSellerName(initialName || "Seller");
+                }
+            } catch (error) {
+                console.warn("Template2Card: failed to fetch seller name", error);
+                setSellerName(initialName || "Seller");
+            }
+        };
+
+        fetchSellerName();
+    }, [ad]);
 
     useEffect(() => {
         const loadFavoriteState = async () => {
@@ -41,13 +99,19 @@ export default function Template2Card({ ad, navigation }) {
     };
 
     const handleOpenChat = () => {
-        navigation.navigate("ChatScreen", {
-            adId: ad?.adId || ad?._id,
-            sellerId: ad?.userId || ad?.user?.id,
-            sellerName: ad?.contactInfo?.name || "Seller",
-            adRef: {
-                adId: ad?.adId || ad?._id,
-                title: ad?.title || "Ad",
+    const adIdentifier = ad?.adId || ad?._id;
+    if (adIdentifier) {
+      trackContactClick(adIdentifier).catch((error) => {
+        console.warn('[Template2Card] Failed to track contact click:', error.message);
+      });
+    }
+
+    navigation.navigate("ChatScreen", {
+      adId: adIdentifier,
+      sellerId: ad?.userId || ad?.user?.id,
+      sellerName,
+      adRef: {
+        adId: adIdentifier,
                 image: ad?.images?.[0] || null,
             },
         });
@@ -71,7 +135,7 @@ export default function Template2Card({ ad, navigation }) {
             const adIdentifier = ad?.adId || ad?._id;
             if (!adIdentifier) return;
 
-            const shareUrl = `${baseUrl}/ads/share/${encodeURIComponent(adIdentifier)}`;
+            const shareUrl = `${BASE_URL}/ads/share/${encodeURIComponent(adIdentifier)}`;
             const deepLink = `golo://ad/${encodeURIComponent(adIdentifier)}`;
 
             await Share.share({
@@ -85,11 +149,36 @@ export default function Template2Card({ ad, navigation }) {
     };
 
     const handleShare = () => {
-        Alert.alert("Share Ad", "Choose where to share this ad", [
-            { text: "In GOLO Chat", onPress: handleShareToChat },
-            { text: "WhatsApp / Messages", onPress: handleShareExternally },
-            { text: "Cancel", style: "cancel" },
-        ]);
+        handleShareExternally();
+    };
+
+    const handleSubmitReport = async () => {
+        if (!selectedReason) {
+            Alert.alert("Error", "Please select a reason before submitting.");
+            return;
+        }
+
+        const adIdentifier = ad?.adId || ad?._id;
+        if (!adIdentifier) {
+            Alert.alert("Error", "Ad ID is missing.");
+            return;
+        }
+
+        try {
+            await submitReport("AD", adIdentifier, selectedReason, details);
+            Alert.alert("Report Submitted", "Thank you. We will review this ad shortly.", [
+                {
+                    text: "OK",
+                    onPress: () => {
+                        setShowReportModal(false);
+                        setSelectedReason(null);
+                        setDetails("");
+                    },
+                },
+            ]);
+        } catch (err) {
+            Alert.alert("Error", err.message || "Failed to submit report. Please try again.");
+        }
     };
 
     const handleCall = (phone) => {
@@ -103,7 +192,10 @@ export default function Template2Card({ ad, navigation }) {
         <>
             <TouchableOpacity
                 activeOpacity={0.8}
-                onPress={() => navigation.navigate("AdDetails", { adId: ad._id })}
+                onPress={() => {
+                    const currentAdId = ad?.adId || ad?._id;
+                    navigation.navigate("AdDetails", { adId: currentAdId });
+                }}
                 style={styles.card}
             >
                 <View style={styles.topRow}>
@@ -150,7 +242,7 @@ export default function Template2Card({ ad, navigation }) {
                         </View>
                         <View style={styles.metaItem}>
                             <Ionicons name="person" size={14} />
-                            <Text style={styles.metaText}>{ad.contactInfo?.name}</Text>
+                            <Text style={styles.metaText}>{sellerName}</Text>
                         </View>
                     </View>
                 </View>
@@ -182,22 +274,16 @@ export default function Template2Card({ ad, navigation }) {
 
                                 <Text style={styles.title}>Why are you reporting this ad?</Text>
 
-                                {[
-                                    "Spam or Misleading",
-                                    "Inappropriate Content",
-                                    "Fraud or Scam",
-                                    "Duplicate Posting",
-                                    "Other",
-                                ].map((reason, index) => (
+                                {REPORT_REASONS.map((reason, index) => (
                                     <TouchableOpacity
                                         key={index}
                                         style={styles.option}
-                                        onPress={() => setSelectedReason(reason)}
+                                        onPress={() => setSelectedReason(reason.value)}
                                     >
-                                        <Text style={{ fontSize: 12, lineHeight: Math.round(12 * 1.5), fontFamily: "Medium" }}>{reason}</Text>
+                                        <Text style={{ fontSize: 12, lineHeight: Math.round(12 * 1.5), fontFamily: "Medium" }}>{reason.label}</Text>
                                         <View style={[
                                             styles.radio,
-                                            selectedReason === reason && styles.radioSelected
+                                            selectedReason === reason.value && styles.radioSelected
                                         ]} />
                                     </TouchableOpacity>
                                 ))}
@@ -230,15 +316,14 @@ export default function Template2Card({ ad, navigation }) {
                                     </TouchableOpacity>
 
                                     <TouchableOpacity
-                                        style={styles.submitBtn}
-                                        onPress={() => {
-                                            console.log({ adId: ad._id, selectedReason, details });
-                                            setShowReportModal(false);
-                                        }}
+                                        style={[styles.submitBtn, !selectedReason && { backgroundColor: '#ccc' }]}
+                                        onPress={handleSubmitReport}
+                                        disabled={!selectedReason}
                                     >
                                         <Text style={{
                                             fontFamily: "SemiBold",
-                                            lineHeight: Math.round(14 * 1.2), fontSize: 14
+                                            lineHeight: Math.round(14 * 1.2), fontSize: 14,
+                                            color: '#000000'
                                         }}>Submit Report</Text>
                                     </TouchableOpacity>
                                 </View>
