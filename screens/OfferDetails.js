@@ -29,10 +29,12 @@ import {
     findVoucherForOffer,
     submitOfferReview,
 } from "../services/voucherService";
+import { fetchOfferDetails } from "../services/offersService";
 import { isFavoriteOfferId, toggleFavoriteOffer } from "../services/offerFavoritesService";
 
 const getOfferImage = (item) =>
     item?.imageUrl ||
+    item?.offerImage ||
     item?.selectedProducts?.[0]?.imageUrl ||
     item?.products?.[0]?.images?.[0] ||
     item?.products?.[0]?.image?.url ||
@@ -48,6 +50,24 @@ const formatPrice = (value) => {
 };
 
 const isMongoObjectId = (value) => /^[a-fA-F0-9]{24}$/.test(String(value || ""));
+
+const getOfferIdFromData = (data) => {
+    if (!data || typeof data !== "object") {
+        return "";
+    }
+
+    return (
+        data?.offerId ||
+        data?._id ||
+        data?.requestId ||
+        data?.id ||
+        data?.offer?.offerId ||
+        data?.offer?._id ||
+        data?.offer?.requestId ||
+        data?.offer?.id ||
+        ""
+    );
+};
 
 const getProductsList = (offerData) => {
     const products = offerData?.selectedProducts || offerData?.products || [];
@@ -74,15 +94,16 @@ export default function OfferDetails({ navigation, route }) {
     const [reviewLoading, setReviewLoading] = useState(false);
     const [isFavorite, setIsFavorite] = useState(false);
     const [favoriteLoading, setFavoriteLoading] = useState(false);
+    const [remoteOfferData, setRemoteOfferData] = useState(null);
+    const [offerLoading, setOfferLoading] = useState(false);
     const qrRef = useRef();
 
-    const offerData = route?.params?.offerData || {};
-    const hasRequestId = Boolean(String(offerData?.requestId || "").trim());
-    const offerId =
-        (offerData?.offerId && isMongoObjectId(offerData.offerId) && offerData.offerId) ||
-        (hasRequestId && offerData?._id && isMongoObjectId(offerData._id) && offerData._id) ||
-        (hasRequestId && isMongoObjectId(offerData?.requestId) && offerData.requestId) ||
-        "";
+    const routeOfferData = route?.params?.offerData || {};
+    const offerData = remoteOfferData || routeOfferData;
+
+    const routeOfferId = getOfferIdFromData(routeOfferData);
+    const remoteOfferId = getOfferIdFromData(remoteOfferData);
+    const offerId = remoteOfferId || routeOfferId;
     const canClaimVoucher = Boolean(offerId);
     const offerImage = getOfferImage(offerData);
     const title = offerData?.bannerTitle || offerData?.title || "Untitled Offer";
@@ -105,7 +126,22 @@ export default function OfferDetails({ navigation, route }) {
     const originalPrice = formatPrice(
         offerData?.originalPrice || offerData?.mrp || offerData?.price || offerData?.regularPrice
     );
-    const validTill = offerData?.endDate || offerData?.validTo;
+    const getOfferValidTill = (data) =>
+        data?.endDate ||
+        data?.validTo ||
+        data?.endsAt ||
+        data?.expiryDate ||
+        data?.expiry ||
+        data?.expiresAt ||
+        data?.offer?.endDate ||
+        data?.offer?.validTo ||
+        data?.offer?.endsAt ||
+        data?.offer?.expiryDate ||
+        data?.offer?.expiry ||
+        data?.offer?.expiresAt ||
+        null;
+
+    const validTill = getOfferValidTill(offerData);
     const offerType = offerData?.bannerCategory || offerData?.offerType || offerData?.category;
     const details =
         offerData?.description ||
@@ -169,6 +205,10 @@ export default function OfferDetails({ navigation, route }) {
             return;
         }
 
+        if (voucher) {
+            return;
+        }
+
         setClaimCheckLoading(true);
         try {
             const existingVoucher = await findVoucherForOffer(offerId);
@@ -184,14 +224,45 @@ export default function OfferDetails({ navigation, route }) {
         } finally {
             setClaimCheckLoading(false);
         }
-    }, [offerId]);
+    }, [offerId, voucher]);
+
+    const loadRemoteOfferData = useCallback(async () => {
+        if (!routeOfferId || remoteOfferData) {
+            return;
+        }
+
+        const hasDetailFields = Boolean(
+            routeOfferData?.description ||
+            routeOfferData?.bannerDescription ||
+            routeOfferData?.termsAndConditions ||
+            (Array.isArray(routeOfferData?.selectedProducts) && routeOfferData.selectedProducts.length > 0) ||
+            (Array.isArray(routeOfferData?.products) && routeOfferData.products.length > 0)
+        );
+
+        if (hasDetailFields) {
+            return;
+        }
+
+        setOfferLoading(true);
+        try {
+            const fetchedOffer = await fetchOfferDetails(routeOfferId);
+            if (fetchedOffer) {
+                setRemoteOfferData(fetchedOffer);
+            }
+        } catch (error) {
+            // Keep the original route offer data if remote fetch fails.
+            console.error("OfferDetails fetch failed, using route data instead:", error);
+        } finally {
+            setOfferLoading(false);
+        }
+    }, [routeOfferId, remoteOfferData, routeOfferData]);
 
     useFocusEffect(
         useCallback(() => {
             syncOfferClaimState();
+            loadRemoteOfferData();
             const loadFavoriteState = async () => {
-                const currentOfferId =
-                    offerData?.offerId || offerData?._id || offerData?.requestId || "";
+                const currentOfferId = getOfferIdFromData(routeOfferData);
                 if (!currentOfferId) {
                     setIsFavorite(false);
                     return;
@@ -200,7 +271,7 @@ export default function OfferDetails({ navigation, route }) {
                 setIsFavorite(favoriteValue);
             };
             loadFavoriteState();
-        }, [syncOfferClaimState])
+        }, [syncOfferClaimState, loadRemoteOfferData, routeOfferData])
     );
 
     const handleToggleFavorite = async () => {

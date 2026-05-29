@@ -55,7 +55,6 @@ const getProductPrice = (product) => {
 const buildProductFields = (product) => {
   const fields = [
     { label: "Price", value: getProductPrice(product) },
-    { label: "SKU", value: product?.sku || product?.productCode || product?.id },
     { label: "Quantity", value: product?.quantity || product?.qty },
     { label: "Unit", value: product?.unit },
     { label: "Category", value: product?.category },
@@ -97,9 +96,21 @@ const resolveProductId = (product) => {
     product?.id ||
     product?._id ||
     product?.product_id ||
-    product?.sku ||
     null
   );
+};
+
+const isMongoObjectId = (value) =>
+  typeof value === 'string' && /^[0-9a-fA-F]{24}$/.test(value);
+
+const buildProductFetchUrls = (resolvedProductId, product) => {
+  const encodedId = encodeURIComponent(resolvedProductId);
+  const webEndpoint = `${BASE_URL}/products/${encodedId}`;
+  const merchantPublicEndpoint = `${BASE_URL}/merchant/products/public/item/${encodedId}`;
+  if (isMongoObjectId(resolvedProductId) && !product?.productId) {
+    return [merchantPublicEndpoint, webEndpoint];
+  }
+  return [webEndpoint, merchantPublicEndpoint];
 };
 
 export default function ProductDetail({ route, navigation }) {
@@ -124,13 +135,23 @@ export default function ProductDetail({ route, navigation }) {
 
     let isMounted = true;
     const fetchProduct = async () => {
+      const urls = buildProductFetchUrls(resolvedProductId, product);
       try {
-        const response = await fetch(`${BASE_URL}/products/${encodeURIComponent(resolvedProductId)}`);
-        if (!response.ok) return;
-        const json = await response.json();
-        if (!isMounted) return;
-        if (json?.data) {
-          setProduct((current) => ({ ...current, ...json.data }));
+        for (const url of urls) {
+          try {
+            const response = await fetch(url);
+            if (!response.ok) {
+              continue;
+            }
+            const json = await response.json();
+            if (!isMounted) return;
+            if (json?.data) {
+              setProduct((current) => ({ ...current, ...json.data }));
+              return;
+            }
+          } catch (fetchError) {
+            console.warn('[ProductDetail] fetch error for', url, fetchError);
+          }
         }
       } catch (error) {
         console.warn('[ProductDetail] Failed to fetch product details:', error);

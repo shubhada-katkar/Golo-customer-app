@@ -91,11 +91,7 @@ export default function GoloFav({navigation}) {
                             </Text>
                             <Text style={{ fontSize: 13, color: colors.text, fontFamily: "Medium" }}
                                 numberOfLines={1}>
-                                {item.shopName || item.merchantName || item.merchant?.name || "Nearby merchant"}
-                            </Text>
-                            <Text style={{ fontSize: 12, color: colors.text, opacity: 0.8, marginTop: 2 }}
-                                numberOfLines={1}>
-                                {item.location || "Location not available"}
+                               By {item.shopName || item.merchantName || item.merchant?.name || "Nearby merchant"}
                             </Text>
                         </View>
 

@@ -27,7 +27,13 @@ export default function Claimed({ navigation }) {
     const isOfferExpired = (offer) => {
         if (!offer) return false;
 
-        const status = String(offer?.status || offer?.voucherStatus || "").toLowerCase();
+        const status = String(
+            offer?.status ||
+            offer?.voucherStatus ||
+            offer?.offer?.status ||
+            offer?.offer?.voucherStatus ||
+            ""
+        ).toLowerCase();
         if (status === "expired" || status === "expired_offer") {
             return true;
         }
@@ -56,7 +62,21 @@ export default function Claimed({ navigation }) {
         return expiryDate.getTime() < Date.now();
     };
 
-    const activeClaimedOffers = claimedOffers.filter((item) => !isOfferExpired(item));
+    const getClaimDisplayItem = (item) => item?.offer || item;
+
+    const isValidClaimedDeal = (item) => {
+        const displayItem = getClaimDisplayItem(item);
+        return Boolean(
+            displayItem?.offerId ||
+            displayItem?._id ||
+            displayItem?.requestId ||
+            displayItem?.id
+        );
+    };
+
+    const activeClaimedOffers = claimedOffers.filter(
+        (item) => !isOfferExpired(item) && isValidClaimedDeal(item)
+    );
 
     const loadClaimedOffers = useCallback(async ({ isRefresh = false } = {}) => {
         try {
@@ -130,30 +150,48 @@ export default function Claimed({ navigation }) {
                         </Text>
                     ) : null}
 
-                    {activeClaimedOffers.map((item, index) => (
-                        <TouchableOpacity
-                            key={item?.id || index}
-                            onPress={() => navigation.navigate("OfferDetails", { offerData: item?.offer || item })}
-                            activeOpacity={0.8}
-                            style={[styles.card, { backgroundColor: colors.card, borderColor: colors.divider }]}
-                        >
-                            {item?.image ? (
-                                <Image source={{ uri: item.image }} style={styles.offerImage} />
-                            ) : (
-                                <View style={styles.imagePlaceholder} />
-                            )}
+                    {activeClaimedOffers.map((item, index) => {
+                        const displayItem = getClaimDisplayItem(item);
+                        const offerTitle = displayItem?.title || displayItem?.bannerTitle || "Untitled Offer";
+                        const merchantName =
+                            displayItem?.merchantName ||
+                            displayItem?.shopName ||
+                            displayItem?.businessName ||
+                            displayItem?.storeName ||
+                            displayItem?.merchant?.name ||
+                            "Unknown Merchant";
+                        const imageUri =
+                            displayItem?.image ||
+                            displayItem?.imageUrl ||
+                            displayItem?.offerImage ||
+                            displayItem?.selectedProducts?.[0]?.imageUrl ||
+                            null;
 
-                            <View style={{ flex: 1, marginLeft: 12 }}>
-                                <Text style={{ fontSize: 16, fontFamily: "SemiBold", color: colors.text, lineHeight: Math.round(16 * 1.5) }} numberOfLines={1}>
-                                    {item?.title || "Untitled Offer"}
-                                </Text>
+                        return (
+                            <TouchableOpacity
+                                key={displayItem?.offerId || displayItem?._id || displayItem?.requestId || item?.id || `claimed-${index}`}
+                                onPress={() => navigation.navigate("OfferDetails", { offerData: displayItem })}
+                                activeOpacity={0.8}
+                                style={[styles.card, { backgroundColor: colors.card, borderColor: colors.divider }]}
+                            >
+                                {imageUri ? (
+                                    <Image source={{ uri: imageUri }} style={styles.offerImage} />
+                                ) : (
+                                    <View style={styles.imagePlaceholder} />
+                                )}
 
-                                <Text style={{ fontSize: 12, color: colors.text, lineHeight: Math.round(12 * 1.5), fontFamily:"Medium" }} numberOfLines={1}>
-                                   Deal by {item?.merchantName || "Unknown Merchant"}
-                                </Text>
-                            </View>
-                        </TouchableOpacity>
-                    ))}
+                                <View style={{ flex: 1, marginLeft: 12 }}>
+                                    <Text style={{ fontSize: 16, fontFamily: "SemiBold", color: colors.text, lineHeight: Math.round(16 * 1.5) }} numberOfLines={1}>
+                                        {offerTitle}
+                                    </Text>
+
+                                    <Text style={{ fontSize: 12, color: colors.text, lineHeight: Math.round(12 * 1.5), fontFamily:"Medium" }} numberOfLines={1}>
+                                        Deal by {merchantName}
+                                    </Text>
+                                </View>
+                            </TouchableOpacity>
+                        );
+                    })}
                 </ScrollView>
             )}
 
