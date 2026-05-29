@@ -16,27 +16,21 @@ export default function ProfilePage({ navigation }) {
     const { theme, colors, toggleTheme } = useContext(ThemeContext);
 
     const [profileImage, setProfileImage] = useState(null);
+    const [profilePhotoBase64, setProfilePhotoBase64] = useState(null);
     const [username, setUsername] = useState("");
     const [phone, setPhone] = useState("");
     const [email, setEmail] = useState("");
-    const [originalEmail, setOriginalEmail] = useState("");
     const [loyaltyPoints, setLoyaltyPoints] = useState(0);
     const [loyaltyTier, setLoyaltyTier] = useState("Bronze");
 
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [sendingEmailOtp, setSendingEmailOtp] = useState(false);
-    const [verifyingEmailOtp, setVerifyingEmailOtp] = useState(false);
 
     const [editName, setEditName] = useState(false);
     const [editPhone, setEditPhone] = useState(false);
-    const [editEmail, setEditEmail] = useState(false);
-    const [emailOtpSent, setEmailOtpSent] = useState(false);
-    const [emailOtp, setEmailOtp] = useState("");
 
     const nameRef = useRef(null);
     const phoneRef = useRef(null);
-    const emailRef = useRef(null);
 
     {/*Dropdown*/ }
     const [drop, setdrop] = useState(false);
@@ -84,11 +78,10 @@ export default function ProfilePage({ navigation }) {
             setUsername(profile.name || "");
             setPhone(profile.profile?.phone || "");
             setEmail(profile.email || "");
-            setOriginalEmail(profile.email || "");
             setLoyaltyPoints(totalLoyaltyPoints);
             setLoyaltyTier(derivedLoyaltyTier);
-            // image url may not exist
-            setProfileImage(profile.profile?.avatar || null);
+            // image url/base64 may not exist
+            setProfileImage(profile.profile?.avatar || profile.profilePhoto || null);
 
             setLoading(false);
 
@@ -116,10 +109,16 @@ export default function ProfilePage({ navigation }) {
             allowsEditing: true,
             aspect: [1, 1],
             quality: 0.7,
+            base64: true,
         });
 
-        if (!result.canceled) {
+        if (!result.canceled && result.assets?.[0]) {
             setProfileImage(result.assets[0].uri);
+            const base64Value = result.assets[0].base64 || null;
+            setProfilePhotoBase64(base64Value);
+            if (!base64Value) {
+                Alert.alert("Image Error", "Could not read image data for upload. Please try a different image.");
+            }
         }
     };
 
@@ -129,124 +128,47 @@ export default function ProfilePage({ navigation }) {
             setSaving(true);
 
             const token = await AsyncStorage.getItem("customerToken");
-            const formData = new FormData();
-            formData.append("name", username);
-            formData.append("phone", phone);
+            const updateData = {
+                name: username,
+                profile: {
+                    phone: phone || ""
+                }
+            };
 
-            if (profileImage && profileImage.startsWith("file")) {
-                formData.append("image", {
-                    uri: profileImage,
-                    type: "image/jpeg",
-                    name: "profile.jpg",
-                });
+            if (profilePhotoBase64) {
+                updateData.profilePhoto = profilePhotoBase64;
+                updateData.profile.avatar = `data:image/jpeg;base64,${profilePhotoBase64}`;
             }
+
             const res = await fetch(`${BASE_URL}/users/profile`, {
                 method: "PUT",
                 headers: {
+                    "Content-Type": "application/json",
                     Authorization: `Bearer ${token}`,
                 },
-                body: formData,
+                body: JSON.stringify(updateData),
             });
 
             const data = await res.json();
             setSaving(false);
 
             if (!res.ok) {
-                Alert.alert("Error", data.message);
+                Alert.alert("Error", data.message || "Update failed");
                 return;
             }
-            Alert.alert("Success", "Profile Updated");
+
+            const updatedProfile = data.data;
+            setProfileImage(updatedProfile.profile?.avatar || updatedProfile.profilePhoto || profileImage);
+            setUsername(updatedProfile.name || username);
+            setPhone(updatedProfile.profile?.phone || phone);
+            setEmail(updatedProfile.email || email);
+            setProfilePhotoBase64(null);
             setEditName(false);
             setEditPhone(false);
-
+            Alert.alert("Success", "Profile Updated");
         } catch (err) {
             setSaving(false);
-            Alert.alert("Error", "Update failed");
-        }
-    };
-
-    const handleSendEmailOtp = async () => {
-        const trimmedEmail = String(email || "").trim().toLowerCase();
-        if (!trimmedEmail) {
-            Alert.alert("Error", "Please enter email");
-            return;
-        }
-
-        if (trimmedEmail === String(originalEmail || "").trim().toLowerCase()) {
-            Alert.alert("Info", "Please enter a different email to change");
-            return;
-        }
-
-        try {
-            setSendingEmailOtp(true);
-            const token = await AsyncStorage.getItem("customerToken");
-
-            const res = await fetch(`${BASE_URL}/users/email-change/send-otp`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({ email: trimmedEmail }),
-            });
-
-            const data = await res.json();
-            if (!res.ok || data?.success === false) {
-                throw new Error(data?.message || "Failed to send OTP");
-            }
-
-            setEmailOtpSent(true);
-            Alert.alert("OTP Sent", "We sent an OTP to your new email.");
-        } catch (error) {
-            Alert.alert("Error", error.message || "Failed to send OTP");
-        } finally {
-            setSendingEmailOtp(false);
-        }
-    };
-
-    const handleVerifyEmailOtp = async () => {
-        const trimmedEmail = String(email || "").trim().toLowerCase();
-        const trimmedOtp = String(emailOtp || "").trim();
-
-        if (!trimmedEmail) {
-            Alert.alert("Error", "Please enter email");
-            return;
-        }
-
-        if (!trimmedOtp) {
-            Alert.alert("Error", "Please enter OTP");
-            return;
-        }
-
-        try {
-            setVerifyingEmailOtp(true);
-            const token = await AsyncStorage.getItem("customerToken");
-
-            const res = await fetch(`${BASE_URL}/users/email-change/verify-otp`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({ email: trimmedEmail, otp: trimmedOtp }),
-            });
-
-            const data = await res.json();
-            if (!res.ok || data?.success === false) {
-                throw new Error(data?.message || "Failed to verify OTP");
-            }
-
-            const updatedEmail = data?.data?.email || trimmedEmail;
-            setEmail(updatedEmail);
-            setOriginalEmail(updatedEmail);
-            setEditEmail(false);
-            setEmailOtpSent(false);
-            setEmailOtp("");
-            Alert.alert("Success", "Email changed successfully");
-        } catch (error) {
-            Alert.alert("Error", error.message || "Failed to verify OTP");
-        } finally {
-            setVerifyingEmailOtp(false);
+            Alert.alert("Error", err.message || "Update failed");
         }
     };
 
@@ -257,6 +179,12 @@ export default function ProfilePage({ navigation }) {
             </View>
         );
     }
+
+    const profileImageSource = profileImage
+        ? (profileImage.startsWith("http") || profileImage.startsWith("data:") || profileImage.startsWith("file:")
+            ? { uri: profileImage }
+            : { uri: `data:image/jpeg;base64,${profileImage}` })
+        : require("../assets/profile.png");
 
     const handleLogout = async () => {
         try {
@@ -402,7 +330,7 @@ export default function ProfilePage({ navigation }) {
                 )}
 
                 <ScrollView
-                    contentContainerStyle={{ paddingBottom: 110 }}
+                    contentContainerStyle={{ paddingBottom: 30 }}
                     keyboardShouldPersistTaps="handled"
                     showsVerticalScrollIndicator={false} >
 
@@ -412,11 +340,7 @@ export default function ProfilePage({ navigation }) {
                     <TouchableOpacity style={styles.avatarWrapper} onPress={pickImage}>
                         <View>
                             <Image
-                                source={
-                                    profileImage
-                                        ? { uri: profileImage }
-                                        : require("../assets/profile.png")
-                                }
+                                source={profileImageSource}
                                 style={styles.profileImage}
                             />
                             <View style={styles.cameraIcon}>
@@ -442,14 +366,11 @@ export default function ProfilePage({ navigation }) {
                                 ]}
                             />
 
-                            <TouchableOpacity
+                                            <TouchableOpacity
                                 style={styles.editIcon}
                                 onPress={() => {
                                     setEditName(true);
                                     setEditPhone(false);
-                                    setEditEmail(false);
-                                    setEmailOtpSent(false);
-                                    setEmailOtp("");
                                     setTimeout(() => nameRef.current?.focus(), 100);
                                 }}
                             >
@@ -476,9 +397,6 @@ export default function ProfilePage({ navigation }) {
                                 onPress={() => {
                                     setEditPhone(true);
                                     setEditName(false);
-                                    setEditEmail(false);
-                                    setEmailOtpSent(false);
-                                    setEmailOtp("");
                                     setTimeout(() => phoneRef.current?.focus(), 100);
                                 }}  >
                                 <MaterialIcons name="edit" size={22} style={{ marginLeft: 8, color: colors.text }} />
@@ -489,31 +407,12 @@ export default function ProfilePage({ navigation }) {
                         <Text style={[styles.text, { color: colors.text }]}>Email</Text>
                         <View style={styles.inputWrapper}>
                             <TextInput
-                                ref={emailRef}
                                 value={email}
-                                onChangeText={setEmail}
-                                editable={editEmail}
+                                editable={false}
                                 keyboardType="email-address"
                                 autoCapitalize="none"
-                                style={[
-                                    styles.input,
-                                    !editEmail && styles.disabledInput,
-                                    { paddingRight: 40 }
-                                ]} />
-
-                            <TouchableOpacity
-                                style={styles.editIcon}
-                                onPress={() => {
-                                    setEditEmail(true);
-                                    setEditName(false);
-                                    setEditPhone(false);
-                                    setEmailOtpSent(false);
-                                    setEmailOtp("");
-                                    setTimeout(() => emailRef.current?.focus(), 100);
-                                }}
-                            >
-                                <MaterialIcons name="edit" size={22} style={{ marginLeft: 8, color: colors.text }} />
-                            </TouchableOpacity>
+                                style={[styles.input, styles.disabledInput]}
+                            />
                         </View>
 
                         <View style={[styles.profileCard, { backgroundColor: colors.card, borderColor: colors.divider }]}> 
@@ -521,44 +420,6 @@ export default function ProfilePage({ navigation }) {
                             <Text style={[styles.cardValue, { color: colors.text }]}>{loyaltyPoints} points</Text>
                             <Text style={[styles.cardSubtitle, { color: colors.text }]}>{loyaltyTier} tier</Text>
                         </View>
-
-                        {editEmail && (
-                            <View style={{ marginTop: 10 }}>
-                                <TouchableOpacity
-                                    style={[styles.saveButton, { marginTop: 0, backgroundColor: "#f5b849" }]}
-                                    onPress={handleSendEmailOtp}
-                                    disabled={sendingEmailOtp}
-                                >
-                                    <Text style={{ color: "#fff", fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) }}>
-                                        {sendingEmailOtp ? "Sending OTP..." : "Verify Email"}
-                                    </Text>
-                                </TouchableOpacity>
-
-                                {emailOtpSent && (
-                                    <>
-                                        <Text style={[styles.text, { color: colors.text, marginTop: 12 }]}>Enter OTP</Text>
-                                        <TextInput
-                                            value={emailOtp}
-                                            onChangeText={setEmailOtp}
-                                            placeholder="Enter 6-digit OTP"
-                                            keyboardType="number-pad"
-                                            maxLength={6}
-                                            style={styles.input}
-                                        />
-
-                                        <TouchableOpacity
-                                            style={[styles.saveButton, { marginTop: 12 }]}
-                                            onPress={handleVerifyEmailOtp}
-                                            disabled={verifyingEmailOtp}
-                                        >
-                                            <Text style={{ color: "white", fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) }}>
-                                                {verifyingEmailOtp ? "Verifying..." : "Submit OTP"}
-                                            </Text>
-                                        </TouchableOpacity>
-                                    </>
-                                )}
-                            </View>
-                        )}
 
                         {/* SAVE BUTTON */}
                         <TouchableOpacity
@@ -588,7 +449,7 @@ const styles = StyleSheet.create({
     },
     text: {
         fontSize: 16,
-        marginTop: 10,
+        marginTop: 6,
         fontFamily: "Medium",
         lineHeight: Math.round(16 * 1.5),
     },
@@ -609,7 +470,7 @@ const styles = StyleSheet.create({
         lineHeight: Math.round(16 * 1.5),
     },
     saveButton: {
-        marginTop: 40,
+        marginTop: 25,
         backgroundColor: "#f5b849",
         padding: 12,
         borderRadius: 10,
@@ -680,21 +541,25 @@ const styles = StyleSheet.create({
     profileCard: {
         borderWidth: 1,
         borderRadius: 12,
-        padding: 16,
+        padding: 14,
         marginTop: 16,
     },
     cardTitle: {
         fontSize: 16,
         marginBottom: 8,
         fontFamily: "SemiBold",
+        lineHeight: Math.round(16 * 1.5),
     },
     cardValue: {
-        fontSize: 32,
+        fontSize: 26,
         fontFamily: "SemiBold",
+        lineHeight: Math.round(26 * 1.5),
     },
     cardSubtitle: {
-        fontSize: 14,
+        fontSize: 12,
         marginTop: 6,
+        fontFamily: "Medium",
+        lineHeight: Math.round(12 * 1.5),
     },
 
     dropdownText: {

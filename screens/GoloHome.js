@@ -644,7 +644,7 @@ const styles = StyleSheet.create({
     },
     distanceHint: {
         marginTop: 4,
-        color: "#505050",
+        color: "#3d3d3d",
         fontSize: 12,
         fontFamily: "Medium",
     },
@@ -662,9 +662,6 @@ const styles = StyleSheet.create({
     categorySection: {
         marginTop: 12,
         marginBottom: 12,
-        borderWidth:1,
-        borderColor: "#e0e0e0",
-        borderRadius: 10,
         paddingHorizontal:6,
         paddingVertical:6
     },
