@@ -1,4 +1,4 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, Dimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import OtpInput from "../components/OtpInput";
@@ -14,9 +14,41 @@ export default function ForgotPassword({ navigation }) {
   const [otpSent, setOtpSent] = useState(false);
   const [sendLoading, setSendLoading] = useState(false);
   const [verifyLoading, setVerifyLoading] = useState(false);
+  const [otpTimer, setOtpTimer] = useState(0);
+  const [resendCooldown, setResendCooldown] = useState(0);
   const colors = useContext(ThemeContext);
 
   const isValidEmail = (value) => /\S+@\S+\.\S+/.test(value);
+
+  useEffect(() => {
+    if (otpTimer <= 0) {
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setOtpTimer((prev) => Math.max(prev - 1, 0));
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [otpTimer]);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) {
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setResendCooldown((prev) => Math.max(prev - 1, 0));
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [resendCooldown]);
+
+  const formatTime = (seconds) => {
+    const minutes = Math.floor(seconds / 60).toString().padStart(2, "0");
+    const secs = (seconds % 60).toString().padStart(2, "0");
+    return `${minutes}:${secs}`;
+  };
 
   const handleSendOtp = async () => {
     if (sendLoading) {
@@ -46,6 +78,8 @@ export default function ForgotPassword({ navigation }) {
 
       setOtpSent(true);
       setOtp("");
+      setOtpTimer(300);
+      setResendCooldown(60);
       Alert.alert("OTP sent", "Check your email for the reset OTP.");
     } catch (error) {
       setSendLoading(false);
@@ -109,16 +143,26 @@ export default function ForgotPassword({ navigation }) {
             style={[styles.input, styles.emailInput]}
           />
           <TouchableOpacity
-            style={[styles.sendButton, sendLoading && styles.buttonDisabled]}
+            style={[styles.sendButton, (sendLoading || resendCooldown > 0) && styles.buttonDisabled]}
             onPress={handleSendOtp}
-            disabled={sendLoading}
+            disabled={sendLoading || resendCooldown > 0}
           >
-            {sendLoading ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.sendButtonText}>{otpSent ? "Resend" : "Send OTP"}</Text>}
+            {sendLoading ? (
+              <Text style={styles.sendButtonText}>Sending...</Text>
+            ) : resendCooldown > 0 ? (
+              <Text style={styles.sendButtonText}>Resend OTP ({formatTime(resendCooldown)})</Text>
+            ) : (
+              <Text style={styles.sendButtonText}>{otpSent ? "Resend OTP" : "Send OTP"}</Text>
+            )}
           </TouchableOpacity>
         </View>
 
         {otpSent ? (
           <>
+            <View style={styles.otpInfoRow}>
+              <Text style={[styles.otpInfoText, { color: colors.text }]}>OTP expires in {otpTimer > 0 ? formatTime(otpTimer) : "00:00"}.</Text>
+            </View>
+
             <Text style={[styles.label, { color: colors.text }]}>OTP</Text>
             <OtpInput value={otp} onChangeOtp={setOtp} />
             <TouchableOpacity
@@ -153,12 +197,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: width * 0.07,
     fontFamily: "SemiBold",
-    lineHeight: width * 0.1,
+    lineHeight: Math.round(width * 0.07 * 1.5),
   },
   subtitle: {
-    marginTop: 10,
-    fontSize: 15,
-    lineHeight: Math.round(15 * 1.5),
+    fontSize: 12,
+    lineHeight: Math.round(12 * 1.5),
     fontFamily: "Medium",
   },
   label: {
@@ -198,6 +241,18 @@ const styles = StyleSheet.create({
     color: "#ffffff",
     fontFamily: "Medium",
     fontSize: 14,
+    lineHeight: Math.round(14 * 1.5),
+  },
+  otpInfoRow: {
+    marginTop: 16,
+    marginBottom: 8,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 8,
+  },
+  otpInfoText: {
+    fontSize: 14,
+    fontFamily: "Medium",
     lineHeight: Math.round(14 * 1.5),
   },
   verifyButton: {

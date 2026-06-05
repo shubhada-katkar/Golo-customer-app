@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, Dimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Entypo } from "@expo/vector-icons";
 import { BASE_URL } from "../config";
+import { ThemeContext } from "../theme/ThemeContext";
 
 const { width } = Dimensions.get("window");
 
@@ -14,6 +15,7 @@ export default function ResetPassword({ navigation, route }) {
   const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const {colors} = useContext(ThemeContext);
 
   const handleResetPassword = async () => {
     if (submitting) {
@@ -73,7 +75,7 @@ export default function ResetPassword({ navigation, route }) {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <View style={styles.container}>
         <Text style={styles.title}>Reset Password</Text>
         <Text style={styles.subtitle}>Set a new password for {email}.</Text>
@@ -158,7 +160,6 @@ const styles = StyleSheet.create({
   },
   passwordInput: {
     flex: 1,
-    height: 48,
     fontFamily: "Medium",
   },
   eyeButton: {
