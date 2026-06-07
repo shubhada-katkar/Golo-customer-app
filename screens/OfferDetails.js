@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useRef, useState } from "react";
+import React, { useCallback, useContext, useEffect, useRef, useState } from "react";
 import {
     Alert,
     ActivityIndicator,
@@ -12,7 +12,7 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
-    View,
+    View, KeyboardAvoidingView, Platform
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -29,7 +29,10 @@ import {
     findVoucherForOffer,
     submitOfferReview,
 } from "../services/voucherService";
-import { fetchOfferDetails } from "../services/offersService";
+import {
+    fetchOfferDetails,
+    fetchPublicMerchantProfile,
+} from "../services/offersService";
 import { isFavoriteOfferId, toggleFavoriteOffer } from "../services/offerFavoritesService";
 
 const getOfferImage = (item) =>
@@ -84,6 +87,7 @@ const getTermsAndConditions = (offerData) => {
 };
 
 export default function OfferDetails({ navigation, route }) {
+    const scrollViewRef = useRef(null);
     const { colors } = useContext(ThemeContext);
     const [showQR, setShowQR] = useState(false);
     const [voucher, setVoucher] = useState(null);
@@ -92,10 +96,13 @@ export default function OfferDetails({ navigation, route }) {
     const [reviewText, setReviewText] = useState("");
     const [reviewRating, setReviewRating] = useState(5);
     const [reviewLoading, setReviewLoading] = useState(false);
+    const [reviewSubmitted, setReviewSubmitted] = useState(false);
     const [isFavorite, setIsFavorite] = useState(false);
     const [favoriteLoading, setFavoriteLoading] = useState(false);
     const [remoteOfferData, setRemoteOfferData] = useState(null);
     const [offerLoading, setOfferLoading] = useState(false);
+    const [merchantProfile, setMerchantProfile] = useState(null);
+    const [merchantProfileLoading, setMerchantProfileLoading] = useState(false);
     const qrRef = useRef();
 
     const routeOfferData = route?.params?.offerData || {};
@@ -115,6 +122,9 @@ export default function OfferDetails({ navigation, route }) {
         offerData?.storeName ||
         offerData?.merchant?.name ||
         offerData?.merchant?.storeName ||
+        merchantProfile?.storeName ||
+        merchantProfile?.merchantName ||
+        merchantProfile?.name ||
         "Nearby merchant";
     const discountedPrice =
         formatPrice(
@@ -123,9 +133,7 @@ export default function OfferDetails({ navigation, route }) {
             offerData?.salePrice ||
             offerData?.finalPrice
         ) || "Offer price unavailable";
-    const originalPrice = formatPrice(
-        offerData?.originalPrice || offerData?.mrp || offerData?.price || offerData?.regularPrice
-    );
+
     const getOfferValidTill = (data) =>
         data?.endDate ||
         data?.validTo ||
@@ -148,12 +156,35 @@ export default function OfferDetails({ navigation, route }) {
         offerData?.bannerDescription ||
         offerData?.selectedProducts?.[0]?.description ||
         "Offer details will be available soon.";
+    const merchantId =
+        offerData?.merchant?.merchantId ||
+        offerData?.merchantId ||
+        offerData?.merchant?._id ||
+        offerData?.merchant?.userId ||
+        offerData?.merchant?.id ||
+        "";
+
     const phoneNumber =
         offerData?.merchant?.contactNumber ||
+        offerData?.merchant?.phone ||
+        offerData?.merchant?.phoneNumber ||
+        offerData?.merchant?.mobile ||
+        offerData?.merchant?.mobileNumber ||
+        offerData?.merchant?.merchantPhone ||
+        offerData?.merchant?.storePhone ||
+        offerData?.merchant?.phoneNo ||
+        offerData?.merchant?.phone_number ||
+        offerData?.merchant?.mobile_no ||
         offerData?.contactNumber ||
         offerData?.phoneNumber ||
+        offerData?.phone ||
         offerData?.merchantPhone ||
         offerData?.mobile ||
+        merchantProfile?.contactNumber ||
+        merchantProfile?.phone ||
+        merchantProfile?.phoneNumber ||
+        merchantProfile?.mobile ||
+        merchantProfile?.mobileNumber ||
         null;
     const locationText =
         offerData?.address ||
@@ -177,8 +208,25 @@ export default function OfferDetails({ navigation, route }) {
         );
     };
 
-    const resolveVoucherId = (voucherLike) =>
-        voucherLike?.voucherId || voucherLike?._id || "";
+    const resolveVoucherId = (voucherLike) => {
+        if (!voucherLike || typeof voucherLike !== "object") {
+            return "";
+        }
+
+        if (voucherLike?._id) {
+            return String(voucherLike._id);
+        }
+
+        if (voucherLike?.id) {
+            return String(voucherLike.id);
+        }
+
+        if (voucherLike?.voucherId) {
+            return String(voucherLike.voucherId);
+        }
+
+        return "";
+    };
 
     const isVoucherRedeemed = (voucherLike) =>
         String(voucherLike?.status || "").toLowerCase() === "redeemed";
@@ -205,10 +253,6 @@ export default function OfferDetails({ navigation, route }) {
             return;
         }
 
-        if (voucher) {
-            return;
-        }
-
         setClaimCheckLoading(true);
         try {
             const existingVoucher = await findVoucherForOffer(offerId);
@@ -224,7 +268,7 @@ export default function OfferDetails({ navigation, route }) {
         } finally {
             setClaimCheckLoading(false);
         }
-    }, [offerId, voucher]);
+    }, [offerId]);
 
     const loadRemoteOfferData = useCallback(async () => {
         if (!routeOfferId || remoteOfferData) {
@@ -239,7 +283,19 @@ export default function OfferDetails({ navigation, route }) {
             (Array.isArray(routeOfferData?.products) && routeOfferData.products.length > 0)
         );
 
-        if (hasDetailFields) {
+        const hasMerchantContact = Boolean(
+            routeOfferData?.merchant?.contactNumber ||
+            routeOfferData?.merchant?.phone ||
+            routeOfferData?.merchant?.phoneNumber ||
+            routeOfferData?.merchant?.mobile ||
+            routeOfferData?.contactNumber ||
+            routeOfferData?.phoneNumber ||
+            routeOfferData?.phone ||
+            routeOfferData?.merchantPhone ||
+            routeOfferData?.mobile
+        );
+
+        if (hasDetailFields && hasMerchantContact) {
             return;
         }
 
@@ -256,6 +312,28 @@ export default function OfferDetails({ navigation, route }) {
             setOfferLoading(false);
         }
     }, [routeOfferId, remoteOfferData, routeOfferData]);
+
+    useEffect(() => {
+        if (!merchantId || merchantProfile) {
+            return;
+        }
+
+        const loadMerchantProfile = async () => {
+            setMerchantProfileLoading(true);
+            try {
+                const profile = await fetchPublicMerchantProfile(merchantId);
+                if (profile) {
+                    setMerchantProfile(profile);
+                }
+            } catch (error) {
+                console.error("Failed to fetch merchant profile:", error);
+            } finally {
+                setMerchantProfileLoading(false);
+            }
+        };
+
+        loadMerchantProfile();
+    }, [merchantId, merchantProfile]);
 
     useFocusEffect(
         useCallback(() => {
@@ -388,6 +466,7 @@ export default function OfferDetails({ navigation, route }) {
             await submitOfferReview(voucherId, { rating: reviewRating, content });
             setReviewText("");
             setReviewRating(5);
+            setReviewSubmitted(true);
             await syncOfferClaimState();
             Alert.alert("Thank you!", "Your review has been submitted.");
         } catch (error) {
@@ -457,7 +536,15 @@ export default function OfferDetails({ navigation, route }) {
                     </View>
                 </View>
 
-                <ScrollView showsVerticalScrollIndicator={false}>
+                <KeyboardAvoidingView
+  style={{ flex: 1 }}
+  behavior={Platform.OS === "ios" ? "padding" : "height"}
+>
+  <ScrollView
+  ref={scrollViewRef}
+    contentContainerStyle={{ paddingBottom: 40 }}
+    keyboardShouldPersistTaps="handled"
+  >
                     <View style={styles.imageContainer}>
                         {offerImage ? (
                             <Image source={{ uri: offerImage }} style={styles.offerImage} />
@@ -570,7 +657,7 @@ export default function OfferDetails({ navigation, route }) {
                             </TouchableOpacity>
                         </View>
 
-                        {isVoucherRedeemed(voucher) ? (
+                        {isVoucherRedeemed(voucher) && !reviewSubmitted ? (
                             <View style={styles.reviewContainer}>
                                 <Text style={styles.reviewLabel}>Write a review</Text>
                                 <Text style={styles.ratingLabel}>Rate your experience</Text>
@@ -617,6 +704,7 @@ export default function OfferDetails({ navigation, route }) {
                         ) : null}
                     </View>
                 </ScrollView>
+                </KeyboardAvoidingView>
 
                 <SafeAreaView
                     edges={["bottom"]}
@@ -708,25 +796,13 @@ const styles = StyleSheet.create({
         fontSize: 20,
         fontFamily: "Bold",
         marginBottom: 8,
-    },
-    priceRow: {
-        flexDirection: "row",
-        gap: 12,
-        alignItems: "center",
-        flexWrap: "wrap",
-    },
-    discount: {
-        color: "green",
-        fontFamily: "SemiBold",
-    },
-    original: {
-        color: "#999",
-        textDecorationLine: "line-through",
-        fontFamily: "Medium",
+        lineHeight: Math.round(20 * 1.4),
     },
     by: {
         marginTop: 4,
         fontFamily: "Medium",
+        lineHeight: Math.round(14 * 1.5),
+        fontSize: 14,
     },
     card: {
         marginTop: 16,
@@ -743,12 +819,14 @@ const styles = StyleSheet.create({
     label: {
         marginTop: 8,
         fontFamily: "SemiBold",
+        fontSize: 14,
+        lineHeight: Math.round(14 * 1.5),
     },
     value: {
         color: "#444",
         marginTop: 2,
         fontFamily: "Medium",
-        lineHeight: 20,
+        fontSize: 14,
     },
     buyBtn: {
         marginTop: 20,
@@ -930,14 +1008,18 @@ const styles = StyleSheet.create({
         borderColor: "#e5e7eb",
     },
     reviewLabel: {
-        fontFamily: "SemiBold",
+        fontFamily: "Medium",
         marginBottom: 10,
         color: "#111827",
+        fontSize: 16,
+        lineHeight: Math.round(16 * 1.5),
     },
     ratingLabel: {
-        fontFamily: "SemiBold",
+        fontFamily: "Medium",
         marginBottom: 8,
         color: "#111827",
+        lineHeight: Math.round(14 * 1.5),
+        fontSize: 14,
     },
     ratingRow: {
         flexDirection: "row",
@@ -955,6 +1037,9 @@ const styles = StyleSheet.create({
         padding: 12,
         color: "#111827",
         textAlignVertical: "top",
+        fontFamily:"Medium",
+        fontSize: 14,
+        lineHeight: Math.round(14 * 1.5),
     },
     reviewButton: {
         marginTop: 12,

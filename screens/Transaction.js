@@ -17,48 +17,38 @@ import { useNavigation } from "@react-navigation/native";
 const transactions = [
   {
     id: "1",
-    paymentId: "PAY12345",
-    orderId: "ORD1001",
-    method: "UPI",
     amount: "₹199",
     status: "Success",
     date: "11 Mar 2026",
+    details : "Details"
   },
   {
     id: "2",
-    paymentId: "PAY12346",
-    orderId: "ORD1002",
-    method: "Credit Card",
     amount: "₹299",
     status: "Success",
     date: "10 Mar 2026",
+    details : "Details"
   },
   {
     id: "3",
-    paymentId: "PAY12347",
-    orderId: "ORD1003",
-    method: "UPI",
     amount: "₹99",
     status: "Pending",
     date: "10 Mar 2026",
+    details : "Details"
   },
   {
     id: "4",
-    paymentId: "PAY12348",
-    orderId: "ORD1004",
-    method: "Debit Card",
     amount: "₹149",
     status: "Failed",
     date: "09 Mar 2026",
+    details : "Details"
   },
   {
     id: "5",
-    paymentId: "PAY12349",
-    orderId: "ORD1005",
-    method: "Debit Card",
     amount: "₹100",
     status: "Success",
     date: "09 Mar 2026",
+    details : "Details"
   },
 ];
 
@@ -68,7 +58,7 @@ export default function Transaction() {
   const { width } = useWindowDimensions();
 
   // Responsive column width
-  const columnWidth = width < 400 ? 100 : width < 768 ? 120 : 150;
+  const columnWidth = width < 400 ? 110 : width < 768 ? 120 : 150;
 
   const renderItem = ({ item }) => (
     <View
@@ -77,26 +67,6 @@ export default function Transaction() {
         { borderBottomColor: colors.border || "#eee" },
       ]}
     >
-      <Text
-        style={[styles.cell, { color: colors.text, width: columnWidth }]}
-        numberOfLines={1}
-      >
-        {item.paymentId}
-      </Text>
-
-      <Text
-        style={[styles.cell, { color: colors.text, width: columnWidth }]}
-        numberOfLines={1}
-      >
-        {item.orderId}
-      </Text>
-
-      <Text
-        style={[styles.cell, { color: colors.text, width: columnWidth }]}
-        numberOfLines={1}
-      >
-        {item.method}
-      </Text>
 
       <Text
         style={[styles.cell, { color: colors.text, width: columnWidth }]}
@@ -123,6 +93,14 @@ export default function Transaction() {
       >
         {item.date}
       </Text>
+
+      <TouchableOpacity 
+        onPress={() => navigation.navigate("TransactionDetails", { transaction: item })}
+      >
+       <MaterialIcons name="arrow-forward-ios" size={18} color={colors.text} 
+       style={[styles.cell, { width: columnWidth }]}
+       />
+      </TouchableOpacity>
     </View>
   );
 
@@ -159,7 +137,7 @@ export default function Transaction() {
       <View
         style={[
           styles.divider,
-          { backgroundColor: colors.border || "#ccc" },
+          { backgroundColor: colors.border || "#000000" },
         ]}
       />
 
@@ -169,12 +147,10 @@ export default function Transaction() {
             {/* Table Header */}
             <View style={styles.tableHeader}>
               {[
-                "Payment ID",
-                "Order ID",
-                "Method",
                 "Amount",
                 "Status",
                 "Date",
+                "View Details",
               ].map((title, index) => (
                 <Text
                   key={index}
@@ -196,7 +172,7 @@ export default function Transaction() {
               showsVerticalScrollIndicator={false}
             />
           </View>
-        </ScrollView>
+          </ScrollView>
       </View>
     </SafeAreaView>
   );

@@ -31,6 +31,7 @@ import Transaction from './screens/Transaction';
 import AdAnalytics from "./screens/AdAnalytics";
 import AdEdit from "./screens/AdEdit";
 import SellerProfile from "./screens/SellerProfile";
+import TransactionDetails from "./screens/TransactionDetails";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -105,7 +106,7 @@ export default function App() {
           <Stack.Screen name="AdAnalytics" component={AdAnalytics} />
           <Stack.Screen name="AdEdit" component={AdEdit} />
           <Stack.Screen name="SellerProfile" component={SellerProfile} />
-
+          <Stack.Screen name="TransactionDetails" component={TransactionDetails} />
         </Stack.Navigator>
       </NavigationContainer>
     </ThemeProvider>

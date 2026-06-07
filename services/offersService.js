@@ -371,15 +371,12 @@ export const fetchAllOffers = async (options = {}) => {
  */
 export const fetchOfferDetails = async (offerId) => {
   try {
-    const response = await fetch(
-      `${BASE_URL}/banners/promotions/offers/${offerId}`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    const response = await fetch(`${BASE_URL}/offers/${offerId}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
 
     const data = await response.json();
 
@@ -391,6 +388,37 @@ export const fetchOfferDetails = async (offerId) => {
   } catch (err) {
     console.error("Failed to fetch offer details:", err);
     throw err;
+  }
+};
+
+/**
+ * Fetch public merchant profile by merchant ID
+ * @param {string} merchantId - Merchant user ID or profile ID
+ * @returns {Promise<Object|null>} Merchant profile data or null
+ */
+export const fetchPublicMerchantProfile = async (merchantId) => {
+  try {
+    if (!BASE_URL || !merchantId) {
+      return null;
+    }
+
+    const response = await fetch(`${BASE_URL}/merchant/public/${merchantId}/profile`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data?.message || `HTTP ${response.status}`);
+    }
+
+    return data?.data || null;
+  } catch (err) {
+    console.error("Failed to fetch public merchant profile:", err);
+    return null;
   }
 };
 
@@ -440,6 +468,7 @@ export const getOffersByCategory = async (category, options = {}) => {
 export default {
   fetchAllOffers,
   fetchOfferDetails,
+  fetchPublicMerchantProfile,
   fetchNearbyOffers,
   searchOffers,
   getOffersByCategory,

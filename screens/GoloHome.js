@@ -164,7 +164,7 @@ export default function GoloHome() {
     const navigation = useNavigation();
     const { colors } = useContext(ThemeContext);
     const [selectedCategory, setSelectedCategory] = useState(null);
-    const [selectedDistanceKm, setSelectedDistanceKm] = useState(5);
+    const [selectedDistanceKm, setSelectedDistanceKm] = useState(50);
     const [showAllCategories, setShowAllCategories] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [offers, setOffers] = useState([]);
@@ -341,13 +341,6 @@ export default function GoloHome() {
                 }
                 showsVerticalScrollIndicator={false}
             >
-                <View style={styles.topRow}>
-                    <View style={styles.headerRow}>
-                        <Ionicons name="star-outline" size={16} style={{ color: colors.text }} />
-                        <Text style={[styles.headerText, { color: colors.text }]}>
-                            Discover What's Nearby</Text>
-                    </View>
-                </View>
 
                 <View style={styles.distanceSection}>
                     <View style={styles.distanceHeaderRow}>
@@ -790,6 +783,7 @@ const styles = StyleSheet.create({
         marginTop: 6,
         color: "#555",
         fontFamily: "Medium",
+        lineHeight: Math.round(12 * 1.5),
     },
     distanceMetaText: {
         fontSize: 14,
