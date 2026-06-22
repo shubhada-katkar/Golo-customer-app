@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   View,
   Text,
@@ -18,6 +18,8 @@ import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { submitReport } from '../services/reportService';
 import { BASE_URL } from '../config';
+import Topbar from '../components/Topbar';
+import { ThemeContext } from '../theme/ThemeContext';
 
 const { width } = Dimensions.get('window');
 
@@ -40,6 +42,7 @@ export default function SellerProfile({ route, navigation }) {
   const [showReportModal, setShowReportModal] = useState(false);
   const [selectedReason, setSelectedReason] = useState(null);
   const [details, setDetails] = useState("");
+  const {colors}=useContext(ThemeContext);
 
   useEffect(() => {
     const fetchSellerData = async () => {
@@ -128,22 +131,28 @@ export default function SellerProfile({ route, navigation }) {
   return (
     <>
       <SafeAreaView style={{ flex: 1 }}>
-        <LinearGradient
-          colors={['#f9a641', '#f5b849', '#ffffff']}
-          start={{ x: 0.5, y: 0 }}
-          end={{ x: 0.5, y: 1 }}
-          style={{ flex: 1 }}
-        >
+         <LinearGradient
+                     colors={["#f8a812", "#fad081", "#f8f6f265"]}
+                     start={{ x: 0, y: 0 }}
+                     end={{ x: 0, y: 1 }}
+                     style={{height: 220, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0}}
+                />
+          <Topbar/>
           {/* Header */}
           <View style={styles.header}>
+            <View style={{flexDirection:"row", alignItems:"center"}}>
             <TouchableOpacity onPress={() => navigation.goBack()}>
-              <MaterialIcons name="arrow-back-ios" size={26} color="#000" />
+              <MaterialIcons name="arrow-back-ios" size={22} color="#000" 
+              style={{padding:10}}/>
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Seller Profile</Text>
+            </View>
             <TouchableOpacity onPress={() => setShowReportModal(true)}>
               <Ionicons name="flag-outline" size={24} color="#000" />
             </TouchableOpacity>
           </View>
+
+          <View style={{ backgroundColor: "#000000", height: 1, marginVertical:6}} />
 
           <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
             {/* Profile Card */}
@@ -204,7 +213,6 @@ export default function SellerProfile({ route, navigation }) {
               </TouchableOpacity>
             </View>
           </ScrollView>
-        </LinearGradient>
       </SafeAreaView>
 
       {/* Report Modal */}
@@ -275,12 +283,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingVertical: 10,
   },
   headerTitle: {
     fontSize: 20,
-    fontFamily: 'Bold',
-    color: '#000',
+    fontFamily: 'SemiBold',
     lineHeight: Math.round(20 * 1.5)
   },
   scrollContent: {

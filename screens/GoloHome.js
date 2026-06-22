@@ -10,15 +10,15 @@ import {
     View,
     ScrollView
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Feather, Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
-import Slider from "@react-native-community/slider";
 import { ThemeContext } from "../theme/ThemeContext";
-import Topbar from "../components/Topbar";
+import Topbar2 from "../components/Topbar2";
 import GoloBottom from "../components/GoloBottom";
 import { fetchAllOffers } from "../services/offersService";
+import { LinearGradient } from "expo-linear-gradient";
 
 const MAIN_STORE_CATEGORIES = [
     "Food & Restaurants",
@@ -138,8 +138,8 @@ const getDistanceText = (value) => {
     }
 
     return distance < 1
-        ? `${Math.round(distance * 1000)} m away`
-        : `${distance.toFixed(1)} km away`;
+        ? `${Math.round(distance * 1000)} m`
+        : `${distance.toFixed(1)} km`;
 };
 
 const isOfferCurrentlyActive = (offer) => {
@@ -160,11 +160,12 @@ const isOfferCurrentlyActive = (offer) => {
     return true;
 };
 
+const DEFAULT_RADIUS_KM = 50;
+
 export default function GoloHome() {
     const navigation = useNavigation();
     const { colors } = useContext(ThemeContext);
     const [selectedCategory, setSelectedCategory] = useState(null);
-    const [selectedDistanceKm, setSelectedDistanceKm] = useState(50);
     const [showAllCategories, setShowAllCategories] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [offers, setOffers] = useState([]);
@@ -172,6 +173,7 @@ export default function GoloHome() {
     const [error, setError] = useState("");
     const [locationStatus, setLocationStatus] = useState("loading");
     const [userCoordinates, setUserCoordinates] = useState(null);
+    const [locationPlaceName, setLocationPlaceName] = useState("");
     const scrollRef = useRef(null);
 
     const categoryIconMap = {
@@ -209,6 +211,9 @@ export default function GoloHome() {
 
         const getUserLocation = async () => {
             try {
+                setLocationStatus("loading");
+                setLocationPlaceName("");
+
                 const { status } = await Location.requestForegroundPermissionsAsync();
 
                 if (!isMounted) {
@@ -228,10 +233,44 @@ export default function GoloHome() {
                     return;
                 }
 
-                setUserCoordinates({
+                const coords = {
                     lat: current?.coords?.latitude,
                     lng: current?.coords?.longitude,
-                });
+                };
+
+                setUserCoordinates(coords);
+
+                try {
+                    const geocode = await Location.reverseGeocodeAsync({
+                        latitude: coords.lat,
+                        longitude: coords.lng,
+                    });
+
+                    if (!isMounted) {
+                        return;
+                    }
+
+                    const place = geocode?.[0] || {};
+                    const placeText = [
+                        place?.name,
+                        place?.street,
+                        place?.city,
+                        place?.subregion,
+                        place?.region,
+                        place?.country,
+                    ]
+                        .filter(Boolean)
+                        .slice(0, 3)
+                        .join(", ");
+
+                    setLocationPlaceName(placeText || "your current area");
+                } catch (geocodeError) {
+                    if (!isMounted) {
+                        return;
+                    }
+                    setLocationPlaceName("your current area");
+                }
+
                 setLocationStatus("granted");
             } catch (locationError) {
                 if (!isMounted) {
@@ -257,7 +296,7 @@ export default function GoloHome() {
             const offersData = await fetchAllOffers({
                 limit: 100,
                 page: 1,
-                radiusKm: selectedDistanceKm,
+                radiusKm: DEFAULT_RADIUS_KM,
                 category: selectedCategory || undefined,
                 lat: userCoordinates?.lat,
                 lng: userCoordinates?.lng,
@@ -270,7 +309,7 @@ export default function GoloHome() {
         } finally {
             setLoading(false);
         }
-    }, [selectedCategory, selectedDistanceKm, userCoordinates?.lat, userCoordinates?.lng]);
+    }, [selectedCategory, userCoordinates?.lat, userCoordinates?.lng]);
 
     useFocusEffect(
         React.useCallback(() => {
@@ -298,6 +337,15 @@ export default function GoloHome() {
 
         return false;
     };
+
+    const locationLabel =
+        locationStatus === "granted"
+            ? locationPlaceName
+                ? `Location: ${locationPlaceName}`
+                : "Current location"
+            : locationStatus === "loading"
+                ? "Checking your location..."
+                : "No access to location";
 
     const filteredOffers = offers
         .filter(
@@ -332,51 +380,31 @@ export default function GoloHome() {
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-            <Topbar />
+            <LinearGradient
+                         colors={["#f8a812", "#fad081",  "#f8f6f265"]}
+                         start={{ x: 0, y: 0 }}
+                         end={{ x: 0, y: 1 }}
+                         style={{height: 270, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0}}
+                    />
+            <Topbar2 />
 
-            <ScrollView
-                contentContainerStyle={styles.container}
-                refreshControl={
-                    <RefreshControl refreshing={loading} onRefresh={fetchOffers} />
-                }
-                showsVerticalScrollIndicator={false}
-            >
-
-                <View style={styles.distanceSection}>
-                    <View style={styles.distanceHeaderRow}>
-                        <Text style={[styles.distanceTitle, { color: colors.text }]}>Distance</Text>
-                        <Text style={styles.distanceValue}>Selected: {selectedDistanceKm} km</Text>
-                    </View>
-
-                    <View style={styles.sliderContainer}>
-                        <Slider
-                            style={styles.slider}
-                            minimumValue={1}
-                            maximumValue={50}
-                            step={1}
-                            value={selectedDistanceKm}
-                            onValueChange={(value) => setSelectedDistanceKm(Math.round(value))}
-                            minimumTrackTintColor="#157a4f"
-                            maximumTrackTintColor="#d9d9d9"
-                            thumbTintColor="#157a4f"
-                        />
-                        <View style={{ flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 6}}>
-                            <Text style={{ fontSize: 12, fontFamily: "Medium", color: colors.text,
-                                lineHeight: Math.round(12 * 1.5) }}>1 km</Text>
-                            <Text style={{ fontSize: 12, fontFamily: "Medium", color: colors.text,
-                                lineHeight: Math.round(12 * 1.5) }}>50 km</Text>
-                        </View>
-                    </View>
-
-                    {locationStatus !== "granted" ? (
-                        <Text style={[styles.distanceHint, { color: colors.text }]}>
-                            Location is off. Showing all deals.
+                <View style={{flexDirection:"row", alignItems:"center",
+                    justifyContent:"space-between", paddingHorizontal:16, paddingVertical:5
+                }}>
+                <View style={styles.locationSection}>
+                    <View style={styles.locationRow}>
+                        <Ionicons name="location-outline" size={16} color="#000000" />
+                        <Text style={[styles.locationText]}
+                        numberOfLines={1} ellipsizeMode="tail">
+                            {locationLabel}
                         </Text>
-                    ) : (
-                        <Text style={[styles.distanceHint, { color: colors.text }]}>
-                            Showing offers within {selectedDistanceKm} km from your location.
-                        </Text>
-                    )}
+                    </View>               
+                </View>
+
+                <TouchableOpacity style={styles.filterbtn} onPress={() => navigation.navigate("FilterPage")}>
+                <Feather name="filter" size={18}/>
+
+                </TouchableOpacity>
                 </View>
 
                 <View style={styles.searchContainer}>
@@ -393,103 +421,59 @@ export default function GoloHome() {
                         </TouchableOpacity>
                     )}
                 </View>
+                                  
+           <ScrollView 
+                contentContainerStyle={styles.container}
+                refreshControl={
+                    <RefreshControl refreshing={loading} onRefresh={fetchOffers} />
+                }
+                showsVerticalScrollIndicator={false}
+            >
 
-                <View style={styles.categorySection}>
-                    {!showAllCategories ? (
-                        <View style={styles.categoryStrip}>
-                            <ScrollView
-                                ref={scrollRef}
-                                horizontal
-                                showsHorizontalScrollIndicator={false}
-                            >
-                                <View style={styles.chipsRow}>
-                                    {sortedCategories.map((item, index) => (
-                                        <CategoryChip
-                                            key={`${item.label}-${index}`}
-                                            icon={item.icon}
-                                            label={item.label}
-                                            isActive={selectedCategory === item.label}
-                                            onPress={() => {
-                                                if (selectedCategory === item.label) {
-                                                    setSelectedCategory(null);
-                                                } else {
-                                                    setSelectedCategory(item.label);
-                                                    setShowAllCategories(false);
-                                                    scrollRef.current?.scrollTo({ x: 0, animated: true });
-                                                }
-                                            }}
-                                        />
-                                    ))}
-                                </View>
-                            </ScrollView>
-
-                            <TouchableOpacity onPress={() => setShowAllCategories(true)}>
-                                <Text style={[styles.seeAllText, { color: colors.text }]}>See All</Text>
-                            </TouchableOpacity>
-                        </View>
-                    ) : (
-                        <View>
-                            <TouchableOpacity
-                                onPress={() => setShowAllCategories(false)}
-                                style={styles.hideCategoriesButton}
-                            >
-                                <Text style={[styles.headerText, { color: colors.text }]}>
-                                    Hide Categories
-                                </Text>
-                            </TouchableOpacity>
-
-                            <View style={styles.categoryGrid}>
+                  <View style={styles.categorySection}>
+                    <View style={styles.categoryStrip}>
+                        <ScrollView
+                            ref={scrollRef}
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                        >
+                            <View style={styles.chipsRow}>
                                 {sortedCategories.map((item, index) => (
-                                    <TouchableOpacity 
+                                    <CategoryChip
                                         key={`${item.label}-${index}`}
+                                        icon={item.icon}
+                                        label={item.label}
+                                        isActive={selectedCategory === item.label}
                                         onPress={() => {
                                             if (selectedCategory === item.label) {
                                                 setSelectedCategory(null);
                                             } else {
                                                 setSelectedCategory(item.label);
-                                                setShowAllCategories(false);
                                                 scrollRef.current?.scrollTo({ x: 0, animated: true });
                                             }
                                         }}
-                                        style={[
-                                            styles.gridItem,
-                                            selectedCategory === item.label && styles.gridItemActive,
-                                        ]}
-                                    >
-                                        <Ionicons
-                                        style={{ marginRight: 6 }}
-                                            name={item.icon}
-                                            size={18}
-                                            color={selectedCategory === item.label ? "#000" : "#000000"}
-                                        />
-                                        <Text
-                                            style={[
-                                                styles.gridText,
-                                                { color: selectedCategory === item.label ? "#000" : "#000000" },
-                                            ]}
-                                        >
-                                            {item.label}
-                                        </Text>
-                                    </TouchableOpacity>
+                                    />
                                 ))}
                             </View>
-                        </View>
-                    )}
+                        </ScrollView>
+                    </View>
                 </View>
-
+                
                 {loading && !offers.length ? (
                     <View style={styles.centerState}>
                         <ActivityIndicator size="small" color="#157a4f" />
                         <Text style={styles.helperText}>Loading live offers...</Text>
                     </View>
                 ) : filteredOffers.length ? (
-                    filteredOffers.map((item, index) => (
-                        <OfferCard
-                            key={item?.requestId || item?._id || item?.offerId || `offer-${index}`}
-                            item={item}
-                            navigation={navigation}
-                        />
-                    ))
+                    <View style={styles.cardsGrid}>
+                        {filteredOffers.map((item, index) => (
+                            <OfferCard
+                                key={item?.requestId || item?._id || item?.offerId || `offer-${index}`}
+                                item={item}
+                                navigation={navigation}
+                            />
+                        ))}
+                    </View>
                 ) : (
                     <View style={styles.centerState}>
                         <Text style={styles.emptyTitle}>
@@ -513,15 +497,21 @@ export default function GoloHome() {
 }
 
 const CategoryChip = ({ icon, label, isActive, onPress }) => (
-    <TouchableOpacity
-        onPress={onPress}
-        style={[
-            styles.chip,
-            isActive && { backgroundColor: "#f1d94e", borderColor: "#000", borderWidth: 1.5 },
-        ]}
-    >
-        <Ionicons name={icon} size={16} color={isActive ? "#000" : "#000000"} />
-        <Text style={[styles.chipText, { color: isActive ? "#000" : "#000000" }]}>{label}</Text>
+    <TouchableOpacity onPress={onPress} style={styles.chip}>
+        <Ionicons
+            name={icon}
+            size={20}
+            color={isActive ? "#157a4f" : "#000000"}
+        />
+        <Text
+            style={[
+                styles.chipText,
+                { color: isActive ? "#157a4f" : "#000000" },
+            ]}
+            numberOfLines={2}
+        >
+            {label}
+        </Text>
     </TouchableOpacity>
 );
 
@@ -554,28 +544,21 @@ const OfferCard = ({ item, navigation }) => {
 
                 <View style={styles.cardContent}>
                     <View style={styles.rowBetween}>
-                        <Text style={styles.title} numberOfLines={2}>
+                        <Text style={styles.title} numberOfLines={1}>
                             {title}
                         </Text>
+                        {distanceText ? <Text style={styles.distanceMetaText}>{distanceText}</Text> : null}
                     </View>
 
                     <Text style={styles.subtitle} numberOfLines={1}>
                         By {subtitle}
                     </Text>
 
-                    <Text style={styles.metaText}>Offer Type: {offerType}</Text>
+                    <Text style={styles.metaText} numberOfLines={1}>Offer Type: {offerType}</Text>
 
-                    <Text style={styles.validText}>
+                    <Text style={styles.validText} numberOfLines={1}>
                         Valid Till: {endDate ? new Date(endDate).toDateString() : "-"}
                     </Text>
-
-                    <View style={{  alignSelf: "flex-end", justifyContent: "center" 
-                    }} >
-
-                    {distanceText ? <Text style={styles.distanceMetaText}>{distanceText}</Text> : null}
-
-                    </View>
-
                 </View>
             </View>
         </TouchableOpacity>
@@ -584,166 +567,90 @@ const OfferCard = ({ item, navigation }) => {
 
 const styles = StyleSheet.create({
     container: {
-        padding: 16,
-        paddingBottom: 90,
+        paddingHorizontal: 14,
+        paddingVertical: 10,
+        paddingBottom:100
+    },
+    cardsGrid: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        justifyContent: "space-between",
     },
     topRow: {
         justifyContent: "space-between",
         flexDirection: "row",
         alignItems: "center",
-        paddingBottom: 10,
     },
-    distanceSection: {
-        marginBottom: 14,
+    locationSection: {
+       backgroundColor:"#f5b949e5",
+       borderRadius:12,
+       padding:10,
+       width:"88%"
     },
-    distanceHeaderRow: {
+    locationRow: {
         flexDirection: "row",
         alignItems: "center",
-        justifyContent: "space-between",
-        marginBottom: 8,
+        gap: 4,
     },
-    distanceTitle: {
-        fontSize: 14,
-        fontFamily: "Medium",
-    },
-    distanceValue: {
-        fontSize: 13,
-        color: "#157a4f",
-        fontFamily: "Medium",
-    },
-    distanceChipsRow: {
-        paddingBottom: 6,
-    },
-    distanceChip: {
-        paddingHorizontal: 12,
-        paddingVertical: 7,
-        borderRadius: 18,
-        borderWidth: 1,
-        borderColor: "#d9d9d9",
-        marginRight: 8,
-        backgroundColor: "#fff",
-    },
-    distanceChipActive: {
-        backgroundColor: "#157a4f",
-        borderColor: "#157a4f",
-    },
-    distanceChipText: {
-        color: "#1f1f1f",
-        fontFamily: "Medium",
+    locationText: {
         fontSize: 12,
+        fontFamily: "Medium",
+        lineHeight: Math.round(12 * 1.5),
+        flexShrink: 1,
     },
-    distanceChipTextActive: {
-        color: "#fff",
-    },
-    distanceHint: {
+    locationHint: {
         marginTop: 4,
-        color: "#3d3d3d",
         fontSize: 12,
         fontFamily: "Medium",
+        lineHeight: Math.round(12 * 1.5),
     },
-    headerRow: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 6,
-    },
-    headerText: {
-        fontSize: 16,
-        fontFamily: "Medium",
-        lineHeight: Math.round(16 * 1.5),
-        paddingVertical: 5,
+    filterbtn:{
+        alignItems:"center",
+        borderRadius:10,
+        backgroundColor:"#f5b949e5",
+        padding:10,
+        justifyContent:"center"
     },
     categorySection: {
-        marginTop: 12,
-        marginBottom: 12,
-        paddingHorizontal:6,
-        paddingVertical:6
+        marginBottom:8
     },
     categoryStrip: {
-        height: 45,
         flexDirection: "row",
         alignItems: "center",
     },
     chipsRow: {
         flexDirection: "row",
-        marginBottom: 10,
         alignItems: "center",
+        gap:16
     },
     chip: {
-        flexDirection: "row",
         alignItems: "center",
-        backgroundColor: "#ffffff",
-        paddingHorizontal: 14,
-        paddingVertical: 8,
-        borderRadius: 20,
-        marginRight: 10,
-        borderColor: "#000000",
-        borderWidth: 1,
+        width:80,
     },
     chipText: {
-        marginLeft: 6,
-        fontSize: 12,
+        fontSize: 11,
         fontFamily: "Medium",
-        lineHeight: Math.round(12 * 1.4),
-    },
-    seeAllText: {
-        fontSize: 16,
-        fontFamily: "Medium",
-        paddingLeft: 10,
-        marginTop: -10,
-    },
-    hideCategoriesButton: {
-        alignSelf: "flex-end",
-        marginRight: 6,
-        bottom: 5,
-    },
-    categoryGrid: {
-        flexDirection: "row",
-        flexWrap: "wrap",
-        justifyContent: "center",
-        justifyContent: "space-around",
-    },
-    gridItem: {
-        width: "49%",
-        backgroundColor: "#ffffff",
-        borderRadius: 10,
-        paddingVertical: 8,
-        marginBottom: 10,
-        alignItems: "center",
-        flexDirection: "row",
-        borderColor: "#000000",
-        borderWidth: 1,
-        paddingLeft: 6,
-        paddingRight: 22,
-    },
-    gridItemActive: {
-        backgroundColor: "#FFD700",
-    },
-    gridText: {
-        fontSize: 12,
-        fontFamily: "Medium",
-        lineHeight: Math.round(12 * 1.5),
+        lineHeight: Math.round(11 * 1.5),
         textAlign: "center",
+        minHeight:32
     },
     card: {
+        width: "48%",
         borderRadius: 10,
-        minHeight: 120,
         borderWidth: 1,
         borderColor: "#ececec",
         elevation: 5,
         backgroundColor: "#fff",
-        justifyContent: "center",
-        paddingHorizontal: 10,
-        paddingVertical: 10,
+        overflow: "hidden",
         marginBottom: 18,
     },
     cardInner: {
-        flexDirection: "row",
+        flexDirection: "column",
     },
     image: {
-        width: 120,
-        height: 130,
+        width: "100%",
+        height: 110,
         backgroundColor: "#b8b8b8",
-        borderRadius: 12,
     },
     imageFallback: {
         alignItems: "center",
@@ -752,18 +659,19 @@ const styles = StyleSheet.create({
     cardContent: {
         flex: 1,
         paddingHorizontal: 10,
+        paddingVertical: 10,
     },
     rowBetween: {
         flexDirection: "row",
         justifyContent: "space-between",
-        alignItems: "flex-start",
-        gap: 8,
+        alignItems: "center",
+        gap:10
     },
     title: {
         flex: 1,
-        fontSize: 18,
+        fontSize: 15,
         fontFamily: "Bold",
-        lineHeight: Math.round(18 * 1.5),
+        lineHeight: Math.round(15 * 1.4),
     },
     subtitle: {
         marginTop: 5,
@@ -773,7 +681,7 @@ const styles = StyleSheet.create({
         lineHeight: Math.round(13 * 1.5),
     },
     metaText: {
-        marginTop: 5,
+        marginTop: 10,
         fontFamily: "Medium",
         fontSize: 12,
         lineHeight: Math.round(12 * 1.5),
@@ -786,11 +694,10 @@ const styles = StyleSheet.create({
         lineHeight: Math.round(12 * 1.5),
     },
     distanceMetaText: {
-        fontSize: 14,
-        marginTop: 4,
+        fontSize: 12,
         color: "#157a4f",
         fontFamily: "Medium",
-        lineHeight: Math.round(14 * 1.5),
+        lineHeight: Math.round(12 * 1.5),
     },
     statusText: {
         textTransform: "capitalize",
@@ -842,18 +749,19 @@ const styles = StyleSheet.create({
         fontFamily: "Medium",
     },
     searchContainer: {
-        top:-5,
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: "#f1f1f1",
+        backgroundColor: "#ffffff",
         borderRadius: 10,
         borderWidth: 1,
         borderColor: "#cacaca",
+        marginHorizontal:16,
+        marginVertical:6
     },
     searchInput: {
         flex: 1,
         paddingHorizontal: 12,
-        paddingVertical: 8,
+        paddingVertical: 6,
         fontFamily: "Medium",
         fontSize: 14,
     },

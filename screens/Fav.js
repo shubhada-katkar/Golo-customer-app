@@ -7,6 +7,7 @@ import Topbar from "../components/Topbar";
 import ChojaBottom from "../components/ChojaBottom";
 import { MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { getFavoriteAds, toggleFavoriteAd } from "../services/favoritesService";
+import { LinearGradient } from "expo-linear-gradient";
 
 export default function Fav({ navigation }) {
     const { colors } = useContext(ThemeContext);
@@ -36,6 +37,12 @@ export default function Fav({ navigation }) {
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+            <LinearGradient
+                         colors={["#f8a812", "#fad081", "#fffbf4"]}
+                         start={{ x: 0, y: 0 }}
+                         end={{ x: 0, y: 1 }}
+                         style={{height: 220, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0}}
+                    />
             <Topbar />
 
             <View style={styles.row1}>
@@ -124,12 +131,16 @@ const styles = StyleSheet.create({
     card: {
         flexDirection: "row",
         alignItems: "center",
-        padding: 12,
-        marginHorizontal: 10,
+        padding: 10,
+        marginHorizontal: 14,
         marginTop: 14,
         borderRadius: 12,
-        borderWidth: 0.5,
-        backgroundColor: "#ffffff"
+        backgroundColor: "#ffffff",
+        elevation: 6,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 6,
     },
 
     imagePlaceholder: {

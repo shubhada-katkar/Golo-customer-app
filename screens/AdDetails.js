@@ -1,17 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  Image,
-  ActivityIndicator,
-  Dimensions,
-  Alert,
-  Share,
-  Modal,
-  TextInput
+import React, { useState, useEffect, useRef, useContext } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image, ActivityIndicator,
+  Dimensions, Alert, Share, Modal, TextInput
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
@@ -21,6 +10,8 @@ import { getAdId, isFavoriteAdId, toggleFavoriteAd } from '../services/favorites
 import { trackAdCardClick, trackContactClick, trackWishlistSave } from '../services/analyticsService';
 import { submitReport } from '../services/reportService';
 import { BASE_URL } from '../config';
+import Topbar from '../components/Topbar';
+import { ThemeContext } from '../theme/ThemeContext';
 
 const { width, height } = Dimensions.get('window');
 
@@ -176,6 +167,7 @@ function getCommonAdDetails(adData) {
 }
 
 export default function AdDetails({ route, navigation }) {
+  const {colors} = useContext(ThemeContext);
   const { adId } = route.params || {};
   const [ad, setAd] = useState(null);
   const [seller, setSeller] = useState(null);
@@ -411,18 +403,21 @@ export default function AdDetails({ route, navigation }) {
   return (
     <>
       <SafeAreaView style={{ flex: 1 }}>
-        <LinearGradient
-          colors={['#f9a641', '#f5b849', '#ffffff']}
-          start={{ x: 0.5, y: 0 }}
-          end={{ x: 0.5, y: 1 }}
-          style={{ flex: 1 }}
-        >
+         <LinearGradient
+                     colors={["#f8a812", "#fad081", "#f8f6f265"]}
+                     start={{ x: 0, y: 0 }}
+                     end={{ x: 0, y: 1 }}
+                     style={{height: 220, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0}}
+                />
+                <Topbar/>
           {/* Header */}
           <View style={styles.header}>
+            <View style={{flexDirection:"row", alignItems:"center"}}>
             <TouchableOpacity onPress={() => navigation.goBack()}>
-              <MaterialIcons name="arrow-back-ios" size={26} />
+              <MaterialIcons name="arrow-back-ios" size={22} style={{padding:10}}/>
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Ad Details</Text>
+            </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
               <TouchableOpacity onPress={handleToggleFavorite} disabled={favoriteLoading}>
                 {favoriteLoading ? (
@@ -439,6 +434,8 @@ export default function AdDetails({ route, navigation }) {
               </TouchableOpacity>
             </View>
           </View>
+
+          <View style={{ backgroundColor: colors.divider, height: 1, marginVertical: 6 }} />
 
           <ScrollView contentContainerStyle={styles.scrollContent}>
             {/* Image Carousel */}
@@ -487,7 +484,7 @@ export default function AdDetails({ route, navigation }) {
                 {ad.price ? (
                   <Text style={styles.price}>₹{ad.price}</Text>
                 ) : (
-                  <Text style={styles.price}>Contact for details</Text>
+                  <Text style={styles.price}>Contact for price details</Text>
                 )}
               </View>
 
@@ -502,11 +499,11 @@ export default function AdDetails({ route, navigation }) {
               {/* Location & Views */}
               <View style={styles.metaRow}>
                 <View style={styles.metaItem}>
-                  <Ionicons name="location-outline" size={16} color="#666" />
+                  <Ionicons name="location-outline" size={16} color="#157a4f" />
                   <Text style={styles.metaText}>{ad.location || ad.city || 'N/A'}</Text>
                 </View>
                 <View style={styles.metaItem}>
-                  <Ionicons name="eye-outline" size={16} color="#666" />
+                  <Ionicons name="eye-outline" size={16} color="#157a4f" />
                   <Text style={styles.metaText}>{ad.views || ad.uniqueVisitors || ad.viewHistory?.length || ad.viewCount || 0} views</Text>
                 </View>
               </View>
@@ -569,13 +566,15 @@ export default function AdDetails({ route, navigation }) {
                   <View style={styles.sellerDetails}>
                     <Text style={styles.sellerName}>{sellerName || 'Anonymous'}</Text>
                     {(sellerPhone || ad.contactInfo?.phone) && (
-                      <TouchableOpacity
-                        style={styles.callBtn}
+                      <TouchableOpacity                     
                         onPress={() => {
                           handleCall(sellerPhone || ad.contactInfo?.phone);
                         }}
+                        style={styles.callBtn}
                       >
-                        <Text style={styles.callBtnText}>📞 {sellerPhone || ad.contactInfo?.phone}</Text>
+                        <Text style={{color:"#ffffff",
+                          fontFamily:"Medium", lineHeight:Math.round(12*1.5), fontSize:12
+                        }}>{sellerPhone || ad.contactInfo?.phone}</Text>
                       </TouchableOpacity>
                     )}
                   </View>
@@ -584,7 +583,6 @@ export default function AdDetails({ route, navigation }) {
               </View>
 
             </View>
-          </ScrollView>
 
           {/* Action Buttons */}
           <View style={styles.actionBar}>
@@ -598,7 +596,7 @@ export default function AdDetails({ route, navigation }) {
               <Text style={styles.callButtonText}>Call Seller</Text>
             </TouchableOpacity>
           </View>
-        </LinearGradient>
+          </ScrollView>
       </SafeAreaView>
 
       <Modal visible={showReportModal} transparent animationType="slide">
@@ -674,13 +672,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 10,
     paddingVertical: 12,
   },
   headerTitle: {
-    fontSize: 18,
-    fontFamily: 'Medium',
-    lineHeight: Math.round(18 * 1.5)
+    fontSize: 20,
+    fontFamily: 'SemiBold',
+    lineHeight: Math.round(20 * 1.5)
   },
   scrollContent: {
     paddingBottom: 20,
@@ -691,7 +689,6 @@ const styles = StyleSheet.create({
   adImage: {
     width: width,
     height: height * 0.35,
-    backgroundColor: '#e0e0e0',
   },
   imageCounter: {
     position: 'absolute',
@@ -714,21 +711,21 @@ const styles = StyleSheet.create({
     marginTop: 12,
     borderRadius: 10,
     padding: 16,
-    marginBottom: 80,
+    marginBottom: 30,
   },
   titleRow: {
     marginBottom: 12,
   },
   title: {
-    fontSize: 22,
+    fontSize: 20,
     marginBottom: 8,
     fontFamily: "Medium",
-    lineHeight: Math.round(22 * 1.5)
+    lineHeight: Math.round(20 * 1.5)
   },
   price: {
-    fontSize: 16,
+    fontSize: 14,
     fontFamily: "Medium",
-    lineHeight: Math.round(16 * 1.5),
+    lineHeight: Math.round(14 * 1.5),
     color: '#157a4f',
   },
   categoryRow: {
@@ -756,6 +753,7 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
+    alignItems:"center"
   },
   metaItem: {
     flexDirection: 'row',
@@ -764,7 +762,7 @@ const styles = StyleSheet.create({
   },
   metaText: {
     fontSize: 12,
-    color: '#666',
+    color: '#000000',
     fontFamily: "Medium",
     lineHeight: Math.round(12 * 1.5)
   },
@@ -795,7 +793,6 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#f0f0f0',
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
@@ -850,36 +847,17 @@ const styles = StyleSheet.create({
     flex: 0.55,
     textAlign: 'right',
   },
-  footerMeta: {
-    marginTop: 16,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-  },
-  footerMetaText: {
-    fontSize: 11,
-    color: '#999',
-    marginBottom: 4,
-    fontFamily: "Medium",
-    lineHeight: Math.round(11 * 1.5)
-  },
   actionBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
     flexDirection: 'row',
-    gap: 12,
-    padding: 12,
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
+    justifyContent:"space-between",
+    paddingHorizontal: 16,
+    marginBottom:10
   },
   chatButtonLarge: {
-    flex: 1,
     backgroundColor: '#f5b849',
-    paddingVertical: 12,
-    borderRadius: 8,
+    paddingVertical: 14,
+    width:"48%",
+    borderRadius: 10,
     alignItems: 'center',
   },
   chatButtonText: {
@@ -889,10 +867,10 @@ const styles = StyleSheet.create({
     lineHeight: Math.round(14 * 1.5)
   },
   callButtonLarge: {
-    flex: 1,
     backgroundColor: '#157a4f',
-    paddingVertical: 12,
-    borderRadius: 8,
+    paddingVertical: 14,
+    width:"48%",
+    borderRadius: 10,
     alignItems: 'center',
   },
   callButtonText: {

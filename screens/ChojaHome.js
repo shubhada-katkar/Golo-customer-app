@@ -2,12 +2,14 @@ import React, { useContext, useRef, useState } from "react";
 import { View, StyleSheet, Text, TouchableOpacity, ScrollView, TextInput } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemeContext } from "../theme/ThemeContext";
-import Topbar from "../components/Topbar";
 import ChojaBottom from "../components/ChojaBottom";
 import { EvilIcons, Ionicons } from "@expo/vector-icons";
 import Iwant from "../components/Iwant";
 import MyAds from "../components/MyAds";
 import ChotyaJahirati from "../components/ChotyaJahirati";
+import Topbar2 from "../components/Topbar2";
+import { LinearGradient } from "expo-linear-gradient";
+
 const categories = [
     { icon: "school-outline", label: "Education" },
     { icon: "heart-outline", label: "Matrimonial" },
@@ -35,7 +37,6 @@ export default function ChojaHome() {
     const { colors } = useContext(ThemeContext);
     const inputRef = useRef(null);
     const [tab, setTab] = useState("Chotya Jahirati");
-    const [showAllCategories, setShowAllCategories] = useState(false);
     const sortedCategories = selectedCategory
         ? [
             categories.find(c => c.label === selectedCategory),
@@ -46,7 +47,13 @@ export default function ChojaHome() {
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-            <Topbar />
+            <LinearGradient
+                colors={["#f8a812", "#fad081", "#f8f6f265"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 1 }}
+                style={{height: 220, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0}}
+            />
+            <Topbar2 />
 
             <View style={styles.row1}>
                 <TouchableOpacity
@@ -65,7 +72,7 @@ export default function ChojaHome() {
 
                     {searchQuery.length > 0 && (
                         <TouchableOpacity onPress={() => setSearchQuery("")} style={{ padding: 4 }}>
-                            <Ionicons name="close-circle" size={18} color="#555" />
+                            <Ionicons name="close-circle" size={19} color="#555" />
                         </TouchableOpacity>
                     )}
 
@@ -74,96 +81,46 @@ export default function ChojaHome() {
             </View>
 
             {/* Categories */}
-            <View style={{
-                marginTop: 12,
-                paddingHorizontal: 10,
-            }}>
-                {!showAllCategories ? (
-                    <View style={{
-                        height: 46,
-                        flexDirection: "row",
-                        alignItems: "center"
-                    }}>
-                        <ScrollView
-                            ref={scrollRef}
-                            horizontal
-                            showsHorizontalScrollIndicator={false}
-                        >
-                            <View style={styles.chipsRow}>
-                                {sortedCategories.map((item, index) => (
-                                    <CategoryChip
-                                        key={index}
-                                        icon={item.icon}
-                                        label={item.label}
-                                        isActive={selectedCategory === item.label}
-                                        onPress={() => {
-                                            if (selectedCategory === item.label) {
-                                                setSelectedCategory(null);
-                                            } else {
-                                                setSelectedCategory(item.label);
-                                                setShowAllCategories(false);
-
-                                                // scroll to beginning
-                                                scrollRef.current?.scrollTo({ x: 0, animated: true });
-                                            }
-                                        }}
-                                    />
-                                ))}
-                            </View>
-                        </ScrollView>
-
-                        <TouchableOpacity onPress={() => setShowAllCategories(true)}>
-                            <View style={styles.headerRow}>
-                                <Text style={styles.headerText}>See All</Text>
-                            </View>
-                        </TouchableOpacity>
-                    </View>
-                ) : (
-                    <View>
-                        <TouchableOpacity onPress={() => setShowAllCategories(false)} style={{ alignSelf: "flex-end", marginRight: 6 }}>
-                            <Text style={[styles.headerText, { color: colors.primary, paddingVertical: 4, bottom: 5 }]}>Hide Categories</Text>
-                        </TouchableOpacity>
-                        <View style={styles.categoryGrid}>
-                            {sortedCategories.map((item, index) => (
-                                <TouchableOpacity
-                                    key={index}
-                                    onPress={() => {
-                                        if (selectedCategory === item.label) {
-                                            setSelectedCategory(null);
-                                        } else {
-                                            setSelectedCategory(item.label);
-                                            setShowAllCategories(false);
-
-                                            // scroll to beginning
-                                            scrollRef.current?.scrollTo({ x: 0, animated: true });
-                                        }
-                                    }}
+            <View style={{ paddingVertical: 12 }}>
+                <ScrollView
+                    ref={scrollRef}
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.chipsRow}
+                >
+                    {sortedCategories.map((item, index) => {
+                        const isActive = selectedCategory === item.label;
+                        return (
+                            <TouchableOpacity
+                                key={index}
+                                onPress={() => {
+                                    if (isActive) {
+                                        setSelectedCategory(null);
+                                    } else {
+                                        setSelectedCategory(item.label);
+                                        scrollRef.current?.scrollTo({ x: 0, animated: true });
+                                    }
+                                }}
+                                style={styles.categoryItem}
+                            >
+                                <Ionicons
+                                    name={item.icon}
+                                    size={24}
+                                    color={isActive ? "#157a4f" : "#000"}
+                                />
+                                <Text
                                     style={[
-                                        styles.gridItem,
-                                        selectedCategory === item.label && {
-                                            backgroundColor: "#FFD700"
-                                        }
+                                        styles.categoryText,
+                                        isActive && { color: "#157a4f", fontFamily: "Medium" }
                                     ]}
+                                    numberOfLines={1}
                                 >
-                                    <Ionicons
-                                        name={item.icon}
-                                        size={22}
-                                        color={selectedCategory === item.label ? "#000" : "#ffffff"}
-                                    />
-
-                                    <Text
-                                        style={[
-                                            styles.gridText,
-                                            { color: selectedCategory === item.label ? "#000" : "#fff" }
-                                        ]}
-                                    >
-                                        {item.label}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
-                    </View>
-                )}
+                                    {item.label}
+                                </Text>
+                            </TouchableOpacity>
+                        );
+                    })}
+                </ScrollView>
             </View>
 
             <View style={{ paddingHorizontal: 8, marginTop: 6 }}>
@@ -221,30 +178,6 @@ export default function ChojaHome() {
     );
 }
 
-const CategoryChip = ({ icon, label, isActive, onPress }) => (
-    <TouchableOpacity
-        onPress={onPress}
-        style={[
-            styles.chip,
-            isActive && { backgroundColor: "#f1d94e", borderColor: "#000", borderWidth: 1.5 } // active color
-        ]}
-    >
-        <Ionicons
-            name={icon}
-            size={16}
-            color={isActive ? "#000" : "#fff"}
-        />
-        <Text
-            style={[
-                styles.chipText,
-                { color: isActive ? "#000" : "#fff" }
-            ]}
-        >
-            {label}
-        </Text>
-    </TouchableOpacity>
-);
-
 const styles = StyleSheet.create({
     row1: {
         flexDirection: "row",
@@ -255,26 +188,12 @@ const styles = StyleSheet.create({
     search: {
         flex: 1,
         paddingHorizontal: 12,
-        backgroundColor: "#d1d1d1",
+        backgroundColor: "#ffffff",
         borderRadius: 10,
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
     },
-
-    headerRow: {
-        flexDirection: "row",
-        gap: 6,
-        alignItems: "center",
-        paddingHorizontal: 6,
-        marginTop: -9
-    },
-    headerText: {
-        fontSize: 16,
-        fontFamily: "Medium",
-        lineHeight: Math.round(16 * 1.4),
-    },
-
     row2: {
         flexDirection: "row",
         justifyContent: "space-between",
@@ -282,24 +201,20 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         padding: 6
     },
-
     tabButton: {
         flex: 1,
         alignItems: "center",
         borderRadius: 6
     },
-
     activeTab: {
         backgroundColor: "#FFD700",
     },
-
     text: {
         color: "#ffffff",
         fontSize: 14,
         fontFamily: "Medium",
         lineHeight: Math.round(16 * 2.4)
     },
-
     activeText: {
         color: "#000000",
         fontFamily: "Medium",
@@ -307,50 +222,21 @@ const styles = StyleSheet.create({
     },
     chipsRow: {
         flexDirection: "row",
-        marginBottom: 10,
-        alignItems: "center"
+        paddingHorizontal: 10,
+        alignItems: "flex-start",
     },
-
-    chip: {
-        flexDirection: "row",
+    categoryItem: {
         alignItems: "center",
-        backgroundColor: "#000",
-        paddingHorizontal: 14,
-        paddingVertical: 8,
-        borderRadius: 20,
-        marginRight: 10,
+        justifyContent: "flex-start",
+        width: 70,
+        marginRight: 8,
     },
-
-    chipText: {
-        color: "#fff",
-        marginLeft: 6,
-        fontSize: 12,
+    categoryText: {
+        fontSize: 10,
         fontFamily: "Medium",
-        lineHeight: Math.round(12 * 1.4),
-    },
-    categoryGrid: {
-        flexDirection: "row",
-        flexWrap: "wrap",
-        justifyContent: "space-between",
-    },
-
-    gridItem: {
-        width: "30%", // 3 per row
-        backgroundColor: "#000000",
-        borderRadius: 10,
-        gap: 6,
-        paddingVertical: 8,
-        marginBottom: 10,
-        alignItems: "center",
-        flexDirection: "row",
-        justifyContent: "center"
-    },
-
-    gridText: {
-        fontSize: 12,
-        fontFamily: "Medium",
-        lineHeight: Math.round(12 * 1.5),
+        color: "#000",
+        marginTop: 4,
         textAlign: "center",
-        color: "#fff"
+        lineHeight: Math.round(10 * 1.3),
     },
 })

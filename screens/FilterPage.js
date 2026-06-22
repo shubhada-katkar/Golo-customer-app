@@ -1,0 +1,362 @@
+import React, { useContext, useState } from "react";
+import {
+    View, StyleSheet, Text, TouchableOpacity, ScrollView } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import Topbar from "../components/Topbar";
+import { MaterialIcons } from "@expo/vector-icons";
+import { BASE_URL } from "../config";
+import { ThemeContext } from "../theme/ThemeContext";
+import { LinearGradient } from "expo-linear-gradient";
+import Slider from "@react-native-community/slider";
+import GoloBottom from "../components/GoloBottom";
+
+export default function FilterPage({ navigation }) {
+    const {colors} = useContext(ThemeContext);
+    const [radius, setRadius] = useState(5);
+    const [offerTypes, setOfferTypes] = useState({
+        flatDiscounts: false,
+        bogoDeals: false,
+        comboOffers: true,
+        cashback: false,
+    });
+
+    const toggleOfferType = (key) => {
+        setOfferTypes((prev) => ({ ...prev, [key]: !prev[key] }));
+    };
+
+    const offerTypeList = [
+        { key: "Special", label: "Special", icon: "star" },
+        { key: "Festival", label: "Festival", icon: "celebration" },
+        { key: "Limited Time", label: "Limited Time", icon: "timer" },
+        { key: "Combo", label: "Combo", icon: "layers" },
+        { key: "Clearance", label: "Clearance", icon: "sell" },
+        { key: "Flash Sale", label: "Flash Sale", icon: "flash-on" },
+        { key: "BOGO", label: "Buy One Get One (BOGO)", icon: "card-giftcard" },
+        { key: "Flat Discount", label: "Flat Discount", icon: "percent" },
+        { key: "Percentage Off", label: "Percentage Off", icon: "percent" },
+        { key: "Bundle Deal", label: "Bundle Deal", icon: "inventory-2" },
+        { key: "New Arrival Offer", label: "New Arrival Offer", icon: "new-releases" },
+        { key: "Weekend Offer", label: "Weekend Offer", icon: "weekend" },
+        { key: "Member Exclusive", label: "Member Exclusive", icon: "verified" },
+        { key: "Loyalty Reward", label: "Loyalty Reward", icon: "loyalty" },
+        { key: "Custom Offer", label: "Custom Offer", icon: "tune" },
+    ];
+
+    return (
+        <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+            <LinearGradient
+                         colors={["#f8a812", "#fad081",  "#f8f6f265"]}
+                         start={{ x: 0, y: 0 }}
+                         end={{ x: 0, y: 1 }}
+                         style={{height: 220, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0}}
+                    />
+                <Topbar />
+                <View style={styles.row1}>
+                    <TouchableOpacity onPress={() => navigation.goBack()}
+                        style={styles.backButton}>
+                        <MaterialIcons
+                            name="arrow-back-ios"
+                            size={22}
+                            color={colors.text}
+                        />
+                    </TouchableOpacity>
+
+                    <View style={{
+                        flex: 1, flexDirection: "row", justifyContent: "space-between",
+                        alignItems: "center", marginRight: 14
+                    }}>
+                        <Text style={{ fontSize: 20, color: colors.text, fontFamily: "Medium", lineHeight: Math.round(20 * 1.5) }}>
+                        Go Back
+                        </Text>
+                    </View>
+                </View>
+
+                <View style={{ height:1, backgroundColor:"#000000", marginTop:6 }}/>
+ 
+   <ScrollView contentContainerStyle={{ paddingBottom: 110}} >
+
+  
+                <View style={styles.clearAllRow}>
+                    <Text style={[styles.filtersEyebrow, { color: colors.text }]}>Filters</Text>
+                    <TouchableOpacity
+                        onPress={() => {
+                            setRadius(5);
+                            setOfferTypes({
+                                flatDiscounts: false,
+                                bogoDeals: false,
+                                comboOffers: false,
+                                cashback: false,
+                            });
+                        }}
+                        style={styles.clearAllButton}
+                    >
+                        <MaterialIcons name="refresh" size={15} color={colors.danger || "#e63946"} />
+                        <Text style={[styles.clearAllText, { color: colors.danger || "#e63946" }]}>
+                            Clear All
+                        </Text>
+                    </TouchableOpacity>
+                </View>
+
+                <View style={[styles.card, styles.cardShadow, { backgroundColor: colors.cardBackground }]}>
+                    <View style={styles.cardHeaderRow}>
+                        <View style={styles.cardTitleRow}>
+                            <View style={[styles.iconBadge, { backgroundColor: (colors.primary || "#157a4f") + "1A" }]}>
+                                <MaterialIcons name="my-location" size={16} color={colors.primary || "#157a4f"} />
+                            </View>
+                            <Text style={[styles.cardTitle, { color: colors.text }]}>Distance Radius</Text>
+                        </View>
+                    </View>
+
+                    <View style={[styles.radiusPill, { backgroundColor: (colors.primary || "#157a4f") + "14" }]}>
+                        <Text style={[styles.radiusPillValue, { color: colors.primary || "#157a4f" }]}>
+                            {radius} km
+                        </Text>
+                        <Text style={[styles.radiusPillLabel, { color: colors.primary || "#157a4f" }]}>
+                            Selected Radius
+                        </Text>
+                    </View>
+
+                    <View style={styles.sliderTrackWrap}>
+                        <LinearGradient
+                            colors={["#f8a812", "#157a4f"]}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 0 }}
+                            style={[styles.sliderTrackFill, { width: `${(radius / 50) * 100}%` }]}
+                        />
+                        <View style={[styles.sliderTrackRemainder, { backgroundColor: colors.border }]} />
+                        <Slider
+                            style={styles.slider}
+                            minimumValue={0}
+                            maximumValue={50}
+                            step={1}
+                            value={radius}
+                            onValueChange={setRadius}
+                            minimumTrackTintColor="transparent"
+                            maximumTrackTintColor={"#f5b849"}
+                            thumbTintColor={"#157a4f"}
+                        />
+                    </View>
+
+                    <View style={styles.sliderLabelsRow}>
+                        <Text style={[styles.sliderLabel, { color: colors.textSecondary }]}>0 km</Text>
+                        <Text style={[styles.sliderLabel, { color: colors.textSecondary }]}>25 km</Text>
+                        <Text style={[styles.sliderLabel, { color: colors.textSecondary }]}>50 km</Text>
+                    </View>
+                </View>
+
+                <View style={[styles.card, styles.cardShadow, { backgroundColor: colors.cardBackground }]}>
+                    <View style={styles.cardTitleRow}>
+                        <View style={[styles.iconBadge, { backgroundColor: (colors.primary || "#157a4f") + "1A" }]}>
+                            <MaterialIcons name="local-offer" size={16} color={colors.primary || "#157a4f"} />
+                        </View>
+                        <Text style={[styles.cardTitle, { color: colors.text }]}>Offer Type</Text>
+                    </View>
+
+                    <Text style={[styles.cardSubtitle, { color: colors.textSecondary }]}>
+                        Select one or more to narrow your results
+                    </Text>
+
+                    <View style={styles.chipGrid}>
+                        {offerTypeList.map((item) => {
+                            const isSelected = offerTypes[item.key];
+                            return (
+                                <TouchableOpacity
+                                    key={item.key}
+                                    onPress={() => toggleOfferType(item.key)}
+                                    style={[
+                                        styles.chip,
+                                        {
+                                            backgroundColor: isSelected
+                                                ? (colors.primary || "#157a4f") + "16"
+                                                : colors.background,
+                                            borderColor: isSelected
+                                                ? (colors.primary || "#157a4f")
+                                                : colors.border,
+                                        },
+                                    ]}
+                                >
+                                    <View style={[
+                                        styles.chipIconWrap,
+                                        { backgroundColor: isSelected ? (colors.primary || "#157a4f") : colors.border }
+                                    ]}>
+                                        <MaterialIcons
+                                            name={isSelected ? "check" : item.icon}
+                                            size={16}
+                                            color={isSelected ? "#fff" : "#157a4f"}
+                                        />
+                                    </View>
+                                    <Text
+                                        style={[
+                                            styles.chipLabel,
+                                            { color: isSelected ? (colors.primary || "#157a4f") : colors.text },
+                                            isSelected && { fontFamily: "Medium" },
+                                        ]}
+                                    >
+                                        {item.label}
+                                    </Text>
+                                </TouchableOpacity>
+                            );
+                        })}
+                    </View>
+                </View>
+                </ScrollView>
+                    <SafeAreaView
+                      edges={["bottom"]}
+                      style={{ position: "absolute", bottom: 0, width: "100%" }} >
+                      <GoloBottom />
+                    </SafeAreaView>
+        </SafeAreaView>
+    );
+}
+
+const styles = StyleSheet.create({
+    row1: {
+        alignItems: "center",
+        flexDirection: "row",
+        paddingLeft: 14,
+    },
+    backButton: {
+        padding: 10,
+    },
+    clearAllRow: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        paddingHorizontal: 18,
+        marginTop: 22,
+        marginBottom: 16,
+    },
+    filtersEyebrow: {
+        fontSize: 18,
+        fontFamily: "Medium",
+        lineHeight:Math.round(18 * 1.5)
+    },
+    clearAllButton: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 4,
+    },
+    clearAllText: {
+        fontSize: 14,
+        fontFamily: "Medium",
+        lineHeight:Math.round(14 * 1.5)
+    },
+    card: {
+        borderRadius: 20,
+        padding: 14,
+        marginHorizontal: 10,
+        backgroundColor:"#ffffff",
+        marginTop:18,
+        borderWidth:0.5,
+    },
+    cardHeaderRow: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 14,
+    },
+    cardTitleRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 10,
+    },
+    iconBadge: {
+        width: 30,
+        height: 30,
+        borderRadius: 10,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    cardTitle: {
+        fontSize: 16,
+        fontFamily: "Medium",
+        lineHeight:Math.round(16 * 1.5)
+    },
+    cardSubtitle: {
+        fontSize: 12,
+        fontFamily: "Medium",
+        marginTop: 6,
+        marginBottom: 14,
+        lineHeight:Math.round(12 * 1.5)
+    },
+    radiusPill: {
+        alignSelf: "flex-start",
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 6,
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+        borderRadius: 14,
+        marginBottom: 18,
+    },
+    radiusPillValue: {
+        fontSize: 18,
+        fontFamily: "Bold",
+        lineHeight:Math.round(18 * 1.5)
+    },
+    radiusPillLabel: {
+        fontSize: 12,
+        fontFamily: "Medium",
+        lineHeight:Math.round(12 * 1.5)
+    },
+    sliderTrackWrap: {
+        height: 40,
+        justifyContent: "center",
+    },
+    sliderTrackFill: {
+        position: "absolute",
+        height: 6,
+        borderRadius: 3,
+        left: 0,
+    },
+    sliderTrackRemainder: {
+        position: "absolute",
+        height: 6,
+        borderRadius: 3,
+        left: 0,
+        right: 0,
+        opacity: 0.4,
+    },
+    slider: {
+        width: "100%",
+        height: 40,
+    },
+    sliderLabelsRow: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        marginTop: 2,
+    },
+    sliderLabel: {
+        fontSize: 12,
+        fontFamily: "Medium",
+        lineHeight:Math.round(12 * 1.5)
+    },
+    chipGrid: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        gap: 8,
+    },
+    chip: {
+        flexDirection: "row",
+        alignItems: "center",
+        alignSelf: "flex-start",
+        gap: 5,
+        paddingVertical: 10,
+        paddingHorizontal: 12,
+        borderRadius: 14,
+        borderWidth: 1.5,
+    },
+    chipIconWrap: {
+        width: 18,
+        height: 18,
+        borderRadius: 7,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    chipLabel: {
+        fontSize: 13,
+        fontFamily: "Medium",
+        flexShrink: 1,
+        lineHeight:Math.round(13 * 1.5)
+    },
+});

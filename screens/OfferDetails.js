@@ -14,7 +14,7 @@ import {
     TouchableOpacity,
     View, KeyboardAvoidingView, Platform
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
 import { ThemeContext } from "../theme/ThemeContext";
@@ -34,6 +34,7 @@ import {
     fetchPublicMerchantProfile,
 } from "../services/offersService";
 import { isFavoriteOfferId, toggleFavoriteOffer } from "../services/offerFavoritesService";
+import { LinearGradient } from "expo-linear-gradient";
 
 const getOfferImage = (item) =>
     item?.imageUrl ||
@@ -507,12 +508,18 @@ export default function OfferDetails({ navigation, route }) {
     return (
         <>
             <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+                      <LinearGradient
+                                               colors={["#f8a812", "#fad081", "#f8f6f265"]}
+                                               start={{ x: 0, y: 0 }}
+                                               end={{ x: 0, y: 1 }}
+                                               style={{height: 270, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0}}
+                                          />
                 <Topbar />
                 <StatusBar barStyle="dark-content" />
 
                 <View style={styles.header}>
-                    <Ionicons
-                        name="arrow-back"
+                    <MaterialIcons
+                        name="arrow-back-ios"
                         size={24}
                         onPress={() => navigation.goBack()}
                         style={{ paddingLeft: 6, color: colors.text }}

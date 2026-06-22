@@ -8,12 +8,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemeContext } from "../theme/ThemeContext";
 import Topbar from "../components/Topbar";
 import ChojaBottom from "../components/ChojaBottom";
-import { MaterialIcons } from "@expo/vector-icons";
+import { MaterialIcons, Entypo } from "@expo/vector-icons";
 import { BarChart, PieChart } from "react-native-chart-kit";
 import { getMyAnalytics } from "../services/analyticsService";
+import { LinearGradient } from "expo-linear-gradient";
 
 const screenWidth = Dimensions.get("window").width;
-const CHART_COLORS = ["#1f7a53", "#f2a93b", "#3b82f6", "#ef4444", "#8b5cf6", "#14b8a6", "#f97316"];
+const CHART_COLORS = ["#157a4f", "#e8b923", "#e8743b", "#c0392b", "#2c6fbb", "#7c4dbd", "#16a0a0"];
 
 function formatDate(value) {
   if (!value) return "-";
@@ -202,112 +203,124 @@ export default function Analytics({ navigation }) {
     category: item.category,
   }));
 
-  return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-      <Topbar />
+ return (
+  <SafeAreaView style={{ flex: 1 }}>
+    <LinearGradient
+      colors={["#f8a812", "#fad081", "#f8f6f265"]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 1 }}
+      style={{ height: 220, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0 }}
+    />
+    <Topbar />
 
-      <View style={styles.row1}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <View style={{ justifyContent: 'center' }}>
-            <MaterialIcons
-              name="arrow-back-ios"
-              size={26}
-              color={colors.text}
-              style={{ padding: 10}}
-            />
+    <View style={styles.row1}>
+      <TouchableOpacity onPress={() => navigation.goBack()}>
+        <View style={{ justifyContent: 'center' }}>
+          <MaterialIcons
+            name="arrow-back-ios"
+            size={22}
+            color={colors.text}
+            style={{ padding: 10 }}
+          />
+        </View>
+      </TouchableOpacity>
+      <Text style={{ fontSize: 20, color: colors.text, fontFamily: "SemiBold", lineHeight: Math.round(20 * 1.2) }}>Analytics</Text>
+    </View>
+
+    <View style={{ flexDirection: "row", backgroundColor: colors.divider, height: 1, marginVertical:6 }} />
+
+    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 110 }}>
+
+      <Text style={[styles.subtitle, { color: colors.text }]}>
+        Track performance of your posted ads</Text>
+      {loading && (
+        <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
+          <ActivityIndicator size="small" color="#1f7a53" />
+          <Text style={{ marginLeft: 8, color: "#666", fontFamily: "Medium" }}>Refreshing live data...</Text>
+        </View>
+      )}
+      {!!error && <Text style={{ color: "#d14343", marginBottom: 10 }}>{error}</Text>}
+
+      {/* Stats Cards */}
+      <View style={styles.statsContainer}>
+        {stats.map((item, index) => (
+          <View key={index} style={styles.card}>
+            <Text style={styles.value}>{item.value}</Text>
+            <Text style={styles.label}>{item.title}</Text>
           </View>
-
-        </TouchableOpacity>
-        <Text style={{ fontSize: 22, color: colors.text, fontFamily: "SemiBold", lineHeight: Math.round(24 * 1.2) }}>Analytics</Text>
+        ))}
       </View>
 
-      <View style={{ flexDirection: "row", backgroundColor: colors.divider, height: 1, color: colors.divider, marginTop: 10 }} />
+      {/* Bar Chart */}
+      <Text style={[styles.sectionTitle, { color: colors.text }]}>Top Ads By Views</Text>
+      <BarChart
+        data={topAdsViews}
+        width={screenWidth - 30}
+        height={220}
+        fromZero
+        chartConfig={{
+          backgroundGradientFrom: "#ffffff",
+          backgroundGradientTo: "#ffffff",
+          color: () => "#1f7a53",
+          labelColor: () => "#555",
+        }}
+        style={styles.chart}
+      />
 
-
-      <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={{ paddingBottom: 110 }}>
-
-        <Text style={[styles.subtitle, { color: colors.text }]}>
-          Track performance of your posted ads</Text>
-        {loading && (
-          <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
-            <ActivityIndicator size="small" color="#1f7a53" />
-            <Text style={{ marginLeft: 8, color: "#666", fontFamily: "Medium" }}>Refreshing live data...</Text>
+      {/* Statistics Card */}
+      <View style={[styles.statsCard, { borderColor: colors.divider }]}>
+        <Text style={[styles.statsCardTitle, { color: colors.text }]}>Statistics</Text>
+        <View style={styles.pieRow}>
+         <PieChart
+  data={categoryData}
+  width={(screenWidth - 30) * 0.5}
+  height={160}
+  chartConfig={{ color: () => "#000" }}
+  accessor={"population"}
+  backgroundColor={"transparent"}
+  hasLegend={false}
+  center={[(screenWidth - 30) * 0.125, 0]}
+/>
+          <View style={styles.legendContainer}>
+            {categoryData.map((item, index) => (
+              <View key={index} style={styles.legendItem}>
+                <View style={[styles.legendDot, { backgroundColor: item.color }]} />
+                <Text style={[styles.legendText, { color: colors.text }]}>
+                  {item.population} {item.name}
+                </Text>
+              </View>
+            ))}
           </View>
-        )}
-        {!!error && <Text style={{ color: "#d14343", marginBottom: 10 }}>{error}</Text>}
-
-        {/* Stats Cards */}
-        <View style={styles.statsContainer}>
-          {stats.map((item, index) => (
-            <View key={index} style={styles.card}>
-              <Text style={styles.value}>{item.value}</Text>
-              <Text style={styles.label}>{item.title}</Text>
-            </View>
-          ))}
         </View>
+      </View>
 
-        {/* Bar Chart */}
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Top Ads by Views</Text>
+      {/* Ads Table */}
+      <Text style={[styles.sectionTitle, { color: colors.text }]}>Your Ads</Text>
 
-        <BarChart
-          data={topAdsViews}
-          width={screenWidth - 30}
-          height={220}
-          fromZero
-          chartConfig={{
-            backgroundGradientFrom: "#ffffff",
-            backgroundGradientTo: "#ffffff",
-            color: () => "#1f7a53",
-            labelColor: () => "#555",
-          }}
-          style={styles.chart}
-        />
+      <View style={styles.tableHeader}>
+        <Text style={[styles.headerText, { color: colors.text }]}>Ad</Text>
+        <Text style={[styles.headerText, { color: colors.text }]}>Date</Text>
+        <Text style={[styles.headerText, { color: colors.text }]}>Status</Text>
+        <Text style={[styles.headerText, { color: colors.text }]}>Action</Text>
+      </View>
 
-        {/* Pie Chart */}
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Ads by Category</Text>
-
-        <PieChart
-          data={categoryData}
-          width={screenWidth - 30}
-          height={220}
-          chartConfig={{
-            color: () => "#000",
-          }}
-          accessor={"population"}
-          backgroundColor={"transparent"}
-          paddingLeft={"10"}
-          absolute
-        />
-
-
-        {/* Ads Table */}
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Your Ads</Text>
-
-        <View style={styles.tableHeader}>
-          <Text style={[styles.headerText, { color: colors.text }]}>Ad</Text>
-          <Text style={[styles.headerText, { color: colors.text }]}>Date</Text>
-          <Text style={[styles.headerText, { color: colors.text }]}>Status</Text>
-          <Text style={[styles.headerText, { color: colors.text }]}>Action</Text>
+      {!adsList.length && (
+        <View style={{ paddingVertical: 14 }}>
+          <Text style={{ color: colors.text, fontFamily: "Medium" }}>No ads posted yet.</Text>
         </View>
+      )}
 
-        {!adsList.length && (
-          <View style={{ paddingVertical: 14 }}>
-            <Text style={{ color: colors.text, fontFamily: "Medium" }}>No ads posted yet.</Text>
-          </View>
-        )}
-
-        {adsList.map((ad) => {
-          const resolvedAdId = ad.adId || ad.id;
-          const statusLabel = getStatusLabel(ad.status);
-          const statusColor = String(ad.status || "").toLowerCase() === "active" ? "green" : "red";
-          return (
+      {adsList.map((ad) => {
+        const resolvedAdId = ad.adId || ad.id;
+        const statusLabel = getStatusLabel(ad.status);
+        const statusColor = String(ad.status || "").toLowerCase() === "active" ? "green" : "red";
+        return (
           <View
             key={String(resolvedAdId)}
             style={styles.tableRow}
           >
             <View style={{ flex: 1 }}>
               <Text style={[styles.adName, { color: colors.text }]}>{ad.name}</Text>
-              <Text style={[styles.category, { color: colors.text }]}>{ad.category}</Text>
             </View>
 
             <Text style={[styles.cell, { color: colors.text }]}>{formatDate(ad.date)}</Text>
@@ -326,17 +339,15 @@ export default function Analytics({ navigation }) {
             </Text>
 
             <View style={styles.actionCell}>
-              <TouchableOpacity
+               <TouchableOpacity
                 style={styles.actionIconBtn}
                 onPress={() =>
                   navigation.navigate("AdAnalytics", {
                     adId: resolvedAdId,
-                    adName: ad.name,
-                    postedDate: ad.date,
                   })
                 }
               >
-                <MaterialIcons name="visibility" size={20} color="#1f7a53" />
+                <Entypo name="eye" size={20} color="#157a4f" />
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -347,23 +358,22 @@ export default function Analytics({ navigation }) {
                   })
                 }
               >
-                <MaterialIcons name="edit" size={20} color="#3b82f6" />
+                <MaterialIcons name="edit" size={20} color="#d89633" />
               </TouchableOpacity>
             </View>
           </View>
-          );
-        })}
+        );
+      })}
 
-      </ScrollView>
+    </ScrollView>
 
-
-      <SafeAreaView
-        edges={["bottom"]}
-        style={{ position: "absolute", bottom: 0, width: "100%" }} >
-        <ChojaBottom />
-      </SafeAreaView>
+    <SafeAreaView
+      edges={["bottom"]}
+      style={{ position: "absolute", bottom: 0, width: "100%" }} >
+      <ChojaBottom />
     </SafeAreaView>
-  );
+  </SafeAreaView>
+);
 }
 
 const styles = StyleSheet.create({
@@ -372,85 +382,94 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     paddingHorizontal: 14
   },
-  card: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 12,
-    marginHorizontal: 10,
-    marginTop: 14,
-    borderRadius: 12,
-    borderRadius: 10,
-    borderWidth: 0.5
-  },
-
-  imagePlaceholder: {
-    width: 68,
-    height: 68,
-    borderRadius: 8,
-    backgroundColor: "#D9D9D9",
-  },
-
-
   container: {
     flex: 1,
     padding: 15,
   },
-
-  title: {
-    fontSize: 26,
-    fontFamily:"Medium",
-    lineHeight: Math.round(26 * 1.5),
-  },
-
   subtitle: {
     fontSize: 14,
     marginBottom: 15,
-    fontFamily:"Medium",
+    fontFamily: "Medium",
     lineHeight: Math.round(14 * 1.5),
   },
-
   statsContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
   },
-
   card: {
-    width: "48%",
+    width: "30%",
     backgroundColor: "#fff",
-    padding: 20,
-    borderRadius: 10,
+    paddingVertical: 16,
+    paddingHorizontal: 6,
+    borderRadius: 12,
     marginBottom: 10,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: "#dadada",
+    alignItems: "center",
   },
-
   value: {
-    fontSize: 22,
+    fontSize: 20,
     fontFamily: "Medium",
-    lineHeight: Math.round(22 * 1.5),
+    lineHeight: Math.round(20 * 1.5),
+    textAlign: "center",
   },
-
   label: {
     color: "#666",
-    marginTop: 5,
-    fontSize: 14,
+    fontSize: 12,
     fontFamily: "Medium",
-    lineHeight: Math.round(14 * 1.5),
+    lineHeight: Math.round(12 * 1.5),
+    textAlign: "center",
   },
-
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 16,
     marginTop: 20,
     marginBottom: 10,
     fontFamily: "Medium",
-    lineHeight: Math.round(18 * 1.5),
+    lineHeight: Math.round(16 * 1.5),
   },
-
   chart: {
     borderRadius: 10,
   },
-
-
+  statsCard: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 20,
+        elevation: 6,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 6,
+  },
+  statsCardTitle: {
+    fontSize: 16,
+    fontFamily: "Medium",
+    lineHeight:Math.round(16*1.5)
+  },
+  pieRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  legendContainer: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  legendItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  legendDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: 8,
+  },
+  legendText: {
+    fontSize: 14,
+    fontFamily: "Medium",
+  },
   tableHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -458,27 +477,23 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: "#ddd",
   },
-
   headerText: {
     flex: 1,
     fontSize: 14,
     fontFamily: "Medium",
     lineHeight: Math.round(14 * 1.5),
+    paddingHorizontal:16
   },
-
   actionCell: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "flex-end",
-    gap: 8,
-    minWidth: 70,
+    justifyContent: "center",
+    minWidth: 40,
   },
-
   actionIconBtn: {
     paddingHorizontal: 4,
-    paddingVertical: 4,
+    marginRight:10
   },
-
   tableRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -487,26 +502,21 @@ const styles = StyleSheet.create({
     borderColor: "#eee",
     flex: 1,
   },
-
   cell: {
     flex: 1,
     fontSize: 13,
     fontFamily: "Medium",
     lineHeight: Math.round(13 * 1.5),
   },
-
   adName: {
-    fontSize: 14,
+    fontSize: 13,
     fontFamily: "Medium",
-    lineHeight: Math.round(14 * 1.5),
+    lineHeight: Math.round(13 * 1.5),
   },
-
   category: {
     fontSize: 12,
     fontFamily: "Medium",
     lineHeight: Math.round(12 * 1.5),
     color: "#777",
   },
-
-
 })

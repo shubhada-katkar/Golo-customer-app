@@ -9,6 +9,7 @@ import {
 } from "@expo/vector-icons";
 import { Dimensions } from "react-native";
 const { width, height } = Dimensions.get("window");
+import ChojaBottom from "../components/ChojaBottom";
 
 export default function JahiratiCategory({ navigation }) {
     const [selectedCategory, setSelectedCategory] = useState(null);

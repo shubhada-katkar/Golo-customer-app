@@ -17,6 +17,7 @@ import Topbar from "../components/Topbar";
 import ChojaBottom from "../components/ChojaBottom";
 import { MaterialIcons, Ionicons, Entypo } from "@expo/vector-icons";
 import { connectChatSocket, listConversations, getAuthContext } from "../services/chatService";
+import { LinearGradient } from "expo-linear-gradient";
 
 export default function ChatPage({ navigation, route }) {
     const { colors } = useContext(ThemeContext);
@@ -113,6 +114,17 @@ export default function ChatPage({ navigation, route }) {
         }, [loadConversations]),
     );
 
+const AVATAR_COLORS = ["#157a4f", "#e8b923", "#e8743b", "#c0392b", "#2c6fbb", "#7c4dbd", "#16a0a0"];
+
+const getAvatarColor = (seed) => {
+    const str = String(seed || "?");
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+};
+
     const openConversation = (conversation) => {
         const pendingShare = shareAd;
 
@@ -172,14 +184,21 @@ export default function ChatPage({ navigation, route }) {
                         style={styles.chatCard}
                         onPress={() => openConversation(conversation)}
                     >
-                        <Image
-                            source={
-                                conversation?.otherUser?.avatar
-                                    ? { uri: conversation.otherUser.avatar }
-                                    : require("../assets/profile.png")
-                            }
-                            style={styles.avatar}
-                        />
+                        {conversation?.otherUser?.avatar ? (
+                            <Image source={{ uri: conversation.otherUser.avatar }} style={styles.avatar} />
+                        ) : (
+                            <View
+                                style={[
+                                    styles.avatar,
+                                    styles.avatarFallback,
+                                    { backgroundColor: getAvatarColor(conversation?.otherUser?.name || conversation?.otherUser?.id || conversation.id) },
+                                ]}
+                            >
+                                <Text style={styles.avatarInitial}>
+                                    {(conversation?.otherUser?.name || "?").trim().charAt(0).toUpperCase()}
+                                </Text>
+                            </View>
+                        )}
 
                         <View style={{ flex: 1 }}>
                             <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
@@ -206,21 +225,27 @@ export default function ChatPage({ navigation, route }) {
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-            <Topbar />
+              <LinearGradient
+                    colors={["#f8a812", "#fad081", "#f8f6f265"]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 0, y: 1 }}
+                    style={{height: 220, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0}}
+                />
+                                <Topbar />
 
             <View style={styles.row1}>
                 <TouchableOpacity onPress={() => navigation.navigate("ChojaHome")}>
                     <View style={{ justifyContent: 'center' }}>
                         <MaterialIcons
                             name="arrow-back-ios"
-                            size={26}
+                            size={22}
                             color={colors.text}
                             style={{ padding: 10 }}
                         />
                     </View>
 
                 </TouchableOpacity>
-                <Text style={{ fontSize: 24, color: colors.text, fontFamily: "SemiBold", lineHeight: Math.round(24 * 1.2) }}>Chats</Text>
+                <Text style={{ fontSize: 20, color: colors.text, fontFamily: "SemiBold", lineHeight: Math.round(20 * 1.2) }}>Chats</Text>
             </View>
 
             {shareAd && (
@@ -231,10 +256,9 @@ export default function ChatPage({ navigation, route }) {
                 </View>
             )}
 
-            <View style={{ flexDirection: "row", backgroundColor: colors.divider, height: 1, color: colors.divider, marginTop: 10 }} />
+            <View style={{ flexDirection: "row", backgroundColor: colors.divider, height: 1, marginVertical:6 }} />
 
             {renderConversationList()}
-
 
             <SafeAreaView
                 edges={["bottom"]}
@@ -252,20 +276,17 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         paddingHorizontal: 14
     },
-
     centerWrap: {
         flex: 1,
         alignItems: "center",
         justifyContent: "center",
         paddingHorizontal: 20,
     },
-
     emptyText: {
         fontSize: 18,
         fontFamily: "SemiBold",
         lineHeight: Math.round(18 * 1.5),
     },
-
     emptySubText: {
         marginTop: 4,
         fontSize: 14,
@@ -273,7 +294,6 @@ const styles = StyleSheet.create({
         fontFamily: "Medium",
         lineHeight: Math.round(14 * 1.5),
     },
-
     chatCard: {
         flexDirection: "row",
         alignItems: "center",
@@ -282,7 +302,6 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: "#e6e6e6",
     },
-
     shareHintWrap: {
         backgroundColor: "#f5b849",
         marginHorizontal: 12,
@@ -290,28 +309,34 @@ const styles = StyleSheet.create({
         paddingVertical: 8,
         paddingHorizontal: 10,
     },
-
     shareHintText: {
         color: "#1e1e1e",
         fontFamily: "Medium",
         fontSize: 13,
         lineHeight: Math.round(13 * 1.5),
     },
-
     avatar: {
         width: 50,
         height: 50,
-        borderRadius: 24,
+        borderRadius: 25,
         marginRight: 12,
     },
-
+    avatarFallback: {
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    avatarInitial: {
+        color: "#fff",
+        fontSize: 20,
+        fontFamily: "Medium",
+        lineHeight:Math.round(20*1.5)
+    },
     name: {
         fontSize: 16,
         fontFamily: "SemiBold",
         color: "#111",
         lineHeight: Math.round(16 * 1.2)
     },
-
     message: {
         fontSize: 13,
         color: "#777",
@@ -319,7 +344,6 @@ const styles = StyleSheet.create({
         marginTop: 2,
         fontFamily: "Medium",
     },
-
     time: {
         fontSize: 12,
         color: "#999",

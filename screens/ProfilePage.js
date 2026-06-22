@@ -11,6 +11,7 @@ import { Entypo, MaterialIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
 import { BASE_URL } from "../config";
+import { LinearGradient } from "expo-linear-gradient";
 
 export default function ProfilePage({ navigation }) {
     const { theme, colors, toggleTheme } = useContext(ThemeContext);
@@ -233,17 +234,22 @@ export default function ProfilePage({ navigation }) {
     };
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+        <SafeAreaView style={{ flex: 1 }}>
             <KeyboardAvoidingView style={{ flex: 1 }}
                 behavior={Platform.OS === "ios" ? "padding" : "height"} >
-
+            <LinearGradient
+                         colors={["#f8a812", "#fad081",  "#f8f6f265"]}
+                         start={{ x: 0, y: 0 }}
+                         end={{ x: 0, y: 1 }}
+                         style={{height: 220, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0}}
+                    />
                 <Topbar />
                 <View style={styles.row1}>
                     <TouchableOpacity onPress={() => navigation.goBack()}
-                        style={{padding:10, borderRadius:20}}>
+                        style={{padding:10}}>
                         <MaterialIcons
                             name="arrow-back-ios"
-                            size={26}
+                            size={22}
                             color={colors.text}
                         />
                     </TouchableOpacity>
@@ -252,7 +258,7 @@ export default function ProfilePage({ navigation }) {
                         flex: 1, flexDirection: "row", justifyContent: "space-between",
                         alignItems: "center", marginRight: 14
                     }}>
-                        <Text style={{ fontSize: 24, color: colors.text, fontFamily: "SemiBold", lineHeight: Math.round(24 * 1.5) }}>
+                        <Text style={{ fontSize: 20, fontFamily: "SemiBold", lineHeight: Math.round(20 * 1.5) }}>
                             Profile
                         </Text>
 
@@ -277,7 +283,7 @@ export default function ProfilePage({ navigation }) {
                                     setdrop(false);
                                     navigation.navigate("Analytics");
                                 }}>
-                                <Text style={[styles.dropdownText, { color: "#157a4f" }]}>
+                                <Text style={[styles.dropdownText, { color: "#000" }]}>
                                     Analytics
                                 </Text>
                             </TouchableOpacity>
@@ -290,7 +296,7 @@ export default function ProfilePage({ navigation }) {
                                     setdrop(false);
                                     navigation.navigate("Transaction");
                                 }}>
-                                <Text style={[styles.dropdownText, { color: "#ecbb31" }]}>
+                                <Text style={[styles.dropdownText, { color: "#000" }]}>
                                     Transaction History
                                 </Text>
                             </TouchableOpacity>
@@ -334,7 +340,7 @@ export default function ProfilePage({ navigation }) {
                     keyboardShouldPersistTaps="handled"
                     showsVerticalScrollIndicator={false} >
 
-                    <View style={{ height: 0.5, backgroundColor: colors.divider, marginTop: 10 }} />
+                    <View style={{ height: 1, backgroundColor:"#000000", marginVertical:6 }} />
 
                     {/* PROFILE IMAGE */}
                     <TouchableOpacity style={styles.avatarWrapper} onPress={pickImage}>
@@ -351,6 +357,17 @@ export default function ProfilePage({ navigation }) {
 
                     <View style={{ paddingHorizontal: 14, marginTop: 16 }}>
 
+
+                        <View style={styles.profileCard} >
+                            <View style={{flexDirection:"row", alignItems:"center", justifyContent:"space-between"}}>
+                            <View>
+                            <Text style={styles.cardTitle}>Loyalty Status</Text>
+                            <Text style={styles.cardSubtitle}>{loyaltyTier} tier</Text>
+                            </View>
+                            <Text style={styles.cardValue }>{loyaltyPoints} points</Text>
+                            </View>
+                        </View>   
+
                         {/* NAME */}
                         <Text style={[styles.text, { color: colors.text }]}>Your Name</Text>
                         <View style={styles.inputWrapper}>
@@ -366,7 +383,7 @@ export default function ProfilePage({ navigation }) {
                                 ]}
                             />
 
-                                            <TouchableOpacity
+                            <TouchableOpacity
                                 style={styles.editIcon}
                                 onPress={() => {
                                     setEditName(true);
@@ -415,18 +432,14 @@ export default function ProfilePage({ navigation }) {
                             />
                         </View>
 
-                        <View style={[styles.profileCard, { backgroundColor: colors.card, borderColor: colors.divider }]}> 
-                            <Text style={[styles.cardTitle, { color: colors.text }]}>Loyalty Status</Text>
-                            <Text style={[styles.cardValue, { color: colors.text }]}>{loyaltyPoints} points</Text>
-                            <Text style={[styles.cardSubtitle, { color: colors.text }]}>{loyaltyTier} tier</Text>
-                        </View>
-
                         {/* SAVE BUTTON */}
                         <TouchableOpacity
                             style={styles.saveButton}
                             onPress={handleSave}
                             disabled={saving} >
-                            <Text style={{ color: "white", fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) }}>
+                            <Text style={{ color: "white", fontFamily: "Medium", lineHeight: Math.round(14 * 1.5),
+                                fontSize:14
+                             }}>
                                 {saving ? "Saving..." : "Save Changes"}
                             </Text>
                         </TouchableOpacity>
@@ -445,7 +458,7 @@ const styles = StyleSheet.create({
         paddingLeft: 14,
     },
     disabledInput: {
-        backgroundColor: "#e0e0e0",
+        backgroundColor: "#ffffff",
     },
     text: {
         fontSize: 16,
@@ -465,7 +478,7 @@ const styles = StyleSheet.create({
         paddingRight: 40,
         borderWidth: 0.5,
         fontSize: 14,
-        backgroundColor: "#e0e0e0",
+        backgroundColor: "#ffffff",
         fontFamily: "Medium",
         lineHeight: Math.round(16 * 1.5),
     },
@@ -498,17 +511,15 @@ const styles = StyleSheet.create({
         position: "relative",
         marginTop: 6,
     },
-
     editIcon: {
         position: "absolute",
         right: 12,
         top: "50%",
         transform: [{ translateY: -10 }],
     },
-
     dropdownOverlay: {
         position: "absolute",
-        top: 0,
+        top: -8,
         left: 0,
         right: 0,
         bottom: 0,
@@ -530,7 +541,6 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.25,
         shadowRadius: 4,
     },
-
     dropdownItem: {
         flexDirection: "row",
         justifyContent: "space-between",
@@ -539,33 +549,29 @@ const styles = StyleSheet.create({
         paddingHorizontal: 14,
     },
     profileCard: {
-        borderWidth: 1,
         borderRadius: 12,
-        padding: 14,
-        marginTop: 16,
+        padding:16,
+        backgroundColor:"#f5b94981",
+        borderRadius:14
     },
     cardTitle: {
         fontSize: 16,
-        marginBottom: 8,
-        fontFamily: "SemiBold",
+        fontFamily: "Medium",
         lineHeight: Math.round(16 * 1.5),
     },
     cardValue: {
-        fontSize: 26,
-        fontFamily: "SemiBold",
-        lineHeight: Math.round(26 * 1.5),
+        fontSize: 24,
+        fontFamily: "Medium",
+        lineHeight: Math.round(24 * 1.5),
     },
     cardSubtitle: {
         fontSize: 12,
-        marginTop: 6,
         fontFamily: "Medium",
         lineHeight: Math.round(12 * 1.5),
     },
-
     dropdownText: {
         fontSize: 16,
         fontFamily: "Medium",
         lineHeight: Math.round(16 * 1.5),
     },
-
 });

@@ -17,32 +17,26 @@ export default function GoloBottom() {
 
             <TouchableOpacity style={[styles.bar]} onPress={() => navigation.navigate("GoloHome")}>
                 <MaterialCommunityIcons name="view-dashboard-outline" size={24}
-                    color={currentRoute === "GoloHome" ? "#157a4f" : "black"} />
-                <Text style={{ textAlign: "auto", fontSize: 10, color: currentRoute === "GoloHome" ? "#157a4f" : "black", fontFamily: "Medium" }}>Dashboard</Text>
+                    color={currentRoute === "GoloHome" ? "#f5b849" : "black"} />
+                <Text style={{ textAlign: "auto", fontSize: 11, color: currentRoute === "GoloHome" ? "#f5b849" : "black", fontFamily: "Medium" }}>Dashboard</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.bar} onPress={()=>navigation.navigate("GoloFav")}>
                 <FontAwesome name="heart-o" size={24}
-                    color={currentRoute === "GoloFav" ? "#157a4f" : "black"} />
-                <Text style={{ textAlign: "auto", fontSize: 10, color: currentRoute === "GoloFav" ? "#157a4f" : "black", fontFamily: "Medium" }}>Saved</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.bar} onPress={() => navigation.navigate("ChojaHome")}>
-                <MaterialIcons name="stars" size={24}
-                    color={currentRoute === "ChojaHome" ? "#157a4f" : "black"} />
-                <Text style={{ textAlign: "auto", fontSize: 10, color: currentRoute === "ChojaHome" ? "#157a4f" : "black", fontFamily: "Medium" }}>Choja</Text>
+                    color={currentRoute === "GoloFav" ? "#f5b849" : "black"} />
+                <Text style={{ textAlign: "auto", fontSize: 11, color: currentRoute === "GoloFav" ? "#f5b849" : "black", fontFamily: "Medium" }}>Saved</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.bar} onPress={() => navigation.navigate("Claimed")}>
                 <MaterialCommunityIcons name="sticker-check-outline" size={24}
-                    color={currentRoute === "Claimed" ? "#157a4f" : "black"} />
-                <Text style={{ textAlign: "auto", fontSize: 10, color: currentRoute === "Claimed" ? "#157a4f" : "black", fontFamily: "Medium" }}>Claimed</Text>
+                    color={currentRoute === "Claimed" ? "#f5b849" : "black"} />
+                <Text style={{ textAlign: "auto", fontSize: 11, color: currentRoute === "Claimed" ? "#f5b849" : "black", fontFamily: "Medium" }}>Claimed</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.bar} onPress={()=>navigation.navigate("ProfilePage")}>
                 <MaterialCommunityIcons name="account-circle-outline" size={24}
-                    color={currentRoute === "ProfilePage" ? "#157a4f" : "black"} />
-                <Text style={{ textAlign: "auto", fontSize: 10, color: currentRoute === "ProfilePage" ? "#157a4f" : "black", fontFamily: "Medium" }}>Profile</Text>
+                    color={currentRoute === "ProfilePage" ? "#f5b849" : "black"} />
+                <Text style={{ textAlign: "auto", fontSize: 11, color: currentRoute === "ProfilePage" ? "#f5b849" : "black", fontFamily: "Medium" }}>Profile</Text>
             </TouchableOpacity>
 
         </View>

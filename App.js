@@ -6,7 +6,6 @@ import { ThemeProvider } from "./theme/ThemeContext";
 import Login from './screens/Login';
 import Registration from './screens/Registration';
 import ForgotPassword from './screens/ForgotPassword';
-import ResetPassword from './screens/ResetPassword';
 import JahiratiCategory from './screens/JahiratiCategory';
 import CalendarScreen from './screens/CalendarScreen';
 import Template from './screens/Template';
@@ -32,6 +31,7 @@ import AdAnalytics from "./screens/AdAnalytics";
 import AdEdit from "./screens/AdEdit";
 import SellerProfile from "./screens/SellerProfile";
 import TransactionDetails from "./screens/TransactionDetails";
+import FilterPage from "./screens/FilterPage";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -89,7 +89,6 @@ export default function App() {
           <Stack.Screen name='Login' component={Login} />
           <Stack.Screen name='Registration' component={Registration} />
           <Stack.Screen name='ForgotPassword' component={ForgotPassword} />
-          <Stack.Screen name='ResetPassword' component={ResetPassword} />
           <Stack.Screen name='AuthLoading' component={AuthLoading} />
           <Stack.Screen name='FormPage' component={FormPage} />
           <Stack.Screen name='Preview' component={Preview} />
@@ -107,6 +106,7 @@ export default function App() {
           <Stack.Screen name="AdEdit" component={AdEdit} />
           <Stack.Screen name="SellerProfile" component={SellerProfile} />
           <Stack.Screen name="TransactionDetails" component={TransactionDetails} />
+          <Stack.Screen name="FilterPage" component={FilterPage}/>
         </Stack.Navigator>
       </NavigationContainer>
     </ThemeProvider>

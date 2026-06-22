@@ -15,6 +15,7 @@ import {
     deleteConversation,
     clearChat,
 } from "../services/chatService";
+import { LinearGradient } from "expo-linear-gradient";
 
 export default function ChatScreen({ navigation, route }) {
     const { colors } = useContext(ThemeContext);
@@ -541,6 +542,12 @@ export default function ChatScreen({ navigation, route }) {
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
                 keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
             >
+                 <LinearGradient
+                             colors={["#f8a812", "#fad081",  "#f8f6f265"]}
+                             start={{ x: 0, y: 0 }}
+                             end={{ x: 0, y: 1 }}
+                             style={{height: 220, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0}}
+                        />
                 <View style={styles.header}>
                     <TouchableOpacity onPress={() => navigation.goBack()}>
                         <Ionicons name="arrow-back" size={26} style={{ padding: 5, color: colors.text }} />

@@ -381,17 +381,23 @@ export default function AdEdit({ route, navigation }) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+       <LinearGradient
+                      colors={["#f8a812", "#fad081", "#f8f6f265"]}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 0, y: 1 }}
+                      style={{height: 220, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0}}
+                  />
       <Topbar />
   
       <View style={[styles.header, { backgroundColor: colors.background }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} >
-          <MaterialIcons name="arrow-back-ios" size={26} style={{ color: colors.text }} />
+          <MaterialIcons name="arrow-back-ios" size={22} style={{ padding:10 }} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.text }]}>Edit Ad</Text>
         <View style={{ width: 24 }} />
       </View>
 
-      <View style={{ height: 1, backgroundColor: "#000000" }} />
+      <View style={{ height: 1, backgroundColor: "#000000", marginVertical:6 }} />
 
       <ScrollView contentContainerStyle={styles.content} style={{ backgroundColor: colors.background }}>
 
@@ -531,13 +537,12 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 20,
+    paddingHorizontal: 14,
   },
   headerTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontFamily: "Medium",
-    lineHeight: Math.round(22 * 1.5),
+    lineHeight: Math.round(22 * 1.0),
   },
   content: {
     paddingHorizontal: 14,

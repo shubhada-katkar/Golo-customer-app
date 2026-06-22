@@ -438,7 +438,7 @@ const styles = StyleSheet.create({
     color: "#777",
     marginTop: 6,
     fontFamily: "Medium",
-    lineHeight: Math.round(12 * 1.5)
+    lineHeight: Math.round(12 * 1.5),
   },
   imageContainer: {
     marginTop: 10,

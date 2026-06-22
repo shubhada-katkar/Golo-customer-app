@@ -13,6 +13,7 @@ import Topbar from "../components/Topbar";
 import { ThemeContext } from "../theme/ThemeContext";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import { LinearGradient } from "expo-linear-gradient";
 
 const transactions = [
   {
@@ -58,7 +59,7 @@ export default function Transaction() {
   const { width } = useWindowDimensions();
 
   // Responsive column width
-  const columnWidth = width < 400 ? 110 : width < 768 ? 120 : 150;
+  const columnWidth = width < 400 ? 96 : width < 768 ? 100 : 96;
 
   const renderItem = ({ item }) => (
     <View
@@ -108,38 +109,31 @@ export default function Transaction() {
     <SafeAreaView
       style={{ flex: 1, backgroundColor: colors.background }}
     >
-      <Topbar />
+      <LinearGradient
+                               colors={["#f8a812", "#fad081",  "#f8f6f265"]}
+                               start={{ x: 0, y: 0 }}
+                               end={{ x: 0, y: 1 }}
+                               style={{height: 270, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0}}
+                          />
+                          <Topbar />
 
       {/* Header */}
       <View style={styles.row1}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <MaterialIcons
             name="arrow-back-ios"
-            size={24}
+            size={22}
             color={colors.text}
-            style={{ padding: 8 }}
+            style={{ padding: 10 }}
           />
         </TouchableOpacity>
 
-        <Text
-          style={[
-            styles.heading,
-            {
-              color: colors.text,
-              fontSize: width < 400 ? 18 : 22,
-            },
-          ]}
-        >
+        <Text style={styles.heading} >
           Transaction History
         </Text>
       </View>
 
-      <View
-        style={[
-          styles.divider,
-          { backgroundColor: colors.border || "#000000" },
-        ]}
-      />
+      <View style={styles.divider} />
 
       <View style={styles.container}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -183,29 +177,27 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row",
     paddingHorizontal: 14,
-    paddingVertical: 6,
   },
 
   heading: {
     fontFamily: "SemiBold",
-    lineHeight: 28,
-    flexShrink: 1,
+    lineHeight: Math.round(20 * 1.5),
+    fontSize: 20,
   },
 
   divider: {
     height: 1,
-    marginTop: 6,
+    backgroundColor:"#000",
+    marginVertical:6
   },
 
   container: {
     flex: 1,
-    padding: 10,
   },
 
   tableHeader: {
     flexDirection: "row",
-    backgroundColor: "#eaeaea",
-    paddingVertical: 12,
+    paddingVertical: 16,
     borderRadius: 8,
   },
 
@@ -213,7 +205,6 @@ const styles = StyleSheet.create({
     fontFamily: "SemiBold",
     fontSize: 14,
     textAlign: "center",
-    paddingHorizontal: 5,
     lineHeight: Math.round(14 * 1.5),
   },
 
@@ -227,7 +218,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontFamily: "Medium",
     fontSize: 13,
-    paddingHorizontal: 5,
     lineHeight: Math.round(13 * 1.5),
   },
 

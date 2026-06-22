@@ -8,12 +8,13 @@ import {
   StyleSheet,
   StatusBar,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Feather, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { ThemeContext } from "../theme/ThemeContext";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Topbar from "../components/Topbar";
 import GoloBottom from "../components/GoloBottom";
 import { BASE_URL } from "../config";
+import { LinearGradient } from "expo-linear-gradient";
 
 const formatPrice = (value) => {
   if (value === undefined || value === null || value === "") return null;
@@ -54,13 +55,12 @@ const getProductPrice = (product) => {
 
 const buildProductFields = (product) => {
   const fields = [
-    { label: "Price", value: getProductPrice(product) },
-    { label: "Quantity", value: product?.quantity || product?.qty },
-    { label: "Unit", value: product?.unit },
-    { label: "Category", value: product?.category },
-    { label: "Brand", value: product?.brand || product?.manufacturer },
-    { label: "Color", value: product?.color },
-    { label: "Size", value: product?.size || product?.dimension },
+    { label: "Quantity", value: product?.quantity || product?.qty, icon: "format-list-numbered" },
+    { label: "Unit", value: product?.unit, icon: "straighten" },
+    { label: "Category", value: product?.category, icon: "category" },
+    { label: "Brand", value: product?.brand || product?.manufacturer, icon: "verified" },
+    { label: "Color", value: product?.color, icon: "palette" },
+    { label: "Size", value: product?.size || product?.dimension, icon: "aspect-ratio" },
   ];
 
   return fields.filter((item) => item.value != null && String(item.value).trim().length > 0);
@@ -168,17 +168,24 @@ export default function ProductDetail({ route, navigation }) {
 
   const image = getProductImage(product);
   const name = getProductName(product);
+  const price = getProductPrice(product);
   const details = getProductDescription(product) || "No additional product details available.";
   const extraFields = buildProductFields(product);
 
   return (
             <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+                <LinearGradient
+                    colors={["#f8a812", "#fad081",  "#f8f6f265"]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 0, y: 1 }}
+                    style={{height: 220, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0}}
+                />
                 <Topbar />
                 <StatusBar barStyle="dark-content" />
 
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
+          <MaterialIcons name="arrow-back-ios" size={22} color={colors.text} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.text }]}>Product Details</Text>
         <View style={styles.headerPlaceholder} />
@@ -189,27 +196,46 @@ export default function ProductDetail({ route, navigation }) {
           {image ? (
             <Image source={{ uri: image }} style={styles.productImage} />
           ) : (
-            <View style={[styles.imagePlaceholder, { backgroundColor: colors.card }]}> 
+            <View style={[styles.imagePlaceholder, { backgroundColor: colors.card || "#fff" }]}>
               <Ionicons name="image-outline" size={60} color="#9a9a9a" />
             </View>
           )}
         </View>
 
-        <View style={styles.card}> 
+        <View
+          style={[
+            styles.card,
+            {
+              backgroundColor: colors.card || "#fff",
+              borderColor: colors.border || "#eee",
+            },
+          ]}
+        >
+        <View style={styles.titleRow}>
           <Text style={[styles.productName, { color: colors.text }]}>{name}</Text>
-          {extraFields.length > 0 && (
-            <View style={styles.fieldsSection}>
-              {extraFields.map((field) => (
-                <View key={field.label} style={styles.fieldRow}>
-                  <Text style={[styles.fieldLabel, { color: colors.text }]}>{field.label}</Text>
-                  <Text style={[styles.fieldValue, { color: colors.text }]}>{field.value}</Text>
-                </View>
-              ))}
+          {price && (
+            <View style={styles.priceBadge}>
+              <Text style={styles.priceText}>{price}</Text>
             </View>
           )}
+        </View>
 
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>Description</Text>
-          <Text style={[styles.description, { color: colors.text }]}>{details}</Text>
+          {extraFields.length > 0 && (
+          <View style={styles.chipsWrap}>
+            {extraFields.map((field) => (
+              <View key={field.label} style={styles.chip}>
+                <Feather name="box" size={16} color="#157a4f" style={styles.chipIcon} />
+                <Text style={styles.chipLabel}>{field.label}: </Text>
+                <Text style={styles.chipValue}>{field.value}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+          <View style={styles.sectionTitleRow}>
+            <MaterialIcons name="description" size={18} color="#157a4f" />
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Description</Text>
+          </View>
+          <Text style={[styles.description, { color: colors.subtext || "#666" }]}>{details}</Text>
         </View>
       </ScrollView>
                       <SafeAreaView
@@ -229,17 +255,16 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
   backButton: {
-    padding: 8,
+    padding:10
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontFamily: "SemiBold",
-    lineHeight: Math.round(18 * 1.5),
+    lineHeight: Math.round(20 * 1.5),
   },
   headerPlaceholder: {
     width: 32,
@@ -250,65 +275,100 @@ const styles = StyleSheet.create({
   },
   imageWrapper: {
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 18,
   },
   productImage: {
     width: "100%",
     height: 260,
-    borderRadius: 16,
+    borderRadius: 18,
     resizeMode: "cover",
-    borderWidth: 1,
-    borderColor: "#4b4b4b",
+    backgroundColor: "#ffffff",
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
   },
   imagePlaceholder: {
     width: "100%",
     height: 260,
-    borderRadius: 16,
+    borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 14,
+  },
+  productName: {
+    fontSize: 20,
+    fontFamily: "Bold",
+    lineHeight: Math.round(20 * 1.5),
+    flex: 1,
+    marginRight: 10,
+  },
+  priceBadge: {
+    backgroundColor: "#157a4f",
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 12,
+  },
+  priceText: {
+    fontSize: 14,
+    fontFamily: "Medium",
+    color: "#ffffff",
+    lineHeight: Math.round(14 * 1.3),
+  },
+  chipsWrap: {
+    flexDirection: "row",
+    alignItems:"center",
+    marginBottom:10
+  },
+  chip: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  chipIcon: {
+    marginRight: 10,
+  },
+  chipLabel: {
+    fontSize: 16,
+    fontFamily: "SemiBold",
+    color: "#000",
+    lineHeight: Math.round(16 * 1.5),
+  },
+  chipValue: {
+    fontSize: 13,
+    fontFamily: "SemiBold",
+    lineHeight: Math.round(13 * 1.5),
+    color:"#666"
   },
   card: {
     borderRadius: 16,
     padding: 18,
     borderWidth: 1,
-    borderColor: "#4b4b4b",
-    borderRadius: 16,
   },
-  productName: {
-    fontSize: 20,
-    fontFamily: "Bold",
-    marginBottom: 12,
-    lineHeight: Math.round(20 * 1.5),
-  },
-  fieldsSection: {
-    marginBottom: 16,
-  },
-  fieldRow: {
+  sectionTitleRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 10,
-  },
-  fieldLabel: {
-    fontSize: 14,
-    fontFamily: "Medium",
-    lineHeight: Math.round(14 * 1.5),
-  },
-  fieldValue: {
-    fontSize: 12,
-    fontFamily: "Medium",
-    maxWidth: "55%",
-    textAlign: "right",
-    lineHeight: Math.round(12 * 1.5),
   },
   sectionTitle: {
     fontSize: 16,
     fontFamily: "SemiBold",
-    marginBottom: 8,
     lineHeight: Math.round(16 * 1.5),
+    marginLeft: 6,
   },
   description: {
-    fontSize: 12,
-    lineHeight: Math.round(12 * 1.5),
+    fontSize: 13,
+    lineHeight: Math.round(13 * 1.6),
     fontFamily: "Medium",
   },
 });

@@ -5,6 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { BASE_URL } from "../config";
 
 const CATEGORY_DTO_FIELD_BY_LABEL = {
     Vehicle: "vehicleData",
@@ -336,7 +337,6 @@ export default function Payment({ navigation, route }) {
                 return;
             }
 
-            const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
             if (!BASE_URL) {
                 throw new Error("EXPO_PUBLIC_API_URL is not configured");
             }

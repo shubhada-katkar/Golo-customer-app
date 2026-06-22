@@ -7,6 +7,7 @@ import ChojaBottom from "../components/ChojaBottom";
 import { ThemeContext } from "../theme/ThemeContext";
 import { MaterialIcons } from "@expo/vector-icons";
 import { deleteAd, getAdAnalytics } from "../services/analyticsService";
+import { LinearGradient } from "expo-linear-gradient";
 
 const StatCard = ({ title, value, subtitle }) => (
     <View style={styles.card}>
@@ -129,7 +130,13 @@ export default function AdAnalytics({ navigation, route }) {
     }, [resolvedAdId, adInfo.title, routeParams.adName, navigation]);
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+        <SafeAreaView style={{ flex: 1 }}>
+             <LinearGradient
+                         colors={["#f8a812", "#fad081", "#f8f6f265"]}
+                         start={{ x: 0, y: 0 }}
+                         end={{ x: 0, y: 1 }}
+                         style={{height: 220, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0}}
+                    />
             <Topbar />
 
 
@@ -138,14 +145,14 @@ export default function AdAnalytics({ navigation, route }) {
                     <View style={{ justifyContent: 'center' }}>
                         <MaterialIcons
                             name="arrow-back-ios"
-                            size={26}
+                            size={22}
                             color={colors.text}
                             style={{ padding: 10 }}
                         />
                     </View>
 
                 </TouchableOpacity>
-                <Text style={{ fontSize: 22, color: colors.text, fontFamily: "SemiBold", lineHeight: Math.round(22 * 1.5), flex: 1 }}>Ad Analytics</Text>
+                <Text style={{ fontSize: 20, color: colors.text, fontFamily: "SemiBold", lineHeight: Math.round(20 * 1.5), flex: 1 }}>Ad Analytics</Text>
                 <TouchableOpacity onPress={handleDeleteAd} disabled={isDeleting} style={styles.deleteBtn}>
                     {isDeleting ? (
                         <ActivityIndicator size="small" color="#d14343" />
@@ -155,10 +162,10 @@ export default function AdAnalytics({ navigation, route }) {
                 </TouchableOpacity>
             </View>
 
-            <View style={{ flexDirection: "row", backgroundColor: colors.divider, height: 1, color: colors.divider, marginTop: 10 }} />
+            <View style={{ flexDirection: "row", backgroundColor: colors.divider, height: 1, marginVertical:6 }} />
 
 
-            <ScrollView style={[styles.container, { backgroundColor: colors.background }]}
+            <ScrollView style={styles.container}
                 contentContainerStyle={{ paddingBottom: 110 }}>
                 {/* HEADER */}
                 <View style={styles.header}>
@@ -258,9 +265,9 @@ const styles = StyleSheet.create({
     },
 
     headerTitle: {
-        fontSize: 18,
+        fontSize: 16,
         fontFamily: "SemiBold",
-        lineHeight: Math.round(18 * 1.2),
+        lineHeight: Math.round(16 * 1.2),
     },
 
     row: {
@@ -271,9 +278,12 @@ const styles = StyleSheet.create({
     card: {
         flex: 1,
         backgroundColor: "#fff",
-        padding: 16,
+        padding: 12,
         borderRadius: 12,
         margin: 6,
+        alignItems:"center",
+        borderWidth:1,
+        borderColor:"#afafaf",
     },
 
     value: {
@@ -302,6 +312,11 @@ const styles = StyleSheet.create({
         padding: 16,
         borderRadius: 12,
         marginTop: 16,
+        elevation: 6,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 6,
     },
 
     sectionTitle: {

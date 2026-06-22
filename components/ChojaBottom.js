@@ -1,67 +1,111 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { MaterialCommunityIcons, Ionicons, FontAwesome } from "@expo/vector-icons";
+import { View,Text,StyleSheet,TouchableOpacity } from "react-native";
+import { MaterialCommunityIcons, FontAwesome6,FontAwesome, Feather } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useRoute } from "@react-navigation/native";
 import { useContext } from "react";
 import { ThemeContext } from "../theme/ThemeContext";
 
-export default function ChojaBottom() {
-    const navigation = useNavigation();
+export default function ChojaBottom(){
+    const navigation=useNavigation();
     const route = useRoute();
     const currentRoute = route.name;
-    const { colors } = useContext(ThemeContext);
+    const {colors} = useContext(ThemeContext);
 
-    return (
-        <View style={[styles.top, { backgroundColor: colors.bottombar }]}>
+    return(
+        <View style={[styles.top, {backgroundColor:colors.bottombar}]}>
 
-            <TouchableOpacity style={[styles.bar]} onPress={() => navigation.navigate("ChojaHome")}>
+            <TouchableOpacity style={[styles.bar ]} onPress={()=>navigation.navigate("ChojaHome")}>
                 <MaterialCommunityIcons name="view-dashboard-outline" size={24}
-                    color={currentRoute === "ChojaHome" ? "#157a4f" : "black"} />
-                <Text style={{ textAlign: "auto", fontSize: 10, color: currentRoute === "ChojaHome" ? "#157a4f" : "black", fontFamily:"Medium" }}>Dashboard</Text>
+                color={currentRoute === "ChojaHome" ? "#f9a641" : "black"}/>
+                <Text style={{textAlign:"auto",fontSize:11,color:currentRoute === "ChojaHome" ? "#f9a641":"black",
+                    fontFamily : "Medium", lineHeight: Math.round(11*1.5)
+                }}>Dashboard</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.bar} onPress={() => navigation.navigate("Fav")}>
-                <FontAwesome name="heart-o" size={24}
-                    color={currentRoute === "Fav" ? "#157a4f" : "black"} />
-                <Text style={{ textAlign: "auto", fontSize: 10, color: currentRoute === "Fav" ? "#157a4f" : "black", fontFamily:"Medium"  }}>Saved</Text>
+            <TouchableOpacity style={styles.bar} onPress={()=>navigation.navigate("Fav")}>
+                <Feather name="heart" size={24}
+                color={currentRoute === "Fav" ? "#f9a641" : "black"}/>
+                <Text style={{textAlign:"auto",fontSize:11,color:currentRoute === "Fav" ? "#f9a641" : "black",
+                    fontFamily : "Medium", lineHeight: Math.round(11*1.5)
+                }}>Saved Ads</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.bar} onPress={() => navigation.navigate("JahiratiCategory")}>
-                <MaterialCommunityIcons name="plus" size={24}
-                    color={currentRoute === "JahiratiCategory" ? "#157a4f" : "black"} />
-                <Text style={{ textAlign: "auto", fontSize: 10, color: currentRoute === "JahiratiCategory" ? "#157a4f" : "black", fontFamily:"Medium"  }}>Post Ad</Text>
-            </TouchableOpacity>            
+           <View style={styles.centerContainer}>
+  <TouchableOpacity  onPress={() => navigation.navigate("JahiratiCategory")}
+    style={[styles.addButton, 
+        {backgroundColor:currentRoute==="JahiratiCategory" ? "#f9a641" :"#4caf50"}
+    ]} >
+    <MaterialCommunityIcons
+      name="plus"
+      size={32}
+      color={currentRoute==="JahiratiCategory" ? "#ffffff" : "black"}
+    />
+  </TouchableOpacity>
 
-            <TouchableOpacity style={styles.bar} onPress={() => navigation.navigate("ChatPage")}>
-                <Ionicons name="chatbubble-ellipses-outline" size={24}
-                    color={currentRoute === "ChatPage" ? "#157a4f" : "black"} />
-                <Text style={{ textAlign: "auto", fontSize: 10, color: currentRoute === "ChatPage" ? "#157a4f" : "black", fontFamily:"Medium"  }}>Chats</Text>
+  <Text
+    style={{
+      fontSize: 11,
+      color: currentRoute === "JahiratiCategory" ? "#f9a641" : "black",
+      fontFamily: "Medium",
+    }}
+  >
+    Post AD
+  </Text>
+</View>
+
+            <TouchableOpacity style={styles.bar} onPress={()=>navigation.navigate("ChatPage")}>
+                <Feather name="message-circle" size={24}
+                color= {currentRoute === "ChatPage" ? "#f9a641" : "black"}/>
+                <Text style={{textAlign:"auto",fontSize:11,color:currentRoute === "ChatPage" ? "#f9a641" : "black",
+                    fontFamily : "Medium", lineHeight: Math.round(11*1.5)
+                }}>Chats</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.bar} onPress={() => navigation.navigate("ProfilePage")}>
-                <MaterialCommunityIcons name="account-circle-outline" size={24}
-                    color={currentRoute === "ProfilePage" ? "#157a4f" : "black"} />
-                <Text style={{ textAlign: "auto", fontSize: 10, color: currentRoute === "ProfilePage" ? "#157a4f" : "black", fontFamily:"Medium"  }}>Profile</Text>
-            </TouchableOpacity>
+                <TouchableOpacity style={styles.bar} onPress={()=>navigation.navigate("ProfilePage")}>
+                <MaterialCommunityIcons name="account-circle-outline" size={24} 
+                color={currentRoute === "ProfilePage" ? "#f9a641" : "black"}/>
+                <Text style={{textAlign:"auto",fontSize:11,color:currentRoute === "ProfilePage" ? "#f9a641" : "black",
+                    fontFamily : "Medium", lineHeight: Math.round(11*1.5)
+                }}>Profile</Text>
+                </TouchableOpacity>
 
         </View>
     );
 }
 
-const styles = StyleSheet.create({
-    top: {
-        flexDirection: "row",
+const styles=StyleSheet.create({
+    top : {
+        flexDirection:"row",
         minHeight: 60,
-        borderColor: "grey",
-        backgroundColor: "white",
-        borderTopWidth: 1,
+        borderColor:"grey", 
+        backgroundColor:"white", 
+        borderTopWidth:1, 
         paddingVertical: 8,
         alignItems: "center",
     },
     bar: {
         flex: 1,
-        alignItems: "center",
-        flexDirection: "column",
+        alignItems:"center",
+        flexDirection: "column", 
     },
+     centerContainer:{
+        flexDirection:"column",
+        justifyContent:"center",
+        alignSelf:"center",
+        alignItems:"center",
+     },
+addButton: {
+  width: 60,
+  height: 60,
+  borderRadius: 30,
+
+  justifyContent: "center",
+  alignItems: "center",
+
+  borderWidth: 3,
+  borderColor: "#d1d1d1",
+
+  marginTop: -30, // lifts button above bar
+},
 })

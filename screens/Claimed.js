@@ -16,6 +16,7 @@ import Topbar from "../components/Topbar";
 import GoloBottom from "../components/GoloBottom";
 import { MaterialIcons } from "@expo/vector-icons";
 import { fetchMyClaimedOffers } from "../services/voucherService";
+import { LinearGradient } from "expo-linear-gradient";
 
 export default function Claimed({ navigation }) {
     const { colors } = useContext(ThemeContext);
@@ -106,6 +107,12 @@ export default function Claimed({ navigation }) {
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+        <LinearGradient
+             colors={["#f8a812", "#fad081",  "#f8f6f265"]}
+             start={{ x: 0, y: 0 }}
+             end={{ x: 0, y: 1 }}
+             style={{height: 220, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0}}
+        />
             <Topbar />
 
             <View style={styles.row1}>
@@ -113,17 +120,19 @@ export default function Claimed({ navigation }) {
                     <View style={{ justifyContent: 'center' }}>
                         <MaterialIcons
                             name="arrow-back-ios"
-                            size={26}
+                            size={22}
                             color={colors.text}
                             style={{ padding: 10 }}
                         />
                     </View>
 
                 </TouchableOpacity>
-                <Text style={{ fontSize: 22, color: colors.text, fontFamily: "SemiBold", lineHeight: Math.round(24 * 1.5) }}>Claimed Offers</Text>
+                <View style={{flexDirection:"column"}}>
+                <Text style={{ fontSize: 20, color: colors.text, fontFamily: "SemiBold", lineHeight: Math.round(20 * 1.5) }}>Claimed Offers</Text>
+                </View>
             </View>
 
-            <View style={{ flexDirection: "row", backgroundColor: colors.divider, height: 1, color: colors.divider, marginTop: 10 }} />
+            <View style={{ flexDirection: "row", backgroundColor: colors.divider, height: 1, marginVertical: 6}} />
 
             {loading ? (
                 <View style={styles.centerWrap}>
@@ -172,7 +181,7 @@ export default function Claimed({ navigation }) {
                                 key={displayItem?.offerId || displayItem?._id || displayItem?.requestId || item?.id || `claimed-${index}`}
                                 onPress={() => navigation.navigate("OfferDetails", { offerData: displayItem })}
                                 activeOpacity={0.8}
-                                style={[styles.card, { backgroundColor: colors.card, borderColor: colors.divider }]}
+                                style={styles.card}
                             >
                                 {imageUri ? (
                                     <Image source={{ uri: imageUri }} style={styles.offerImage} />
@@ -213,21 +222,26 @@ const styles = StyleSheet.create({
     card: {
         flexDirection: "row",
         alignItems: "center",
-        padding: 12,
+        padding: 10,
         marginHorizontal: 14,
         marginTop: 14,
         borderRadius: 12,
-        borderWidth: 1
+        backgroundColor:"#ffffff",
+        elevation: 6,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 6,
     },
     imagePlaceholder: {
-        width: 68,
-        height: 68,
+        width: 80,
+        height: 80,
         borderRadius: 8,
         backgroundColor: "#D9D9D9",
     },
     offerImage: {
-        width: 68,
-        height: 68,
+        width: 80,
+        height: 80,
         borderRadius: 8,
         backgroundColor: "#D9D9D9",
     },

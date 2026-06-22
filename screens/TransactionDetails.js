@@ -10,6 +10,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { ThemeContext } from "../theme/ThemeContext";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import Topbar from "../components/Topbar";
+import { LinearGradient } from "expo-linear-gradient";
 
 export default function TransactionDetails() {
   const { colors } = useContext(ThemeContext);
@@ -18,52 +19,117 @@ export default function TransactionDetails() {
 
   const { transaction } = route.params;
 
+  const getStatusColors = (status) => {
+    const s = (status || "").toLowerCase();
+    if (s === "success" || s === "completed" || s === "paid") {
+      return { bg: "#e3f2ea", text: "#157a4f" };
+    }
+    if (s === "pending" || s === "processing") {
+      return { bg: "#fdf0db", text: "#f5b849" };
+    }
+    if (s === "failed" || s === "cancelled" || s === "declined") {
+      return { bg: "#f0f0f0", text: "#777777" };
+    }
+    return { bg: "#f0f0f0", text: "#777777" };
+  };
+
+  const statusColors = getStatusColors(transaction.status);
+
   return (
     <SafeAreaView
       style={{ flex: 1, backgroundColor: colors.background }}
     >
+      <LinearGradient
+        colors={["#f8a812", "#fad081", "#f8f6f265"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={{ height: 270, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0 }}
+      />
       <Topbar />
 
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+        >
           <MaterialIcons
             name="arrow-back-ios"
-            size={24}
-            color={colors.text}
+            size={22}
           />
         </TouchableOpacity>
 
-        <Text style={[styles.heading, { color: colors.text }]}>
+        <Text style={styles.heading}>
           Transaction Details
         </Text>
       </View>
 
-      <View style={[styles.divider, { backgroundColor: colors.border || "#000000" }]} />
+      {/* Hero Amount Card */}
+      <View style={styles.heroCard}>
+        <Text style={[styles.cardTitle, { alignSelf:"flex-start"}]}>Transaction Amount</Text>
+        <Text style={styles.heroLabel}>Total Amount</Text>
+        <Text style={styles.heroAmount}>{transaction.amount}</Text>
+
+        <View
+          style={[
+            styles.statusBadge,
+            { backgroundColor: statusColors.bg },
+          ]}
+        >
+          <View
+            style={[
+              styles.statusDot,
+              { backgroundColor: statusColors.text },
+            ]}
+          />
+          <Text style={[styles.statusText, { color: statusColors.text }]}>
+            {transaction.status}
+          </Text>
+        </View>
+      </View>
 
       {/* Details Card */}
       <View
         style={[
           styles.card,
           {
-            backgroundColor: colors.card || "#fff",
-            borderColor: colors.border || "#ddd",
+            backgroundColor: "#fff",
+            borderColor: "#eee",
           },
         ]}
       >
-        <DetailRow label="Transaction ID" value={transaction.id} />
-        <DetailRow label="Amount" value={transaction.amount} />
-        <DetailRow label="Status" value={transaction.status} />
-        <DetailRow label="Date" value={transaction.date} />
+        <Text style={styles.cardTitle}>
+          Transaction Info
+        </Text>
+
+        <DetailRow
+          icon="receipt-long"
+          label="Transaction ID"
+          value={transaction.id}
+          colors={colors}
+        />
+        <View style={[styles.rowDivider, { backgroundColor: "#f0f0f0" }]} />
+
+        <DetailRow
+          icon="event"
+          label="Date"
+          value={transaction.date}
+          colors={colors}
+        />
       </View>
     </SafeAreaView>
   );
 }
 
-const DetailRow = ({ label, value }) => (
+const DetailRow = ({ icon, label, value, colors }) => (
   <View style={styles.row}>
-    <Text style={styles.label}>{label}</Text>
-    <Text style={styles.value}>{value}</Text>
+    <View style={styles.rowLeft}>
+      <View style={styles.iconBadge}>
+        <MaterialIcons name={icon} size={16} color="#157a4f" />
+      </View>
+      <Text style={[styles.label, { color: colors.subtext || "#777" }]}>{label}</Text>
+    </View>
+    <Text style={[styles.value, { color: colors.text }]}>{value}</Text>
   </View>
 );
 
@@ -75,41 +141,122 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
 
+  backButton: {
+    padding:10
+  },
+
   heading: {
     fontSize: 20,
     fontFamily: "SemiBold",
     lineHeight: Math.round(20 * 1.5),
   },
 
-  divider: {
-    height: 1,
-    marginTop:6
+  heroCard: {
+    marginHorizontal: 15,
+    marginTop: 14,
+    marginBottom: 15,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 16,
+    backgroundColor: "#ffffff",
+    alignItems: "center",
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+  },
+
+  heroLabel: {
+    fontSize: 13,
+    fontFamily: "Medium",
+    color: "#999999",
+    marginBottom: 6,
+    lineHeight: Math.round(13 * 1.5),
+  },
+
+  heroAmount: {
+    fontSize: 34,
+    fontFamily: "SemiBold",
+    color: "#157a4f",
+    marginBottom: 14,
+    lineHeight: Math.round(34 * 1.2),
+  },
+
+  statusBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+
+  statusDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    marginRight: 6,
+  },
+
+  statusText: {
+    fontSize: 13,
+    fontFamily: "SemiBold",
+    textTransform: "capitalize",
+    lineHeight: Math.round(13 * 1.5),
   },
 
   card: {
-    margin: 15,
+    marginHorizontal: 15,
     padding: 18,
-    borderRadius: 12,
+    borderRadius: 16,
     borderWidth: 1,
-    elevation: 2,
+    elevation: 1,
+  },
+
+  cardTitle: {
+    fontSize: 15,
+    fontFamily: "SemiBold",
+    marginBottom: 14,
+    lineHeight: Math.round(15 * 1.5),
   },
 
   row: {
-    marginBottom: 18,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 12,
+  },
+
+  rowLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexShrink: 1,
+  },
+
+  rowDivider: {
+    height: 1,
+  },
+
+  iconBadge: {
+    width: 30,
+    height: 30,
+    borderRadius: 8,
+    backgroundColor: "#e3f2ea",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
   },
 
   label: {
     fontSize: 14,
     fontFamily: "SemiBold",
-    color: "#777",
-    marginBottom: 4,
     lineHeight: Math.round(14 * 1.5),
   },
 
   value: {
-    fontSize: 16,
+    fontSize: 15,
     fontFamily: "Medium",
-    color: "#000",
-    lineHeight: Math.round(16 * 1.5),
+    lineHeight: Math.round(15 * 1.5),
+    marginLeft: 10,
   },
 });
