@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext, useRef, useMemo } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   ScrollView,
   StyleSheet,
   StatusBar,
+  Dimensions,
 } from "react-native";
 import { Feather, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { ThemeContext } from "../theme/ThemeContext";
@@ -15,6 +16,9 @@ import Topbar from "../components/Topbar";
 import GoloBottom from "../components/GoloBottom";
 import { BASE_URL } from "../config";
 import { LinearGradient } from "expo-linear-gradient";
+
+const { width } = Dimensions.get("window");
+const CONTAINER_WIDTH = width - 32;
 
 const formatPrice = (value) => {
   if (value === undefined || value === null || value === "") return null;
@@ -31,6 +35,34 @@ const getProductImage = (product) => {
     product?.photo ||
     null
   );
+};
+
+const getAllProductImages = (product) => {
+  if (!product) return [];
+
+  // 1. Check if product.images is a populated array
+  if (Array.isArray(product?.images) && product.images.length > 0) {
+    return product.images
+      .map((img) => (typeof img === "string" ? img : img?.url || img?.imageUrl || img))
+      .filter((img) => typeof img === "string" && img.length > 0);
+  }
+
+  // 2. Check if product.imageUrl is an array
+  if (Array.isArray(product?.imageUrl)) {
+    return product.imageUrl.filter((img) => typeof img === "string" && img.length > 0);
+  }
+
+  // 3. Check selectedProducts array
+  if (Array.isArray(product?.selectedProducts) && product.selectedProducts.length > 0) {
+    const images = product.selectedProducts
+      .map((p) => p?.imageUrl || p?.image?.url || p?.photo)
+      .filter((img) => typeof img === "string" && img.length > 0);
+    if (images.length > 0) return images;
+  }
+
+  // 4. Fallback to single image resolving function
+  const singleImage = getProductImage(product);
+  return singleImage ? [singleImage] : [];
 };
 
 const getProductName = (product) => {
@@ -120,6 +152,10 @@ export default function ProductDetail({ route, navigation }) {
   const initialProduct = routeProduct || {};
   const [product, setProduct] = useState(initialProduct);
   const [hasFetchedProduct, setHasFetchedProduct] = useState(false);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+
+  const sliderRef = useRef(null);
+  const timerRef = useRef(null);
 
   const resolvedProductId = resolveProductId(initialProduct) || routeProductId;
 
@@ -166,22 +202,51 @@ export default function ProductDetail({ route, navigation }) {
     };
   }, [resolvedProductId, product, hasFetchedProduct]);
 
-  const image = getProductImage(product);
   const name = getProductName(product);
   const price = getProductPrice(product);
   const details = getProductDescription(product) || "No additional product details available.";
   const extraFields = buildProductFields(product);
 
+  const allImages = useMemo(() => getAllProductImages(product), [product]);
+
+  const startAutoSlide = () => {
+    stopAutoSlide();
+    if (allImages.length <= 1) return;
+    timerRef.current = setInterval(() => {
+      setActiveImageIndex((prev) => {
+        const nextIndex = (prev + 1) % allImages.length;
+        sliderRef.current?.scrollTo({
+          x: nextIndex * CONTAINER_WIDTH,
+          animated: true,
+        });
+        return nextIndex;
+      });
+    }, 3000);
+  };
+
+  const stopAutoSlide = () => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    setActiveImageIndex(0);
+    startAutoSlide();
+    return () => stopAutoSlide();
+  }, [allImages]);
+
   return (
-            <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-                <LinearGradient
-                    colors={["#f8a812", "#fad081",  "#f8f6f265"]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 0, y: 1 }}
-                    style={{height: 220, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0}}
-                />
-                <Topbar />
-                <StatusBar barStyle="dark-content" />
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+      <LinearGradient
+        colors={["#f8a812", "#fad081", "#f8f6f265"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={{ height: 220, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0 }}
+      />
+      <Topbar />
+      <StatusBar barStyle="dark-content" />
 
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
@@ -193,8 +258,43 @@ export default function ProductDetail({ route, navigation }) {
 
       <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.imageWrapper}>
-          {image ? (
-            <Image source={{ uri: image }} style={styles.productImage} />
+          {allImages.length > 1 ? (
+            <View style={styles.carouselContainer}>
+              <ScrollView
+                ref={sliderRef}
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                onMomentumScrollEnd={(e) => {
+                  const index = Math.round(e.nativeEvent.contentOffset.x / CONTAINER_WIDTH);
+                  setActiveImageIndex(index);
+                }}
+                onScrollBeginDrag={stopAutoSlide}
+                onScrollEndDrag={startAutoSlide}
+              >
+                {allImages.map((uri, index) => (
+                  <Image
+                    key={index}
+                    source={{ uri }}
+                    style={{ width: CONTAINER_WIDTH, height: 260, resizeMode: "cover" }}
+                  />
+                ))}
+              </ScrollView>
+
+              <View style={styles.dotsContainer}>
+                {allImages.map((_, index) => (
+                  <View
+                    key={index}
+                    style={[
+                      styles.dot,
+                      activeImageIndex === index ? styles.activeDot : styles.inactiveDot,
+                    ]}
+                  />
+                ))}
+              </View>
+            </View>
+          ) : allImages.length === 1 ? (
+            <Image source={{ uri: allImages[0] }} style={styles.productImage} />
           ) : (
             <View style={[styles.imagePlaceholder, { backgroundColor: colors.card || "#fff" }]}>
               <Ionicons name="image-outline" size={60} color="#9a9a9a" />
@@ -211,26 +311,26 @@ export default function ProductDetail({ route, navigation }) {
             },
           ]}
         >
-        <View style={styles.titleRow}>
-          <Text style={[styles.productName, { color: colors.text }]}>{name}</Text>
-          {price && (
-            <View style={styles.priceBadge}>
-              <Text style={styles.priceText}>{price}</Text>
-            </View>
-          )}
-        </View>
+          <View style={styles.titleRow}>
+            <Text style={[styles.productName, { color: colors.text }]}>{name}</Text>
+            {price && (
+              <View style={styles.priceBadge}>
+                <Text style={styles.priceText}>{price}</Text>
+              </View>
+            )}
+          </View>
 
           {extraFields.length > 0 && (
-          <View style={styles.chipsWrap}>
-            {extraFields.map((field) => (
-              <View key={field.label} style={styles.chip}>
-                <Feather name="box" size={16} color="#157a4f" style={styles.chipIcon} />
-                <Text style={styles.chipLabel}>{field.label}: </Text>
-                <Text style={styles.chipValue}>{field.value}</Text>
-              </View>
-            ))}
-          </View>
-        )}
+            <View style={styles.chipsWrap}>
+              {extraFields.map((field) => (
+                <View key={field.label} style={styles.chip}>
+                  <Feather name="box" size={16} color="#157a4f" style={styles.chipIcon} />
+                  <Text style={styles.chipLabel}>{field.label}: </Text>
+                  <Text style={styles.chipValue}>{field.value}</Text>
+                </View>
+              ))}
+            </View>
+          )}
           <View style={styles.sectionTitleRow}>
             <MaterialIcons name="description" size={18} color="#157a4f" />
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Description</Text>
@@ -238,12 +338,12 @@ export default function ProductDetail({ route, navigation }) {
           <Text style={[styles.description, { color: colors.subtext || "#666" }]}>{details}</Text>
         </View>
       </ScrollView>
-                      <SafeAreaView
-                          edges={["bottom"]}
-                          style={{ position: "absolute", bottom: 0, width: "100%" }}
-                      >
-                          <GoloBottom />
-                      </SafeAreaView>
+      <SafeAreaView
+        edges={["bottom"]}
+        style={{ position: "absolute", bottom: 0, width: "100%" }}
+      >
+        <GoloBottom />
+      </SafeAreaView>
     </SafeAreaView>
   );
 }
@@ -259,7 +359,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   backButton: {
-    padding:10
+    padding: 10
   },
   headerTitle: {
     fontSize: 20,
@@ -328,8 +428,8 @@ const styles = StyleSheet.create({
   },
   chipsWrap: {
     flexDirection: "row",
-    alignItems:"center",
-    marginBottom:10
+    alignItems: "center",
+    marginBottom: 10
   },
   chip: {
     flexDirection: "row",
@@ -348,7 +448,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: "SemiBold",
     lineHeight: Math.round(13 * 1.5),
-    color:"#666"
+    color: "#666"
   },
   card: {
     borderRadius: 16,
@@ -370,5 +470,41 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: Math.round(13 * 1.6),
     fontFamily: "Medium",
+  },
+  carouselContainer: {
+    width: CONTAINER_WIDTH,
+    height: 260,
+    borderRadius: 18,
+    overflow: "hidden",
+    backgroundColor: "#ffffff",
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  dotsContainer: {
+    position: "absolute",
+    bottom: 12,
+    flexDirection: "row",
+    alignSelf: "center",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.35)",
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+  },
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginHorizontal: 4,
+  },
+  activeDot: {
+    backgroundColor: "#ffffff",
+  },
+  inactiveDot: {
+    backgroundColor: "rgba(255, 255, 255, 0.4)",
   },
 });

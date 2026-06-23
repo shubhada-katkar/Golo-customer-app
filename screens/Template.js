@@ -32,14 +32,6 @@ export default function Template({ navigation, route }) {
 
                 <ScrollView contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
 
-                    <Text style={{ marginTop: 16, fontSize: 16, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) }}>
-                        Language
-                    </Text>
-
-                    <TouchableOpacity style={styles.language}>
-                        <Text style={{ fontFamily: "Medium", fontSize: 14, lineHeight: Math.round(14 * 1.5) }}>English</Text>
-                    </TouchableOpacity>
-
                     <Text style={{ paddingVertical: 14, fontSize: 16, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) }}>
                         Choose from these 3 sample templates
                     </Text>

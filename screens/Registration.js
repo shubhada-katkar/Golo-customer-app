@@ -23,6 +23,8 @@ export default function Registration({ navigation }) {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [age, setAge] = useState("");
+  const [gender, setGender] = useState("");
   const [password, setPassword] = useState("");
   const [visiblepass, setvisiblepass] = useState(false);
   const [registerLoading, setRegisterLoading] = useState(false);
@@ -52,6 +54,21 @@ export default function Registration({ navigation }) {
     return null;
   };
 
+  const parseAge = (value) => {
+    return (value || "").replace(/\D/g, "");
+  };
+
+  const getDateOfBirthFromAge = (ageValue) => {
+    const years = Number(ageValue);
+    if (!Number.isInteger(years) || years < 1 || years > 120) {
+      return null;
+    }
+
+    const now = new Date();
+    const dob = new Date(now.getFullYear() - years, now.getMonth(), now.getDate());
+    return dob.toISOString().split("T")[0];
+  };
+
   const getErrorMessage = (message, fallback) => {
     if (Array.isArray(message)) {
       return message.filter(Boolean).join("\n");
@@ -69,7 +86,7 @@ export default function Registration({ navigation }) {
       return;
     }
 
-    if (!username.trim() || !email.trim() || !password.trim()) {
+    if (!username.trim() || !email.trim() || !password.trim() || !age.trim() || !gender) {
       Alert.alert("Missing details", "Fill all fields.");
       return;
     }
@@ -84,9 +101,26 @@ export default function Registration({ navigation }) {
       return;
     }
 
+    const parsedAge = Number(age.trim());
+    if (!Number.isInteger(parsedAge) || parsedAge < 1 || parsedAge > 120) {
+      Alert.alert("Invalid age", "Enter a valid age between 1 and 120.");
+      return;
+    }
+
     const formattedPhone = formatPhone(phone);
     if (formattedPhone === null) {
       Alert.alert("Invalid phone", "Enter a valid 10-digit phone number.");
+      return;
+    }
+
+    const dateOfBirth = getDateOfBirthFromAge(parsedAge);
+    if (!dateOfBirth) {
+      Alert.alert("Invalid age", "Enter a valid age between 1 and 120.");
+      return;
+    }
+
+    if (!["male", "female", "others", "prefer_not_to_say"].includes(gender)) {
+      Alert.alert("Invalid gender", "Select a valid gender option.");
       return;
     }
 
@@ -101,6 +135,8 @@ export default function Registration({ navigation }) {
           phone: formattedPhone,
           password,
           accountType: "user",
+          gender,
+          dateOfBirth,
         }),
       });
 
@@ -173,6 +209,44 @@ export default function Registration({ navigation }) {
                 onChangeText={setPhone}
                 keyboardType="phone-pad"
               />
+
+              <Text style={styles.label}>Age</Text>
+              <TextInput
+                style={styles.input}
+                value={age}
+                placeholder="Enter your age"
+                onChangeText={(value) => setAge(parseAge(value))}
+                keyboardType="numeric"
+                maxLength={3}
+              />
+
+              <Text style={styles.label}>Gender</Text>
+              <View style={styles.genderRow}>
+                {[
+                  { value: "male", label: "Male" },
+                  { value: "female", label: "Female" },
+                  { value: "others", label: "Others" },
+                  { value: "prefer_not_to_say", label: "Prefer not to say" },
+                ].map((option) => (
+                  <TouchableOpacity
+                    key={option.value}
+                    style={[
+                      styles.genderOption,
+                      gender === option.value && styles.genderOptionActive,
+                    ]}
+                    onPress={() => setGender(option.value)}
+                  >
+                    <Text
+                      style={[
+                        styles.genderText,
+                        gender === option.value && styles.genderTextActive,
+                      ]}
+                    >
+                      {option.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
 
               <Text style={styles.label}>Password</Text>
               <View style={styles.inputpassword}>
@@ -251,7 +325,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: height * 0.05,
+    paddingVertical: height * 0.10,
   },
   input: {
     backgroundColor: "#ffffff",
@@ -261,6 +335,33 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#000000",
     fontFamily: "Medium",
+  },
+  genderRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 8,
+  },
+  genderOption: {
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#000000",
+    backgroundColor: "#ffffff",
+  },
+  genderOptionActive: {
+    backgroundColor: "#157a4f",
+    borderColor: "#157a4f",
+  },
+  genderText: {
+    fontSize: 14,
+    fontFamily: "Medium",
+    color: "#000000",
+    lineHeight: Math.round(14 * 1.5),
+  },
+  genderTextActive: {
+    color: "#ffffff",
   },
   button: {
     backgroundColor: "#157a4f",
@@ -289,7 +390,7 @@ const styles = StyleSheet.create({
     borderColor: "#000000",
   },
   passwordInput: {
-    fontSize: 16,
+    fontSize: 14,
     flex: 1,
     fontFamily: "Medium",
   },

@@ -429,9 +429,6 @@ export default function AdDetails({ route, navigation }) {
               <TouchableOpacity onPress={handleShare}>
                 <Ionicons name="share-social" size={24} />
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => setShowReportModal(true)}>
-                <Ionicons name="flag-outline" size={22} color="#000000" />
-              </TouchableOpacity>
             </View>
           </View>
 
@@ -587,19 +584,25 @@ export default function AdDetails({ route, navigation }) {
           {/* Action Buttons */}
           <View style={styles.actionBar}>
             <TouchableOpacity style={styles.chatButtonLarge} onPress={handleOpenChat}>
-              <Text style={styles.chatButtonText}>Chat with Seller</Text>
+              <Text style={styles.chatButtonText}>Chat</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.callButtonLarge}
               onPress={() => handleCall(ad.contactInfo?.phone)}
             >
-              <Text style={styles.callButtonText}>Call Seller</Text>
+              <Text style={styles.callButtonText}>Call</Text>
             </TouchableOpacity>
           </View>
+
+              <TouchableOpacity style={styles.reportButton} onPress={() => setShowReportModal(true)}>
+                <Ionicons name="flag-outline" size={22} color="#ffffff" />
+                <Text style={styles.reportButtonText}>Report this Ad</Text>
+              </TouchableOpacity>
+
           </ScrollView>
       </SafeAreaView>
 
-      <Modal visible={showReportModal} transparent animationType="slide">
+      <Modal visible={showReportModal} transparent animationType="slide" statusBarTranslucent>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
 
@@ -886,7 +889,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 8,
   },
-
   buttonRow: {
     flexDirection: "row",
     marginTop: 12,
@@ -904,7 +906,6 @@ const styles = StyleSheet.create({
     padding: 16,
     borderWidth: 1,
   },
-
   modalTitle: {
     fontSize: 18,
     fontFamily: "SemiBold",
@@ -918,7 +919,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: Math.round(13 * 1.5)
   },
-
   option: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -936,12 +936,10 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "#000000",
   },
-
   radioSelected: {
     backgroundColor: "#157a4f",
     borderColor: "#157a4f",
   },
-
   textArea: {
     borderWidth: 1,
     borderColor: "#000000",
@@ -953,7 +951,6 @@ const styles = StyleSheet.create({
     lineHeight: Math.round(13 * 1.5),
     fontSize: 13,
   },
-
   cancelBtn: {
     flex: 1,
     padding: 12,
@@ -963,7 +960,6 @@ const styles = StyleSheet.create({
     borderColor: "#000000",
     marginRight: 6,
   },
-
   submitBtn: {
     flex: 1,
     padding: 12,
@@ -973,5 +969,21 @@ const styles = StyleSheet.create({
     borderColor: "#000000",
     marginRight: 6,
   },
-
+  reportButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: "#d84040",
+    marginTop: 6,
+    marginHorizontal: 16,
+  },
+  reportButtonText: {
+    color: "#ffffff",
+    fontSize: 14,
+    lineHeight: Math.round(14 * 1.5),
+    fontFamily: "Medium",
+    marginLeft: 6,
+  }
 });

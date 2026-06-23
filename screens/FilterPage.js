@@ -1,6 +1,7 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import {
-    View, StyleSheet, Text, TouchableOpacity, ScrollView } from "react-native";
+    View, StyleSheet, Text, TouchableOpacity, ScrollView
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Topbar from "../components/Topbar";
 import { MaterialIcons } from "@expo/vector-icons";
@@ -9,19 +10,67 @@ import { ThemeContext } from "../theme/ThemeContext";
 import { LinearGradient } from "expo-linear-gradient";
 import Slider from "@react-native-community/slider";
 import GoloBottom from "../components/GoloBottom";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function FilterPage({ navigation }) {
-    const {colors} = useContext(ThemeContext);
-    const [radius, setRadius] = useState(5);
-    const [offerTypes, setOfferTypes] = useState({
-        flatDiscounts: false,
-        bogoDeals: false,
-        comboOffers: true,
-        cashback: false,
-    });
+    const { colors } = useContext(ThemeContext);
+    const [radius, setRadius] = useState(50);
+    const [offerTypes, setOfferTypes] = useState({});
+
+    // Load filters on mount
+    useEffect(() => {
+        const loadFilters = async () => {
+            try {
+                const savedRadius = await AsyncStorage.getItem("GOLO_FILTER_RADIUS");
+                const savedOfferTypes = await AsyncStorage.getItem("GOLO_FILTER_OFFER_TYPES");
+
+                if (savedRadius !== null) {
+                    setRadius(Number(savedRadius));
+                } else {
+                    setRadius(50);
+                }
+
+                if (savedOfferTypes !== null) {
+                    const types = savedOfferTypes.split(",").filter(Boolean);
+                    const typesObj = {};
+                    types.forEach((key) => {
+                        typesObj[key] = true;
+                    });
+                    setOfferTypes(typesObj);
+                } else {
+                    setOfferTypes({});
+                }
+            } catch (e) {
+                console.error("Failed to load filters from AsyncStorage", e);
+            }
+        };
+        loadFilters();
+    }, []);
+
+    const saveRadius = async (val) => {
+        try {
+            await AsyncStorage.setItem("GOLO_FILTER_RADIUS", String(val));
+        } catch (e) {
+            console.error("Failed to save radius", e);
+        }
+    };
+
+    const saveOfferTypes = async (typesObj) => {
+        try {
+            const selectedKeys = Object.keys(typesObj).filter((key) => typesObj[key]);
+            const typesStr = selectedKeys.join(",");
+            await AsyncStorage.setItem("GOLO_FILTER_OFFER_TYPES", typesStr);
+        } catch (e) {
+            console.error("Failed to save offer types", e);
+        }
+    };
 
     const toggleOfferType = (key) => {
-        setOfferTypes((prev) => ({ ...prev, [key]: !prev[key] }));
+        setOfferTypes((prev) => {
+            const next = { ...prev, [key]: !prev[key] };
+            saveOfferTypes(next);
+            return next;
+        });
     };
 
     const offerTypeList = [
@@ -45,48 +94,49 @@ export default function FilterPage({ navigation }) {
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
             <LinearGradient
-                         colors={["#f8a812", "#fad081",  "#f8f6f265"]}
-                         start={{ x: 0, y: 0 }}
-                         end={{ x: 0, y: 1 }}
-                         style={{height: 220, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0}}
+                colors={["#f8a812", "#fad081", "#f8f6f265"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 1 }}
+                style={{ height: 220, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0 }}
+            />
+            <Topbar />
+            <View style={styles.row1}>
+                <TouchableOpacity onPress={() => navigation.goBack()}
+                    style={styles.backButton}>
+                    <MaterialIcons
+                        name="arrow-back-ios"
+                        size={22}
+                        color={colors.text}
                     />
-                <Topbar />
-                <View style={styles.row1}>
-                    <TouchableOpacity onPress={() => navigation.goBack()}
-                        style={styles.backButton}>
-                        <MaterialIcons
-                            name="arrow-back-ios"
-                            size={22}
-                            color={colors.text}
-                        />
-                    </TouchableOpacity>
+                </TouchableOpacity>
 
-                    <View style={{
-                        flex: 1, flexDirection: "row", justifyContent: "space-between",
-                        alignItems: "center", marginRight: 14
-                    }}>
-                        <Text style={{ fontSize: 20, color: colors.text, fontFamily: "Medium", lineHeight: Math.round(20 * 1.5) }}>
+                <View style={{
+                    flex: 1, flexDirection: "row", justifyContent: "space-between",
+                    alignItems: "center", marginRight: 14
+                }}>
+                    <Text style={{ fontSize: 20, color: colors.text, fontFamily: "Medium", lineHeight: Math.round(20 * 1.5) }}>
                         Go Back
-                        </Text>
-                    </View>
+                    </Text>
                 </View>
+            </View>
 
-                <View style={{ height:1, backgroundColor:"#000000", marginTop:6 }}/>
- 
-   <ScrollView contentContainerStyle={{ paddingBottom: 110}} >
+            <View style={{ height: 1, backgroundColor: "#000000", marginTop: 6 }} />
 
-  
+            <ScrollView contentContainerStyle={{ paddingBottom: 110 }} >
+
+
                 <View style={styles.clearAllRow}>
                     <Text style={[styles.filtersEyebrow, { color: colors.text }]}>Filters</Text>
                     <TouchableOpacity
-                        onPress={() => {
-                            setRadius(5);
-                            setOfferTypes({
-                                flatDiscounts: false,
-                                bogoDeals: false,
-                                comboOffers: false,
-                                cashback: false,
-                            });
+                        onPress={async () => {
+                            setRadius(50);
+                            setOfferTypes({});
+                            try {
+                                await AsyncStorage.setItem("GOLO_FILTER_RADIUS", "50");
+                                await AsyncStorage.setItem("GOLO_FILTER_OFFER_TYPES", "");
+                            } catch (e) {
+                                console.error("Failed to clear filters from AsyncStorage", e);
+                            }
                         }}
                         style={styles.clearAllButton}
                     >
@@ -126,11 +176,12 @@ export default function FilterPage({ navigation }) {
                         <View style={[styles.sliderTrackRemainder, { backgroundColor: colors.border }]} />
                         <Slider
                             style={styles.slider}
-                            minimumValue={0}
+                            minimumValue={1}
                             maximumValue={50}
                             step={1}
                             value={radius}
                             onValueChange={setRadius}
+                            onSlidingComplete={saveRadius}
                             minimumTrackTintColor="transparent"
                             maximumTrackTintColor={"#f5b849"}
                             thumbTintColor={"#157a4f"}
@@ -199,12 +250,20 @@ export default function FilterPage({ navigation }) {
                         })}
                     </View>
                 </View>
-                </ScrollView>
-                    <SafeAreaView
-                      edges={["bottom"]}
-                      style={{ position: "absolute", bottom: 0, width: "100%" }} >
-                      <GoloBottom />
-                    </SafeAreaView>
+                <TouchableOpacity
+                    style={[styles.applyButton, { backgroundColor: colors.primary || "#157a4f" }]}
+                    onPress={() => {
+                        navigation.goBack();
+                    }}
+                >
+                    <Text style={styles.applyButtonText}>Apply Filters</Text>
+                </TouchableOpacity>
+            </ScrollView>
+            <SafeAreaView
+                edges={["bottom"]}
+                style={{ position: "absolute", bottom: 0, width: "100%" }} >
+                <GoloBottom />
+            </SafeAreaView>
         </SafeAreaView>
     );
 }
@@ -229,7 +288,7 @@ const styles = StyleSheet.create({
     filtersEyebrow: {
         fontSize: 18,
         fontFamily: "Medium",
-        lineHeight:Math.round(18 * 1.5)
+        lineHeight: Math.round(18 * 1.5)
     },
     clearAllButton: {
         flexDirection: "row",
@@ -239,15 +298,15 @@ const styles = StyleSheet.create({
     clearAllText: {
         fontSize: 14,
         fontFamily: "Medium",
-        lineHeight:Math.round(14 * 1.5)
+        lineHeight: Math.round(14 * 1.5)
     },
     card: {
         borderRadius: 20,
         padding: 14,
         marginHorizontal: 10,
-        backgroundColor:"#ffffff",
-        marginTop:18,
-        borderWidth:0.5,
+        backgroundColor: "#ffffff",
+        marginTop: 18,
+        borderWidth: 0.5,
     },
     cardHeaderRow: {
         flexDirection: "row",
@@ -270,14 +329,14 @@ const styles = StyleSheet.create({
     cardTitle: {
         fontSize: 16,
         fontFamily: "Medium",
-        lineHeight:Math.round(16 * 1.5)
+        lineHeight: Math.round(16 * 1.5)
     },
     cardSubtitle: {
         fontSize: 12,
         fontFamily: "Medium",
         marginTop: 6,
         marginBottom: 14,
-        lineHeight:Math.round(12 * 1.5)
+        lineHeight: Math.round(12 * 1.5)
     },
     radiusPill: {
         alignSelf: "flex-start",
@@ -292,12 +351,12 @@ const styles = StyleSheet.create({
     radiusPillValue: {
         fontSize: 18,
         fontFamily: "Bold",
-        lineHeight:Math.round(18 * 1.5)
+        lineHeight: Math.round(18 * 1.5)
     },
     radiusPillLabel: {
         fontSize: 12,
         fontFamily: "Medium",
-        lineHeight:Math.round(12 * 1.5)
+        lineHeight: Math.round(12 * 1.5)
     },
     sliderTrackWrap: {
         height: 40,
@@ -329,7 +388,7 @@ const styles = StyleSheet.create({
     sliderLabel: {
         fontSize: 12,
         fontFamily: "Medium",
-        lineHeight:Math.round(12 * 1.5)
+        lineHeight: Math.round(12 * 1.5)
     },
     chipGrid: {
         flexDirection: "row",
@@ -357,6 +416,25 @@ const styles = StyleSheet.create({
         fontSize: 13,
         fontFamily: "Medium",
         flexShrink: 1,
-        lineHeight:Math.round(13 * 1.5)
+        lineHeight: Math.round(13 * 1.5)
+    },
+    applyButton: {
+        height: 50,
+        borderRadius: 14,
+        alignItems: "center",
+        justifyContent: "center",
+        marginHorizontal: 14,
+        marginTop: 24,
+        marginBottom: 16,
+        elevation: 3,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+    },
+    applyButtonText: {
+        color: "#ffffff",
+        fontSize: 16,
+        fontFamily: "Bold",
     },
 });

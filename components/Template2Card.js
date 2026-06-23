@@ -1,14 +1,12 @@
 import React, { useEffect, useState } from "react";
 import {
     View, Text, StyleSheet, TouchableOpacity, Image, Alert,
-    Share, Modal, TextInput, ActivityIndicator
+    Share, ActivityIndicator
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Linking } from "react-native";
 import { getAdId, isFavoriteAdId, toggleFavoriteAd } from "../services/favoritesService";
 import { trackAdCardClick, trackContactClick } from "../services/analyticsService";
-import { submitReport } from "../services/reportService";
-import { ScrollView } from "react-native-gesture-handler";
 import { BASE_URL } from "../config";
 
 const GENERIC_SELLER_NAMES = new Set(["seller", "user", "anonymous", "unknown"]);
@@ -27,20 +25,9 @@ const isGenericSellerName = (name) => {
   return GENERIC_SELLER_NAMES.has(text);
 };
 
-const REPORT_REASONS = [
-    { label: "Spam or Misleading", value: "spam" },
-    { label: "Inappropriate Content", value: "inappropriate" },
-    { label: "Fraud or Scam", value: "fraud" },
-    { label: "Duplicate Posting", value: "duplicate" },
-    { label: "Other", value: "other" },
-];
-
 export default function Template2Card({ ad, navigation }) {
     const [isFavorite, setIsFavorite] = useState(false);
     const [favoriteLoading, setFavoriteLoading] = useState(false);
-    const [showReportModal, setShowReportModal] = useState(false);
-    const [selectedReason, setSelectedReason] = useState(null);
-    const [details, setDetails] = useState("");
     const [sellerName, setSellerName] = useState(() => getAdSellerName(ad) || "Seller");
 
     useEffect(() => {
@@ -152,35 +139,6 @@ export default function Template2Card({ ad, navigation }) {
         handleShareExternally();
     };
 
-    const handleSubmitReport = async () => {
-        if (!selectedReason) {
-            Alert.alert("Error", "Please select a reason before submitting.");
-            return;
-        }
-
-        const adIdentifier = ad?.adId || ad?._id;
-        if (!adIdentifier) {
-            Alert.alert("Error", "Ad ID is missing.");
-            return;
-        }
-
-        try {
-            await submitReport("AD", adIdentifier, selectedReason, details);
-            Alert.alert("Report Submitted", "Thank you. We will review this ad shortly.", [
-                {
-                    text: "OK",
-                    onPress: () => {
-                        setShowReportModal(false);
-                        setSelectedReason(null);
-                        setDetails("");
-                    },
-                },
-            ]);
-        } catch (err) {
-            Alert.alert("Error", err.message || "Failed to submit report. Please try again.");
-        }
-    };
-
     const handleCall = (phone) => {
         if (!phone) return;
 
@@ -189,155 +147,85 @@ export default function Template2Card({ ad, navigation }) {
         Linking.openURL(`tel:${cleanedNumber}`);
     };
     return (
-        <>
-            <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={() => {
-                    const currentAdId = ad?.adId || ad?._id;
-                    navigation.navigate("AdDetails", { adId: currentAdId });
-                }}
-                style={styles.card}
-            >
-                <View style={styles.topRow}>
-                    <TouchableOpacity onPress={handleFavoriteToggle} disabled={favoriteLoading}>
-                    {favoriteLoading ? (
-                        <ActivityIndicator size="small" color="#e74c3c" />
-                    ) : (
-                        <Ionicons name={isFavorite ? "heart" : "heart-outline"} size={18} color={isFavorite ? "#e74c3c" : "#222"} />
-                    )}
-                </TouchableOpacity>
-                    <TouchableOpacity onPress={handleShare}>
-                        <Ionicons name="share-social-outline" size={18} />
-                    </TouchableOpacity>
-                    <TouchableOpacity onPress={() => setShowReportModal(true)}>
-                        <Ionicons name="flag-outline" size={20} color="#ce3d3d" />
-                    </TouchableOpacity>
-                </View>
+        <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => {
+                const currentAdId = ad?.adId || ad?._id;
+                navigation.navigate("AdDetails", { adId: currentAdId });
+            }}
+            style={styles.card}
+        >
 
-                <Text style={styles.timeText}>
-                    {new Date(ad.createdAt || Date.now()).toLocaleString()}
-                </Text>
-
-                <View style={styles.row}>
-                    {ad.images?.length > 0 ? (
-                        <Image source={{ uri: ad.images[0] }} style={styles.image} />
-                    ) : (
-                        <View style={styles.image} />
-                    )}
-
-                    <View style={{ flex: 1 }}>
-                        <Text style={styles.title}>{ad.title}</Text>
-                        <Text numberOfLines={2} style={styles.desc}>
-                            {ad.description}
-                        </Text>
-                    </View>
-                </View>
-
-                <View style={styles.metaRow}>
-                    <Text style={styles.price}>{ad.price ? `₹${ad.price}` : "Price Not Mentioned"}</Text>
-                    <View style={{ flexDirection: "row", gap: 10 }}>
-                        <View style={styles.metaItem}>
-                            <Ionicons name="location-outline" size={14} />
-                            <Text style={styles.metaText}>{ad.location || ad.city}</Text>
-                        </View>
-                        <View style={styles.metaItem}>
-                            <Ionicons name="person" size={14} />
-                            <Text style={styles.metaText}>{sellerName}</Text>
-                        </View>
-                    </View>
-                </View>
-
-                <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 10 }}>
-                    <TouchableOpacity style={styles.chatBtn} onPress={handleOpenChat}>
-                        <Text style={styles.btnText}>Chat</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={styles.callBtn}
-                        onPress={() => handleCall(ad.contactInfo?.phone)}
-                    >
-                        <Text style={styles.btnText}>Call</Text>
-                    </TouchableOpacity>
-                </View>
-
+            <View style={styles.timerow}>
+            <Text style={styles.timeText}>
+                {new Date(ad.createdAt || Date.now()).toLocaleString()}
+            </Text>
+            <View style={styles.topRow}> 
+            <TouchableOpacity onPress={handleFavoriteToggle} disabled={favoriteLoading}>
+                {favoriteLoading ? (
+                    <ActivityIndicator size="small" color="#e74c3c" />
+                ) : (
+                    <Ionicons name={isFavorite ? "heart" : "heart-outline"} size={20} color={isFavorite ? "#e74c3c" : "#222"} />
+                )}
             </TouchableOpacity>
+                <TouchableOpacity onPress={handleShare}>
+                    <Ionicons name="share-social-outline" size={20} />
+                </TouchableOpacity>
+            </View>
+            </View>
 
-            <Modal visible={showReportModal} transparent animationType="slide">
+            <View style={styles.row}>
+                {ad.images?.length > 0 ? (
+                    <Image source={{ uri: ad.images[0] }} style={styles.image} />
+                ) : (
+                    <View style={styles.image} />
+                )}
 
-                    <View style={styles.modalOverlay}>
-                        <View style={styles.modalContainer}>
+                <View style={{ flex: 1 }}>
+                    <Text style={styles.title}>{ad.title}</Text>
+                    <Text numberOfLines={2} style={styles.desc}>
+                        {ad.description}
+                    </Text>
+                </View>
+            </View>
 
-                            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}
-                                keyboardShouldPersistTaps="handled">
-
-                                <Text style={styles.modalTitle}>Report This Ad</Text>
-                                <Text style={styles.modalSubtitle}>Help us review suspicious listings.</Text>
-
-                                <Text style={styles.title}>Why are you reporting this ad?</Text>
-
-                                {REPORT_REASONS.map((reason, index) => (
-                                    <TouchableOpacity
-                                        key={index}
-                                        style={styles.option}
-                                        onPress={() => setSelectedReason(reason.value)}
-                                    >
-                                        <Text style={{ fontSize: 12, lineHeight: Math.round(12 * 1.5), fontFamily: "Medium" }}>{reason.label}</Text>
-                                        <View style={[
-                                            styles.radio,
-                                            selectedReason === reason.value && styles.radioSelected
-                                        ]} />
-                                    </TouchableOpacity>
-                                ))}
-
-                                <Text style={{
-                                    fontSize: 12,
-                                    lineHeight: Math.round(12 * 1.5),
-                                    fontFamily: "Medium",
-                                    marginTop: 10
-                                }}>Additional Details (Optional)</Text>
-
-                                <TextInput
-                                    placeholder="Please provide more details..."
-                                    value={details}
-                                    onChangeText={setDetails}
-                                    multiline
-                                    maxLength={500}
-                                    style={styles.textArea}
-                                />
-
-                                <View style={styles.buttonRow}>
-                                    <TouchableOpacity
-                                        style={styles.cancelBtn}
-                                        onPress={() => setShowReportModal(false)}
-                                    >
-                                        <Text style={{
-                                            fontFamily: "SemiBold",
-                                            lineHeight: Math.round(14 * 1.2), fontSize: 14
-                                        }}>Cancel</Text>
-                                    </TouchableOpacity>
-
-                                    <TouchableOpacity
-                                        style={[styles.submitBtn, !selectedReason && { backgroundColor: '#ccc' }]}
-                                        onPress={handleSubmitReport}
-                                        disabled={!selectedReason}
-                                    >
-                                        <Text style={{
-                                            fontFamily: "SemiBold",
-                                            lineHeight: Math.round(14 * 1.2), fontSize: 14,
-                                            color: '#000000'
-                                        }}>Submit Report</Text>
-                                    </TouchableOpacity>
-                                </View>
-
-                            </ScrollView>
-                        </View>
+            <View style={styles.metaRow}>
+                <Text style={styles.price}>{ad.price ? `₹${ad.price}` : "Price Not Mentioned"}</Text>
+                <View style={{ flexDirection: "row", gap: 10 }}>
+                    <View style={styles.metaItem}>
+                        <Ionicons name="location-outline" size={14} />
+                        <Text style={styles.metaText}>{ad.location || ad.city}</Text>
                     </View>
-            </Modal>
+                    <View style={styles.metaItem}>
+                        <Ionicons name="person" size={14} />
+                        <Text style={styles.metaText}>{sellerName}</Text>
+                    </View>
+                </View>
+            </View>
 
-        </>
+            <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 10 }}>
+                <TouchableOpacity style={styles.chatBtn} onPress={handleOpenChat}>
+                    <Text style={styles.btnText}>Chat</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={styles.callBtn}
+                    onPress={() => handleCall(ad.contactInfo?.phone)}
+                >
+                    <Text style={styles.btnText}>Call</Text>
+                </TouchableOpacity>
+            </View>
+
+        </TouchableOpacity>
     );
 }
 
 const styles = StyleSheet.create({
+    timerow:{
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        paddingHorizontal: 10,
+    },
     card: {
         backgroundColor: "#fff",
         padding: 16,
@@ -352,9 +240,9 @@ const styles = StyleSheet.create({
     timeText: {
         fontSize: 12,
         color: "#777",
-        marginTop: 6,
         fontFamily: "Medium",
-        lineHeight: Math.round(12 * 1.5)
+        lineHeight: Math.round(12 * 1.5),
+        alignSelf: "flex-start",
     },
     row: {
         flexDirection: "row",
@@ -423,99 +311,5 @@ const styles = StyleSheet.create({
         fontWeight: "600",
         fontFamily: "Medium",
         lineHeight: Math.round(14 * 1.5)
-    },
-
-
-    modalOverlay: {
-        flex: 1,
-        backgroundColor: "rgba(0,0,0,0.5)",
-        justifyContent: "center",
-        padding: 20,
-    },
-
-    modalContainer: {
-        backgroundColor: "#fff",
-        borderRadius: 16,
-        padding: 16,
-        borderWidth: 1,
-    },
-
-    modalTitle: {
-        fontSize: 18,
-        fontFamily: "SemiBold",
-        lineHeight: Math.round(18 * 1.2),
-    },
-
-    modalSubtitle: {
-        color: "#666",
-        marginBottom: 10,
-        fontFamily: "Medium",
-        fontSize: 12,
-        lineHeight: Math.round(12 * 1.5)
-    },
-
-    reportBox: {
-        backgroundColor: "#f3f3f3",
-        padding: 10,
-        borderRadius: 8,
-        marginBottom: 10,
-    },
-
-    option: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        padding: 12,
-        borderWidth: 1,
-        borderColor: "#000000",
-        borderRadius: 10,
-        marginTop: 8,
-    },
-
-    radio: {
-        width: 18,
-        height: 18,
-        borderRadius: 9,
-        borderWidth: 2,
-        borderColor: "#000000",
-    },
-
-    radioSelected: {
-        backgroundColor: "#157a4f",
-        borderColor: "#157a4f",
-    },
-    buttonRow: {
-        flexDirection: "row",
-        marginTop: 12,
-    },
-    textArea: {
-        borderWidth: 1,
-        borderColor: "#000000",
-        borderRadius: 10,
-        padding: 10,
-        height: 80,
-        marginTop: 8,
-        fontFamily: "Medium",
-        lineHeight: Math.round(13 * 1.5),
-        fontSize: 13,
-    },
-
-    cancelBtn: {
-        flex: 1,
-        padding: 12,
-        alignItems: "center",
-        borderRadius: 10,
-        borderWidth: 1,
-        borderColor: "#000000",
-        marginRight: 6,
-    },
-
-    submitBtn: {
-        flex: 1,
-        padding: 12,
-        alignItems: "center",
-        borderRadius: 10,
-        borderWidth: 1,
-        borderColor: "#000000",
-        marginRight: 6,
     },
 });

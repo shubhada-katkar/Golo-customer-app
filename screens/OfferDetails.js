@@ -23,6 +23,8 @@ import GoloBottom from "../components/GoloBottom";
 import QRCode from "react-native-qrcode-svg";
 import ViewShot from "react-native-view-shot";
 import * as MediaLibrary from "expo-media-library";
+import * as Location from "expo-location";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
     claimOfferVoucher,
     fetchVoucherById,
@@ -87,6 +89,27 @@ const getTermsAndConditions = (offerData) => {
     );
 };
 
+const normalizeGender = (gender) => {
+    if (!gender || typeof gender !== "string") return "";
+    const normalized = gender.trim().toLowerCase();
+    if (normalized === "male" || normalized === "m") return "male";
+    if (normalized === "female" || normalized === "f") return "female";
+    return normalized;
+};
+
+const getAgeFromDate = (dateValue) => {
+    if (!dateValue) return null;
+    const date = new Date(dateValue);
+    if (Number.isNaN(date.getTime())) return null;
+    const now = new Date();
+    let age = now.getFullYear() - date.getFullYear();
+    const monthDiff = now.getMonth() - date.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < date.getDate())) {
+        age -= 1;
+    }
+    return age >= 0 ? age : null;
+};
+
 export default function OfferDetails({ navigation, route }) {
     const scrollViewRef = useRef(null);
     const { colors } = useContext(ThemeContext);
@@ -104,6 +127,11 @@ export default function OfferDetails({ navigation, route }) {
     const [offerLoading, setOfferLoading] = useState(false);
     const [merchantProfile, setMerchantProfile] = useState(null);
     const [merchantProfileLoading, setMerchantProfileLoading] = useState(false);
+    const [claimLatitude, setClaimLatitude] = useState(null);
+    const [claimLongitude, setClaimLongitude] = useState(null);
+    const [claimLocationLabel, setClaimLocationLabel] = useState("");
+    const [customerAge, setCustomerAge] = useState(null);
+    const [customerGender, setCustomerGender] = useState("");
     const qrRef = useRef();
 
     const routeOfferData = route?.params?.offerData || {};
@@ -353,6 +381,71 @@ export default function OfferDetails({ navigation, route }) {
         }, [syncOfferClaimState, loadRemoteOfferData, routeOfferData])
     );
 
+    useEffect(() => {
+        const loadCustomerClaimMetadata = async () => {
+            try {
+                const storedCustomerData = await AsyncStorage.getItem("customerData");
+                if (storedCustomerData) {
+                    const parsed = JSON.parse(storedCustomerData);
+                    const dob = parsed?.profile?.dateOfBirth || parsed?.dateOfBirth || parsed?.profile?.dob || parsed?.dob;
+                    const ageValue = parsed?.age || getAgeFromDate(dob);
+                    const genderValue = normalizeGender(parsed?.profile?.gender || parsed?.gender || parsed?.profile?.sex || parsed?.sex);
+                    if (Number.isFinite(Number(ageValue))) {
+                        setCustomerAge(Number(ageValue));
+                    }
+                    if (genderValue) {
+                        setCustomerGender(genderValue);
+                    }
+                }
+            } catch (error) {
+                console.warn("Failed to load customer metadata:", error);
+            }
+
+            try {
+                const { status } = await Location.requestForegroundPermissionsAsync();
+                if (status !== "granted") {
+                    return;
+                }
+
+                const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+                const latitude = position?.coords?.latitude;
+                const longitude = position?.coords?.longitude;
+                if (Number.isFinite(latitude) && Number.isFinite(longitude)) {
+                    setClaimLatitude(latitude);
+                    setClaimLongitude(longitude);
+                }
+
+                try {
+                    const geocode = await Location.reverseGeocodeAsync({ latitude, longitude });
+                    const place = Array.isArray(geocode) ? geocode[0] : null;
+                    if (place) {
+                        const placeText = [
+                            place.name,
+                            place.street,
+                            place.streetNumber,
+                            place.city,
+                            place.subregion,
+                            place.region,
+                            place.country,
+                        ]
+                            .filter(Boolean)
+                            .slice(0, 4)
+                            .join(", ");
+                        if (placeText) {
+                            setClaimLocationLabel(placeText);
+                        }
+                    }
+                } catch (geocodeError) {
+                    console.warn("Reverse geocode failed:", geocodeError);
+                }
+            } catch (locationError) {
+                console.warn("Location permission or fetch failed:", locationError);
+            }
+        };
+
+        loadCustomerClaimMetadata();
+    }, []);
+
     const handleToggleFavorite = async () => {
         if (favoriteLoading) return;
         setFavoriteLoading(true);
@@ -411,11 +504,16 @@ export default function OfferDetails({ navigation, route }) {
 
         setClaimLoading(true);
         try {
-            const claimResult = await claimOfferVoucher(offerId);
+            const claimResult = await claimOfferVoucher(offerId, {
+                latitude: claimLatitude,
+                longitude: claimLongitude,
+                location: claimLocationLabel || locationText,
+                age: customerAge,
+                gender: customerGender,
+            });
             const hydratedVoucher = await hydrateVoucher(claimResult);
             setVoucher(hydratedVoucher || claimResult);
             setShowQR(true);
-            Alert.alert("Claimed", "Offer claimed successfully.");
         } catch (error) {
             const message = String(error?.message || "Unable to claim offer right now");
             const alreadyClaimed = message.toLowerCase().includes("already claimed");
@@ -721,7 +819,7 @@ export default function OfferDetails({ navigation, route }) {
                 </SafeAreaView>
             </SafeAreaView>
 
-            <Modal visible={showQR} transparent animationType="slide">
+            <Modal visible={showQR} transparent animationType="slide" statusBarTranslucent>
                 <View style={styles.modalContainer}>
                     <View style={styles.qrCard}>
                         <Text style={styles.qrTitle}>Show this QR to Merchant</Text>

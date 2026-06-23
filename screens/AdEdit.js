@@ -546,7 +546,7 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 14,
-    paddingBottom: 90,
+    paddingBottom:110,
   },
   label: {
     fontSize: 14,

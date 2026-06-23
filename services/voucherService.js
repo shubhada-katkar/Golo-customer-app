@@ -46,16 +46,36 @@ const authorizedFetch = async (path, options = {}, fallbackMessage = "Request fa
   return payload;
 };
 
-export const claimOfferVoucher = async (offerId) => {
+export const claimOfferVoucher = async (offerId, metadata = {}) => {
   if (!offerId) {
     throw new Error("Offer id is required");
+  }
+
+  const body = { offerId };
+  if (typeof metadata.latitude === "number") {
+    body.latitude = Number(metadata.latitude);
+  }
+  if (typeof metadata.longitude === "number") {
+    body.longitude = Number(metadata.longitude);
+  }
+  if (metadata.location) {
+    body.location = String(metadata.location).trim();
+  }
+
+  const headers = {};
+  if (metadata.age !== undefined && metadata.age !== null) {
+    headers["X-Customer-Age"] = String(metadata.age);
+  }
+  if (metadata.gender) {
+    headers["X-Customer-Gender"] = String(metadata.gender).trim();
   }
 
   const payload = await authorizedFetch(
     "/vouchers/claim",
     {
       method: "POST",
-      body: JSON.stringify({ offerId }),
+      headers,
+      body: JSON.stringify(body),
     },
     "Unable to claim this offer"
   );

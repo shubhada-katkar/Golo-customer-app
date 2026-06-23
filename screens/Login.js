@@ -63,7 +63,6 @@ export default function Login({ navigation }) {
         ["customerId", data.data.user.id]
       ]);
 
-      Alert.alert("Login Successful");
       navigation.reset({
         index: 0,
         routes: [{ name: "GoloHome" }],

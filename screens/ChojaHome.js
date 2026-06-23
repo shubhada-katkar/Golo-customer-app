@@ -1,8 +1,9 @@
-import React, { useContext, useRef, useState } from "react";
+﻿import React, { useContext, useRef, useState } from "react";
 import { View, StyleSheet, Text, TouchableOpacity, ScrollView, TextInput } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemeContext } from "../theme/ThemeContext";
 import ChojaBottom from "../components/ChojaBottom";
+import VoiceSearchButton from "../components/VoiceSearchButton";
 import { EvilIcons, Ionicons } from "@expo/vector-icons";
 import Iwant from "../components/Iwant";
 import MyAds from "../components/MyAds";
@@ -60,23 +61,24 @@ export default function ChojaHome() {
                     style={styles.search}
                     activeOpacity={1}
                     onPress={() => inputRef.current?.focus()} >
+                    
+                    <EvilIcons name="search" size={24} color="#555" />
                     <TextInput
                         ref={inputRef}
                         placeholder="Search ads by name or category"
                         value={searchQuery}
                         onChangeText={setSearchQuery}
-                        style={{ flex: 1, fontFamily: "Medium", fontSize: 14 }}
+                        style={styles.searchInput}
                         textAlignVertical="center"
                         returnKeyType="search"
                     />
+                <VoiceSearchButton onResult={setSearchQuery} color="#555" activeColor="#157a4f" />
 
                     {searchQuery.length > 0 && (
                         <TouchableOpacity onPress={() => setSearchQuery("")} style={{ padding: 4 }}>
                             <Ionicons name="close-circle" size={19} color="#555" />
                         </TouchableOpacity>
                     )}
-
-                    <EvilIcons name="search" size={26} />
                 </TouchableOpacity>
             </View>
 
@@ -183,16 +185,23 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         paddingHorizontal: 10,
-        marginTop: 10
     },
     search: {
-        flex: 1,
-        paddingHorizontal: 12,
-        backgroundColor: "#ffffff",
-        borderRadius: 10,
         flexDirection: "row",
         alignItems: "center",
-        justifyContent: "space-between",
+        backgroundColor: "#ffffff",
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: "#cacaca",
+        marginVertical:6,
+        paddingHorizontal: 4,
+    },
+    searchInput: {
+        flex: 1,
+        marginHorizontal: 6,
+        fontFamily: "Medium",
+        fontSize: 14,
+        top:4
     },
     row2: {
         flexDirection: "row",

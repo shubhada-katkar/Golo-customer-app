@@ -10,15 +10,17 @@ import {
     View,
     ScrollView
 } from "react-native";
-import { Feather, Ionicons } from "@expo/vector-icons";
+import { Feather, Ionicons, EvilIcons } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { ThemeContext } from "../theme/ThemeContext";
 import Topbar2 from "../components/Topbar2";
 import GoloBottom from "../components/GoloBottom";
+import VoiceSearchButton from "../components/VoiceSearchButton";
 import { fetchAllOffers } from "../services/offersService";
 import { LinearGradient } from "expo-linear-gradient";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const MAIN_STORE_CATEGORIES = [
     "Food & Restaurants",
@@ -160,6 +162,38 @@ const isOfferCurrentlyActive = (offer) => {
     return true;
 };
 
+const offerTypeMatches = (offer, selectedOfferTypesStr) => {
+    if (!selectedOfferTypesStr) {
+        return true;
+    }
+
+    const selectedTypes = selectedOfferTypesStr
+        .split(",")
+        .map((t) => t.trim().toLowerCase())
+        .filter(Boolean);
+
+    if (selectedTypes.length === 0) {
+        return true;
+    }
+
+    const offerType = String(offer?.bannerCategory || offer?.offerType || offer?.category || "").toLowerCase();
+    const title = String(offer?.title || offer?.bannerTitle || "").toLowerCase();
+    const blob = `${title} ${offerType}`;
+
+    return selectedTypes.some((type) => {
+        if (!type) return false;
+        if (offerType === type) return true;
+        if (type === 'flat discount') return blob.includes('flat') || blob.includes('discount');
+        if (type.includes('bogo') || type.includes('buy one get')) {
+            return blob.includes('bogo') || blob.includes('buy 1 get 1') || blob.includes('buy one get one');
+        }
+        if (type === 'percentage off' || type.includes('percent') || type.includes('%')) {
+            return blob.includes('%') || blob.includes('percent') || blob.includes('percentage');
+        }
+        return blob.includes(type);
+    });
+};
+
 const DEFAULT_RADIUS_KM = 50;
 
 export default function GoloHome() {
@@ -175,6 +209,8 @@ export default function GoloHome() {
     const [userCoordinates, setUserCoordinates] = useState(null);
     const [locationPlaceName, setLocationPlaceName] = useState("");
     const scrollRef = useRef(null);
+    const [radius, setRadius] = useState(DEFAULT_RADIUS_KM);
+    const [selectedOfferTypes, setSelectedOfferTypes] = useState("");
 
     const categoryIconMap = {
         "Food & Restaurants": "restaurant-outline",
@@ -296,7 +332,8 @@ export default function GoloHome() {
             const offersData = await fetchAllOffers({
                 limit: 100,
                 page: 1,
-                radiusKm: DEFAULT_RADIUS_KM,
+                radiusKm: radius,
+                offerTypes: selectedOfferTypes || undefined,
                 category: selectedCategory || undefined,
                 lat: userCoordinates?.lat,
                 lng: userCoordinates?.lng,
@@ -309,12 +346,67 @@ export default function GoloHome() {
         } finally {
             setLoading(false);
         }
-    }, [selectedCategory, userCoordinates?.lat, userCoordinates?.lng]);
+    }, [selectedCategory, userCoordinates?.lat, userCoordinates?.lng, radius, selectedOfferTypes]);
 
     useFocusEffect(
         React.useCallback(() => {
-            fetchOffers();
-        }, [fetchOffers])
+            let isMounted = true;
+            const loadFiltersAndFetch = async () => {
+                let currentRadius = DEFAULT_RADIUS_KM;
+                let currentOfferTypes = "";
+                try {
+                    const savedRadius = await AsyncStorage.getItem("GOLO_FILTER_RADIUS");
+                    const savedOfferTypes = await AsyncStorage.getItem("GOLO_FILTER_OFFER_TYPES");
+                    
+                    if (savedRadius !== null) {
+                        currentRadius = Number(savedRadius);
+                    }
+                    if (savedOfferTypes !== null) {
+                        currentOfferTypes = savedOfferTypes;
+                    }
+                } catch (e) {
+                    console.error("Failed to load filters from AsyncStorage", e);
+                }
+
+                if (!isMounted) return;
+
+                setRadius(currentRadius);
+                setSelectedOfferTypes(currentOfferTypes);
+
+                setLoading(true);
+                try {
+                    setError("");
+                    const offersData = await fetchAllOffers({
+                        limit: 100,
+                        page: 1,
+                        radiusKm: currentRadius,
+                        offerTypes: currentOfferTypes || undefined,
+                        category: selectedCategory || undefined,
+                        lat: userCoordinates?.lat,
+                        lng: userCoordinates?.lng,
+                    });
+                    if (isMounted) {
+                        setOffers(offersData);
+                    }
+                } catch (err) {
+                    if (isMounted) {
+                        setOffers([]);
+                        setError(err?.message || "Unable to load offers right now");
+                    }
+                    console.error("Fetch offers error:", err);
+                } finally {
+                    if (isMounted) {
+                        setLoading(false);
+                    }
+                }
+            };
+
+            loadFiltersAndFetch();
+
+            return () => {
+                isMounted = false;
+            };
+        }, [selectedCategory, userCoordinates?.lat, userCoordinates?.lng])
     );
 
     const offerMatchesSearch = (offer, q) => {
@@ -352,7 +444,8 @@ export default function GoloHome() {
             (offer) =>
                 isOfferCurrentlyActive(offer) &&
                 categoryMatches(offer, selectedCategory) &&
-                offerMatchesSearch(offer, searchQuery)
+                offerMatchesSearch(offer, searchQuery) &&
+                offerTypeMatches(offer, selectedOfferTypes)
         )
         .sort((offerA, offerB) => {
             const distanceA = Number(offerA?.distanceKm);
@@ -389,7 +482,7 @@ export default function GoloHome() {
             <Topbar2 />
 
                 <View style={{flexDirection:"row", alignItems:"center",
-                    justifyContent:"space-between", paddingHorizontal:16, paddingVertical:5
+                    justifyContent:"space-between", paddingHorizontal:16
                 }}>
                 <View style={styles.locationSection}>
                     <View style={styles.locationRow}>
@@ -408,6 +501,7 @@ export default function GoloHome() {
                 </View>
 
                 <View style={styles.searchContainer}>
+                   <EvilIcons name="search" size={24} color="#555" />
                     <TextInput
                         placeholder="Search offers or products"
                         value={searchQuery}
@@ -415,6 +509,7 @@ export default function GoloHome() {
                         style={styles.searchInput}
                         returnKeyType="search"
                     />
+                <VoiceSearchButton onResult={setSearchQuery} color="#555" activeColor="#157a4f" />
                     {searchQuery.length > 0 && (
                         <TouchableOpacity onPress={() => setSearchQuery("")} style={{ padding: 8 }}>
                             <Ionicons name="close-circle" size={18} color="#555" />
@@ -756,13 +851,15 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: "#cacaca",
         marginHorizontal:16,
-        marginVertical:6
+        marginVertical:6,
+        paddingHorizontal: 6,
     },
     searchInput: {
         flex: 1,
-        paddingHorizontal: 12,
+        paddingLeft: 5,
         paddingVertical: 6,
         fontFamily: "Medium",
         fontSize: 14,
+        top:3
     },
 });

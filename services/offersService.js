@@ -309,6 +309,7 @@ export const fetchAllOffers = async (options = {}) => {
     lat = null,
     lng = null,
     radiusKm = 10,
+    offerTypes = null,
   } = options;
 
   try {
@@ -322,6 +323,10 @@ export const fetchAllOffers = async (options = {}) => {
 
     if (q) {
       nearbyParams.append("q", q);
+    }
+
+    if (offerTypes) {
+      nearbyParams.append("offerTypes", offerTypes);
     }
 
     if (lat && lng) {
