@@ -28,11 +28,12 @@ export default function Claimed({ navigation }) {
     const isOfferExpired = (offer) => {
         if (!offer) return false;
 
+        const displayItem = offer?.offer || offer;
         const status = String(
             offer?.status ||
             offer?.voucherStatus ||
-            offer?.offer?.status ||
-            offer?.offer?.voucherStatus ||
+            displayItem?.status ||
+            displayItem?.voucherStatus ||
             ""
         ).toLowerCase();
         if (status === "expired" || status === "expired_offer") {
@@ -45,11 +46,16 @@ export default function Claimed({ navigation }) {
             offer?.expiresAt ||
             offer?.expiryDate ||
             offer?.expiry ||
-            offer?.offer?.endDate ||
-            offer?.offer?.validTo ||
-            offer?.offer?.expiresAt ||
-            offer?.offer?.expiryDate ||
-            offer?.offer?.expiry;
+            displayItem?.endDate ||
+            displayItem?.validTo ||
+            displayItem?.expiresAt ||
+            displayItem?.expiryDate ||
+            displayItem?.expiry ||
+            displayItem?.offer?.endDate ||
+            displayItem?.offer?.validTo ||
+            displayItem?.offer?.expiresAt ||
+            displayItem?.offer?.expiryDate ||
+            displayItem?.offer?.expiry;
 
         if (!expiryValue) {
             return false;
@@ -89,7 +95,10 @@ export default function Claimed({ navigation }) {
 
             setError("");
             const data = await fetchMyClaimedOffers({ limit: 100 });
-            setClaimedOffers(Array.isArray(data) ? data : []);
+            const normalizedOffers = Array.isArray(data)
+                ? data.filter((item) => !isOfferExpired(item) && isValidClaimedDeal(item))
+                : [];
+            setClaimedOffers(normalizedOffers);
         } catch (err) {
             const message = String(err?.message || "Unable to load claimed offers");
             setError(message);
