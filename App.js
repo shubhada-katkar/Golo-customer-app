@@ -106,7 +106,7 @@ export default function App() {
           <Stack.Screen name="AdEdit" component={AdEdit} />
           <Stack.Screen name="SellerProfile" component={SellerProfile} />
           <Stack.Screen name="TransactionDetails" component={TransactionDetails} />
-          <Stack.Screen name="FilterPage" component={FilterPage}/>
+          <Stack.Screen name="FilterPage" component={FilterPage} />
         </Stack.Navigator>
       </NavigationContainer>
     </ThemeProvider>
