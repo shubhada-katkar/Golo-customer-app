@@ -32,12 +32,13 @@ import AdEdit from "./screens/AdEdit";
 import SellerProfile from "./screens/SellerProfile";
 import TransactionDetails from "./screens/TransactionDetails";
 import FilterPage from "./screens/FilterPage";
+import { BASE_URL } from "./config"; // adjust path as needed
 
 SplashScreen.preventAutoHideAsync();
 
 const Stack = createStackNavigator();
 
-const SHARE_WEB_BASE = (process.env.EXPO_PUBLIC_SHARE_WEB_BASE_URL || "").replace(/\/+$/, "");
+const SHARE_WEB_BASE = BASE_URL.replace(/\/+$/, "");
 
 const linking = {
   prefixes: [

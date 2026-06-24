@@ -58,8 +58,14 @@ export const claimOfferVoucher = async (offerId, metadata = {}) => {
   if (typeof metadata.longitude === "number") {
     body.longitude = Number(metadata.longitude);
   }
-  if (metadata.location) {
-    body.location = String(metadata.location).trim();
+
+  const rawLocation = typeof metadata.location === "string" ? metadata.location.trim() : "";
+  const normalizedLocation = rawLocation && !/^(location not available|not available|unknown|n\/a)$/i.test(rawLocation)
+    ? rawLocation
+    : "";
+
+  if (normalizedLocation) {
+    body.location = normalizedLocation;
   }
 
   const headers = {};

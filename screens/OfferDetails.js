@@ -110,6 +110,40 @@ const getAgeFromDate = (dateValue) => {
     return age >= 0 ? age : null;
 };
 
+const findFirstValue = (source, paths = []) => {
+    if (!source || typeof source !== "object") {
+        return null;
+    }
+
+    for (const path of paths) {
+        let current = source;
+        let found = true;
+
+        for (const key of path) {
+            if (current == null || typeof current !== "object" || !(key in current)) {
+                found = false;
+                break;
+            }
+            current = current[key];
+        }
+
+        if (found && current !== null && current !== undefined && String(current).trim() !== "") {
+            return current;
+        }
+    }
+
+    return null;
+};
+
+const normalizePhoneNumber = (value) => {
+    if (value === undefined || value === null || value === "") {
+        return null;
+    }
+
+    const normalized = String(value).trim();
+    return normalized ? normalized : null;
+};
+
 export default function OfferDetails({ navigation, route }) {
     const scrollViewRef = useRef(null);
     const { colors } = useContext(ThemeContext);
@@ -185,36 +219,69 @@ export default function OfferDetails({ navigation, route }) {
         offerData?.bannerDescription ||
         offerData?.selectedProducts?.[0]?.description ||
         "Offer details will be available soon.";
-    const merchantId =
-        offerData?.merchant?.merchantId ||
-        offerData?.merchantId ||
-        offerData?.merchant?._id ||
-        offerData?.merchant?.userId ||
-        offerData?.merchant?.id ||
-        "";
+    const merchantId = normalizePhoneNumber(
+        findFirstValue(offerData, [
+            ["merchant", "merchantId"],
+            ["merchant", "userId"],
+            ["merchant", "id"],
+            ["merchant", "_id"],
+            ["merchant", "user", "id"],
+            ["merchant", "user", "_id"],
+            ["merchantId"],
+            ["merchant", "merchant", "id"],
+            ["merchant", "merchant", "_id"],
+            ["merchantProfile", "merchantId"],
+            ["merchantProfile", "userId"],
+            ["merchantProfile", "id"],
+            ["merchantProfile", "_id"],
+        ]) || merchantProfile?.merchantId || merchantProfile?.userId || merchantProfile?.id || merchantProfile?._id || ""
+    ) || "";
 
-    const phoneNumber =
-        offerData?.merchant?.contactNumber ||
-        offerData?.merchant?.phone ||
-        offerData?.merchant?.phoneNumber ||
-        offerData?.merchant?.mobile ||
-        offerData?.merchant?.mobileNumber ||
-        offerData?.merchant?.merchantPhone ||
-        offerData?.merchant?.storePhone ||
-        offerData?.merchant?.phoneNo ||
-        offerData?.merchant?.phone_number ||
-        offerData?.merchant?.mobile_no ||
-        offerData?.contactNumber ||
-        offerData?.phoneNumber ||
-        offerData?.phone ||
-        offerData?.merchantPhone ||
-        offerData?.mobile ||
-        merchantProfile?.contactNumber ||
-        merchantProfile?.phone ||
-        merchantProfile?.phoneNumber ||
-        merchantProfile?.mobile ||
-        merchantProfile?.mobileNumber ||
-        null;
+    const phoneNumber = normalizePhoneNumber(
+        findFirstValue(offerData, [
+            ["merchant", "contactNumber"],
+            ["merchant", "phone"],
+            ["merchant", "phoneNumber"],
+            ["merchant", "mobile"],
+            ["merchant", "mobileNumber"],
+            ["merchant", "merchantPhone"],
+            ["merchant", "storePhone"],
+            ["merchant", "phoneNo"],
+            ["merchant", "contactNo"],
+            ["merchant", "mobileNo"],
+            ["merchant", "telephone"],
+            ["merchant", "contact"],
+            ["merchant", "user", "contactNumber"],
+            ["merchant", "user", "phoneNumber"],
+            ["merchant", "user", "mobile"],
+            ["merchant", "profile", "contactNumber"],
+            ["merchant", "profile", "phoneNumber"],
+            ["merchant", "profile", "mobile"],
+            ["merchant", "profile", "mobileNumber"],
+            ["contactNumber"],
+            ["phoneNumber"],
+            ["phone"],
+            ["mobile"],
+            ["merchantPhone"],
+            ["mobileNumber"],
+            ["merchant", "merchant", "contactNumber"],
+            ["merchant", "merchant", "phoneNumber"],
+            ["merchant", "merchant", "mobile"],
+        ]) ||
+        findFirstValue(merchantProfile, [
+            ["contactNumber"],
+            ["phone"],
+            ["phoneNumber"],
+            ["mobile"],
+            ["mobileNumber"],
+            ["merchantPhone"],
+            ["storePhone"],
+            ["user", "contactNumber"],
+            ["user", "phoneNumber"],
+            ["user", "mobile"],
+            ["user", "mobileNumber"],
+        ]) || null
+    );
     const locationText =
         offerData?.address ||
         offerData?.shopAddress ||
@@ -502,12 +569,14 @@ export default function OfferDetails({ navigation, route }) {
             return;
         }
 
+        const resolvedClaimLocation = claimLocationLabel?.trim() || "";
+
         setClaimLoading(true);
         try {
             const claimResult = await claimOfferVoucher(offerId, {
                 latitude: claimLatitude,
                 longitude: claimLongitude,
-                location: claimLocationLabel || locationText,
+                location: resolvedClaimLocation,
                 age: customerAge,
                 gender: customerGender,
             });
