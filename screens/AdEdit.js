@@ -20,6 +20,7 @@ import { updateAd } from "../services/analyticsService";
 import { ThemeContext } from "../theme/ThemeContext";
 import Topbar from "../components/Topbar";
 import ChojaBottom from "../components/ChojaBottom";
+import { BASE_URL } from "../config";
 
 const CATEGORY_DTO_FIELD_BY_LABEL = {
   Vehicle: "vehicleData",
@@ -208,12 +209,15 @@ export default function AdEdit({ route, navigation }) {
     contactPhone: "",
   });
 
-  const baseUrl = useMemo(
-    () => (process.env.EXPO_PUBLIC_API_URL || "").replace(/\/+$/, ""),
-    [],
-  );
-
   const colors = useContext(ThemeContext);
+
+  const templateNumber = useMemo(() => {
+    const parsed = Number(ad?.templateId ?? ad?.template ?? 1);
+    return Number.isFinite(parsed) ? parsed : 1;
+  }, [ad?.templateId, ad?.template]);
+
+  const showImageSection = templateNumber === 1 || templateNumber === 2;
+  const allowsMultipleImages = templateNumber === 1;
 
   useEffect(() => {
     const fetchAd = async () => {
@@ -224,11 +228,11 @@ export default function AdEdit({ route, navigation }) {
           return;
         }
 
-        if (!baseUrl) {
-          throw new Error("EXPO_PUBLIC_API_URL is not configured");
+        if (!BASE_URL) {
+          throw new Error("BASE_URL is not configured");
         }
 
-        const response = await fetch(`${baseUrl}/ads/${encodeURIComponent(adId)}`);
+        const response = await fetch(`${BASE_URL}/ads/${encodeURIComponent(adId)}`);
         const data = await response.json().catch(() => ({}));
 
         if (!response.ok || !data?.success || !data?.data) {
@@ -239,9 +243,11 @@ export default function AdEdit({ route, navigation }) {
         const categoryDtoField = CATEGORY_DTO_FIELD_BY_LABEL[fetchedAd?.category] || null;
         const categorySource = fetchedAd?.categorySpecificData || (categoryDtoField ? fetchedAd?.[categoryDtoField] : null) || {};
         const editorData = buildCategoryEditorData(categorySource);
+        const fetchedImages = Array.isArray(fetchedAd?.images) ? fetchedAd.images : [];
+        const normalizedImages = Number(fetchedAd?.templateId ?? fetchedAd?.template ?? 1) === 2 ? fetchedImages.slice(0, 1) : fetchedImages;
 
         setAd(fetchedAd);
-        setImages(Array.isArray(fetchedAd?.images) ? fetchedAd.images : []);
+        setImages(normalizedImages);
         setCategoryDraft(editorData.draft);
         setCategoryTypeMap(editorData.typeMap);
         setForm({
@@ -261,7 +267,7 @@ export default function AdEdit({ route, navigation }) {
     };
 
     fetchAd();
-  }, [adId, baseUrl, navigation]);
+  }, [adId, BASE_URL, navigation]);
 
   const onChange = (key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -289,7 +295,12 @@ export default function AdEdit({ route, navigation }) {
 
     if (!result.canceled && result.assets?.length > 0) {
       const selectedUris = result.assets.map((asset) => asset.uri).filter(Boolean);
-      setImages((prev) => [...prev, ...selectedUris]);
+      const incomingUris = allowsMultipleImages ? selectedUris : selectedUris.slice(0, 1);
+
+      setImages((prev) => {
+        const combined = [...prev, ...incomingUris];
+        return allowsMultipleImages ? combined : combined.slice(0, 1);
+      });
     }
   };
 
@@ -324,14 +335,16 @@ export default function AdEdit({ route, navigation }) {
         throw new Error("Please login again to update ad");
       }
 
-      if (!baseUrl) {
-        throw new Error("EXPO_PUBLIC_API_URL is not configured");
+      if (!BASE_URL) {
+        throw new Error("BASE_URL is not configured");
       }
 
       const uploadedImages = [];
-      for (const imageUri of images) {
-        const uploaded = await uploadAdImageToCloud(imageUri);
-        if (uploaded) uploadedImages.push(uploaded);
+      if (showImageSection) {
+        for (const imageUri of images) {
+          const uploaded = await uploadAdImageToCloud(imageUri);
+          if (uploaded) uploadedImages.push(uploaded);
+        }
       }
 
       // Clean contactInfo: only allowed fields
@@ -455,24 +468,32 @@ export default function AdEdit({ route, navigation }) {
           placeholder="Enter phone number"
         />
 
-        <Text style={styles.sectionTitle}>Images</Text>
-        <View style={styles.imageList}>
-          {images.map((uri, index) => (
-            <View key={`${uri}-${index}`} style={styles.imageTileWrap}>
-              <Image source={{ uri }} style={styles.imageTile} />
-              <TouchableOpacity
-                style={styles.imageRemoveBtn}
-                onPress={() => removeImageAt(index)}
-              >
-                <MaterialIcons name="close" size={16} color="#fff" />
-              </TouchableOpacity>
+        {showImageSection ? (
+          <>
+            <Text style={styles.sectionTitle}>Images</Text>
+            <View style={styles.imageList}>
+              {images.map((uri, index) => (
+                <View key={`${uri}-${index}`} style={styles.imageTileWrap}>
+                  <Image source={{ uri }} style={styles.imageTile} />
+                  <TouchableOpacity
+                    style={styles.imageRemoveBtn}
+                    onPress={() => removeImageAt(index)}
+                  >
+                    <MaterialIcons name="close" size={16} color="#fff" />
+                  </TouchableOpacity>
+                </View>
+              ))}
             </View>
-          ))}
-        </View>
 
-        <TouchableOpacity style={styles.secondaryBtn} onPress={pickImages}>
-          <Text style={styles.secondaryBtnText}>Add Images</Text>
-        </TouchableOpacity>
+            <TouchableOpacity style={styles.secondaryBtn} onPress={pickImages}>
+              <Text style={styles.secondaryBtnText}>{allowsMultipleImages ? "Add Images" : "Add Image"}</Text>
+            </TouchableOpacity>
+
+            {!allowsMultipleImages ? (
+              <Text style={styles.helperText}>Only one image is allowed for this template.</Text>
+            ) : null}
+          </>
+        ) : null}
 
         <Text style={[styles.sectionTitle, { marginTop: 22 }]}>Category Details</Text>
         {!Object.keys(categoryDraft).length && (

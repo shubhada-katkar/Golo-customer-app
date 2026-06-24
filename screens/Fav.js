@@ -14,6 +14,19 @@ export default function Fav({ navigation }) {
     const [favorites, setFavorites] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    const getAdImageUri = (item) => {
+        if (Array.isArray(item?.images) && item.images.length > 0) return item.images[0];
+        if (Array.isArray(item?.photos) && item.photos.length > 0) return item.photos[0];
+        if (typeof item?.image === "string" && item.image) return item.image;
+        if (typeof item?.imageUrl === "string" && item.imageUrl) return item.imageUrl;
+        if (typeof item?.thumbnail === "string" && item.thumbnail) return item.thumbnail;
+        return null;
+    };
+
+    const getAdDescription = (item) => {
+        return item?.description || item?.body || item?.details || item?.adDescription || "";
+    };
+
     const loadFavorites = useCallback(async () => {
         setLoading(true);
         try {
@@ -79,38 +92,50 @@ export default function Fav({ navigation }) {
                     <View style={{ padding: 24, alignItems: "center" }}>
                         <Text style={{ color: colors.text, fontFamily: "Medium" }}>No favorite ads yet</Text>
                     </View>
-                ) : favorites.map((item) => (
-                    <TouchableOpacity
-                        key={item.adId}
-                        style={[styles.card]}
-                        onPress={() => navigation.navigate("AdDetails", { adId: item._id || item.adId })}
-                    >
-                        {item?.image ? (
-                            <Image source={{ uri: item.image }} style={styles.imagePlaceholder} />
-                        ) : null}
+                ) : favorites.map((item) => {
+                    const imageUri = getAdImageUri(item);
+                    const description = getAdDescription(item);
 
-                        <View style={{ flex: 1, marginLeft: item?.image ? 12 : 0 }}>
-                            <Text style={{ fontSize: 16, fontFamily: "SemiBold", color: "#000000",
-                                lineHeight: Math.round(16 * 1.5)
-                             }} numberOfLines={1}>
-                                {item.title || "Ad"}
-                            </Text>
-                            <Text style={{ fontSize: 12, color: "#000000", lineHeight: Math.round(12 * 1.5),
-                                fontFamily: "Medium"
-                             }} numberOfLines={1}>
-                                {item.location || "No location"}
-                            </Text>
-                        </View>
+                    return (
+                        <TouchableOpacity
+                            key={item.adId || item._id || item.title}
+                            style={[styles.card]}
+                            onPress={() => navigation.navigate("AdDetails", { adId: item._id || item.adId })}
+                        >
+                            {imageUri ? (
+                                <Image source={{ uri: imageUri }} style={styles.imagePlaceholder} />
+                            ) : null}
 
-                        <TouchableOpacity onPress={() => handleRemoveFavorite(item)}>
+                            <View style={{ flex: 1, marginLeft: imageUri ? 12 : 0 }}>
+                                <Text style={{ fontSize: 16, fontFamily: "SemiBold", color: "#000000",
+                                    lineHeight: Math.round(16 * 1.5)
+                                 }} numberOfLines={1}>
+                                    {item.title || "Ad"}
+                                </Text>
+                                <Text style={{ fontSize: 12, color: "#000000", lineHeight: Math.round(12 * 1.5),
+                                    fontFamily: "Medium"
+                                 }} numberOfLines={1}>
+                                    {item.location || "No location"}
+                                </Text>
+                                {description ? (
+                                    <Text style={{ fontSize: 12, color: "#666666", lineHeight: Math.round(12 * 1.5),
+                                        fontFamily: "Regular", marginTop: 2
+                                     }} numberOfLines={2}>
+                                        {description}
+                                    </Text>
+                                ) : null}
+                            </View>
+
+                            <TouchableOpacity onPress={() => handleRemoveFavorite(item)}>
                             <MaterialCommunityIcons
                                 name="heart"
                                 size={26}
                                 color="#e74c3c"
                             />
+                            </TouchableOpacity>
                         </TouchableOpacity>
-                    </TouchableOpacity>
-                ))}
+                    );
+                })}
             </ScrollView>
 
             <SafeAreaView

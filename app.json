@@ -1,4 +1,4 @@
-﻿{
+{
   "expo": {
     "name": "GOLO",
     "slug": "golo-customer-app",
@@ -23,7 +23,19 @@
     },
     "plugins": [
       "@react-native-community/datetimepicker",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "packagingOptions": {
+              "exclude": [
+                "META-INF/com.android.support/*"
+              ]
+            }
+          }
+        }
+      ]
     ],
     "extra": {
       "eas": {

@@ -17,7 +17,6 @@ import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { ThemeContext } from "../theme/ThemeContext";
 import Topbar2 from "../components/Topbar2";
 import GoloBottom from "../components/GoloBottom";
-import VoiceSearchButton from "../components/VoiceSearchButton";
 import { fetchAllOffers } from "../services/offersService";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -509,7 +508,6 @@ export default function GoloHome() {
                         style={styles.searchInput}
                         returnKeyType="search"
                     />
-                <VoiceSearchButton onResult={setSearchQuery} color="#555" activeColor="#157a4f" />
                     {searchQuery.length > 0 && (
                         <TouchableOpacity onPress={() => setSearchQuery("")} style={{ padding: 8 }}>
                             <Ionicons name="close-circle" size={18} color="#555" />

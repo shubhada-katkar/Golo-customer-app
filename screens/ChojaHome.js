@@ -3,7 +3,6 @@ import { View, StyleSheet, Text, TouchableOpacity, ScrollView, TextInput } from 
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemeContext } from "../theme/ThemeContext";
 import ChojaBottom from "../components/ChojaBottom";
-import VoiceSearchButton from "../components/VoiceSearchButton";
 import { EvilIcons, Ionicons } from "@expo/vector-icons";
 import Iwant from "../components/Iwant";
 import MyAds from "../components/MyAds";
@@ -72,7 +71,6 @@ export default function ChojaHome() {
                         textAlignVertical="center"
                         returnKeyType="search"
                     />
-                <VoiceSearchButton onResult={setSearchQuery} color="#555" activeColor="#157a4f" />
 
                     {searchQuery.length > 0 && (
                         <TouchableOpacity onPress={() => setSearchQuery("")} style={{ padding: 4 }}>
