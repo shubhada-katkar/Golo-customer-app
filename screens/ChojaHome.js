@@ -1,4 +1,4 @@
-﻿import React, { useContext, useRef, useState } from "react";
+﻿import React, { useContext, useRef, useState, useEffect } from "react";
 import { View, StyleSheet, Text, TouchableOpacity, ScrollView, TextInput } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemeContext } from "../theme/ThemeContext";
@@ -9,6 +9,7 @@ import MyAds from "../components/MyAds";
 import ChotyaJahirati from "../components/ChotyaJahirati";
 import Topbar2 from "../components/Topbar2";
 import { LinearGradient } from "expo-linear-gradient";
+import * as Location from "expo-location";
 
 const categories = [
     { icon: "school-outline", label: "Education" },
@@ -44,6 +45,100 @@ export default function ChojaHome() {
         ]
         : categories;
     const scrollRef = useRef(null);
+        const [locationStatus, setLocationStatus] = useState("loading");
+        const [userCoordinates, setUserCoordinates] = useState(null);
+        const [locationPlaceName, setLocationPlaceName] = useState("");
+
+    useEffect(() => {
+        let isMounted = true;
+
+        const getUserLocation = async () => {
+            try {
+                setLocationStatus("loading");
+                setLocationPlaceName("");
+
+                const { status } = await Location.requestForegroundPermissionsAsync();
+
+                if (!isMounted) {
+                    return;
+                }
+
+                if (status !== "granted") {
+                    setLocationStatus("denied");
+                    return;
+                }
+
+                const current = await Location.getCurrentPositionAsync({
+                    accuracy: Location.Accuracy.Balanced,
+                });
+
+                if (!isMounted) {
+                    return;
+                }
+
+                const coords = {
+                    lat: current?.coords?.latitude,
+                    lng: current?.coords?.longitude,
+                };
+
+                setUserCoordinates(coords);
+
+                try {
+                    const geocode = await Location.reverseGeocodeAsync({
+                        latitude: coords.lat,
+                        longitude: coords.lng,
+                    });
+
+                    if (!isMounted) {
+                        return;
+                    }
+
+                    const place = geocode?.[0] || {};
+                    const placeText = [
+                        place?.name,
+                        place?.street,
+                        place?.city,
+                        place?.subregion,
+                        place?.region,
+                        place?.country,
+                    ]
+                        .filter(Boolean)
+                        .slice(0, 3)
+                        .join(", ");
+
+                    setLocationPlaceName(placeText || "your current area");
+                } catch (geocodeError) {
+                    if (!isMounted) {
+                        return;
+                    }
+                    setLocationPlaceName("your current area");
+                }
+
+                setLocationStatus("granted");
+            } catch (locationError) {
+                if (!isMounted) {
+                    return;
+                }
+                setLocationStatus("denied");
+                console.error("Location permission/fetch error:", locationError);
+            }
+        };
+
+        getUserLocation();
+
+        return () => {
+            isMounted = false;
+        };
+    }, []);
+
+    const locationLabel =
+        locationStatus === "granted"
+            ? locationPlaceName
+                ? `Location: ${locationPlaceName}`
+                : "Current location"
+            : locationStatus === "loading"
+                ? "Checking your location..."
+                : "No access to location";
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
@@ -54,6 +149,16 @@ export default function ChojaHome() {
                 style={{height: 220, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0}}
             />
             <Topbar2 />
+
+              <View style={styles.locationSection}>
+                                <View style={styles.locationRow}>
+                                    <Ionicons name="location-outline" size={16} color="#000000" />
+                                    <Text style={[styles.locationText]}
+                                    numberOfLines={1} ellipsizeMode="tail">
+                                        {locationLabel}
+                                    </Text>
+                                </View>               
+                            </View>
 
             <View style={styles.row1}>
                 <TouchableOpacity
@@ -245,5 +350,29 @@ const styles = StyleSheet.create({
         marginTop: 4,
         textAlign: "center",
         lineHeight: Math.round(10 * 1.3),
+    },
+    locationSection: {
+       backgroundColor:"#f5b949e5",
+       borderRadius:12,
+       padding:10,
+       marginHorizontal:12,
+       marginBottom:5
+    },
+    locationRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 4,
+    },
+    locationText: {
+        fontSize: 12,
+        fontFamily: "Medium",
+        lineHeight: Math.round(12 * 1.5),
+        flexShrink: 1,
+    },
+    locationHint: {
+        marginTop: 4,
+        fontSize: 12,
+        fontFamily: "Medium",
+        lineHeight: Math.round(12 * 1.5),
     },
 })

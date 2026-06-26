@@ -186,22 +186,28 @@ export default function Matrimonial({ formData, setFormData, category, onPreviou
 
         <Text style={styles.label}>About Me</Text>
         <TextInput
-          style={styles.input}
+          style={styles.descriptionInput}
           value={formData.aboutMe || ""}
           onChangeText={(text) =>
             setFormData({ ...formData, aboutMe: text })
           }
           placeholder="Share a brief description about yourself"
+          multiline
+          scrollEnabled
+          textAlignVertical="top"
         />
 
         <Text style={styles.label}>Partner Preference</Text>
         <TextInput
-          style={styles.input}
+          style={styles.descriptionInput}
           value={formData.partnerPreference || ""}
           onChangeText={(text) =>
             setFormData({ ...formData, partnerPreference: text })
           }
           placeholder="Describe your ideal partner"
+          multiline
+          textAlignVertical="top"
+          scrollEnabled
         />
 
       </View>
@@ -220,7 +226,7 @@ const styles = StyleSheet.create({
   formCard: { backgroundColor: "#fff", paddingBottom: 18, borderRadius: 10, paddingHorizontal: 16 },
   label: { fontSize: 16, marginTop: 16, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
   value: { fontSize: 16, color: "#555", fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
-  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10, marginTop: 6 },
+  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10, marginTop: 6, fontSize:14, fontFamily:"Medium" },
   textArea: { height: 80, textAlignVertical: "top" },
   switchRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 12 },
 
@@ -247,5 +253,16 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     overflow: "hidden",
   },
+   descriptionInput: {
+  borderWidth: 1,
+  borderColor: "#ccc",
+  borderRadius: 8,
+  padding: 12,
+  minHeight: 100,      // Increased height
+  maxHeight: 100,      // Keeps the box fixed after this height
+  fontSize: 14,
+  textAlignVertical: "top",
+  fontFamily:"Medium"
+},
 });
 

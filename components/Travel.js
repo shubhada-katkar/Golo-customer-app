@@ -141,22 +141,28 @@ export default function Travel({ formData, setFormData, category, onPrevious, te
 
         <Text style={styles.label}>Inclusions</Text>
         <TextInput
-          style={styles.input}
+          style={styles.descriptionInput}
           value={formData.inclusions || ""}
           onChangeText={(text) =>
             setFormData({ ...formData, inclusions: text })
           }
           placeholder="Inclusions"
+          multiline
+          textAlignVertical="top"
+          scrollEnabled
         />
 
         <Text style={styles.label}>Exclusions</Text>
         <TextInput
-          style={styles.input}
+          style={styles.descriptionInput}
           value={formData.exclusions || ""}
           onChangeText={(text) =>
             setFormData({ ...formData, exclusions: text })
           }
           placeholder="Exclusions"
+          multiline
+          scrollEnabled
+          textAlignVertical="top"
         />
       </View>
       <TouchableOpacity style={styles.nextBtn} onPress={() => { navigation.navigate("Preview", { template, category, formData, price, selectedDays, selectedLocations, selectedDates, startDate, endDate }); }}>
@@ -171,10 +177,20 @@ const styles = StyleSheet.create({
   formCard: { backgroundColor: "#fff", paddingHorizontal: 16, borderRadius: 10, paddingBottom: 18 },
   label: { fontSize: 16, marginTop: 16, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
   value: { fontSize: 16, color: "#555", fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
-  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10, marginTop: 6 },
+  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10, marginTop: 6, fontSize:14, fontFamily:"Medium" },
   textArea: { height: 80, textAlignVertical: "top" },
   switchRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 12 },
-
+   descriptionInput: {
+  borderWidth: 1,
+  borderColor: "#ccc",
+  borderRadius: 8,
+  padding: 12,
+  minHeight: 100,      // Increased height
+  maxHeight: 100,      // Keeps the box fixed after this height
+  fontSize: 14,
+  textAlignVertical: "top",
+  fontFamily:"Medium"
+},
   uploadBox: {
     borderWidth: 1,
     borderStyle: "dashed",

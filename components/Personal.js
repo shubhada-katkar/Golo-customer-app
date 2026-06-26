@@ -95,12 +95,15 @@ export default function Personal({ formData, setFormData, category, onPrevious, 
 
         <Text style={styles.label}>Description</Text>
         <TextInput
-          style={styles.input}
+          style={styles.descriptionInput}
           value={formData.description || ""}
           onChangeText={(text) =>
             setFormData({ ...formData, description: text })
           }
           placeholder="Provide a brief description of your achievement"
+            multiline
+  textAlignVertical="top" // Starts text from the top (Android)
+  scrollEnabled={true}
         />
 
         <Text style={styles.label}>Contact</Text>
@@ -127,7 +130,7 @@ const styles = StyleSheet.create({
   formCard: { backgroundColor: "#fff", paddingHorizontal: 16, borderRadius: 10, paddingBottom: 18 },
   label: { fontSize: 16, marginTop: 16, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
   value: { fontSize: 16, color: "#555", fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
-  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10, marginTop: 6 },
+  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10, marginTop: 6, fontSize:14, fontFamily:"Medium" },
   textArea: { height: 80, textAlignVertical: "top" },
   switchRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 12 },
 
@@ -155,7 +158,17 @@ const styles = StyleSheet.create({
     justifyContent: "center"
   },
   nextText: { color: "#fff", fontSize: 16, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
-
+ descriptionInput: {
+  borderWidth: 1,
+  borderColor: "#ccc",
+  borderRadius: 8,
+  padding: 12,
+  minHeight: 150,      // Increased height
+  maxHeight: 150,      // Keeps the box fixed after this height
+  fontSize: 14,
+  textAlignVertical: "top",
+  fontFamily:"Medium"
+},
   pickerWrap: {
     borderWidth: 1,
     borderColor: "#ddd",

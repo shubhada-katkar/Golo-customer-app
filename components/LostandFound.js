@@ -113,13 +113,15 @@ export default function LostandFound({
                 {/* Description */}
                 <Text style={styles.label}>Description *</Text>
                 <TextInput
-                    style={[styles.input, styles.textArea]}
-                    multiline
+                    style={styles.descriptionInput}
                     value={formData.description || ""}
                     onChangeText={(text) =>
                         setFormData({ ...formData, description: text })
                     }
                     placeholder="Describe the item"
+                    multiline
+                    scrollEnabled
+                     textAlignVertical="top" 
                 />
 
                 {/* Reward */}
@@ -218,12 +220,21 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         padding: 10,
         marginTop: 6,
+        fontSize:14,
+        fontFamily:"Medium"
     },
 
-    textArea: {
-        height: 80,
-        textAlignVertical: "top",
-    },
+ descriptionInput: {
+  borderWidth: 1,
+  borderColor: "#ccc",
+  borderRadius: 8,
+  padding: 12,
+  minHeight: 100,      // Increased height
+  maxHeight: 100,      // Keeps the box fixed after this height
+  fontSize: 14,
+  textAlignVertical: "top",
+  fontFamily:"Medium"
+},
 
     segmentRow: {
         flexDirection: "row",

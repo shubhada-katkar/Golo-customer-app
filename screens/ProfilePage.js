@@ -6,8 +6,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemeContext } from "../theme/ThemeContext";
 import Topbar from "../components/Topbar";
-import ChojaBottom from "../components/ChojaBottom";
-import { Entypo, MaterialIcons } from "@expo/vector-icons";
+import { Entypo, MaterialIcons, MaterialCommunityIcons, Feather } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
 import { BASE_URL } from "../config";
@@ -32,9 +31,6 @@ export default function ProfilePage({ navigation }) {
 
     const nameRef = useRef(null);
     const phoneRef = useRef(null);
-
-    {/*Dropdown*/ }
-    const [drop, setdrop] = useState(false);
 
     // ================= FETCH PROFILE =================
     const fetchProfile = async () => {
@@ -261,80 +257,10 @@ export default function ProfilePage({ navigation }) {
                         <Text style={{ fontSize: 20, fontFamily: "SemiBold", lineHeight: Math.round(20 * 1.5) }}>
                             Profile
                         </Text>
-
-                        <Entypo name="dots-three-vertical" size={22} color={colors.text}
-                            onPress={() => setdrop(!drop)} />
                     </View>
 
                 </View>
-
-                {drop && (
-                    <View style={styles.dropdownOverlay}>
-                        <TouchableOpacity
-                            style={styles.overlayBackground}
-                            onPress={() => setdrop(false)}
-                        />
-
-                        <View style={[styles.dropdownMenu, { backgroundColor: colors.background }]}>
-
-                            <TouchableOpacity
-                                style={styles.dropdownItem}
-                                onPress={() => {
-                                    setdrop(false);
-                                    navigation.navigate("Analytics");
-                                }}>
-                                <Text style={[styles.dropdownText, { color: "#000" }]}>
-                                    Analytics
-                                </Text>
-                            </TouchableOpacity>
-
-                            <View style={{ height: 0.5, backgroundColor: colors.divider }} />
-
-                            <TouchableOpacity
-                                style={styles.dropdownItem}
-                                onPress={() => {
-                                    setdrop(false);
-                                    navigation.navigate("Transaction");
-                                }}>
-                                <Text style={[styles.dropdownText, { color: "#000" }]}>
-                                    Transaction History
-                                </Text>
-                            </TouchableOpacity>
-
-
-                            <View style={{ height: 0.5, backgroundColor: colors.divider }} />
-
-                            <View style={styles.dropdownItem}>
-                                <Text style={[styles.dropdownText, { color: colors.text }]}>
-                                    Dark Mode
-                                </Text>
-
-                                <Switch
-                                    value={theme === "dark"}
-                                    onValueChange={toggleTheme}
-                                    thumbColor={theme === "dark" ? "#157a4f" : "#f4f3f4"}
-                                    trackColor={{ false: "#ccc", true: "#141414" }}
-                                />
-                            </View>
-
-                            <View style={{ height: 0.5, backgroundColor: colors.divider }} />
-
-                            <TouchableOpacity
-                                style={[styles.dropdownItem, { flexDirection: "row", alignItems: "center", justifyContent: "flex-start", gap: 5 }]}
-                                onPress={() => {
-                                    setdrop(false);
-                                    confirmLogout();
-                                }}>
-                                <Text style={[styles.dropdownText, { color: "#f86868" }]}>
-                                    Logout
-                                </Text>
-                                <MaterialIcons name="exit-to-app" size={20} color="#f86868" style={{ top: -2 }} />
-                            </TouchableOpacity>
-
-                        </View>
-                    </View>
-                )}
-
+         
                 <ScrollView
                     contentContainerStyle={{ paddingBottom: 30 }}
                     keyboardShouldPersistTaps="handled"
@@ -343,6 +269,7 @@ export default function ProfilePage({ navigation }) {
                     <View style={{ height: 1, backgroundColor:"#000000", marginVertical:6 }} />
 
                     {/* PROFILE IMAGE */}
+                    <View style={{ alignItems: "center", flexDirection: "row", paddingHorizontal: 14, justifyContent:"space-between", marginTop: 12 }}>
                     <TouchableOpacity style={styles.avatarWrapper} onPress={pickImage}>
                         <View>
                             <Image
@@ -355,18 +282,20 @@ export default function ProfilePage({ navigation }) {
                         </View>
                     </TouchableOpacity>
 
-                    <View style={{ paddingHorizontal: 14, marginTop: 16 }}>
-
-
                         <View style={styles.profileCard} >
-                            <View style={{flexDirection:"row", alignItems:"center", justifyContent:"space-between"}}>
+                            <View style={{flexDirection:"row", alignItems:"center", gap:12}}>
                             <View>
                             <Text style={styles.cardTitle}>Loyalty Status</Text>
                             <Text style={styles.cardSubtitle}>{loyaltyTier} tier</Text>
                             </View>
                             <Text style={styles.cardValue }>{loyaltyPoints} points</Text>
                             </View>
-                        </View>   
+                        </View> 
+                      </View>  
+
+                    <View style={{ paddingHorizontal: 14, marginTop: 10 }}>  
+
+                      <Text style={[styles.sectionHeader, { color: colors.text, marginTop: 12 }]}>PROFILE SETTINGS</Text>
 
                         {/* NAME */}
                         <Text style={[styles.text, { color: colors.text }]}>Your Name</Text>
@@ -443,8 +372,49 @@ export default function ProfilePage({ navigation }) {
                                 {saving ? "Saving..." : "Save Changes"}
                             </Text>
                         </TouchableOpacity>
+            </View>
 
-                    </View>
+            <View style={styles.divider} />
+
+             <View style={styles.menuContainer}>
+            <Text style={[styles.sectionHeader, { color: colors.text }]}>MENU</Text>
+
+            <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.card || "#fff" }]} onPress={() => navigation.navigate("Analytics")}>
+                <View style={styles.iconCircle}>
+                    <MaterialCommunityIcons name="account-cog-outline" size={20} color="#157a4f" />
+                </View>
+                <View style={styles.menuText}>
+                    <Text style={[styles.menuTitle, { color: colors.text }]}>Analytics</Text>
+                    <Text style={[styles.menuSub, { color: colors.subText || "#888" }]}>View your ads analytics</Text>
+                </View>
+                <Feather name="chevron-right" size={20} color={colors.subText || "#aaa"} />
+            </TouchableOpacity>
+
+             <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.card || "#fff" }]} onPress={() => navigation.navigate("Transaction")}>
+                <View style={styles.iconCircle}>
+                    <MaterialCommunityIcons name="account-cog-outline" size={20} color="#157a4f" />
+                </View>
+                <View style={styles.menuText}>
+                    <Text style={[styles.menuTitle, { color: colors.text }]}>Transactions</Text>
+                    <Text style={[styles.menuSub, { color: colors.subText || "#888" }]}>View your transaction history</Text>
+                </View>
+                <Feather name="chevron-right" size={20} color={colors.subText || "#aaa"} />
+            </TouchableOpacity>
+
+            <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.card || "#fff" }]}
+             onPress={() => { confirmLogout();  }}>
+                <View style={[styles.iconCircle, { backgroundColor: "#fff0f0" }]}>
+                    <MaterialIcons name="logout" size={20} color="#ff6b6b" />
+                </View>
+                <View style={styles.menuText}>
+                    <Text style={[styles.menuTitle, { color: "#ff6b6b" }]}>
+                        Sign Out
+                    </Text>
+                </View>
+                <Feather name="chevron-right" size={20} color="#ff6b6b" />
+            </TouchableOpacity>
+            </View>
+
                 </ScrollView>
             </KeyboardAvoidingView>
         </SafeAreaView>
@@ -461,10 +431,10 @@ const styles = StyleSheet.create({
         backgroundColor: "#ffffff",
     },
     text: {
-        fontSize: 16,
+        fontSize: 14,
         marginTop: 6,
         fontFamily: "Medium",
-        lineHeight: Math.round(16 * 1.5),
+        lineHeight: Math.round(14 * 1.5),
     },
     inputRow: {
         flexDirection: "row",
@@ -491,21 +461,20 @@ const styles = StyleSheet.create({
     },
     cameraIcon: {
         position: "absolute",
-        bottom: 10,
-        right: 10,
+        bottom: 4,
+        right: 5,
         backgroundColor: "#4b4a4a",
         padding: 4,
         borderRadius: 20,
     },
     profileImage: {
-        width: 130,
-        height: 130,
-        borderRadius: 70,
+        width: 110,
+        height: 110,
+        borderRadius: 60,
         alignSelf: "center",
     },
     avatarWrapper: {
         alignSelf: "center",
-        marginTop: 15,
     },
     inputWrapper: {
         position: "relative",
@@ -517,40 +486,10 @@ const styles = StyleSheet.create({
         top: "50%",
         transform: [{ translateY: -10 }],
     },
-    dropdownOverlay: {
-        position: "absolute",
-        top: -8,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        zIndex: 1000,
-    },
-
-    overlayBackground: {
-        flex: 1,
-    },
-
-    dropdownMenu: {
-        position: "absolute",
-        top: 126,
-        right: 0,
-        width: 230,
-        elevation: 6,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 4,
-    },
-    dropdownItem: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        paddingVertical: 14,
-        paddingHorizontal: 14,
-    },
     profileCard: {
         borderRadius: 12,
-        padding:16,
+        paddingHorizontal: 18,
+        paddingVertical: 25,
         backgroundColor:"#f5b94981",
         borderRadius:14
     },
@@ -560,18 +499,67 @@ const styles = StyleSheet.create({
         lineHeight: Math.round(16 * 1.5),
     },
     cardValue: {
-        fontSize: 24,
+        fontSize: 20,
         fontFamily: "Medium",
-        lineHeight: Math.round(24 * 1.5),
+        lineHeight: Math.round(20 * 1.5),
     },
     cardSubtitle: {
         fontSize: 12,
         fontFamily: "Medium",
         lineHeight: Math.round(12 * 1.5),
     },
-    dropdownText: {
-        fontSize: 16,
+      menuContainer: {
+        paddingHorizontal: 16,
+    },
+    sectionHeader: {
+        fontSize: 11,
         fontFamily: "Medium",
-        lineHeight: Math.round(16 * 1.5),
+        letterSpacing: 0.8,
+        opacity: 0.5,
+        marginBottom: 8,
+        lineHeight:Math.round(11*1.5)
+    },
+    menuItem: {
+        flexDirection: "row",
+        alignItems: "center",
+        paddingVertical: 13,
+        paddingHorizontal: 14,
+        borderRadius: 12,
+        marginBottom: 8,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 2,
+        elevation: 1,
+    },
+    iconCircle: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: "#e8f5ee",
+        alignItems: "center",
+        justifyContent: "center",
+        marginRight: 12,
+    },
+    menuText: {
+        flex: 1,
+    },
+    menuTitle: {
+        fontSize: 15,
+        fontFamily: "Medium",
+        lineHeight:Math.round(15*1.5)
+    },
+    menuSub: {
+        fontSize: 12,
+        marginTop: 1,
+        fontFamily: "Medium",
+        opacity: 0.7,
+        lineHeight:Math.round(12*1.5)
+    },
+    divider: {
+        height: 1,
+        marginVertical: 20,
+        marginHorizontal: 12,
+        backgroundColor: "#dadada",
     },
 });

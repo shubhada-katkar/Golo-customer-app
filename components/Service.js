@@ -121,12 +121,15 @@ export default function Service({ formData, setFormData, category, onPrevious, t
 
                 <Text style={styles.label}>Service Bio / Skills</Text>
                 <TextInput
-                    style={styles.input}
+                    style={styles.descriptionInput}
                     value={formData.serviceBio || ""}
                     onChangeText={(text) =>
                         setFormData({ ...formData, serviceBio: text })
                     }
                     placeholder="Enter your service bio / skills"
+                    scrollEnabled
+                    multiline
+                     textAlignVertical="top" 
                 />
 
             </View>
@@ -144,7 +147,7 @@ const styles = StyleSheet.create({
     formCard: { backgroundColor: "#fff", paddingHorizontal: 16, borderRadius: 10, paddingBottom: 18 },
     label: { fontSize: 16, marginTop: 16, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
     value: { fontSize: 16, color: "#555", fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
-    input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10, marginTop: 6 },
+    input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10, marginTop: 6, fontSize:14, fontFamily:"Medium" },
     textArea: { height: 80, textAlignVertical: "top" },
     switchRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 12 },
 
@@ -173,6 +176,17 @@ const styles = StyleSheet.create({
     },
     nextText: { color: "#fff", fontSize: 16, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
 
+     descriptionInput: {
+  borderWidth: 1,
+  borderColor: "#ccc",
+  borderRadius: 8,
+  padding: 12,
+  minHeight: 100,      // Increased height
+  maxHeight: 100,      // Keeps the box fixed after this height
+  fontSize: 14,
+  textAlignVertical: "top",
+  fontFamily:"Medium"
+},
     checkbox: {
         width: 26,
         height: 26,
