@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useCallback, useContext, useEffect, useState } from "react";
 import {
     View,
     Text,
@@ -43,7 +43,7 @@ const adMatchesSearch = (ad, query) => {
     return candidates.some((value) => normalizeText(value).includes(needle));
 };
 
-export default function ChotyaJahirati({ selectedCategory, searchQuery = "" }) {
+export default function ChotyaJahirati({ selectedCategory, searchQuery = "", lat, lng, locationPlaceName = "" }) {
     const { colors } = useContext(ThemeContext);
     const [ads, setAds] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -53,28 +53,42 @@ export default function ChotyaJahirati({ selectedCategory, searchQuery = "" }) {
     const [loadingMore, setLoadingMore] = useState(false);
     const [hasMore, setHasMore] = useState(true);
 
-    useEffect(() => {
-        setPage(1);
-        setHasMore(true);
-        fetchAds(1);
-    }, [selectedCategory]);
-
-    const fetchAds = async (pageNumber = 1) => {
+    // fetchAds: always defined before useEffect so the closure captures current prop values.
+    // Primary strategy: /ads/search?location=<placeName> — the backend matches this against
+    // the ad's `cities` array (set in CalendarScreen when posting), so only ads published
+    // for the user's current city/area are shown.
+    // Fallback: /ads/nearby (geo) when no place name is available.
+    const fetchAds = useCallback(async (pageNumber = 1) => {
         try {
             if (pageNumber === 1) setLoading(true);
             else setLoadingMore(true);
 
-            let url = `${BASE_URL}/ads?page=${pageNumber}&limit=10`;
+            let url;
 
-            if (selectedCategory && selectedCategory !== "null") {
-                url += `&category=${encodeURIComponent(selectedCategory)}`;
+            if (locationPlaceName && locationPlaceName.trim() && locationPlaceName !== "your current area") {
+                // PRIMARY: text-based location search — matches ad's `cities` array on backend
+                url = `${BASE_URL}/ads/search?location=${encodeURIComponent(locationPlaceName)}&page=${pageNumber}&limit=10`;
+                if (selectedCategory && selectedCategory !== "null") {
+                    url += `&category=${encodeURIComponent(selectedCategory)}`;
+                }
+            } else if (lat && lng) {
+                // FALLBACK: geo nearby when we have coordinates but no resolved place name yet
+                url = `${BASE_URL}/ads/nearby?lat=${lat}&lng=${lng}&distance=50000&page=${pageNumber}&limit=10`;
+                if (selectedCategory && selectedCategory !== "null") {
+                    url += `&category=${encodeURIComponent(selectedCategory)}`;
+                }
+            } else {
+                // LAST RESORT: general listing with optional category
+                url = `${BASE_URL}/ads?page=${pageNumber}&limit=10`;
+                if (selectedCategory && selectedCategory !== "null") {
+                    url += `&category=${encodeURIComponent(selectedCategory)}`;
+                }
             }
 
             const res = await fetch(url);
             const json = await res.json();
 
             if (json?.data) {
-
                 if (pageNumber === 1) {
                     setAds(json.data);
                 } else {
@@ -87,14 +101,20 @@ export default function ChotyaJahirati({ selectedCategory, searchQuery = "" }) {
 
                 setPage(pageNumber);
             }
-
         } catch (err) {
             console.warn("Failed to fetch ads", err.message || err);
         } finally {
             setLoading(false);
             setLoadingMore(false);
         }
-    };
+    }, [lat, lng, locationPlaceName, selectedCategory]);
+
+    // Re-fetch from page 1 whenever category or location changes
+    useEffect(() => {
+        setPage(1);
+        setHasMore(true);
+        fetchAds(1);
+    }, [fetchAds]);
 
     // 🔥 Template Mapping
     const TEMPLATE_MAP = {
@@ -152,7 +172,7 @@ export default function ChotyaJahirati({ selectedCategory, searchQuery = "" }) {
                 renderItem={renderItem}
                 contentContainerStyle={{
                     paddingHorizontal: 16,
-                    paddingBottom: 70,
+                    paddingBottom: 100,
                 }}
                 showsVerticalScrollIndicator={false}
 

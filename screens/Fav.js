@@ -51,11 +51,11 @@ export default function Fav({ navigation }) {
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
             <LinearGradient
-                         colors={["#f8a812", "#fad081", "#fffbf4"]}
-                         start={{ x: 0, y: 0 }}
-                         end={{ x: 0, y: 1 }}
-                         style={{height: 220, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0}}
-                    />
+                colors={["#f8a812", "#fad081", "#f8f6f265"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 1 }}
+                style={{ height: 220, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0 }}
+            />
             <Topbar />
 
             <View style={styles.row1}>
@@ -107,31 +107,34 @@ export default function Fav({ navigation }) {
                             ) : null}
 
                             <View style={{ flex: 1, marginLeft: imageUri ? 12 : 0 }}>
-                                <Text style={{ fontSize: 16, fontFamily: "SemiBold", color: "#000000",
+                                <Text style={{
+                                    fontSize: 16, fontFamily: "SemiBold", color: "#000000",
                                     lineHeight: Math.round(16 * 1.5)
-                                 }} numberOfLines={1}>
+                                }} numberOfLines={1}>
                                     {item.title || "Ad"}
                                 </Text>
-                                <Text style={{ fontSize: 12, color: "#000000", lineHeight: Math.round(12 * 1.5),
+                                <Text style={{
+                                    fontSize: 12, color: "#000000", lineHeight: Math.round(12 * 1.5),
                                     fontFamily: "Medium"
-                                 }} numberOfLines={1}>
+                                }} numberOfLines={1}>
                                     {item.location || "No location"}
                                 </Text>
                                 {description ? (
-                                    <Text style={{ fontSize: 12, color: "#666666", lineHeight: Math.round(12 * 1.5),
+                                    <Text style={{
+                                        fontSize: 12, color: "#666666", lineHeight: Math.round(12 * 1.5),
                                         fontFamily: "Regular", marginTop: 2
-                                     }} numberOfLines={2}>
+                                    }} numberOfLines={2}>
                                         {description}
                                     </Text>
                                 ) : null}
                             </View>
 
                             <TouchableOpacity onPress={() => handleRemoveFavorite(item)}>
-                            <MaterialCommunityIcons
-                                name="heart"
-                                size={26}
-                                color="#e74c3c"
-                            />
+                                <MaterialCommunityIcons
+                                    name="heart"
+                                    size={26}
+                                    color="#e74c3c"
+                                />
                             </TouchableOpacity>
                         </TouchableOpacity>
                     );

@@ -6,7 +6,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemeContext } from "../theme/ThemeContext";
 import Topbar from "../components/Topbar";
-import { Entypo, MaterialIcons, MaterialCommunityIcons, Feather } from "@expo/vector-icons";
+import { AntDesign, MaterialIcons, MaterialCommunityIcons, Feather, Entypo } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
 import { BASE_URL } from "../config";
@@ -65,12 +65,12 @@ export default function ProfilePage({ navigation }) {
                 : Object.values(profile.merchantLoyaltyPoints || {}).reduce(
                     (sum, value) => sum + Number(value || 0),
                     0,
-                  );
+                );
             const derivedLoyaltyTier = profile.loyaltyTier ||
                 (totalLoyaltyPoints >= 20000 ? 'Platinum' :
-                totalLoyaltyPoints >= 5000 ? 'Gold' :
-                totalLoyaltyPoints >= 1000 ? 'Silver' :
-                'Bronze');
+                    totalLoyaltyPoints >= 5000 ? 'Gold' :
+                        totalLoyaltyPoints >= 1000 ? 'Silver' :
+                            'Bronze');
 
             setUsername(profile.name || "");
             setPhone(profile.profile?.phone || "");
@@ -233,16 +233,16 @@ export default function ProfilePage({ navigation }) {
         <SafeAreaView style={{ flex: 1 }}>
             <KeyboardAvoidingView style={{ flex: 1 }}
                 behavior={Platform.OS === "ios" ? "padding" : "height"} >
-            <LinearGradient
-                         colors={["#f8a812", "#fad081",  "#f8f6f265"]}
-                         start={{ x: 0, y: 0 }}
-                         end={{ x: 0, y: 1 }}
-                         style={{height: 220, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0}}
-                    />
+                <LinearGradient
+                    colors={["#f8a812", "#fad081", "#f8f6f265"]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 0, y: 1 }}
+                    style={{ height: 220, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0 }}
+                />
                 <Topbar />
                 <View style={styles.row1}>
                     <TouchableOpacity onPress={() => navigation.goBack()}
-                        style={{padding:10}}>
+                        style={{ padding: 10 }}>
                         <MaterialIcons
                             name="arrow-back-ios"
                             size={22}
@@ -260,42 +260,42 @@ export default function ProfilePage({ navigation }) {
                     </View>
 
                 </View>
-         
+
                 <ScrollView
                     contentContainerStyle={{ paddingBottom: 30 }}
                     keyboardShouldPersistTaps="handled"
                     showsVerticalScrollIndicator={false} >
 
-                    <View style={{ height: 1, backgroundColor:"#000000", marginVertical:6 }} />
+                    <View style={{ height: 1, backgroundColor: "#000000", marginVertical: 6 }} />
 
                     {/* PROFILE IMAGE */}
-                    <View style={{ alignItems: "center", flexDirection: "row", paddingHorizontal: 14, justifyContent:"space-between", marginTop: 12 }}>
-                    <TouchableOpacity style={styles.avatarWrapper} onPress={pickImage}>
-                        <View>
-                            <Image
-                                source={profileImageSource}
-                                style={styles.profileImage}
-                            />
-                            <View style={styles.cameraIcon}>
-                                <MaterialIcons name="camera-alt" size={22} color="#ffffff" />
+                    <View style={{ alignItems: "center", flexDirection: "row", paddingHorizontal: 14, justifyContent: "space-between", marginTop: 12 }}>
+                        <TouchableOpacity style={styles.avatarWrapper} onPress={pickImage}>
+                            <View>
+                                <Image
+                                    source={profileImageSource}
+                                    style={styles.profileImage}
+                                />
+                                <View style={styles.cameraIcon}>
+                                    <MaterialIcons name="camera-alt" size={22} color="#ffffff" />
+                                </View>
                             </View>
-                        </View>
-                    </TouchableOpacity>
+                        </TouchableOpacity>
 
                         <View style={styles.profileCard} >
-                            <View style={{flexDirection:"row", alignItems:"center", gap:12}}>
-                            <View>
-                            <Text style={styles.cardTitle}>Loyalty Status</Text>
-                            <Text style={styles.cardSubtitle}>{loyaltyTier} tier</Text>
+                            <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                                <View>
+                                    <Text style={styles.cardTitle}>Loyalty Status</Text>
+                                    <Text style={styles.cardSubtitle}>{loyaltyTier} tier</Text>
+                                </View>
+                                <Text style={styles.cardValue}>{loyaltyPoints} points</Text>
                             </View>
-                            <Text style={styles.cardValue }>{loyaltyPoints} points</Text>
-                            </View>
-                        </View> 
-                      </View>  
+                        </View>
+                    </View>
 
-                    <View style={{ paddingHorizontal: 14, marginTop: 10 }}>  
+                    <View style={{ paddingHorizontal: 14, marginTop: 10 }}>
 
-                      <Text style={[styles.sectionHeader, { color: colors.text, marginTop: 12 }]}>PROFILE SETTINGS</Text>
+                        <Text style={[styles.sectionHeader, { color: colors.text, marginTop: 12 }]}>PROFILE SETTINGS</Text>
 
                         {/* NAME */}
                         <Text style={[styles.text, { color: colors.text }]}>Your Name</Text>
@@ -366,54 +366,55 @@ export default function ProfilePage({ navigation }) {
                             style={styles.saveButton}
                             onPress={handleSave}
                             disabled={saving} >
-                            <Text style={{ color: "white", fontFamily: "Medium", lineHeight: Math.round(14 * 1.5),
-                                fontSize:14
-                             }}>
+                            <Text style={{
+                                color: "white", fontFamily: "Medium", lineHeight: Math.round(14 * 1.5),
+                                fontSize: 14
+                            }}>
                                 {saving ? "Saving..." : "Save Changes"}
                             </Text>
                         </TouchableOpacity>
-            </View>
+                    </View>
 
-            <View style={styles.divider} />
+                    <View style={styles.divider} />
 
-             <View style={styles.menuContainer}>
-            <Text style={[styles.sectionHeader, { color: colors.text }]}>MENU</Text>
+                    <View style={styles.menuContainer}>
+                        <Text style={[styles.sectionHeader, { color: colors.text }]}>MENU</Text>
 
-            <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.card || "#fff" }]} onPress={() => navigation.navigate("Analytics")}>
-                <View style={styles.iconCircle}>
-                    <MaterialCommunityIcons name="account-cog-outline" size={20} color="#157a4f" />
-                </View>
-                <View style={styles.menuText}>
-                    <Text style={[styles.menuTitle, { color: colors.text }]}>Analytics</Text>
-                    <Text style={[styles.menuSub, { color: colors.subText || "#888" }]}>View your ads analytics</Text>
-                </View>
-                <Feather name="chevron-right" size={20} color={colors.subText || "#aaa"} />
-            </TouchableOpacity>
+                        <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.card || "#fff" }]} onPress={() => navigation.navigate("Analytics")}>
+                            <View style={styles.iconCircle}>
+                                <AntDesign name="unordered-list" size={20} color="#157a4f" />
+                            </View>
+                            <View style={styles.menuText}>
+                                <Text style={[styles.menuTitle, { color: colors.text }]}>Analytics</Text>
+                                <Text style={[styles.menuSub, { color: colors.subText || "#888" }]}>View your ads analytics</Text>
+                            </View>
+                            <Feather name="chevron-right" size={20} color={colors.subText || "#aaa"} />
+                        </TouchableOpacity>
 
-             <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.card || "#fff" }]} onPress={() => navigation.navigate("Transaction")}>
-                <View style={styles.iconCircle}>
-                    <MaterialCommunityIcons name="account-cog-outline" size={20} color="#157a4f" />
-                </View>
-                <View style={styles.menuText}>
-                    <Text style={[styles.menuTitle, { color: colors.text }]}>Transactions</Text>
-                    <Text style={[styles.menuSub, { color: colors.subText || "#888" }]}>View your transaction history</Text>
-                </View>
-                <Feather name="chevron-right" size={20} color={colors.subText || "#aaa"} />
-            </TouchableOpacity>
+                        <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.card || "#fff" }]} onPress={() => navigation.navigate("Transaction")}>
+                            <View style={styles.iconCircle}>
+                                <AntDesign name="credit-card" size={20} color="#157a4f" />
+                            </View>
+                            <View style={styles.menuText}>
+                                <Text style={[styles.menuTitle, { color: colors.text }]}>Transactions</Text>
+                                <Text style={[styles.menuSub, { color: colors.subText || "#888" }]}>View your transaction history</Text>
+                            </View>
+                            <Feather name="chevron-right" size={20} color={colors.subText || "#aaa"} />
+                        </TouchableOpacity>
 
-            <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.card || "#fff" }]}
-             onPress={() => { confirmLogout();  }}>
-                <View style={[styles.iconCircle, { backgroundColor: "#fff0f0" }]}>
-                    <MaterialIcons name="logout" size={20} color="#ff6b6b" />
-                </View>
-                <View style={styles.menuText}>
-                    <Text style={[styles.menuTitle, { color: "#ff6b6b" }]}>
-                        Sign Out
-                    </Text>
-                </View>
-                <Feather name="chevron-right" size={20} color="#ff6b6b" />
-            </TouchableOpacity>
-            </View>
+                        <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.card || "#fff" }]}
+                            onPress={() => { confirmLogout(); }}>
+                            <View style={[styles.iconCircle, { backgroundColor: "#fff0f0" }]}>
+                                <MaterialIcons name="logout" size={20} color="#ff6b6b" />
+                            </View>
+                            <View style={styles.menuText}>
+                                <Text style={[styles.menuTitle, { color: "#ff6b6b" }]}>
+                                    Sign Out
+                                </Text>
+                            </View>
+                            <Feather name="chevron-right" size={20} color="#ff6b6b" />
+                        </TouchableOpacity>
+                    </View>
 
                 </ScrollView>
             </KeyboardAvoidingView>
@@ -490,8 +491,8 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         paddingHorizontal: 18,
         paddingVertical: 25,
-        backgroundColor:"#f5b94981",
-        borderRadius:14
+        backgroundColor: "#f5b94981",
+        borderRadius: 14
     },
     cardTitle: {
         fontSize: 16,
@@ -508,7 +509,7 @@ const styles = StyleSheet.create({
         fontFamily: "Medium",
         lineHeight: Math.round(12 * 1.5),
     },
-      menuContainer: {
+    menuContainer: {
         paddingHorizontal: 16,
     },
     sectionHeader: {
@@ -517,7 +518,7 @@ const styles = StyleSheet.create({
         letterSpacing: 0.8,
         opacity: 0.5,
         marginBottom: 8,
-        lineHeight:Math.round(11*1.5)
+        lineHeight: Math.round(11 * 1.5)
     },
     menuItem: {
         flexDirection: "row",
@@ -547,14 +548,14 @@ const styles = StyleSheet.create({
     menuTitle: {
         fontSize: 15,
         fontFamily: "Medium",
-        lineHeight:Math.round(15*1.5)
+        lineHeight: Math.round(15 * 1.5)
     },
     menuSub: {
         fontSize: 12,
         marginTop: 1,
         fontFamily: "Medium",
         opacity: 0.7,
-        lineHeight:Math.round(12*1.5)
+        lineHeight: Math.round(12 * 1.5)
     },
     divider: {
         height: 1,

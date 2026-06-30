@@ -3,7 +3,7 @@ import {
     View, Text, StyleSheet, TouchableOpacity, Image, Alert,
     Share, ActivityIndicator
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Entypo, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { Linking } from "react-native";
 import { getAdId, isFavoriteAdId, toggleFavoriteAd } from "../services/favoritesService";
 import { trackAdCardClick, trackContactClick } from "../services/analyticsService";
@@ -12,17 +12,17 @@ import { BASE_URL } from "../config";
 const GENERIC_SELLER_NAMES = new Set(["seller", "user", "anonymous", "unknown"]);
 
 const getAdSellerName = (ad) =>
-  ad?.sellerName ||
-  ad?.user?.name ||
-  ad?.contactInfo?.name ||
-  ad?.contactInfo?.sellerName ||
-  ad?.name ||
-  null;
+    ad?.sellerName ||
+    ad?.user?.name ||
+    ad?.contactInfo?.name ||
+    ad?.contactInfo?.sellerName ||
+    ad?.name ||
+    null;
 
 const isGenericSellerName = (name) => {
-  if (!name) return true;
-  const text = String(name).trim().toLowerCase();
-  return GENERIC_SELLER_NAMES.has(text);
+    if (!name) return true;
+    const text = String(name).trim().toLowerCase();
+    return GENERIC_SELLER_NAMES.has(text);
 };
 
 export default function Template2Card({ ad, navigation }) {
@@ -86,19 +86,19 @@ export default function Template2Card({ ad, navigation }) {
     };
 
     const handleOpenChat = () => {
-    const adIdentifier = ad?.adId || ad?._id;
-    if (adIdentifier) {
-      trackContactClick(adIdentifier).catch((error) => {
-        console.warn('[Template2Card] Failed to track contact click:', error.message);
-      });
-    }
+        const adIdentifier = ad?.adId || ad?._id;
+        if (adIdentifier) {
+            trackContactClick(adIdentifier).catch((error) => {
+                console.warn('[Template2Card] Failed to track contact click:', error.message);
+            });
+        }
 
-    navigation.navigate("ChatScreen", {
-      adId: adIdentifier,
-      sellerId: ad?.userId || ad?.user?.id,
-      sellerName,
-      adRef: {
-        adId: adIdentifier,
+        navigation.navigate("ChatScreen", {
+            adId: adIdentifier,
+            sellerId: ad?.userId || ad?.user?.id,
+            sellerName,
+            adRef: {
+                adId: adIdentifier,
                 image: ad?.images?.[0] || null,
             },
         });
@@ -157,21 +157,21 @@ export default function Template2Card({ ad, navigation }) {
         >
 
             <View style={styles.timerow}>
-            <Text style={styles.timeText}>
-                {new Date(ad.createdAt || Date.now()).toLocaleString()}
-            </Text>
-            <View style={styles.topRow}> 
-            <TouchableOpacity onPress={handleFavoriteToggle} disabled={favoriteLoading}>
-                {favoriteLoading ? (
-                    <ActivityIndicator size="small" color="#e74c3c" />
-                ) : (
-                    <Ionicons name={isFavorite ? "heart" : "heart-outline"} size={20} color={isFavorite ? "#e74c3c" : "#222"} />
-                )}
-            </TouchableOpacity>
-                <TouchableOpacity onPress={handleShare}>
-                    <Ionicons name="share-social-outline" size={20} />
-                </TouchableOpacity>
-            </View>
+                <Text style={styles.timeText}>
+                    {new Date(ad.createdAt || Date.now()).toLocaleString()}
+                </Text>
+                <View style={styles.topRow}>
+                    <TouchableOpacity onPress={handleFavoriteToggle} disabled={favoriteLoading}>
+                        {favoriteLoading ? (
+                            <ActivityIndicator size="small" color="#e74c3c" />
+                        ) : (
+                            <Ionicons name={isFavorite ? "heart" : "heart-outline"} size={20} color={isFavorite ? "#e74c3c" : "#222"} />
+                        )}
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={handleShare}>
+                        <Ionicons name="share-social-outline" size={20} />
+                    </TouchableOpacity>
+                </View>
             </View>
 
             <View style={styles.row}>
@@ -182,24 +182,27 @@ export default function Template2Card({ ad, navigation }) {
                 )}
 
                 <View style={{ flex: 1 }}>
-                    <Text style={styles.title}>{ad.title}</Text>
-                    <Text numberOfLines={2} style={styles.desc}>
+                    <Text style={styles.title} numberOfLines={2} ellipsizeMode="tail">
+                        {ad.title}</Text>
+                    <Text numberOfLines={1} ellipsizeMode="tail"
+                        style={styles.desc}>
                         {ad.description}
                     </Text>
+                    <Text style={styles.price}>{ad.price ? `₹${ad.price}` : ""}</Text>
                 </View>
+
             </View>
 
             <View style={styles.metaRow}>
-                <Text style={styles.price}>{ad.price ? `₹${ad.price}` : "Price Not Mentioned"}</Text>
-                <View style={{ flexDirection: "row", gap: 10 }}>
-                    <View style={styles.metaItem}>
-                        <Ionicons name="location-outline" size={14} />
-                        <Text style={styles.metaText}>{ad.location || ad.city}</Text>
-                    </View>
-                    <View style={styles.metaItem}>
-                        <Ionicons name="person" size={14} />
-                        <Text style={styles.metaText}>{sellerName}</Text>
-                    </View>
+                <View style={styles.metaItem}>
+                    <Entypo name="location-pin" size={16} color="#d62c2cff" />
+                    <Text numberOfLines={1} ellipsizeMode="tail"
+                        style={[styles.metaText, { width: "60%" }]}>{ad.location || ad.city}</Text>
+                </View>
+                <View style={styles.metaItem}>
+                    <MaterialIcons name="account-circle" size={16} color="#f5b849" />
+                    <Text numberOfLines={1} ellipsizeMode="tail"
+                        style={[styles.metaText, { width: "50%" }]}>{sellerName}</Text>
                 </View>
             </View>
 
@@ -220,7 +223,7 @@ export default function Template2Card({ ad, navigation }) {
 }
 
 const styles = StyleSheet.create({
-    timerow:{
+    timerow: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
@@ -263,15 +266,15 @@ const styles = StyleSheet.create({
     desc: {
         fontSize: 13,
         color: "#666",
-        marginTop: 4,
+        marginTop: 5,
         fontFamily: "Medium",
         lineHeight: Math.round(13 * 1.5)
     },
     metaRow: {
         flexDirection: "row",
         justifyContent: "space-between",
-        marginTop: 10,
         alignItems: "center",
+        marginTop: 8,
     },
     metaItem: {
         flexDirection: "row",
@@ -282,12 +285,14 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: "#444",
         fontFamily: "Medium",
-        lineHeight: Math.round(12 * 1.5)
+        lineHeight: Math.round(12 * 1.5),
     },
     price: {
         fontSize: 12,
         fontFamily: "Medium",
-        lineHeight: Math.round(12 * 1.5)
+        lineHeight: Math.round(12 * 1.5),
+        marginTop: 5,
+        color: "#157a4f"
     },
     chatBtn: {
         backgroundColor: "#f5b849",

@@ -14,7 +14,7 @@ import {
     TouchableOpacity,
     View, KeyboardAvoidingView, Platform
 } from "react-native";
-import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { Feather, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
 import { ThemeContext } from "../theme/ThemeContext";
@@ -675,12 +675,12 @@ export default function OfferDetails({ navigation, route }) {
     return (
         <>
             <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-                      <LinearGradient
-                                               colors={["#f8a812", "#fad081", "#f8f6f265"]}
-                                               start={{ x: 0, y: 0 }}
-                                               end={{ x: 0, y: 1 }}
-                                               style={{height: 270, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0}}
-                                          />
+                <LinearGradient
+                    colors={["#f8a812", "#fad081", "#f8f6f265"]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 0, y: 1 }}
+                    style={{ height: 270, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0 }}
+                />
                 <Topbar />
                 <StatusBar barStyle="dark-content" />
 
@@ -711,173 +711,185 @@ export default function OfferDetails({ navigation, route }) {
                 </View>
 
                 <KeyboardAvoidingView
-  style={{ flex: 1 }}
-  behavior={Platform.OS === "ios" ? "padding" : "height"}
->
-  <ScrollView
-  ref={scrollViewRef}
-    contentContainerStyle={{ paddingBottom: 40 }}
-    keyboardShouldPersistTaps="handled"
-  >
-                    <View style={styles.imageContainer}>
-                        {offerImage ? (
-                            <Image source={{ uri: offerImage }} style={styles.offerImage} />
-                        ) : (
-                            <View style={styles.fakeImage}>
-                                <Ionicons name="image-outline" size={44} color="#9a9a9a" />
-                            </View>
-                        )}
-                    </View>
-
-                    <View style={styles.content}>
-                        <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
-
-                        <Text style={[styles.by, { color: colors.text }]}>By {merchant}</Text>
-
-                        <View style={styles.card}>
-                            <Text style={styles.cardTitle}>Offer Details</Text>
-
-                            <Text style={styles.label}>Offer Type</Text>
-                            <Text style={styles.value}>{offerType || "-"}</Text>
-
-                            <Text style={styles.label}>Valid Till</Text>
-                            <Text style={styles.value}>
-                                {validTill ? new Date(validTill).toDateString() : "-"}
-                            </Text>
-
-                            <Text style={styles.label}>Location</Text>
-                            <Text style={styles.value}>{locationText}</Text>
-
-                            {products.length > 0 && (
-                                <>
-                                    <Text style={styles.label}>Products Included</Text>
-                                    <View style={styles.productsContainer}>
-                                        {products.map((product, index) => {
-                                            const productImage =
-                                                product?.imageUrl ||
-                                                product?.image?.url ||
-                                                product?.images?.[0] ||
-                                                null;
-                                            const productName = product?.productName || product?.name || product?.title || `Product ${index + 1}`;
-
-                                            return (
-                                                <TouchableOpacity
-                                                    key={index}
-                                                    style={styles.productCard}
-                                                    activeOpacity={0.8}
-                                                    onPress={() => navigation.navigate("ProductDetail", { product })}
-                                                >
-                                                    {productImage ? (
-                                                        <Image
-                                                            source={{ uri: productImage }}
-                                                            style={styles.productImage}
-                                                        />
-                                                    ) : (
-                                                        <View style={styles.productImagePlaceholder}>
-                                                            <Ionicons
-                                                                name="image-outline"
-                                                                size={24}
-                                                                color="#9a9a9a"
-                                                            />
-                                                        </View>
-                                                    )}
-                                                    <Text style={styles.productName} numberOfLines={2}>
-                                                        {productName}
-                                                    </Text>
-                                                </TouchableOpacity>
-                                            );
-                                        })}
-                                    </View>
-                                </>
-                            )}
-
-                            {termsAndConditions && termsAndConditions !== "No specific terms and conditions provided." && (
-                                <>
-                                    <Text style={styles.label}>Terms & Conditions</Text>
-                                    <Text style={styles.value}>{termsAndConditions}</Text>
-                                </>
-                            )}
-                        </View>
-
-                        <TouchableOpacity
-                            style={[
-                                styles.buyBtn,
-                                voucher ? styles.claimedBtn : null,
-                                !canClaimVoucher ? styles.unavailableBtn : null,
-                                claimLoading ? styles.disabledBtn : null,
-                            ]}
-                            onPress={handleClaim}
-                            disabled={!canClaimVoucher || claimLoading || claimCheckLoading}
-                        >
-                            {claimLoading || claimCheckLoading ? (
-                                <ActivityIndicator size="small" color="#fff" />
+                    style={{ flex: 1 }}
+                    behavior={Platform.OS === "ios" ? "padding" : "height"}
+                >
+                    <ScrollView
+                        ref={scrollViewRef}
+                        contentContainerStyle={{ paddingBottom: 40 }}
+                        keyboardShouldPersistTaps="handled"
+                    >
+                        <View style={styles.imageContainer}>
+                            {offerImage ? (
+                                <Image source={{ uri: offerImage }} style={styles.offerImage} />
                             ) : (
-                                <Text style={styles.buyText}>
-                                    {voucher ? "Claimed" : canClaimVoucher ? "Claim Now" : "Not Available"}
-                                </Text>
+                                <View style={styles.fakeImage}>
+                                    <Ionicons name="image-outline" size={44} color="#9a9a9a" />
+                                </View>
                             )}
-                        </TouchableOpacity>
-
-                        <View style={styles.bottomBar}>
-                            <TouchableOpacity 
-                                style={[styles.dirBtn, !phoneNumber && styles.disabledCallBtn]} 
-                                onPress={handleCallMerchant}
-                                disabled={!phoneNumber}
-                            >
-                                <Ionicons name="call" size={18} color="#fff" />
-                                <Text style={styles.bottomText}>
-                                    {phoneNumber ? ` Call ${phoneNumber}` : " Number unavailable"}
-                                </Text>
-                            </TouchableOpacity>
                         </View>
 
-                        {isVoucherRedeemed(voucher) && !reviewSubmitted ? (
-                            <View style={styles.reviewContainer}>
-                                <Text style={styles.reviewLabel}>Write a review</Text>
-                                <Text style={styles.ratingLabel}>Rate your experience</Text>
-                                <View style={styles.ratingRow}>
-                                    {Array.from({ length: 5 }).map((_, starIndex) => (
-                                        <TouchableOpacity
-                                            key={starIndex}
-                                            onPress={() => !reviewLoading && setReviewRating(starIndex + 1)}
-                                            disabled={reviewLoading}
-                                        >
-                                            <Ionicons
-                                                name={starIndex < reviewRating ? "star" : "star-outline"}
-                                                size={28}
-                                                color={starIndex < reviewRating ? "#fbbf24" : "#9ca3af"}
-                                                style={styles.ratingStar}
-                                            />
-                                        </TouchableOpacity>
-                                    ))}
-                                </View>
-                                <TextInput
-                                    style={styles.reviewInput}
-                                    placeholder="Write your review for the merchant or offer..."
-                                    placeholderTextColor="#6b7280"
-                                    value={reviewText}
-                                    onChangeText={setReviewText}
-                                    multiline
-                                    editable={!reviewLoading}
-                                />
+                        <View style={styles.content}>
+                            <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+
+                            <Text style={[styles.by, { color: colors.text }]}>By {merchant}</Text>
+
+                            <View style={styles.card}>
+                                <Text style={styles.cardTitle}>Offer Details</Text>
+
+                                <Text style={styles.label}>Offer Type</Text>
+                                <Text style={styles.value}>{offerType || "-"}</Text>
+
+                                <Text style={styles.label}>Valid Till</Text>
+                                <Text style={styles.value}>
+                                    {validTill ? new Date(validTill).toDateString() : "-"}
+                                </Text>
+
+                                <Text style={styles.label}>Location</Text>
+                                <Text style={styles.value}>{locationText}</Text>
+
+                                {products.length > 0 && (
+                                    <>
+                                        <Text style={styles.label}>Products Included</Text>
+                                        <View style={styles.productsContainer}>
+                                            {products.map((product, index) => {
+                                                const productImage =
+                                                    product?.imageUrl ||
+                                                    product?.image?.url ||
+                                                    product?.images?.[0] ||
+                                                    null;
+                                                const productName = product?.productName || product?.name || product?.title || `Product ${index + 1}`;
+
+                                                return (
+                                                    <TouchableOpacity
+                                                        key={index}
+                                                        style={styles.productCard}
+                                                        activeOpacity={0.8}
+                                                        onPress={() => navigation.navigate("ProductDetail", { product })}
+                                                    >
+                                                        {productImage ? (
+                                                            <Image
+                                                                source={{ uri: productImage }}
+                                                                style={styles.productImage}
+                                                            />
+                                                        ) : (
+                                                            <View style={styles.productImagePlaceholder}>
+                                                                <Ionicons
+                                                                    name="image-outline"
+                                                                    size={24}
+                                                                    color="#9a9a9a"
+                                                                />
+                                                            </View>
+                                                        )}
+                                                        <Text style={styles.productName} numberOfLines={2}>
+                                                            {productName}
+                                                        </Text>
+                                                    </TouchableOpacity>
+                                                );
+                                            })}
+                                        </View>
+                                    </>
+                                )}
+
+                                {termsAndConditions && termsAndConditions !== "No specific terms and conditions provided." && (
+                                    <>
+                                        <Text style={styles.label}>Terms & Conditions</Text>
+                                        <Text style={styles.value}>{termsAndConditions}</Text>
+                                    </>
+                                )}
+                            </View>
+
+                            <TouchableOpacity
+                                style={[
+                                    styles.buyBtn,
+                                    voucher ? styles.claimedBtn : null,
+                                    !canClaimVoucher ? styles.unavailableBtn : null,
+                                    claimLoading ? styles.disabledBtn : null,
+                                ]}
+                                onPress={handleClaim}
+                                disabled={!canClaimVoucher || claimLoading || claimCheckLoading}
+                            >
+                                {claimLoading || claimCheckLoading ? (
+                                    <ActivityIndicator size="small" color="#fff" />
+                                ) : (
+                                    <Text style={styles.buyText}>
+                                        {voucher ? "Claimed" : canClaimVoucher ? "Claim Now" : "Not Available"}
+                                    </Text>
+                                )}
+                            </TouchableOpacity>
+
+                            <View style={styles.bottomBar}>
                                 <TouchableOpacity
-                                    style={[
-                                        styles.reviewButton,
-                                        reviewLoading ? styles.disabledBtn : null,
-                                    ]}
-                                    onPress={submitReview}
-                                    disabled={reviewLoading}
+                                    style={[styles.dirBtn, !phoneNumber && styles.disabledCallBtn]}
+                                    onPress={handleCallMerchant}
+                                    disabled={!phoneNumber}
                                 >
-                                    {reviewLoading ? (
-                                        <ActivityIndicator size="small" color="#fff" />
-                                    ) : (
-                                        <Text style={styles.reviewButtonText}>Submit Review</Text>
-                                    )}
+                                    <Ionicons name="call" size={18} color="#fff" />
+                                    <Text style={styles.bottomText}>
+                                        {phoneNumber ? ` Call ${phoneNumber}` : " Number unavailable"}
+                                    </Text>
                                 </TouchableOpacity>
                             </View>
-                        ) : null}
-                    </View>
-                </ScrollView>
+
+                            <View style={styles.bottomBar}>
+                                <TouchableOpacity
+                                    style={styles.button}
+                                    onPress={() => navigation.navigate("ReviewsPage", { offerId, merchant, offerImage })}
+                                >
+                                    <Feather name="thumbs-up" size={16} color="#157a4f" />
+                                    <Text style={[styles.bottomText, { color: "#157a4f" }]}>
+                                        View Reviews
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+
+                            {isVoucherRedeemed(voucher) && !reviewSubmitted ? (
+                                <View style={styles.reviewContainer}>
+                                    <Text style={styles.reviewLabel}>Write a review</Text>
+                                    <Text style={styles.ratingLabel}>Rate your experience</Text>
+                                    <View style={styles.ratingRow}>
+                                        {Array.from({ length: 5 }).map((_, starIndex) => (
+                                            <TouchableOpacity
+                                                key={starIndex}
+                                                onPress={() => !reviewLoading && setReviewRating(starIndex + 1)}
+                                                disabled={reviewLoading}
+                                            >
+                                                <Ionicons
+                                                    name={starIndex < reviewRating ? "star" : "star-outline"}
+                                                    size={28}
+                                                    color={starIndex < reviewRating ? "#fbbf24" : "#9ca3af"}
+                                                    style={styles.ratingStar}
+                                                />
+                                            </TouchableOpacity>
+                                        ))}
+                                    </View>
+                                    <TextInput
+                                        style={styles.reviewInput}
+                                        placeholder="Write your review for the merchant or offer..."
+                                        placeholderTextColor="#6b7280"
+                                        value={reviewText}
+                                        onChangeText={setReviewText}
+                                        multiline
+                                        editable={!reviewLoading}
+                                    />
+                                    <TouchableOpacity
+                                        style={[
+                                            styles.reviewButton,
+                                            reviewLoading ? styles.disabledBtn : null,
+                                        ]}
+                                        onPress={submitReview}
+                                        disabled={reviewLoading}
+                                    >
+                                        {reviewLoading ? (
+                                            <ActivityIndicator size="small" color="#fff" />
+                                        ) : (
+                                            <Text style={styles.reviewButtonText}>Submit Review</Text>
+                                        )}
+                                    </TouchableOpacity>
+                                </View>
+                            ) : null}
+                        </View>
+                    </ScrollView>
                 </KeyboardAvoidingView>
 
                 <SafeAreaView
@@ -1017,6 +1029,18 @@ const styles = StyleSheet.create({
     },
     claimedBtn: {
         backgroundColor: "#157a4f",
+    },
+    button: {
+        flex: 1,
+        flexDirection: "row",
+        padding: 12,
+        borderRadius: 10,
+        justifyContent: "center",
+        alignItems: "center",
+        gap: 4,
+        borderWidth: 1,
+        borderColor: "#157a4f",
+        backgroundColor: "#fff"
     },
     unavailableBtn: {
         backgroundColor: "#9ca3af",
@@ -1211,7 +1235,7 @@ const styles = StyleSheet.create({
         padding: 12,
         color: "#111827",
         textAlignVertical: "top",
-        fontFamily:"Medium",
+        fontFamily: "Medium",
         fontSize: 14,
         lineHeight: Math.round(14 * 1.5),
     },

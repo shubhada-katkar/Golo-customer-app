@@ -112,7 +112,8 @@ export default function Template({ navigation, route }) {
                             <View style={styles.image2} />
 
                             <View>
-                                <Text style={styles.cardTitle}>
+                                <Text style={styles.cardTitle}
+                                numberOfLines={1} ellipsizeMode="tail">
                                     Your Ad Title Will Appear Here
                                 </Text>
                                 <Text style={styles.cardDesc}>Description</Text>
@@ -179,7 +180,8 @@ export default function Template({ navigation, route }) {
                         <Text style={styles.timeText}>20m ago</Text>
 
                         {/* Title */}
-                        <Text style={styles.cardTitle}>
+                        <Text style={styles.cardTitle}
+                        numberOfLines={1} ellipsizeMode="tail">
                             Your Ad Title Will Appear Here
                         </Text>
 
@@ -304,10 +306,9 @@ const styles = StyleSheet.create({
     },
     cardTitle: {
         fontSize: 16,
-        fontWeight: "600",
-        marginTop: 10,
         fontFamily: "Medium",
-        lineHeight: Math.round(16 * 1.5)
+        lineHeight: Math.round(16 * 1.5),
+        width:"70%"
     },
     cardDesc: {
         fontSize: 13,
@@ -383,7 +384,7 @@ const styles = StyleSheet.create({
         marginTop: 12
     },
     stripText: {
-        color: "#000000",
+        color: "#157a4f",
         fontSize: 14,
         fontFamily: "Medium",
         lineHeight: Math.round(14 * 1.5)

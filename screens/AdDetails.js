@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image, ActivityIndicator,
+import {
+  View, Text, ScrollView, TouchableOpacity, StyleSheet, Image, ActivityIndicator,
   Dimensions, Alert, Share, Modal, TextInput
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -167,7 +168,7 @@ function getCommonAdDetails(adData) {
 }
 
 export default function AdDetails({ route, navigation }) {
-  const {colors} = useContext(ThemeContext);
+  const { colors } = useContext(ThemeContext);
   const { adId } = route.params || {};
   const [ad, setAd] = useState(null);
   const [seller, setSeller] = useState(null);
@@ -403,183 +404,183 @@ export default function AdDetails({ route, navigation }) {
   return (
     <>
       <SafeAreaView style={{ flex: 1 }}>
-         <LinearGradient
-                     colors={["#f8a812", "#fad081", "#f8f6f265"]}
-                     start={{ x: 0, y: 0 }}
-                     end={{ x: 0, y: 1 }}
-                     style={{height: 220, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0}}
-                />
-                <Topbar/>
-          {/* Header */}
-          <View style={styles.header}>
-            <View style={{flexDirection:"row", alignItems:"center"}}>
+        <LinearGradient
+          colors={["#f8a812", "#fad081", "#f8f6f265"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+          style={{ height: 220, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0 }}
+        />
+        <Topbar />
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
             <TouchableOpacity onPress={() => navigation.goBack()}>
-              <MaterialIcons name="arrow-back-ios" size={22} style={{padding:10}}/>
+              <MaterialIcons name="arrow-back-ios" size={22} style={{ padding: 10 }} />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Ad Details</Text>
-            </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-              <TouchableOpacity onPress={handleToggleFavorite} disabled={favoriteLoading}>
-                {favoriteLoading ? (
-                  <ActivityIndicator size="small" color="#e74c3c" />
-                ) : (
-                  <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={24} color={isFavorite ? '#e74c3c' : '#111'} />
-                )}
-              </TouchableOpacity>
-              <TouchableOpacity onPress={handleShare}>
-                <Ionicons name="share-social" size={24} />
-              </TouchableOpacity>
-            </View>
           </View>
-
-          <View style={{ backgroundColor: colors.divider, height: 1, marginVertical: 6 }} />
-
-          <ScrollView contentContainerStyle={styles.scrollContent}>
-            {/* Image Carousel */}
-            {ad.images && ad.images.length > 0 ? (
-              <View style={styles.imageContainer}>
-                <ScrollView
-                  ref={sliderRef}
-                  horizontal
-                  pagingEnabled
-                  showsHorizontalScrollIndicator={true}
-                  onMomentumScrollEnd={(e) => {
-                    const index = Math.round(e.nativeEvent.contentOffset.x / width);
-                    setActiveImageIndex(index);
-                  }}
-                >
-                  {ad.images.map((uri, idx) => (
-                    <Image
-                      key={idx}
-                      source={{ uri }}
-                      style={styles.adImage}
-                      resizeMode="cover"
-                    />
-                  ))}
-                </ScrollView>
-
-                {/* Image Counter */}
-                {ad.images.length > 1 && (
-                  <View style={styles.imageCounter}>
-                    <Text style={styles.imageCounterText}>
-                      {activeImageIndex + 1} / {ad.images.length}
-                    </Text>
-                  </View>
-                )}
-              </View>
-            ) : Number(ad?.templateId || 0) !== 3 ? (
-              <View style={[styles.adImage, { justifyContent: 'center', alignItems: 'center' }]}>
-                <Ionicons name="image-outline" size={40} color="#999" />
-              </View>
-            ) : null}
-
-            {/* Content Card */}
-            <View style={styles.contentCard}>
-              {/* Title & Price */}
-              <View style={styles.titleRow}>
-                <Text style={styles.title}>{ad.title}</Text>
-                {ad.price ? (
-                  <Text style={styles.price}>₹{ad.price}</Text>
-                ) : (
-                  <Text style={styles.price}>Contact for price details</Text>
-                )}
-              </View>
-
-              {/* Category & SubCategory */}
-              <View style={styles.categoryRow}>
-                <Text style={styles.metaText}>Category</Text>
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>{ad.category}</Text>
-                </View>
-              </View>
-
-              {/* Location & Views */}
-              <View style={styles.metaRow}>
-                <View style={styles.metaItem}>
-                  <Ionicons name="location-outline" size={16} color="#157a4f" />
-                  <Text style={styles.metaText}>{ad.location || ad.city || 'N/A'}</Text>
-                </View>
-                <View style={styles.metaItem}>
-                  <Ionicons name="eye-outline" size={16} color="#157a4f" />
-                  <Text style={styles.metaText}>{ad.views || ad.uniqueVisitors || ad.viewHistory?.length || ad.viewCount || 0} views</Text>
-                </View>
-              </View>
-
-              {/* Details */}
-              <Text style={styles.sectionTitle}>Details</Text>
-              {hasDetails ? (
-                <>
-                  {commonAdDetails.map((item, index) => (
-                    <View style={styles.detailRow} key={`common-${item.label}-${index}`}>
-                      <Text style={styles.detailLabel}>{item.label}</Text>
-                      <Text style={styles.detailValue}>{item.value}</Text>
-                    </View>
-                  ))}
-
-                  {categoryDetails.map((item, index) => (
-                    <View style={styles.detailRow} key={`category-${item.label}-${index}`}>
-                      <Text style={styles.detailLabel}>{item.label}</Text>
-                      <Text style={styles.detailValue}>{item.value}</Text>
-                    </View>
-                  ))}
-                </>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <TouchableOpacity onPress={handleToggleFavorite} disabled={favoriteLoading}>
+              {favoriteLoading ? (
+                <ActivityIndicator size="small" color="#e74c3c" />
               ) : (
-                <Text style={styles.description}>No additional details available for this ad.</Text>
+                <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={24} color={isFavorite ? '#e74c3c' : '#111'} />
               )}
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleShare}>
+              <Ionicons name="share-social" size={24} />
+            </TouchableOpacity>
+          </View>
+        </View>
 
+        <View style={{ backgroundColor: colors.divider, height: 1, marginVertical: 6 }} />
 
-              {/* Description */}
-              <View style={{ marginTop: 12 }}>
-                <Text style={styles.sectionTitle}>Ad Description</Text>
-                <Text style={styles.description}>{ad.description}</Text>
-              </View>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          {/* Image Carousel */}
+          {ad.images && ad.images.length > 0 ? (
+            <View style={styles.imageContainer}>
+              <ScrollView
+                ref={sliderRef}
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={true}
+                onMomentumScrollEnd={(e) => {
+                  const index = Math.round(e.nativeEvent.contentOffset.x / width);
+                  setActiveImageIndex(index);
+                }}
+              >
+                {ad.images.map((uri, idx) => (
+                  <Image
+                    key={idx}
+                    source={{ uri }}
+                    style={styles.adImage}
+                    resizeMode="cover"
+                  />
+                ))}
+              </ScrollView>
 
-              {/* Seller Info */}
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Seller Information</Text>
-                <TouchableOpacity
-                  style={styles.sellerInfo}
-                  onPress={() => {
-                    const sellerId = ad?.userId || ad?.user?.id;
-                    if (sellerId) {
-                      navigation.navigate('SellerProfile', {
-                        sellerId,
-                        adId: ad?.adId || ad?._id || adId,
-                        adTitle: ad?.title || 'Ad',
-                        adImage: ad?.images?.[0] || null,
-                      });
-                    } else {
-                      Alert.alert('Info', 'Seller ID is missing for this ad');
-                    }
-                  }}
-                >
-                  <View style={styles.sellerAvatar}>
-                    {sellerAvatar ? (
-                      <Image source={{ uri: sellerAvatar }} style={styles.sellerAvatarImage} />
-                    ) : (
-                      <Ionicons name="person-circle" size={48} color="#157a4f" />
-                    )}
-                  </View>
-                  <View style={styles.sellerDetails}>
-                    <Text style={styles.sellerName}>{sellerName || 'Anonymous'}</Text>
-                    {(sellerPhone || ad.contactInfo?.phone) && (
-                      <TouchableOpacity                     
-                        onPress={() => {
-                          handleCall(sellerPhone || ad.contactInfo?.phone);
-                        }}
-                        style={styles.callBtn}
-                      >
-                        <Text style={{color:"#ffffff",
-                          fontFamily:"Medium", lineHeight:Math.round(12*1.5), fontSize:12
-                        }}>{sellerPhone || ad.contactInfo?.phone}</Text>
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                  <MaterialIcons name="chevron-right" size={24} color="#666" />
-                </TouchableOpacity>
-              </View>
-
+              {/* Image Counter */}
+              {ad.images.length > 1 && (
+                <View style={styles.imageCounter}>
+                  <Text style={styles.imageCounterText}>
+                    {activeImageIndex + 1} / {ad.images.length}
+                  </Text>
+                </View>
+              )}
             </View>
+          ) : Number(ad?.templateId || 0) !== 3 ? (
+            <View style={[styles.adImage, { justifyContent: 'center', alignItems: 'center' }]}>
+              <Ionicons name="image-outline" size={40} color="#999" />
+            </View>
+          ) : null}
+
+          {/* Content Card */}
+          <View style={styles.contentCard}>
+            {/* Title & Price */}
+            <View style={styles.titleRow}>
+              <Text style={styles.title}>{ad.title}</Text>
+              {ad.price ? (
+                <Text style={styles.price}>₹{ad.price}</Text>
+              ) : (
+                <Text style={styles.price}>Contact for more details</Text>
+              )}
+            </View>
+
+            {/* Category & SubCategory */}
+            <View style={styles.categoryRow}>
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{ad.category}</Text>
+              </View>
+            </View>
+
+            {/* Location & Views */}
+            <View style={styles.metaRow}>
+              <View style={styles.metaItem}>
+                <Ionicons name="location-outline" size={16} color="#157a4f" />
+                <Text style={[styles.metaText, { width: "80%" }]}>{ad.location || ad.city || 'N/A'}</Text>
+              </View>
+              <View style={styles.metaItem}>
+                <Ionicons name="eye-outline" size={16} color="#157a4f" />
+                <Text style={styles.metaText}>{ad.views || ad.uniqueVisitors || ad.viewHistory?.length || ad.viewCount || 0} views</Text>
+              </View>
+            </View>
+
+            {/* Details */}
+            <Text style={styles.sectionTitle}>Details</Text>
+            {hasDetails ? (
+              <>
+                {commonAdDetails.map((item, index) => (
+                  <View style={styles.detailRow} key={`common-${item.label}-${index}`}>
+                    <Text style={styles.detailLabel}>{item.label}</Text>
+                    <Text style={styles.detailValue}>{item.value}</Text>
+                  </View>
+                ))}
+
+                {categoryDetails.map((item, index) => (
+                  <View style={styles.detailRow} key={`category-${item.label}-${index}`}>
+                    <Text style={styles.detailLabel}>{item.label}</Text>
+                    <Text style={styles.detailValue}>{item.value}</Text>
+                  </View>
+                ))}
+              </>
+            ) : (
+              <Text style={styles.description}>No additional details available for this ad.</Text>
+            )}
+
+
+            {/* Description */}
+            <View style={{ marginTop: 12 }}>
+              <Text style={styles.sectionTitle}>Ad Description</Text>
+              <Text style={styles.description}>{ad.description}</Text>
+            </View>
+
+            {/* Seller Info */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Seller Information</Text>
+              <TouchableOpacity
+                style={styles.sellerInfo}
+                onPress={() => {
+                  const sellerId = ad?.userId || ad?.user?.id;
+                  if (sellerId) {
+                    navigation.navigate('SellerProfile', {
+                      sellerId,
+                      adId: ad?.adId || ad?._id || adId,
+                      adTitle: ad?.title || 'Ad',
+                      adImage: ad?.images?.[0] || null,
+                    });
+                  } else {
+                    Alert.alert('Info', 'Seller ID is missing for this ad');
+                  }
+                }}
+              >
+                <View style={styles.sellerAvatar}>
+                  {sellerAvatar ? (
+                    <Image source={{ uri: sellerAvatar }} style={styles.sellerAvatarImage} />
+                  ) : (
+                    <Ionicons name="person-circle" size={48} color="#157a4f" />
+                  )}
+                </View>
+                <View style={styles.sellerDetails}>
+                  <Text style={styles.sellerName}>{sellerName || 'Anonymous'}</Text>
+                  {(sellerPhone || ad.contactInfo?.phone) && (
+                    <TouchableOpacity
+                      onPress={() => {
+                        handleCall(sellerPhone || ad.contactInfo?.phone);
+                      }}
+                      style={styles.callBtn}
+                    >
+                      <Text style={{
+                        color: "#ffffff",
+                        fontFamily: "Medium", lineHeight: Math.round(12 * 1.5), fontSize: 12
+                      }}>{sellerPhone || ad.contactInfo?.phone}</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+                <MaterialIcons name="chevron-right" size={24} color="#666" />
+              </TouchableOpacity>
+            </View>
+
+          </View>
 
           {/* Action Buttons */}
           <View style={styles.actionBar}>
@@ -594,12 +595,12 @@ export default function AdDetails({ route, navigation }) {
             </TouchableOpacity>
           </View>
 
-              <TouchableOpacity style={styles.reportButton} onPress={() => setShowReportModal(true)}>
-                <Ionicons name="flag-outline" size={22} color="#ffffff" />
-                <Text style={styles.reportButtonText}>Report this Ad</Text>
-              </TouchableOpacity>
+          <TouchableOpacity style={styles.reportButton} onPress={() => setShowReportModal(true)}>
+            <Ionicons name="flag-outline" size={22} color="#ffffff" />
+            <Text style={styles.reportButtonText}>Report this Ad</Text>
+          </TouchableOpacity>
 
-          </ScrollView>
+        </ScrollView>
       </SafeAreaView>
 
       <Modal visible={showReportModal} transparent animationType="slide" statusBarTranslucent>
@@ -750,13 +751,11 @@ const styles = StyleSheet.create({
     lineHeight: Math.round(12 * 1.5)
   },
   metaRow: {
-    flexDirection: 'row',
-    gap: 20,
     marginBottom: 16,
     paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
-    alignItems:"center"
+    gap: 20
   },
   metaItem: {
     flexDirection: 'row',
@@ -767,7 +766,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#000000',
     fontFamily: "Medium",
-    lineHeight: Math.round(12 * 1.5)
+    lineHeight: Math.round(12 * 1.5),
   },
   section: {
     marginTop: 16,
@@ -827,38 +826,38 @@ const styles = StyleSheet.create({
     fontFamily: "Medium",
     lineHeight: Math.round(12 * 1.5)
   },
-detailRow: {
-  flexDirection: 'column',
-  alignItems: 'flex-start',
-  paddingVertical: 8,
-  borderBottomWidth: 1,
-  borderBottomColor: '#f0f0f0',
-},
-detailLabel: {
-  fontSize: 14,
-  color: '#808080',
-  fontFamily: "Medium",
-  lineHeight: Math.round(14 * 1.5),
-  textAlign: 'left',
-  marginBottom: 4,
-},
-detailValue: {
-  fontSize: 14,
-  color: '#333',
-  fontFamily: "Medium",
-  lineHeight: Math.round(14 * 1.5),
-  textAlign: 'left',
-},
+  detailRow: {
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  detailLabel: {
+    fontSize: 14,
+    color: '#808080',
+    fontFamily: "Medium",
+    lineHeight: Math.round(14 * 1.5),
+    textAlign: 'left',
+    marginBottom: 4,
+  },
+  detailValue: {
+    fontSize: 14,
+    color: '#333',
+    fontFamily: "Medium",
+    lineHeight: Math.round(14 * 1.5),
+    textAlign: 'left',
+  },
   actionBar: {
     flexDirection: 'row',
-    justifyContent:"space-between",
+    justifyContent: "space-between",
     paddingHorizontal: 16,
-    marginBottom:10
+    marginBottom: 10
   },
   chatButtonLarge: {
     backgroundColor: '#f5b849',
     paddingVertical: 14,
-    width:"48%",
+    width: "48%",
     borderRadius: 10,
     alignItems: 'center',
   },
@@ -871,7 +870,7 @@ detailValue: {
   callButtonLarge: {
     backgroundColor: '#157a4f',
     paddingVertical: 14,
-    width:"48%",
+    width: "48%",
     borderRadius: 10,
     alignItems: 'center',
   },

@@ -55,8 +55,8 @@ export default function Travel({ formData, setFormData, category, onPrevious, te
         <Text style={styles.label}>Package Type</Text>
         <View style={styles.pickerWrap}>
           <Picker
-            selectedValue={formData.courseType || ""}
-            onValueChange={(value) => setFormData({ ...formData, courseType: value })}
+            selectedValue={formData.packageType || ""}
+            onValueChange={(value) => setFormData({ ...formData, packageType: value })}
             mode="dropdown"
           >
             <Picker.Item label="Select package type" value="" />
@@ -95,16 +95,6 @@ export default function Travel({ formData, setFormData, category, onPrevious, te
             setFormData({ ...formData, travelDate: text })
           }
           placeholder="e.g. 15th June 2024"
-        />
-
-        <Text style={styles.label}>Duration</Text>
-        <TextInput
-          style={styles.input}
-          value={formData.duration || ""}
-          onChangeText={(text) =>
-            setFormData({ ...formData, duration: text })
-          }
-          placeholder="e.g. 6 Months"
         />
 
         <View style={{ height: 1, backgroundColor: "#a7a7a7", marginTop: 20 }} />
@@ -177,20 +167,20 @@ const styles = StyleSheet.create({
   formCard: { backgroundColor: "#fff", paddingHorizontal: 16, borderRadius: 10, paddingBottom: 18 },
   label: { fontSize: 16, marginTop: 16, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
   value: { fontSize: 16, color: "#555", fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
-  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10, marginTop: 6, fontSize:14, fontFamily:"Medium" },
+  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10, marginTop: 6, fontSize: 14, fontFamily: "Medium" },
   textArea: { height: 80, textAlignVertical: "top" },
   switchRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 12 },
-   descriptionInput: {
-  borderWidth: 1,
-  borderColor: "#ccc",
-  borderRadius: 8,
-  padding: 12,
-  minHeight: 100,      // Increased height
-  maxHeight: 100,      // Keeps the box fixed after this height
-  fontSize: 14,
-  textAlignVertical: "top",
-  fontFamily:"Medium"
-},
+  descriptionInput: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    padding: 12,
+    minHeight: 100,      // Increased height
+    maxHeight: 100,      // Keeps the box fixed after this height
+    fontSize: 14,
+    textAlignVertical: "top",
+    fontFamily: "Medium"
+  },
   uploadBox: {
     borderWidth: 1,
     borderStyle: "dashed",

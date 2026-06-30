@@ -32,6 +32,7 @@ import AdEdit from "./screens/AdEdit";
 import SellerProfile from "./screens/SellerProfile";
 import TransactionDetails from "./screens/TransactionDetails";
 import FilterPage from "./screens/FilterPage";
+import ReviewsPage from "./screens/ReviewsPage";
 import { BASE_URL } from "./config"; // adjust path as needed
 
 SplashScreen.preventAutoHideAsync();
@@ -108,6 +109,7 @@ export default function App() {
           <Stack.Screen name="SellerProfile" component={SellerProfile} />
           <Stack.Screen name="TransactionDetails" component={TransactionDetails} />
           <Stack.Screen name="FilterPage" component={FilterPage} />
+          <Stack.Screen name="ReviewsPage" component={ReviewsPage} />
         </Stack.Navigator>
       </NavigationContainer>
     </ThemeProvider>

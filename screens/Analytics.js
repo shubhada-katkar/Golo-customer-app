@@ -120,13 +120,13 @@ export default function Analytics({ navigation }) {
 
     const resolvedStats = summary
       ? {
-          totalAds: Number(summary.totalAds || 0),
-          activeAds: Number(summary.activeAds || 0),
-          adCardClicks: Number(summary.totalViews || 0),
-          uniqueVisitors: Number(summary.uniqueVisitors || 0),
-          contactClicks: Number(summary.totalContactClicks || 0),
-          wishlistSaves: Number(summary.totalWishlistSaves || 0),
-        }
+        totalAds: Number(summary.totalAds || 0),
+        activeAds: Number(summary.activeAds || 0),
+        adCardClicks: Number(summary.totalViews || 0),
+        uniqueVisitors: Number(summary.uniqueVisitors || 0),
+        contactClicks: Number(summary.totalContactClicks || 0),
+        wishlistSaves: Number(summary.totalWishlistSaves || 0),
+      }
       : (Object.keys(statsData).length ? statsData : derivedFromAds);
 
     return [
@@ -143,13 +143,13 @@ export default function Analytics({ navigation }) {
     const topAds = (Array.isArray(analytics?.topAdsByViews) && analytics.topAdsByViews.length > 0)
       ? analytics.topAdsByViews
       : [...normalizedAds]
-          .sort((a, b) => Number(b.views || 0) - Number(a.views || 0))
-          .slice(0, 5)
-          .map((item) => ({
-            adId: item.adId,
-            label: item.title || item.category || "Ad",
-            views: Number(item.views || 0),
-          }));
+        .sort((a, b) => Number(b.views || 0) - Number(a.views || 0))
+        .slice(0, 3)
+        .map((item) => ({
+          adId: item.adId,
+          label: item.title || item.category || "Ad",
+          views: Number(item.views || 0),
+        }));
 
     return {
       labels: topAds.length ? topAds.map((item) => item.label?.slice(0, 14) || "Ad") : ["No Data"],
@@ -165,12 +165,12 @@ export default function Analytics({ navigation }) {
     const categories = (Array.isArray(analytics?.categoryDistribution) && analytics.categoryDistribution.length > 0)
       ? analytics.categoryDistribution
       : Object.entries(
-          normalizedAds.reduce((acc, ad) => {
-            const category = ad?.category || "Others";
-            acc[category] = (acc[category] || 0) + 1;
-            return acc;
-          }, {}),
-        ).map(([name, population]) => ({ name, population }));
+        normalizedAds.reduce((acc, ad) => {
+          const category = ad?.category || "Others";
+          acc[category] = (acc[category] || 0) + 1;
+          return acc;
+        }, {}),
+      ).map(([name, population]) => ({ name, population }));
     const fallback = [
       {
         name: "No Data",
@@ -203,177 +203,177 @@ export default function Analytics({ navigation }) {
     category: item.category,
   }));
 
- return (
-  <SafeAreaView style={{ flex: 1 }}>
-    <LinearGradient
-      colors={["#f8a812", "#fad081", "#f8f6f265"]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 0, y: 1 }}
-      style={{ height: 220, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0 }}
-    />
-    <Topbar />
-
-    <View style={styles.row1}>
-      <TouchableOpacity onPress={() => navigation.goBack()}>
-        <View style={{ justifyContent: 'center' }}>
-          <MaterialIcons
-            name="arrow-back-ios"
-            size={22}
-            color={colors.text}
-            style={{ padding: 10 }}
-          />
-        </View>
-      </TouchableOpacity>
-      <Text style={{ fontSize: 20, color: colors.text, fontFamily: "SemiBold", lineHeight: Math.round(20 * 1.2) }}>Analytics</Text>
-    </View>
-
-    <View style={{ flexDirection: "row", backgroundColor: colors.divider, height: 1, marginVertical:6 }} />
-
-    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 110 }}>
-
-      <Text style={[styles.subtitle, { color: colors.text }]}>
-        Track performance of your posted ads</Text>
-      {loading && (
-        <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
-          <ActivityIndicator size="small" color="#1f7a53" />
-          <Text style={{ marginLeft: 8, color: "#666", fontFamily: "Medium" }}>Refreshing live data...</Text>
-        </View>
-      )}
-      {!!error && <Text style={{ color: "#d14343", marginBottom: 10 }}>{error}</Text>}
-
-      {/* Stats Cards */}
-      <View style={styles.statsContainer}>
-        {stats.map((item, index) => (
-          <View key={index} style={styles.card}>
-            <Text style={styles.value}>{item.value}</Text>
-            <Text style={styles.label}>{item.title}</Text>
-          </View>
-        ))}
-      </View>
-
-      {/* Bar Chart */}
-      <Text style={[styles.sectionTitle, { color: colors.text }]}>Top Ads By Views</Text>
-      <BarChart
-        data={topAdsViews}
-        width={screenWidth - 30}
-        height={220}
-        fromZero
-        chartConfig={{
-          backgroundGradientFrom: "#ffffff",
-          backgroundGradientTo: "#ffffff",
-          color: () => "#1f7a53",
-          labelColor: () => "#555",
-        }}
-        style={styles.chart}
+  return (
+    <SafeAreaView style={{ flex: 1 }}>
+      <LinearGradient
+        colors={["#f8a812", "#fad081", "#f8f6f265"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={{ height: 220, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0 }}
       />
+      <Topbar />
 
-      {/* Statistics Card */}
-      <View style={[styles.statsCard, { borderColor: colors.divider }]}>
-        <Text style={[styles.statsCardTitle, { color: colors.text }]}>Statistics</Text>
-        <View style={styles.pieRow}>
-         <PieChart
-  data={categoryData}
-  width={(screenWidth - 30) * 0.5}
-  height={160}
-  chartConfig={{ color: () => "#000" }}
-  accessor={"population"}
-  backgroundColor={"transparent"}
-  hasLegend={false}
-  center={[(screenWidth - 30) * 0.125, 0]}
-/>
-          <View style={styles.legendContainer}>
-            {categoryData.map((item, index) => (
-              <View key={index} style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: item.color }]} />
-                <Text style={[styles.legendText, { color: colors.text }]}>
-                  {item.population} {item.name}
-                </Text>
-              </View>
-            ))}
+      <View style={styles.row1}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <View style={{ justifyContent: 'center' }}>
+            <MaterialIcons
+              name="arrow-back-ios"
+              size={22}
+              color={colors.text}
+              style={{ padding: 10 }}
+            />
+          </View>
+        </TouchableOpacity>
+        <Text style={{ fontSize: 20, color: colors.text, fontFamily: "SemiBold", lineHeight: Math.round(20 * 1.2) }}>Analytics</Text>
+      </View>
+
+      <View style={{ flexDirection: "row", backgroundColor: colors.divider, height: 1, marginVertical: 6 }} />
+
+      <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 110 }}>
+
+        <Text style={[styles.subtitle, { color: colors.text }]}>
+          Track performance of your posted ads</Text>
+        {loading && (
+          <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
+            <ActivityIndicator size="small" color="#1f7a53" />
+            <Text style={{ marginLeft: 8, color: "#666", fontFamily: "Medium" }}>Refreshing live data...</Text>
+          </View>
+        )}
+        {!!error && <Text style={{ color: "#d14343", marginBottom: 10 }}>{error}</Text>}
+
+        {/* Stats Cards */}
+        <View style={styles.statsContainer}>
+          {stats.map((item, index) => (
+            <View key={index} style={styles.card}>
+              <Text style={styles.value}>{item.value}</Text>
+              <Text style={styles.label}>{item.title}</Text>
+            </View>
+          ))}
+        </View>
+
+        {/* Bar Chart */}
+        <Text style={styles.sectionTitle}>Top Ads By Views</Text>
+        <BarChart
+          data={topAdsViews}
+          width={screenWidth - 30}
+          height={220}
+          fromZero
+          chartConfig={{
+            backgroundGradientFrom: "#ffffff",
+            backgroundGradientTo: "#ffffff",
+            color: () => "#1f7a53",
+            labelColor: () => "#555",
+          }}
+          style={styles.chart}
+        />
+
+        {/* Statistics Card */}
+        <View style={[styles.statsCard, { borderColor: colors.divider }]}>
+          <Text style={[styles.statsCardTitle, { color: colors.text }]}>Statistics</Text>
+          <View style={styles.pieRow}>
+            <PieChart
+              data={categoryData}
+              width={(screenWidth - 30) * 0.5}
+              height={160}
+              chartConfig={{ color: () => "#000" }}
+              accessor={"population"}
+              backgroundColor={"transparent"}
+              hasLegend={false}
+              center={[(screenWidth - 30) * 0.125, 0]}
+            />
+            <View style={styles.legendContainer}>
+              {categoryData.map((item, index) => (
+                <View key={index} style={styles.legendItem}>
+                  <View style={[styles.legendDot, { backgroundColor: item.color }]} />
+                  <Text style={[styles.legendText, { color: colors.text }]}>
+                    {item.population} {item.name}
+                  </Text>
+                </View>
+              ))}
+            </View>
           </View>
         </View>
-      </View>
 
-      {/* Ads Table */}
-      <Text style={[styles.sectionTitle, { color: colors.text }]}>Your Ads</Text>
+        {/* Ads Table */}
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Your Ads</Text>
 
-      <View style={styles.tableHeader}>
-        <Text style={[styles.headerText, { color: colors.text }]}>Ad</Text>
-        <Text style={[styles.headerText, { color: colors.text }]}>Date</Text>
-        <Text style={[styles.headerText, { color: colors.text }]}>Status</Text>
-        <Text style={[styles.headerText, { color: colors.text }]}>Action</Text>
-      </View>
-
-      {!adsList.length && (
-        <View style={{ paddingVertical: 14 }}>
-          <Text style={{ color: colors.text, fontFamily: "Medium" }}>No ads posted yet.</Text>
+        <View style={styles.tableHeader}>
+          <Text style={[styles.headerText, { color: colors.text }]}>Ad</Text>
+          <Text style={[styles.headerText, { color: colors.text }]}>Date</Text>
+          <Text style={[styles.headerText, { color: colors.text }]}>Status</Text>
+          <Text style={[styles.headerText, { color: colors.text }]}>Action</Text>
         </View>
-      )}
 
-      {adsList.map((ad) => {
-        const resolvedAdId = ad.adId || ad.id;
-        const statusLabel = getStatusLabel(ad.status);
-        const statusColor = String(ad.status || "").toLowerCase() === "active" ? "green" : "red";
-        return (
-          <View
-            key={String(resolvedAdId)}
-            style={styles.tableRow}
-          >
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.adName, { color: colors.text }]}>{ad.name}</Text>
-            </View>
+        {!adsList.length && (
+          <View style={{ paddingVertical: 14 }}>
+            <Text style={{ color: colors.text, fontFamily: "Medium" }}>No ads posted yet.</Text>
+          </View>
+        )}
 
-            <Text style={[styles.cell, { color: colors.text }]}>{formatDate(ad.date)}</Text>
-
-            <Text
-              style={[
-                styles.cell,
-                {
-                  color: statusColor,
-                  fontFamily: "Medium",
-                  lineHeight: Math.round(13 * 1.5),
-                },
-              ]}
+        {adsList.map((ad) => {
+          const resolvedAdId = ad.adId || ad.id;
+          const statusLabel = getStatusLabel(ad.status);
+          const statusColor = String(ad.status || "").toLowerCase() === "active" ? "green" : "red";
+          return (
+            <View
+              key={String(resolvedAdId)}
+              style={styles.tableRow}
             >
-              {statusLabel}
-            </Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.adName} numberOfLines={1} ellipsizeMode="tail" >{ad.name}</Text>
+              </View>
 
-            <View style={styles.actionCell}>
-               <TouchableOpacity
-                style={styles.actionIconBtn}
-                onPress={() =>
-                  navigation.navigate("AdAnalytics", {
-                    adId: resolvedAdId,
-                  })
-                }
-              >
-                <Entypo name="eye" size={20} color="#157a4f" />
-              </TouchableOpacity>
+              <Text style={[styles.cell, { color: colors.text }]}>{formatDate(ad.date)}</Text>
 
-              <TouchableOpacity
-                style={styles.actionIconBtn}
-                onPress={() =>
-                  navigation.navigate("AdEdit", {
-                    adId: resolvedAdId,
-                  })
-                }
+              <Text
+                style={[
+                  styles.cell,
+                  {
+                    color: statusColor,
+                    fontFamily: "Medium",
+                    lineHeight: Math.round(13 * 1.5),
+                  },
+                ]}
               >
-                <MaterialIcons name="edit" size={20} color="#d89633" />
-              </TouchableOpacity>
+                {statusLabel}
+              </Text>
+
+              <View style={styles.actionCell}>
+                <TouchableOpacity
+                  style={styles.actionIconBtn}
+                  onPress={() =>
+                    navigation.navigate("AdAnalytics", {
+                      adId: resolvedAdId,
+                    })
+                  }
+                >
+                  <Entypo name="eye" size={20} color="#157a4f" />
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.actionIconBtn}
+                  onPress={() =>
+                    navigation.navigate("AdEdit", {
+                      adId: resolvedAdId,
+                    })
+                  }
+                >
+                  <MaterialIcons name="edit" size={20} color="#d89633" />
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
-        );
-      })}
+          );
+        })}
 
-    </ScrollView>
+      </ScrollView>
 
-    <SafeAreaView
-      edges={["bottom"]}
-      style={{ position: "absolute", bottom: 0, width: "100%" }} >
-      <ChojaBottom />
+      <SafeAreaView
+        edges={["bottom"]}
+        style={{ position: "absolute", bottom: 0, width: "100%" }} >
+        <ChojaBottom />
+      </SafeAreaView>
     </SafeAreaView>
-  </SafeAreaView>
-);
+  );
 }
 
 const styles = StyleSheet.create({
@@ -436,16 +436,16 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     marginTop: 20,
-        elevation: 6,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 6,
+    elevation: 6,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
   },
   statsCardTitle: {
     fontSize: 16,
     fontFamily: "Medium",
-    lineHeight:Math.round(16*1.5)
+    lineHeight: Math.round(16 * 1.5)
   },
   pieRow: {
     flexDirection: "row",
@@ -482,7 +482,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: "Medium",
     lineHeight: Math.round(14 * 1.5),
-    paddingHorizontal:16
+    paddingHorizontal: 16
   },
   actionCell: {
     flexDirection: "row",
@@ -492,7 +492,7 @@ const styles = StyleSheet.create({
   },
   actionIconBtn: {
     paddingHorizontal: 4,
-    marginRight:10
+    marginRight: 10
   },
   tableRow: {
     flexDirection: "row",
@@ -512,6 +512,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: "Medium",
     lineHeight: Math.round(13 * 1.5),
+    width: "82%"
   },
   category: {
     fontSize: 12,

@@ -1,5 +1,5 @@
-﻿import React, { useContext, useRef, useState, useEffect } from "react";
-import { View, StyleSheet, Text, TouchableOpacity, ScrollView, TextInput } from "react-native";
+import React, { useCallback, useContext, useRef, useState, useEffect } from "react";
+import { ActivityIndicator, View, StyleSheet, Text, TouchableOpacity, ScrollView, TextInput, Keyboard } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemeContext } from "../theme/ThemeContext";
 import ChojaBottom from "../components/ChojaBottom";
@@ -38,16 +38,22 @@ export default function ChojaHome() {
     const { colors } = useContext(ThemeContext);
     const inputRef = useRef(null);
     const [tab, setTab] = useState("Chotya Jahirati");
-    const sortedCategories = selectedCategory
-        ? [
-            categories.find(c => c.label === selectedCategory),
-            ...categories.filter(c => c.label !== selectedCategory),
-        ]
-        : categories;
+    const sortedCategories = categories;
     const scrollRef = useRef(null);
-        const [locationStatus, setLocationStatus] = useState("loading");
-        const [userCoordinates, setUserCoordinates] = useState(null);
-        const [locationPlaceName, setLocationPlaceName] = useState("");
+
+    const [locationStatus, setLocationStatus] = useState("loading");
+    const [userCoordinates, setUserCoordinates] = useState(null);
+    const [locationPlaceName, setLocationPlaceName] = useState("");
+    const [gpsCoordinates, setGpsCoordinates] = useState(null);
+    const [gpsPlaceName, setGpsPlaceName] = useState("");
+
+    // Location editing state
+    const [isEditingLocation, setIsEditingLocation] = useState(false);
+    const [locationQuery, setLocationQuery] = useState("");
+    const [locationSuggestions, setLocationSuggestions] = useState([]);
+    const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+    const locationInputRef = useRef(null);
+    const debounceTimer = useRef(null);
 
     useEffect(() => {
         let isMounted = true;
@@ -58,10 +64,7 @@ export default function ChojaHome() {
                 setLocationPlaceName("");
 
                 const { status } = await Location.requestForegroundPermissionsAsync();
-
-                if (!isMounted) {
-                    return;
-                }
+                if (!isMounted) return;
 
                 if (status !== "granted") {
                     setLocationStatus("denied");
@@ -71,10 +74,7 @@ export default function ChojaHome() {
                 const current = await Location.getCurrentPositionAsync({
                     accuracy: Location.Accuracy.Balanced,
                 });
-
-                if (!isMounted) {
-                    return;
-                }
+                if (!isMounted) return;
 
                 const coords = {
                     lat: current?.coords?.latitude,
@@ -82,63 +82,207 @@ export default function ChojaHome() {
                 };
 
                 setUserCoordinates(coords);
+                setGpsCoordinates(coords);
 
+                // Use Nominatim reverse geocoding (same as the website) for consistent address display
                 try {
-                    const geocode = await Location.reverseGeocodeAsync({
-                        latitude: coords.lat,
-                        longitude: coords.lng,
-                    });
+                    const reverseRes = await fetch(
+                        `https://nominatim.openstreetmap.org/reverse?lat=${coords.lat}&lon=${coords.lng}&format=json&addressdetails=1`,
+                        {
+                            headers: {
+                                "User-Agent": "GoloCustomerApp/1.0",
+                                "Accept": "application/json",
+                            },
+                        }
+                    );
+                    if (!isMounted) return;
 
-                    if (!isMounted) {
-                        return;
+                    if (reverseRes.ok) {
+                        const reverseData = await reverseRes.json();
+                        const addr = reverseData?.address || {};
+
+                        const parts = [
+                            addr.amenity || addr.shop || addr.tourism || addr.leisure || addr.building,
+                            addr.house_number,
+                            addr.road || addr.pedestrian || addr.footway,
+                            addr.neighbourhood,
+                            addr.suburb,
+                            addr.quarter,
+                            addr.city_district,
+                            addr.village,
+                            addr.town,
+                            addr.city,
+                            addr.district,
+                            addr.county,
+                            addr.state_district,
+                            addr.state,
+                            addr.postcode,
+                            addr.country,
+                        ].filter(Boolean);
+
+                        const cleanParts = parts.map(p => String(p).trim()).filter(Boolean);
+                        const uniqueParts = [];
+                        for (const part of cleanParts) {
+                            if (!uniqueParts.some(p => p.toLowerCase() === part.toLowerCase())) {
+                                uniqueParts.push(part);
+                            }
+                        }
+
+                        const resolvedName = uniqueParts.join(", ") || "your current area";
+                        if (!isMounted) return;
+                        setLocationPlaceName(resolvedName);
+                        setGpsPlaceName(resolvedName);
+                    } else {
+                        throw new Error(`Nominatim reverse HTTP ${reverseRes.status}`);
                     }
-
-                    const place = geocode?.[0] || {};
-                    const placeText = [
-                        place?.name,
-                        place?.street,
-                        place?.city,
-                        place?.subregion,
-                        place?.region,
-                        place?.country,
-                    ]
-                        .filter(Boolean)
-                        .slice(0, 3)
-                        .join(", ");
-
-                    setLocationPlaceName(placeText || "your current area");
-                } catch (geocodeError) {
-                    if (!isMounted) {
-                        return;
-                    }
+                } catch {
+                    if (!isMounted) return;
                     setLocationPlaceName("your current area");
+                    setGpsPlaceName("your current area");
                 }
 
                 setLocationStatus("granted");
             } catch (locationError) {
-                if (!isMounted) {
-                    return;
-                }
+                if (!isMounted) return;
                 setLocationStatus("denied");
                 console.error("Location permission/fetch error:", locationError);
             }
         };
 
         getUserLocation();
-
-        return () => {
-            isMounted = false;
-        };
+        return () => { isMounted = false; };
     }, []);
+
+    // Nominatim-powered suggestions — neighbourhood/area level
+    const fetchLocationSuggestions = useCallback(async (query) => {
+        const trimmed = (query || "").trim();
+        if (!trimmed) {
+            setLocationSuggestions([]);
+            setSuggestionsLoading(false);
+            return;
+        }
+
+        setSuggestionsLoading(true);
+        try {
+            const params = new URLSearchParams({
+                q: trimmed,
+                format: "json",
+                addressdetails: "1",
+                limit: "8",
+                "accept-language": "en",
+            });
+
+            const response = await fetch(
+                `https://nominatim.openstreetmap.org/search?${params.toString()}`,
+                {
+                    headers: {
+                        "User-Agent": "GoloCustomerApp/1.0",
+                        "Accept": "application/json",
+                    },
+                }
+            );
+            if (!response.ok) throw new Error(`Nominatim HTTP ${response.status}`);
+
+            const data = await response.json();
+            const suggestions = (data || []).map((item, idx) => {
+                const addr = item.address || {};
+                const parts = [
+                    addr.amenity || addr.shop || addr.tourism || addr.leisure || addr.building || addr.place,
+                    addr.house_number,
+                    addr.road || addr.pedestrian || addr.footway || addr.street,
+                    addr.neighbourhood,
+                    addr.suburb,
+                    addr.quarter,
+                    addr.city_district,
+                    addr.village,
+                    addr.town,
+                    addr.city,
+                    addr.district,
+                    addr.county,
+                    addr.state_district,
+                    addr.state,
+                    addr.postcode,
+                    addr.country,
+                ].filter(Boolean);
+
+                const cleanParts = parts.map(p => String(p).trim()).filter(Boolean);
+                const uniqueParts = [];
+                for (const part of cleanParts) {
+                    if (!uniqueParts.some(p => p.toLowerCase() === part.toLowerCase())) {
+                        uniqueParts.push(part);
+                    }
+                }
+                const resolvedLabel = uniqueParts.join(", ");
+
+                return {
+                    id: `${item.place_id || idx}`,
+                    lat: parseFloat(item.lat),
+                    lng: parseFloat(item.lon),
+                    label: resolvedLabel || item.display_name || trimmed,
+                };
+            });
+
+            const seen = new Set();
+            const unique = suggestions.filter((s) => {
+                if (seen.has(s.label)) return false;
+                seen.add(s.label);
+                return true;
+            });
+            setLocationSuggestions(unique);
+        } catch (err) {
+            console.error("Location suggestion error:", err);
+            setLocationSuggestions([]);
+        } finally {
+            setSuggestionsLoading(false);
+        }
+    }, []);
+
+    const handleLocationQueryChange = useCallback((text) => {
+        setLocationQuery(text);
+        if (debounceTimer.current) clearTimeout(debounceTimer.current);
+        debounceTimer.current = setTimeout(() => {
+            fetchLocationSuggestions(text);
+        }, 400);
+    }, [fetchLocationSuggestions]);
+
+    const handleStartEditingLocation = useCallback(() => {
+        setIsEditingLocation(true);
+        setLocationQuery("");
+        setLocationSuggestions([]);
+        setTimeout(() => locationInputRef.current?.focus(), 100);
+    }, []);
+
+    const handleCancelEditingLocation = useCallback(() => {
+        setIsEditingLocation(false);
+        setLocationQuery("");
+        setLocationSuggestions([]);
+        Keyboard.dismiss();
+    }, []);
+
+    const handleSelectSuggestion = useCallback((suggestion) => {
+        Keyboard.dismiss();
+        setIsEditingLocation(false);
+        setLocationQuery("");
+        setLocationSuggestions([]);
+        setUserCoordinates({ lat: suggestion.lat, lng: suggestion.lng });
+        setLocationPlaceName(suggestion.label);
+        setLocationStatus("granted");
+    }, []);
+
+    const handleResetToGPS = useCallback(() => {
+        if (gpsCoordinates) {
+            setUserCoordinates(gpsCoordinates);
+            setLocationPlaceName(gpsPlaceName);
+        }
+        handleCancelEditingLocation();
+    }, [gpsCoordinates, gpsPlaceName, handleCancelEditingLocation]);
 
     const locationLabel =
         locationStatus === "granted"
-            ? locationPlaceName
-                ? `Location: ${locationPlaceName}`
-                : "Current location"
+            ? locationPlaceName || "Current location"
             : locationStatus === "loading"
                 ? "Checking your location..."
-                : "No access to location";
+                : "Tap to set location";
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
@@ -146,26 +290,90 @@ export default function ChojaHome() {
                 colors={["#f8a812", "#fad081", "#f8f6f265"]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 0, y: 1 }}
-                style={{height: 220, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0}}
+                style={{ height: 220, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0 }}
             />
             <Topbar2 />
 
-              <View style={styles.locationSection}>
-                                <View style={styles.locationRow}>
-                                    <Ionicons name="location-outline" size={16} color="#000000" />
-                                    <Text style={[styles.locationText]}
-                                    numberOfLines={1} ellipsizeMode="tail">
-                                        {locationLabel}
-                                    </Text>
-                                </View>               
-                            </View>
+            {/* ---- Location Section ---- */}
+            {isEditingLocation ? (
+                <View style={[styles.locationSection, styles.locationEditingSection]}>
+                    <View style={styles.locationRow}>
+                        <View style={styles.locationLeftGroup}>
+                            <Ionicons name="location-outline" size={16} color="#c47a00" />
+                            <TextInput
+                                ref={locationInputRef}
+                                style={styles.locationInput}
+                                placeholder="Type a city or area..."
+                                placeholderTextColor="#888"
+                                value={locationQuery}
+                                onChangeText={handleLocationQueryChange}
+                                returnKeyType="search"
+                                autoCorrect={false}
+                                autoCapitalize="words"
+                            />
+                        </View>
+                        <TouchableOpacity onPress={handleCancelEditingLocation} style={styles.locationCancelBtn}>
+                            <Ionicons name="close-circle" size={18} color="#555" />
+                        </TouchableOpacity>
+                    </View>
+
+                    {(suggestionsLoading || locationSuggestions.length > 0) && (
+                        <View style={styles.suggestionsContainer}>
+                            {suggestionsLoading ? (
+                                <View style={styles.suggestionLoading}>
+                                    <ActivityIndicator size="small" color="#c47a00" />
+                                    <Text style={styles.suggestionLoadingText}>Searching...</Text>
+                                </View>
+                            ) : (
+                                locationSuggestions.map((s) => (
+                                    <TouchableOpacity
+                                        key={s.id}
+                                        style={styles.suggestionItem}
+                                        onPress={() => handleSelectSuggestion(s)}
+                                        activeOpacity={0.7}
+                                    >
+                                        <Ionicons name="location-sharp" size={14} color="#c47a00" style={{ marginRight: 8 }} />
+                                        <Text style={styles.suggestionText} numberOfLines={2}>{s.label}</Text>
+                                    </TouchableOpacity>
+                                ))
+                            )}
+                            {gpsCoordinates && (
+                                <TouchableOpacity
+                                    style={[styles.suggestionItem, styles.gpsResetItem]}
+                                    onPress={handleResetToGPS}
+                                    activeOpacity={0.7}
+                                >
+                                    <Ionicons name="navigate" size={14} color="#157a4f" style={{ marginRight: 8 }} />
+                                    <Text style={[styles.suggestionText, { color: "#157a4f" }]}>Use my current GPS location</Text>
+                                </TouchableOpacity>
+                            )}
+                        </View>
+                    )}
+                </View>
+            ) : (
+                <TouchableOpacity
+                    style={styles.locationSection}
+                    onPress={handleStartEditingLocation}
+                    activeOpacity={0.75}
+                >
+                    <View style={styles.locationRow}>
+                        <View style={styles.locationLeftGroup}>
+                            <Ionicons name="location-outline" size={16} color="#000000" />
+                            <Text style={styles.locationText} numberOfLines={1} ellipsizeMode="tail">
+                                {locationLabel}
+                            </Text>
+                        </View>
+                        <Ionicons name="chevron-down" size={14} color="#555" />
+                    </View>
+                </TouchableOpacity>
+            )}
 
             <View style={styles.row1}>
                 <TouchableOpacity
                     style={styles.search}
                     activeOpacity={1}
                     onPress={() => inputRef.current?.focus()} >
-                    
+
                     <EvilIcons name="search" size={24} color="#555" />
                     <TextInput
                         ref={inputRef}
@@ -203,7 +411,6 @@ export default function ChojaHome() {
                                         setSelectedCategory(null);
                                     } else {
                                         setSelectedCategory(item.label);
-                                        scrollRef.current?.scrollTo({ x: 0, animated: true });
                                     }
                                 }}
                                 style={styles.categoryItem}
@@ -228,7 +435,7 @@ export default function ChojaHome() {
                 </ScrollView>
             </View>
 
-            <View style={{ paddingHorizontal: 8, marginTop: 6 }}>
+            <View style={{ paddingHorizontal: 8 }}>
                 <View style={styles.row2}>
 
                     <TouchableOpacity
@@ -268,7 +475,15 @@ export default function ChojaHome() {
             </View>
 
             <View style={{ flex: 1, marginTop: 10 }}>
-                {tab === "Chotya Jahirati" && <ChotyaJahirati selectedCategory={selectedCategory} searchQuery={searchQuery} />}
+                {tab === "Chotya Jahirati" && (
+                    <ChotyaJahirati
+                        selectedCategory={selectedCategory}
+                        searchQuery={searchQuery}
+                        lat={userCoordinates?.lat}
+                        lng={userCoordinates?.lng}
+                        locationPlaceName={locationPlaceName}
+                    />
+                )}
                 {tab === "I Want" && <Iwant />}
                 {tab === "My Ads" && <MyAds selectedCategory={selectedCategory} searchQuery={searchQuery} />}
             </View>
@@ -296,15 +511,15 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         borderWidth: 1,
         borderColor: "#cacaca",
-        marginVertical:6,
+        marginVertical: 5,
         paddingHorizontal: 4,
     },
     searchInput: {
         flex: 1,
-        marginHorizontal: 6,
+        marginHorizontal: 5,
         fontFamily: "Medium",
         fontSize: 14,
-        top:4
+        top: 4
     },
     row2: {
         flexDirection: "row",
@@ -325,12 +540,12 @@ const styles = StyleSheet.create({
         color: "#ffffff",
         fontSize: 14,
         fontFamily: "Medium",
-        lineHeight: Math.round(16 * 2.4)
+        lineHeight: Math.round(14 * 2.4)
     },
     activeText: {
         color: "#000000",
         fontFamily: "Medium",
-        lineHeight: Math.round(16 * 2.4),
+        lineHeight: Math.round(14 * 2.4),
     },
     chipsRow: {
         flexDirection: "row",
@@ -352,16 +567,33 @@ const styles = StyleSheet.create({
         lineHeight: Math.round(10 * 1.3),
     },
     locationSection: {
-       backgroundColor:"#f5b949e5",
-       borderRadius:12,
-       padding:10,
-       marginHorizontal:12,
-       marginBottom:5
+        backgroundColor: "#f5b949e5",
+        borderRadius: 12,
+        paddingHorizontal: 10,
+        height: 44,
+        justifyContent: "center",
+        marginHorizontal: 12,
+        marginBottom: 5,
+    },
+    locationEditingSection: {
+        height: "auto",
+        backgroundColor: "#fff8ec",
+        borderWidth: 1,
+        borderColor: "#f8a812",
+        paddingVertical: 8,
+        zIndex: 100,
     },
     locationRow: {
         flexDirection: "row",
         alignItems: "center",
+        justifyContent: "space-between",
+    },
+    locationLeftGroup: {
+        flexDirection: "row",
+        alignItems: "center",
         gap: 4,
+        flex: 1,
+        marginRight: 8,
     },
     locationText: {
         fontSize: 12,
@@ -369,10 +601,64 @@ const styles = StyleSheet.create({
         lineHeight: Math.round(12 * 1.5),
         flexShrink: 1,
     },
-    locationHint: {
-        marginTop: 4,
-        fontSize: 12,
+    locationInput: {
+        flex: 1,
+        fontSize: 13,
         fontFamily: "Medium",
-        lineHeight: Math.round(12 * 1.5),
+        color: "#222",
+        paddingVertical: 0,
+        paddingHorizontal: 4,
+    },
+    locationCancelBtn: {
+        paddingLeft: 4,
+    },
+    suggestionsContainer: {
+        position: "absolute",
+        top: "100%",
+        left: 0,
+        right: 0,
+        marginTop: 20,
+        backgroundColor: "#ffffff",
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: "#e5c47a",
+        overflow: "hidden",
+        elevation: 8,
+        shadowColor: "#000",
+        shadowOpacity: 0.10,
+        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 3 },
+        zIndex: 200,
+    },
+    suggestionItem: {
+        flexDirection: "row",
+        alignItems: "center",
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: "#f5e9cf",
+    },
+    gpsResetItem: {
+        backgroundColor: "#f0faf5",
+        borderBottomWidth: 0,
+    },
+    suggestionText: {
+        flex: 1,
+        fontSize: 13,
+        fontFamily: "Medium",
+        color: "#333",
+        lineHeight: Math.round(13 * 1.5),
+    },
+    suggestionLoading: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 8,
+        padding: 12,
+    },
+    suggestionLoadingText: {
+        fontSize: 13,
+        fontFamily: "Medium",
+        color: "#888",
+        lineHeight: Math.round(13 * 1.5),
     },
 })

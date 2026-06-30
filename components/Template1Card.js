@@ -3,7 +3,7 @@ import {
   View, Text, StyleSheet, TouchableOpacity, Image,
   Dimensions, ScrollView, FlatList, Alert, Share, ActivityIndicator
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, Entypo, MaterialIcons } from "@expo/vector-icons";
 import { Linking } from "react-native";
 import { getAdId, isFavoriteAdId, toggleFavoriteAd } from "../services/favoritesService";
 import { trackAdCardClick, trackContactClick } from "../services/analyticsService";
@@ -259,7 +259,7 @@ export default function Template1Card({ ad, navigation }) {
       )}
 
 
-     <View style={styles.topRow}>
+      <View style={styles.topRow}>
         <TouchableOpacity onPress={handleFavoriteToggle} disabled={favoriteLoading}>
           {favoriteLoading ? (
             <ActivityIndicator size="small" color="#e74c3c" />
@@ -273,23 +273,24 @@ export default function Template1Card({ ad, navigation }) {
       </View>
 
       <View style={styles.row}>
-        <Text style={styles.title} numberOfLines={1}
-        ellipsizeMode="tail">{ad.title}</Text>
+        <Text style={styles.title} numberOfLines={2} ellipsizeMode="tail">{ad.title}</Text>
         <Text style={styles.price}>{ad.price ? `₹${ad.price}` : ""}</Text>
       </View>
 
-      <Text numberOfLines={2} style={styles.desc}>
-        {ad.description}
+      <Text numberOfLines={1} ellipsizeMode="tail" style={styles.desc}>
+        Description : {ad.description}
       </Text>
 
       <View style={styles.metaRow}>
         <View style={styles.metaItem}>
-          <Ionicons name="location-outline" size={14} />
-          <Text style={styles.metaText}>{ad.location || ad.city}</Text>
+          <Entypo name="location-pin" size={16} color="#d62c2cff" />
+          <Text numberOfLines={1} ellipsizeMode="tail"
+            style={[styles.metaText, { width: "60%" }]}>{ad.location || ad.city}</Text>
         </View>
         <View style={styles.metaItem}>
-          <Ionicons name="person" size={14} />
-          <Text style={styles.metaText}>{sellerName}</Text>
+          <MaterialIcons name="account-circle" size={16} color="#f5b849" />
+          <Text numberOfLines={1} ellipsizeMode="tail"
+            style={[styles.metaText, { width: "50%" }]}>{sellerName}</Text>
         </View>
       </View>
 
@@ -319,7 +320,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "flex-end",
     gap: 10,
-    marginTop:7
+    marginTop: 7
   },
   timeText: {
     fontSize: 12,
@@ -362,23 +363,25 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   row: {
-    flex:1,
+    flex: 1,
     flexDirection: "row",
     justifyContent: "space-between",
     marginTop: 10,
     alignItems: "center",
   },
   title: {
-    width:"65%",
     fontSize: 16,
     fontFamily: "Medium",
     lineHeight: Math.round(16 * 1.5),
+    width: "70%"
   },
   price: {
     fontSize: 14,
     fontFamily: "Medium",
     lineHeight: Math.round(14 * 1.5),
     flexShrink: 0,
+    marginRight: 5,
+    color: "#157a4f"
   },
   desc: {
     fontSize: 13,
@@ -401,7 +404,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#444",
     fontFamily: "Medium",
-    lineHeight: Math.round(12 * 1.5)
+    lineHeight: Math.round(12 * 1.5),
   },
   buttonRow: {
     flexDirection: "row",

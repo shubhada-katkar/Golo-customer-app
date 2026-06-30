@@ -1,12 +1,16 @@
-import React, { useContext, useEffect, useRef, useState } from "react";
+import React, { useContext, useEffect, useRef, useState, useCallback } from "react";
 import {
     ActivityIndicator,
+    FlatList,
     Image,
+    Keyboard,
+    Modal,
     RefreshControl,
     StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
+    TouchableWithoutFeedback,
     View,
     ScrollView
 } from "react-native";
@@ -206,10 +210,20 @@ export default function GoloHome() {
     const [error, setError] = useState("");
     const [locationStatus, setLocationStatus] = useState("loading");
     const [userCoordinates, setUserCoordinates] = useState(null);
+    const [gpsCoordinates, setGpsCoordinates] = useState(null);
+    const [gpsPlaceName, setGpsPlaceName] = useState("");
     const [locationPlaceName, setLocationPlaceName] = useState("");
     const scrollRef = useRef(null);
     const [radius, setRadius] = useState(DEFAULT_RADIUS_KM);
     const [selectedOfferTypes, setSelectedOfferTypes] = useState("");
+
+    // Location editing state
+    const [isEditingLocation, setIsEditingLocation] = useState(false);
+    const [locationQuery, setLocationQuery] = useState("");
+    const [locationSuggestions, setLocationSuggestions] = useState([]);
+    const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+    const locationInputRef = useRef(null);
+    const debounceTimer = useRef(null);
 
     const categoryIconMap = {
         "Food & Restaurants": "restaurant-outline",
@@ -234,12 +248,7 @@ export default function GoloHome() {
         icon: categoryIconMap[label] || "pricetags-outline",
     }));
 
-    const sortedCategories = selectedCategory
-        ? [
-            categories.find((c) => c.label === selectedCategory),
-            ...categories.filter((c) => c.label !== selectedCategory),
-        ].filter(Boolean)
-        : categories;
+    const sortedCategories = categories;
 
     useEffect(() => {
         let isMounted = true;
@@ -274,6 +283,7 @@ export default function GoloHome() {
                 };
 
                 setUserCoordinates(coords);
+                setGpsCoordinates(coords);
 
                 try {
                     const geocode = await Location.reverseGeocodeAsync({
@@ -286,24 +296,35 @@ export default function GoloHome() {
                     }
 
                     const place = geocode?.[0] || {};
-                    const placeText = [
-                        place?.name,
+                    const parts = [
+                        place?.name !== place?.street ? place?.name : null,
+                        place?.district,
+                        place?.streetNumber,
                         place?.street,
                         place?.city,
-                        place?.subregion,
+                        place?.subregion !== place?.city ? place?.subregion : null,
                         place?.region,
+                        place?.postalCode,
                         place?.country,
-                    ]
-                        .filter(Boolean)
-                        .slice(0, 3)
-                        .join(", ");
+                    ].filter(Boolean);
 
-                    setLocationPlaceName(placeText || "your current area");
+                    const cleanParts = parts.map(p => String(p).trim()).filter(Boolean);
+                    const uniqueParts = [];
+                    for (const part of cleanParts) {
+                        if (!uniqueParts.some(p => p.toLowerCase() === part.toLowerCase())) {
+                            uniqueParts.push(part);
+                        }
+                    }
+
+                    const resolvedName = uniqueParts.join(", ") || "your current area";
+                    setLocationPlaceName(resolvedName);
+                    setGpsPlaceName(resolvedName);
                 } catch (geocodeError) {
                     if (!isMounted) {
                         return;
                     }
                     setLocationPlaceName("your current area");
+                    setGpsPlaceName("your current area");
                 }
 
                 setLocationStatus("granted");
@@ -322,6 +343,138 @@ export default function GoloHome() {
             isMounted = false;
         };
     }, []);
+
+    // Fetch rich address suggestions via OpenStreetMap Nominatim
+    // — returns neighbourhood/area-level results (e.g. "Laxmipuri, Kolhapur, Maharashtra")
+    const fetchLocationSuggestions = useCallback(async (query) => {
+        const trimmed = (query || "").trim();
+        if (!trimmed) {
+            setLocationSuggestions([]);
+            setSuggestionsLoading(false);
+            return;
+        }
+
+        setSuggestionsLoading(true);
+        try {
+            const params = new URLSearchParams({
+                q: trimmed,
+                format: "json",
+                addressdetails: "1",
+                limit: "8",
+                "accept-language": "en",
+            });
+
+            const response = await fetch(
+                `https://nominatim.openstreetmap.org/search?${params.toString()}`,
+                {
+                    headers: {
+                        "User-Agent": "GoloCustomerApp/1.0",
+                        "Accept": "application/json",
+                    },
+                }
+            );
+
+            if (!response.ok) throw new Error(`Nominatim HTTP ${response.status}`);
+
+            const data = await response.json();
+
+            const suggestions = (data || []).map((item, idx) => {
+                const addr = item.address || {};
+                const parts = [
+                    addr.amenity || addr.shop || addr.tourism || addr.leisure || addr.building || addr.place,
+                    addr.house_number,
+                    addr.road || addr.pedestrian || addr.footway || addr.street,
+                    addr.neighbourhood,
+                    addr.suburb,
+                    addr.quarter,
+                    addr.city_district,
+                    addr.village,
+                    addr.town,
+                    addr.city,
+                    addr.district,
+                    addr.county,
+                    addr.state_district,
+                    addr.state,
+                    addr.postcode,
+                    addr.country,
+                ].filter(Boolean);
+
+                const cleanParts = parts.map(p => String(p).trim()).filter(Boolean);
+                const uniqueParts = [];
+                for (const part of cleanParts) {
+                    if (!uniqueParts.some(p => p.toLowerCase() === part.toLowerCase())) {
+                        uniqueParts.push(part);
+                    }
+                }
+                const resolvedLabel = uniqueParts.join(", ");
+
+                return {
+                    id: `${item.place_id || idx}`,
+                    lat: parseFloat(item.lat),
+                    lng: parseFloat(item.lon),
+                    label: resolvedLabel || item.display_name || trimmed,
+                };
+            });
+
+            // Deduplicate by label
+            const seen = new Set();
+            const unique = suggestions.filter((s) => {
+                if (seen.has(s.label)) return false;
+                seen.add(s.label);
+                return true;
+            });
+
+            setLocationSuggestions(unique);
+        } catch (err) {
+            console.error("Location suggestion error:", err);
+            setLocationSuggestions([]);
+        } finally {
+            setSuggestionsLoading(false);
+        }
+    }, []);
+
+    const handleLocationQueryChange = useCallback((text) => {
+        setLocationQuery(text);
+        if (debounceTimer.current) clearTimeout(debounceTimer.current);
+        // 400ms debounce — responsive but avoids hammering Nominatim
+        debounceTimer.current = setTimeout(() => {
+            fetchLocationSuggestions(text);
+        }, 400);
+    }, [fetchLocationSuggestions]);
+
+    const handleStartEditingLocation = useCallback(() => {
+        setIsEditingLocation(true);
+        setLocationQuery("");
+        setLocationSuggestions([]);
+        setTimeout(() => locationInputRef.current?.focus(), 100);
+    }, []);
+
+    const handleCancelEditingLocation = useCallback(() => {
+        setIsEditingLocation(false);
+        setLocationQuery("");
+        setLocationSuggestions([]);
+        Keyboard.dismiss();
+    }, []);
+
+    const handleSelectSuggestion = useCallback(async (suggestion) => {
+        Keyboard.dismiss();
+        setIsEditingLocation(false);
+        setLocationQuery("");
+        setLocationSuggestions([]);
+
+        const newCoords = { lat: suggestion.lat, lng: suggestion.lng };
+        setUserCoordinates(newCoords);
+        setLocationPlaceName(suggestion.label);
+        setLocationStatus("granted");
+    }, []);
+
+    const handleResetToGPS = useCallback(() => {
+        if (gpsCoordinates) {
+            setUserCoordinates(gpsCoordinates);
+            setLocationPlaceName(gpsPlaceName);
+        }
+        handleCancelEditingLocation();
+    }, [gpsCoordinates, gpsPlaceName, handleCancelEditingLocation]);
 
     const fetchOffers = React.useCallback(async () => {
         setLoading(true);
@@ -356,7 +509,7 @@ export default function GoloHome() {
                 try {
                     const savedRadius = await AsyncStorage.getItem("GOLO_FILTER_RADIUS");
                     const savedOfferTypes = await AsyncStorage.getItem("GOLO_FILTER_OFFER_TYPES");
-                    
+
                     if (savedRadius !== null) {
                         currentRadius = Number(savedRadius);
                     }
@@ -432,11 +585,11 @@ export default function GoloHome() {
     const locationLabel =
         locationStatus === "granted"
             ? locationPlaceName
-                ? `Location: ${locationPlaceName}`
+                ? locationPlaceName
                 : "Current location"
             : locationStatus === "loading"
                 ? "Checking your location..."
-                : "No access to location";
+                : "Tap to set location";
 
     const filteredOffers = offers
         .filter(
@@ -473,34 +626,94 @@ export default function GoloHome() {
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
             <LinearGradient
-                         colors={["#f8a812", "#fad081",  "#f8f6f265"]}
-                         start={{ x: 0, y: 0 }}
-                         end={{ x: 0, y: 1 }}
-                         style={{height: 270, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0}}
-                    />
+                colors={["#f8a812", "#fad081", "#f8f6f265"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 1 }}
+                style={{ height: 270, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0 }}
+            />
             <Topbar2 />
 
-                <View style={{flexDirection:"row", alignItems:"center",
-                    justifyContent:"space-between", paddingHorizontal:16
-                }}>
-                <View style={styles.locationSection}>
+            {/* ---- Location Section ---- */}
+            {isEditingLocation ? (
+                <View style={[styles.locationSection, styles.locationEditingSection, { position: "relative", zIndex: 100 }]}>
                     <View style={styles.locationRow}>
-                        <Ionicons name="location-outline" size={16} color="#000000" />
-                        <Text style={[styles.locationText]}
-                        numberOfLines={1} ellipsizeMode="tail">
-                            {locationLabel}
-                        </Text>
-                    </View>               
+                        <View style={styles.locationLeftGroup}>
+                            <Ionicons name="location-outline" size={16} color="#c47a00" />
+                            <TextInput
+                                ref={locationInputRef}
+                                style={styles.locationInput}
+                                placeholder="Type a city or area..."
+                                placeholderTextColor="#888"
+                                value={locationQuery}
+                                onChangeText={handleLocationQueryChange}
+                                returnKeyType="search"
+                                autoCorrect={false}
+                                autoCapitalize="words"
+                            />
+                        </View>
+                        <TouchableOpacity onPress={handleCancelEditingLocation} style={styles.locationCancelBtn}>
+                            <Ionicons name="close-circle" size={18} color="#555" />
+                        </TouchableOpacity>
+                    </View>
+
+                    {(suggestionsLoading || locationSuggestions.length > 0) && (
+                        <View style={styles.suggestionsContainer}>
+                            {suggestionsLoading ? (
+                                <View style={styles.suggestionLoading}>
+                                    <ActivityIndicator size="small" color="#c47a00" />
+                                    <Text style={styles.suggestionLoadingText}>Searching...</Text>
+                                </View>
+                            ) : (
+                                locationSuggestions.map((s) => (
+                                    <TouchableOpacity
+                                        key={s.id}
+                                        style={styles.suggestionItem}
+                                        onPress={() => handleSelectSuggestion(s)}
+                                        activeOpacity={0.7}
+                                    >
+                                        <Ionicons name="location-sharp" size={14} color="#c47a00" style={{ marginRight: 8 }} />
+                                        <Text style={styles.suggestionText} numberOfLines={2}>{s.label}</Text>
+                                    </TouchableOpacity>
+                                ))
+                            )}
+                            {gpsCoordinates && (
+                                <TouchableOpacity
+                                    style={[styles.suggestionItem, styles.gpsResetItem]}
+                                    onPress={handleResetToGPS}
+                                    activeOpacity={0.7}
+                                >
+                                    <Ionicons name="navigate" size={14} color="#157a4f" style={{ marginRight: 8 }} />
+                                    <Text style={[styles.suggestionText, { color: "#157a4f" }]}>Use my current GPS location</Text>
+                                </TouchableOpacity>
+                            )}
+                        </View>
+                    )}
                 </View>
-
-                <TouchableOpacity style={styles.filterbtn} onPress={() => navigation.navigate("FilterPage")}>
-                <Feather name="filter" size={18}/>
-
+            ) : (
+                <TouchableOpacity
+                    style={styles.locationSection}
+                    onPress={handleStartEditingLocation}
+                    activeOpacity={0.75}
+                >
+                    <View style={styles.locationRow}>
+                        <View style={styles.locationLeftGroup}>
+                            <Ionicons name="location-outline" size={16} color="#000000" />
+                            <Text style={styles.locationText} numberOfLines={1} ellipsizeMode="tail">
+                                {locationLabel}
+                            </Text>
+                        </View>
+                        <Ionicons name="chevron-down" size={14} color="#555" />
+                    </View>
                 </TouchableOpacity>
-                </View>
+            )}
 
+
+            <View style={{
+                flexDirection: "row", alignItems: "center",
+                justifyContent: "space-between", paddingHorizontal: 16
+            }}>
                 <View style={styles.searchContainer}>
-                   <EvilIcons name="search" size={24} color="#555" />
+                    <EvilIcons name="search" size={24} color="#555" />
                     <TextInput
                         placeholder="Search offers or products"
                         value={searchQuery}
@@ -514,8 +727,13 @@ export default function GoloHome() {
                         </TouchableOpacity>
                     )}
                 </View>
-                                  
-           <ScrollView 
+                <TouchableOpacity style={styles.filterbtn} onPress={() => navigation.navigate("FilterPage")}>
+                    <Feather name="filter" size={18} />
+
+                </TouchableOpacity>
+            </View>
+
+            <ScrollView
                 contentContainerStyle={styles.container}
                 refreshControl={
                     <RefreshControl refreshing={loading} onRefresh={fetchOffers} />
@@ -523,7 +741,7 @@ export default function GoloHome() {
                 showsVerticalScrollIndicator={false}
             >
 
-                  <View style={styles.categorySection}>
+                <View style={styles.categorySection}>
                     <View style={styles.categoryStrip}>
                         <ScrollView
                             ref={scrollRef}
@@ -542,7 +760,6 @@ export default function GoloHome() {
                                                 setSelectedCategory(null);
                                             } else {
                                                 setSelectedCategory(item.label);
-                                                scrollRef.current?.scrollTo({ x: 0, animated: true });
                                             }
                                         }}
                                     />
@@ -551,7 +768,7 @@ export default function GoloHome() {
                         </ScrollView>
                     </View>
                 </View>
-                
+
                 {loading && !offers.length ? (
                     <View style={styles.centerState}>
                         <ActivityIndicator size="small" color="#157a4f" />
@@ -636,12 +853,11 @@ const OfferCard = ({ item, navigation }) => {
                 )}
 
                 <View style={styles.cardContent}>
-                    <View style={styles.rowBetween}>
-                        <Text style={styles.title} numberOfLines={1}>
-                            {title}
-                        </Text>
-                        {distanceText ? <Text style={styles.distanceMetaText}>{distanceText}</Text> : null}
-                    </View>
+                    {distanceText ? <Text style={styles.distanceMetaText}>{distanceText}</Text> : null}
+
+                    <Text style={styles.title} numberOfLines={1}>
+                        {title}
+                    </Text>
 
                     <Text style={styles.subtitle} numberOfLines={1}>
                         By {subtitle}
@@ -650,7 +866,7 @@ const OfferCard = ({ item, navigation }) => {
                     <Text style={styles.metaText} numberOfLines={1}>Offer Type: {offerType}</Text>
 
                     <Text style={styles.validText} numberOfLines={1}>
-                        Valid Till: {endDate ? new Date(endDate).toDateString() : "-"}
+                        Expires on: {endDate ? new Date(endDate).toDateString() : "-"}
                     </Text>
                 </View>
             </View>
@@ -662,7 +878,7 @@ const styles = StyleSheet.create({
     container: {
         paddingHorizontal: 14,
         paddingVertical: 10,
-        paddingBottom:100
+        paddingBottom: 100
     },
     cardsGrid: {
         flexDirection: "row",
@@ -675,15 +891,31 @@ const styles = StyleSheet.create({
         alignItems: "center",
     },
     locationSection: {
-       backgroundColor:"#f5b949e5",
-       borderRadius:12,
-       padding:10,
-       width:"88%"
+        backgroundColor: "#f5b949e5",
+        borderRadius: 12,
+        paddingHorizontal: 10,
+        height: 44,           // fixed height, same in both states
+        justifyContent: "center",
+        marginHorizontal: 16,
+        marginBottom: 8,
+    },
+    locationEditingSection: {
+        backgroundColor: "#fff8ec",
+        borderWidth: 1,
+        borderColor: "#f8a812",
+        zIndex: 100,
     },
     locationRow: {
         flexDirection: "row",
         alignItems: "center",
+        justifyContent: "space-between",   // pushes chevron/close button to the end
+    },
+    locationLeftGroup: {
+        flexDirection: "row",
+        alignItems: "center",
         gap: 4,
+        flex: 1,
+        marginRight: 8,    // breathing room before the trailing icon
     },
     locationText: {
         fontSize: 12,
@@ -691,21 +923,80 @@ const styles = StyleSheet.create({
         lineHeight: Math.round(12 * 1.5),
         flexShrink: 1,
     },
+    locationInput: {
+        flex: 1,
+        fontSize: 13,
+        fontFamily: "Medium",
+        color: "#222",
+        paddingVertical: 0,
+        paddingHorizontal: 4,
+    },
+    locationCancelBtn: {
+        paddingLeft: 4,
+    },
+    suggestionsContainer: {
+        position: "absolute",
+        top: "100%",          // right below locationSection's bottom edge
+        left: 0,
+        right: 0,
+        marginTop: 6,
+        backgroundColor: "#ffffff",
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: "#e5c47a",
+        overflow: "hidden",
+        elevation: 6,
+        shadowColor: "#000",
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 3 },
+        zIndex: 200,
+    },
+    suggestionItem: {
+        flexDirection: "row",
+        alignItems: "center",
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: "#f5e9cf",
+    },
+    gpsResetItem: {
+        backgroundColor: "#f0faf5",
+        borderBottomWidth: 0,
+    },
+    suggestionText: {
+        flex: 1,
+        fontSize: 13,
+        fontFamily: "Medium",
+        color: "#333",
+        lineHeight: 18,
+    },
+    suggestionLoading: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 8,
+        padding: 12,
+    },
+    suggestionLoadingText: {
+        fontSize: 13,
+        fontFamily: "Medium",
+        color: "#888",
+    },
     locationHint: {
         marginTop: 4,
         fontSize: 12,
         fontFamily: "Medium",
         lineHeight: Math.round(12 * 1.5),
     },
-    filterbtn:{
-        alignItems:"center",
-        borderRadius:10,
-        backgroundColor:"#f5b949e5",
-        padding:10,
-        justifyContent:"center"
+    filterbtn: {
+        alignItems: "center",
+        borderRadius: 10,
+        backgroundColor: "#f5b949e5",
+        padding: 12.5,
+        justifyContent: "center"
     },
     categorySection: {
-        marginBottom:8
+        marginBottom: 8
     },
     categoryStrip: {
         flexDirection: "row",
@@ -714,18 +1005,18 @@ const styles = StyleSheet.create({
     chipsRow: {
         flexDirection: "row",
         alignItems: "center",
-        gap:16
+        gap: 16
     },
     chip: {
         alignItems: "center",
-        width:80,
+        width: 80,
     },
     chipText: {
         fontSize: 11,
         fontFamily: "Medium",
         lineHeight: Math.round(11 * 1.5),
         textAlign: "center",
-        minHeight:32
+        minHeight: 32
     },
     card: {
         width: "48%",
@@ -754,12 +1045,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10,
         paddingVertical: 10,
     },
-    rowBetween: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        gap:10
-    },
     title: {
         flex: 1,
         fontSize: 15,
@@ -770,27 +1055,29 @@ const styles = StyleSheet.create({
         marginTop: 5,
         color: "#666",
         fontFamily: "Medium",
-        fontSize: 13,
-        lineHeight: Math.round(13 * 1.5),
-    },
-    metaText: {
-        marginTop: 10,
-        fontFamily: "Medium",
         fontSize: 12,
         lineHeight: Math.round(12 * 1.5),
     },
-    validText: {
+    metaText: {
+        marginTop: 5,
+        fontFamily: "Medium",
         fontSize: 12,
+        lineHeight: Math.round(12 * 1.5),
+        color: "#666"
+    },
+    validText: {
+        fontSize: 10,
         marginTop: 6,
         color: "#555",
         fontFamily: "Medium",
-        lineHeight: Math.round(12 * 1.5),
+        lineHeight: Math.round(10 * 1.5),
     },
     distanceMetaText: {
         fontSize: 12,
         color: "#157a4f",
         fontFamily: "Medium",
         lineHeight: Math.round(12 * 1.5),
+        alignSelf: "flex-end"
     },
     statusText: {
         textTransform: "capitalize",
@@ -848,9 +1135,9 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         borderWidth: 1,
         borderColor: "#cacaca",
-        marginHorizontal:16,
-        marginVertical:6,
+        marginVertical: 6,
         paddingHorizontal: 6,
+        width: "87%"
     },
     searchInput: {
         flex: 1,
@@ -858,6 +1145,6 @@ const styles = StyleSheet.create({
         paddingVertical: 6,
         fontFamily: "Medium",
         fontSize: 14,
-        top:3
+        top: 3
     },
 });

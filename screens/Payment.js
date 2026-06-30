@@ -28,6 +28,13 @@ const CATEGORY_DTO_FIELD_BY_LABEL = {
     "Public Notice": "publicNoticeData",
 };
 
+// Maps frontend category labels to the exact enum values the backend @IsEnum accepts.
+// Without this, categories like "Greetings" and "Others" fail backend validation.
+const CATEGORY_LABEL_TO_BACKEND_ENUM = {
+    Greetings: "Greetings & Tributes",
+    Others: "Other",
+};
+
 const CATEGORY_PAYLOAD_RULES = {
     vehicleData: {
         allow: [
@@ -85,7 +92,7 @@ const CATEGORY_PAYLOAD_RULES = {
         array: ["socialMediaLinks"],
     },
     travelData: {
-        allow: ["courseType", "destination", "duration", "travelDate", "price", "availableSeats", "pickupLocation", "inclusions", "exclusions"],
+        allow: ["packageType", "destination", "duration", "travelDate", "price", "availableSeats", "pickupLocation", "inclusions", "exclusions"],
         string: ["price"],
     },
     astrologyData: {
@@ -112,7 +119,8 @@ const CATEGORY_PAYLOAD_RULES = {
     },
     greetingsData: {
         allow: ["noticeType", "relationType", "name", "age", "year", "wishes", "from", "name2", "age2", "year2", "summary", "funeralDetails", "message", "senderName", "occasion"],
-    },};
+    },
+};
 
 function toBoolean(value) {
     if (typeof value === "boolean") return value;
@@ -346,6 +354,8 @@ export default function Payment({ navigation, route }) {
                 : (formData?.image ? [formData.image] : []);
 
             const categoryLabel = category?.label || "Education";
+            // Resolve the exact backend enum value; fall back to the label itself
+            const backendCategoryEnum = CATEGORY_LABEL_TO_BACKEND_ENUM[categoryLabel] || categoryLabel;
             const categoryDtoField = CATEGORY_DTO_FIELD_BY_LABEL[categoryLabel];
             const parsedPrice = Number(formData?.price || 0);
             const rawCategoryFormPayload = buildCategoryFormPayload(formData || {});
@@ -380,7 +390,7 @@ export default function Payment({ navigation, route }) {
             const payload = {
                 title: formData?.heading || "Ad Title",
                 description: formData?.body || "Ad Description",
-                category: categoryLabel,
+                category: backendCategoryEnum,
                 subCategory: categoryLabel,
                 userId: userId,
                 userType: "Customer",
@@ -477,7 +487,7 @@ export default function Payment({ navigation, route }) {
                                             marginBottom: 6,
                                         }}
                                     >
-                                        <Text style={{ fontSize: 15, color: "#ffffff" }}>{loc}</Text>
+                                        <Text style={{ fontSize: 15, color: "#ffffff", fontSize: 12, fontFamily: "Medium" }}>{loc}</Text>
                                     </View>
                                 ))
                             ) : (

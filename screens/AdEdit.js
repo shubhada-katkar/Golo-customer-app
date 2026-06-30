@@ -189,9 +189,9 @@ function buildTypedCategoryPayload(draft = {}, typeMap = {}) {
 }
 
 export default function AdEdit({ route, navigation }) {
-    const [reporting, setReporting] = useState(false);
-    const [reportReason, setReportReason] = useState("");
-    const [showReportBox, setShowReportBox] = useState(false);
+  const [reporting, setReporting] = useState(false);
+  const [reportReason, setReportReason] = useState("");
+  const [showReportBox, setShowReportBox] = useState(false);
 
   const { adId } = route.params || {};
   const [loading, setLoading] = useState(true);
@@ -394,23 +394,23 @@ export default function AdEdit({ route, navigation }) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-       <LinearGradient
-                      colors={["#f8a812", "#fad081", "#f8f6f265"]}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 0, y: 1 }}
-                      style={{height: 220, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0}}
-                  />
+      <LinearGradient
+        colors={["#f8a812", "#fad081", "#f8f6f265"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={{ height: 220, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0 }}
+      />
       <Topbar />
-  
+
       <View style={[styles.header, { backgroundColor: colors.background }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} >
-          <MaterialIcons name="arrow-back-ios" size={22} style={{ padding:10 }} />
+          <MaterialIcons name="arrow-back-ios" size={22} style={{ padding: 10 }} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.text }]}>Edit Ad</Text>
         <View style={{ width: 24 }} />
       </View>
 
-      <View style={{ height: 1, backgroundColor: "#000000", marginVertical:6 }} />
+      <View style={{ height: 1, backgroundColor: "#000000", marginVertical: 6 }} />
 
       <ScrollView contentContainerStyle={styles.content} style={{ backgroundColor: colors.background }}>
 
@@ -537,6 +537,13 @@ export default function AdEdit({ route, navigation }) {
         >
           {saving ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.submitText}>Update Ad</Text>}
         </TouchableOpacity>
+
+        <View style={styles.noticeBox}>
+          <MaterialIcons name="info-outline" size={18} color="#9a6700" style={{ marginRight: 8 }} />
+          <Text style={styles.noticeText}>
+            You can edit this ad only once. Please review all details carefully before updating.
+          </Text>
+        </View>
       </ScrollView>
 
       <SafeAreaView
@@ -567,7 +574,24 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 14,
-    paddingBottom:110,
+    paddingBottom: 110,
+  },
+  noticeBox: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    backgroundColor: "#fff8e1",
+    borderWidth: 1,
+    borderColor: "#f3d98a",
+    borderRadius: 10,
+    padding: 12,
+    marginTop: 14,
+  },
+  noticeText: {
+    flex: 1,
+    color: "#7a5b00",
+    fontSize: 13,
+    fontFamily: "Medium",
+    lineHeight: Math.round(13 * 1.5),
   },
   label: {
     fontSize: 14,
