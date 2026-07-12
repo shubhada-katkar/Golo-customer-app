@@ -1,4 +1,5 @@
 import { BASE_URL } from "../config";
+import { getValidToken } from "./authService";
 
 const normalizeText = (value) =>
   String(value ?? "")
@@ -427,6 +428,78 @@ export const fetchPublicMerchantProfile = async (merchantId) => {
   }
 };
 
+const readJsonResponse = async (response) => {
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data?.message || `HTTP ${response.status}`);
+  }
+
+  return data;
+};
+
+/**
+ * Check whether the current customer is already following a merchant.
+ * @param {string} merchantId
+ * @returns {Promise<{success:boolean, isFollowing:boolean}>}
+ */
+export const checkFollowStatus = async (merchantId) => {
+  try {
+    if (!BASE_URL || !merchantId) {
+      return { success: true, isFollowing: false };
+    }
+
+    const token = await getValidToken();
+    const response = await fetch(`${BASE_URL}/users/merchants/${merchantId}/follow-status`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const data = await readJsonResponse(response);
+    return {
+      success: Boolean(data?.success !== false),
+      isFollowing: Boolean(data?.isFollowing),
+    };
+  } catch (error) {
+    if (error?.message === "NOT_AUTHENTICATED" || error?.message === "SESSION_EXPIRED") {
+      return { success: true, isFollowing: false };
+    }
+
+    console.warn("Failed to check follow status:", error);
+    return { success: true, isFollowing: false };
+  }
+};
+
+/**
+ * Toggle follow status for a merchant.
+ * @param {string} merchantId
+ * @returns {Promise<{success:boolean, isFollowing:boolean, message:string}>}
+ */
+export const toggleFollowMerchant = async (merchantId) => {
+  if (!BASE_URL || !merchantId) {
+    throw new Error("Merchant ID is required");
+  }
+
+  const token = await getValidToken();
+  const response = await fetch(`${BASE_URL}/users/merchants/${merchantId}/follow`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await readJsonResponse(response);
+  return {
+    success: Boolean(data?.success !== false),
+    isFollowing: Boolean(data?.isFollowing),
+    message: data?.message || "", 
+  };
+};
+
 /**
  * Fetch nearby offers based on user location
  * @param {number} latitude - User's latitude
@@ -474,6 +547,8 @@ export default {
   fetchAllOffers,
   fetchOfferDetails,
   fetchPublicMerchantProfile,
+  checkFollowStatus,
+  toggleFollowMerchant,
   fetchNearbyOffers,
   searchOffers,
   getOffersByCategory,

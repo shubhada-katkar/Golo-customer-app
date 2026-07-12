@@ -278,6 +278,6 @@ const styles = StyleSheet.create({
         color: "#fff",
         fontSize: 16,
         fontFamily: "Medium",
+        lineHeight: Math.round(16 * 1.5),
     },
 });
-

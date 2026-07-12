@@ -1,9 +1,10 @@
-import React, { useState, useCallback, useRef } from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
 import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView,
   TextInput, Image, Alert, ActivityIndicator,
   Keyboard, TouchableWithoutFeedback
 } from "react-native";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 
@@ -133,6 +134,7 @@ export default function Card2({ category, formData, setFormData, onNext }) {
 
     if (!result.canceled && result.assets?.length > 0) {
       setFormData({ ...formData, image: result.assets[0].uri });
+      try { await AsyncStorage.removeItem('golo_images_flagged'); } catch (e) {}
     }
   };
 
@@ -147,6 +149,7 @@ export default function Card2({ category, formData, setFormData, onNext }) {
 
     if (!result.canceled && result.assets?.length > 0) {
       setFormData({ ...formData, image: result.assets[0].uri });
+      try { await AsyncStorage.removeItem('golo_images_flagged'); } catch (e) {}
     }
   };
 
@@ -220,10 +223,8 @@ export default function Card2({ category, formData, setFormData, onNext }) {
             value={formData.contact}
             onChangeText={(text) => setFormData({ ...formData, contact: text })}
             keyboardType="phone-pad"
-            placeholder="e.g. 9876543210"
+            placeholder="10 digit mobile number"
           />
-
-
 
           <Text style={styles.label}>Add Image (1 image)</Text>
           <View style={styles.uploadBox}>
@@ -257,7 +258,7 @@ export default function Card2({ category, formData, setFormData, onNext }) {
           ) : null}
         </View>
 
-        <TouchableOpacity style={styles.nextBtn} onPress={onNext}>
+        <TouchableOpacity style={styles.nextBtn} onPress={() => onNext && onNext()}>
           <Text style={styles.nextText}>Next</Text>
         </TouchableOpacity>
       </ScrollView>

@@ -108,8 +108,8 @@ export default function Fav({ navigation }) {
 
                             <View style={{ flex: 1, marginLeft: imageUri ? 12 : 0 }}>
                                 <Text style={{
-                                    fontSize: 16, fontFamily: "SemiBold", color: "#000000",
-                                    lineHeight: Math.round(16 * 1.5)
+                                    fontSize: 14, fontFamily: "SemiBold", color: "#000000",
+                                    lineHeight: Math.round(14 * 1.5)
                                 }} numberOfLines={1}>
                                     {item.title || "Ad"}
                                 </Text>
@@ -122,8 +122,8 @@ export default function Fav({ navigation }) {
                                 {description ? (
                                     <Text style={{
                                         fontSize: 12, color: "#666666", lineHeight: Math.round(12 * 1.5),
-                                        fontFamily: "Regular", marginTop: 2
-                                    }} numberOfLines={2}>
+                                        fontFamily: "Medium", marginTop: 2
+                                    }} numberOfLines={1}>
                                         {description}
                                     </Text>
                                 ) : null}

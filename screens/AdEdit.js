@@ -284,22 +284,29 @@ export default function AdEdit({ route, navigation }) {
       return;
     }
 
+    if (images.length >= 5) {
+      Alert.alert("Limit reached", "You can upload up to 5 images only.");
+      return;
+    }
+
+    const remainingSlots = 5 - images.length;
+
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions
         ? ImagePicker.MediaTypeOptions.Images
         : "Images",
       allowsMultipleSelection: true,
       quality: 0.7,
-      selectionLimit: 10,
+      selectionLimit: remainingSlots,
     });
 
     if (!result.canceled && result.assets?.length > 0) {
-      const selectedUris = result.assets.map((asset) => asset.uri).filter(Boolean);
+      const selectedUris = result.assets.map((asset) => asset.uri).filter(Boolean).slice(0, remainingSlots);
       const incomingUris = allowsMultipleImages ? selectedUris : selectedUris.slice(0, 1);
 
       setImages((prev) => {
         const combined = [...prev, ...incomingUris];
-        return allowsMultipleImages ? combined : combined.slice(0, 1);
+        return allowsMultipleImages ? combined.slice(0, 5) : combined.slice(0, 1);
       });
     }
   };

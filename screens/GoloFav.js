@@ -9,7 +9,7 @@ import { MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { getFavoriteOffers, toggleFavoriteOffer } from "../services/offerFavoritesService";
 import { LinearGradient } from "expo-linear-gradient";
 
-export default function GoloFav({navigation}) {
+export default function GoloFav({ navigation }) {
     const { colors } = useContext(ThemeContext);
     const [favorites, setFavorites] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -37,12 +37,12 @@ export default function GoloFav({navigation}) {
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-                    <LinearGradient
-             colors={["#f8a812", "#fad081",  "#f8f6f265"]}
-             start={{ x: 0, y: 0 }}
-             end={{ x: 0, y: 1 }}
-             style={{height: 220, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0}}
-        />
+            <LinearGradient
+                colors={["#f8a812", "#fad081", "#f8f6f265"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 1 }}
+                style={{ height: 220, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0 }}
+            />
             <Topbar />
 
             <View style={styles.row1}>
@@ -60,7 +60,7 @@ export default function GoloFav({navigation}) {
                 <Text style={{ fontSize: 20, color: colors.text, fontFamily: "SemiBold", lineHeight: Math.round(20 * 1.5) }}>Saved Offers</Text>
             </View>
 
-            <View style={{backgroundColor: colors.divider, height: 1, marginVertical:6}} />
+            <View style={{ backgroundColor: colors.divider, height: 1, marginVertical: 6 }} />
 
             <ScrollView
                 contentContainerStyle={{ paddingBottom: 120 }}
@@ -92,13 +92,13 @@ export default function GoloFav({navigation}) {
                         )}
 
                         <View style={{ flex: 1, marginLeft: 12 }}>
-                            <Text style={{ fontSize: 16, fontFamily: "SemiBold", color: colors.text, lineHeight:Math.round(16*1.5) }}
+                            <Text style={{ fontSize: 16, fontFamily: "SemiBold", color: colors.text, lineHeight: Math.round(16 * 1.5) }}
                                 numberOfLines={1}>
                                 {item.bannerTitle || item.title || "Offer"}
                             </Text>
-                            <Text style={{ fontSize: 13, color: colors.text, fontFamily: "Medium", lineHeight:Math.round(13*1.5) }}
+                            <Text style={{ fontSize: 13, color: colors.text, fontFamily: "Medium", lineHeight: Math.round(13 * 1.5) }}
                                 numberOfLines={1}>
-                               By {item.shopName || item.merchantName || item.merchant?.name || "Nearby merchant"}
+                                By {item.shopName || item.merchantName || item.merchant?.name || "Nearby merchant"}
                             </Text>
                         </View>
 
@@ -135,7 +135,7 @@ const styles = StyleSheet.create({
         marginHorizontal: 14,
         marginTop: 14,
         borderRadius: 12,
-        backgroundColor:"#ffffff",
+        backgroundColor: "#ffffff",
         elevation: 6,
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },

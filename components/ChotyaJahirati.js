@@ -15,6 +15,7 @@ import Template1Card from "../components/Template1Card";
 import Template2Card from "../components/Template2Card";
 import Template3Card from "../components/Template3Card";
 import { BASE_URL } from "../config";
+import { getBackendCategoryName, matchesCategorySubFilter } from "../utils/categorySubFilters";
 
 const normalizeText = (value) =>
     String(value || "").trim().toLowerCase().replace(/\s+/g, " ");
@@ -43,7 +44,7 @@ const adMatchesSearch = (ad, query) => {
     return candidates.some((value) => normalizeText(value).includes(needle));
 };
 
-export default function ChotyaJahirati({ selectedCategory, searchQuery = "", lat, lng, locationPlaceName = "" }) {
+export default function ChotyaJahirati({ selectedCategory, selectedSubFilter = null, searchQuery = "", lat, lng, locationPlaceName = "" }) {
     const { colors } = useContext(ThemeContext);
     const [ads, setAds] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -63,25 +64,26 @@ export default function ChotyaJahirati({ selectedCategory, searchQuery = "", lat
             if (pageNumber === 1) setLoading(true);
             else setLoadingMore(true);
 
+            const backendCategory = getBackendCategoryName(selectedCategory);
             let url;
 
             if (locationPlaceName && locationPlaceName.trim() && locationPlaceName !== "your current area") {
                 // PRIMARY: text-based location search — matches ad's `cities` array on backend
                 url = `${BASE_URL}/ads/search?location=${encodeURIComponent(locationPlaceName)}&page=${pageNumber}&limit=10`;
-                if (selectedCategory && selectedCategory !== "null") {
-                    url += `&category=${encodeURIComponent(selectedCategory)}`;
+                if (backendCategory) {
+                    url += `&category=${encodeURIComponent(backendCategory)}`;
                 }
             } else if (lat && lng) {
                 // FALLBACK: geo nearby when we have coordinates but no resolved place name yet
                 url = `${BASE_URL}/ads/nearby?lat=${lat}&lng=${lng}&distance=50000&page=${pageNumber}&limit=10`;
-                if (selectedCategory && selectedCategory !== "null") {
-                    url += `&category=${encodeURIComponent(selectedCategory)}`;
+                if (backendCategory) {
+                    url += `&category=${encodeURIComponent(backendCategory)}`;
                 }
             } else {
                 // LAST RESORT: general listing with optional category
                 url = `${BASE_URL}/ads?page=${pageNumber}&limit=10`;
-                if (selectedCategory && selectedCategory !== "null") {
-                    url += `&category=${encodeURIComponent(selectedCategory)}`;
+                if (backendCategory) {
+                    url += `&category=${encodeURIComponent(backendCategory)}`;
                 }
             }
 
@@ -129,7 +131,11 @@ export default function ChotyaJahirati({ selectedCategory, searchQuery = "", lat
         }
     };
 
-    const filteredAds = ads.filter((ad) => adMatchesSearch(ad, searchQuery));
+    const filteredAds = ads.filter((ad) => {
+        const matchesSearch = adMatchesSearch(ad, searchQuery);
+        const matchesSubFilter = matchesCategorySubFilter(ad, selectedCategory, selectedSubFilter);
+        return matchesSearch && matchesSubFilter;
+    });
 
     const renderItem = ({ item }) => {
 

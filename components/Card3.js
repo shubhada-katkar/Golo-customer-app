@@ -184,10 +184,8 @@ export default function Card3({ category, onNext, formData, setFormData }) {
             value={formData.contact}
             onChangeText={(text) => setFormData({ ...formData, contact: text })}
             keyboardType="phone-pad"
-            placeholder="e.g. 9876543210"
+            placeholder="10 digit mobile number"
           />
-
-
 
           {/* No image section for Card3 — text-only ad */}
         </View>

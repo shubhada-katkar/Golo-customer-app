@@ -34,6 +34,9 @@ import TransactionDetails from "./screens/TransactionDetails";
 import FilterPage from "./screens/FilterPage";
 import ReviewsPage from "./screens/ReviewsPage";
 import { BASE_URL } from "./config"; // adjust path as needed
+import NotificationsPage from "./screens/NotificationsPage";
+import StorePage from "./screens/StorePage";
+import { startCustomerNotificationPolling, stopCustomerNotificationPolling } from "./services/notificationService";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -49,6 +52,7 @@ const linking = {
   config: {
     screens: {
       AdDetails: "ad/:adId",
+      OfferDetails: "offer/:offerId",
     },
   },
 };
@@ -68,6 +72,14 @@ export default function App() {
     }
   }, [fontsLoaded]);
 
+  useEffect(() => {
+    startCustomerNotificationPolling();
+
+    return () => {
+      stopCustomerNotificationPolling();
+    };
+  }, []);
+
   // ⚠️ Must return null while fonts are loading
   if (!fontsLoaded) return null;
 
@@ -75,7 +87,7 @@ export default function App() {
     <ThemeProvider>
       <NavigationContainer linking={linking}>
         <Stack.Navigator
-          initialRouteName="Login"
+          initialRouteName="AuthLoading"
           screenOptions={{
             headerShown: false,
             cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
@@ -110,6 +122,8 @@ export default function App() {
           <Stack.Screen name="TransactionDetails" component={TransactionDetails} />
           <Stack.Screen name="FilterPage" component={FilterPage} />
           <Stack.Screen name="ReviewsPage" component={ReviewsPage} />
+          <Stack.Screen name="NotificationsPage" component={NotificationsPage} />
+          <Stack.Screen name="StorePage" component={StorePage} />
         </Stack.Navigator>
       </NavigationContainer>
     </ThemeProvider>

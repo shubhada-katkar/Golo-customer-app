@@ -116,12 +116,12 @@ export default function Claimed({ navigation }) {
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-        <LinearGradient
-             colors={["#f8a812", "#fad081",  "#f8f6f265"]}
-             start={{ x: 0, y: 0 }}
-             end={{ x: 0, y: 1 }}
-             style={{height: 220, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0}}
-        />
+            <LinearGradient
+                colors={["#f8a812", "#fad081", "#f8f6f265"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 1 }}
+                style={{ height: 220, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0 }}
+            />
             <Topbar />
 
             <View style={styles.row1}>
@@ -136,12 +136,12 @@ export default function Claimed({ navigation }) {
                     </View>
 
                 </TouchableOpacity>
-                <View style={{flexDirection:"column"}}>
-                <Text style={{ fontSize: 20, color: colors.text, fontFamily: "SemiBold", lineHeight: Math.round(20 * 1.5) }}>Claimed Offers</Text>
+                <View style={{ flexDirection: "column" }}>
+                    <Text style={{ fontSize: 20, color: colors.text, fontFamily: "SemiBold", lineHeight: Math.round(20 * 1.5) }}>Claimed Offers</Text>
                 </View>
             </View>
 
-            <View style={{ flexDirection: "row", backgroundColor: colors.divider, height: 1, marginVertical: 6}} />
+            <View style={{ flexDirection: "row", backgroundColor: colors.divider, height: 1, marginVertical: 6 }} />
 
             {loading ? (
                 <View style={styles.centerWrap}>
@@ -163,7 +163,7 @@ export default function Claimed({ navigation }) {
                     ) : null}
 
                     {!error && activeClaimedOffers.length === 0 ? (
-                        <Text style={[styles.infoText, { color: colors.text }]}> 
+                        <Text style={[styles.infoText, { color: colors.text }]}>
                             No active claimed offers yet.
                         </Text>
                     ) : null}
@@ -203,7 +203,7 @@ export default function Claimed({ navigation }) {
                                         {offerTitle}
                                     </Text>
 
-                                    <Text style={{ fontSize: 12, color: colors.text, lineHeight: Math.round(12 * 1.5), fontFamily:"Medium" }} numberOfLines={1}>
+                                    <Text style={{ fontSize: 12, color: colors.text, lineHeight: Math.round(12 * 1.5), fontFamily: "Medium" }} numberOfLines={1}>
                                         Deal by {merchantName}
                                     </Text>
                                 </View>
@@ -235,7 +235,7 @@ const styles = StyleSheet.create({
         marginHorizontal: 14,
         marginTop: 14,
         borderRadius: 12,
-        backgroundColor:"#ffffff",
+        backgroundColor: "#ffffff",
         elevation: 6,
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },

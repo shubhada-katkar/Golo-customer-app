@@ -43,6 +43,26 @@ const MAIN_STORE_CATEGORIES = [
     "Local Businesses & Vendors",
 ];
 
+const CATEGORY_COLORS = {
+    "Food & Restaurants": { bg: "#d6efe2", dark: "#1c7a4d" },
+    "Home Services": { bg: "#fde3cf", dark: "#c2641a" },
+    "Beauty & Wellness": { bg: "#ede1fb", dark: "#7b3fc4" },
+    "Healthcare & Medical": { bg: "#d2f3ea", dark: "#0f8a5f" },
+    "Hotels & Accommodation": { bg: "#fdf2cf", dark: "#a8821a" },
+    "Shopping & Retail": { bg: "#fbdfe2", dark: "#c23b4d" },
+    "Education & Training": { bg: "#ece2fb", dark: "#6b3fc4" },
+    "Real Estate": { bg: "#d6f5ec", dark: "#117a5a" },
+    "Events & Entertainment": { bg: "#fdeccb", dark: "#b3781a" },
+    "Professional Services": { bg: "#e1eaf0", dark: "#3c6685" },
+    "Automotive Services": { bg: "#fbdfe2", dark: "#c23b4d" },
+    "Home Improvement": { bg: "#fde3cf", dark: "#c2641a" },
+    "Fitness & Sports": { bg: "#fde3cf", dark: "#c2641a" },
+    "Daily Needs & Utilities": { bg: "#d6efe2", dark: "#1c7a4d" },
+    "Local Businesses & Vendors": { bg: "#d6e7fa", dark: "#1d5fa3" },
+};
+
+const DEFAULT_CATEGORY_COLOR = { bg: "#f0f0f0", dark: "#555555" };
+
 const CATEGORY_ALIASES = {
     "Food & Dining": "Food & Restaurants",
     Beauty: "Beauty & Wellness",
@@ -118,23 +138,42 @@ const formatPrice = (value) => {
     return Number.isFinite(numericValue) ? `Rs ${numericValue}` : String(value);
 };
 
-const getDiscountPrice = (item) =>
-    formatPrice(
+const getOfferDisplayPrice = (item) => {
+    const directPrice = formatPrice(
+        item?.displayPrice ||
         item?.discountedPrice ||
         item?.offerPrice ||
         item?.salePrice ||
         item?.finalPrice ||
-        item?.displayPrice
+        item?.price
     );
 
-const getOriginalPrice = (item) =>
-    formatPrice(
-        item?.originalPrice ||
-        item?.mrp ||
-        item?.price ||
-        item?.regularPrice ||
-        item?.totalPrice
-    );
+    if (directPrice) {
+        return directPrice;
+    }
+
+    const selectedProducts = Array.isArray(item?.selectedProducts)
+        ? item.selectedProducts
+        : [];
+
+    const lowestProductPrice = selectedProducts
+        .map((product) =>
+            formatPrice(
+                product?.offerPrice ||
+                product?.discountedPrice ||
+                product?.salePrice ||
+                product?.finalPrice ||
+                product?.displayPrice ||
+                product?.price
+            )
+        )
+        .filter(Boolean)
+        .map((value) => Number(String(value).replace(/[^0-9.-]/g, "")))
+        .filter((value) => Number.isFinite(value) && value > 0)
+        .sort((a, b) => a - b)[0];
+
+    return lowestProductPrice !== undefined ? formatPrice(lowestProductPrice) : null;
+};
 
 const getDistanceText = (value) => {
     const distance = Number(value);
@@ -806,24 +845,20 @@ export default function GoloHome() {
     );
 }
 
-const CategoryChip = ({ icon, label, isActive, onPress }) => (
-    <TouchableOpacity onPress={onPress} style={styles.chip}>
-        <Ionicons
-            name={icon}
-            size={20}
-            color={isActive ? "#157a4f" : "#000000"}
-        />
-        <Text
-            style={[
-                styles.chipText,
-                { color: isActive ? "#157a4f" : "#000000" },
-            ]}
-            numberOfLines={2}
-        >
-            {label}
-        </Text>
-    </TouchableOpacity>
-);
+const CategoryChip = ({ icon, label, isActive, onPress }) => {
+    const { bg, dark } = CATEGORY_COLORS[label] || { bg: "#f0f0f0", dark: "#555555" };
+    return (
+        <TouchableOpacity onPress={onPress} style={styles.chip}>
+            <View style={[styles.chipIconCircle, { backgroundColor: bg }]}>
+                <Ionicons name={icon} size={20} color={dark} />
+            </View>
+            <Text style={[styles.chipText, { color: dark }]} numberOfLines={2}>
+                {label}
+            </Text>
+            {isActive && <View style={styles.chipUnderline} />}
+        </TouchableOpacity>
+    );
+};
 
 const OfferCard = ({ item, navigation }) => {
     const productImage = getOfferImage(item);
@@ -833,8 +868,7 @@ const OfferCard = ({ item, navigation }) => {
     const endDate = item?.endDate || item?.validTo || null;
     const requestStatus = item?.status || "active";
     const normalizedStatus = String(requestStatus).replace(/_/g, " ");
-    const discountPrice = getDiscountPrice(item);
-    const originalPrice = getOriginalPrice(item);
+    const displayPrice = getOfferDisplayPrice(item);
     const distanceText = getDistanceText(item?.distanceKm);
 
     return (
@@ -853,7 +887,16 @@ const OfferCard = ({ item, navigation }) => {
                 )}
 
                 <View style={styles.cardContent}>
+                    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                    {displayPrice ? (
+                        <Text style={styles.discountPrice} numberOfLines={1}>
+                            {displayPrice}
+                        </Text>
+                    ) : null}
+
                     {distanceText ? <Text style={styles.distanceMetaText}>{distanceText}</Text> : null}
+                    
+                    </View>
 
                     <Text style={styles.title} numberOfLines={1}>
                         {title}
@@ -891,13 +934,14 @@ const styles = StyleSheet.create({
         alignItems: "center",
     },
     locationSection: {
-        backgroundColor: "#f5b949e5",
+        backgroundColor: "#ffffffe5",
         borderRadius: 12,
         paddingHorizontal: 10,
-        height: 44,           // fixed height, same in both states
+        height: 40,           // fixed height, same in both states
         justifyContent: "center",
         marginHorizontal: 16,
-        marginBottom: 8,
+        borderWidth: 1,
+        borderColor: "#f8a812",
     },
     locationEditingSection: {
         backgroundColor: "#fff8ec",
@@ -1011,10 +1055,24 @@ const styles = StyleSheet.create({
         alignItems: "center",
         width: 80,
     },
+    chipIconCircle: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        alignItems: "center",
+        justifyContent: "center",
+        marginBottom: 4,
+    },
+    chipUnderline: {
+        marginTop: 4,
+        width: 24,
+        height: 2,
+        backgroundColor: "#000000",
+    },
     chipText: {
-        fontSize: 11,
+        fontSize: 10,
         fontFamily: "Medium",
-        lineHeight: Math.round(11 * 1.5),
+        lineHeight: Math.round(10 * 1.5),
         textAlign: "center",
         minHeight: 32
     },
@@ -1074,7 +1132,6 @@ const styles = StyleSheet.create({
     },
     distanceMetaText: {
         fontSize: 12,
-        color: "#157a4f",
         fontFamily: "Medium",
         lineHeight: Math.round(12 * 1.5),
         alignSelf: "flex-end"
@@ -1092,25 +1149,12 @@ const styles = StyleSheet.create({
     statusNegative: {
         color: "red",
     },
-    priceRow: {
-        flexDirection: "row",
-        alignItems: "center",
-        flexWrap: "wrap",
-        marginTop: 6,
-    },
     discountPrice: {
         color: "green",
         marginRight: 10,
-        fontSize: 14,
-        fontFamily: "Medium",
-        lineHeight: Math.round(14 * 1.5),
-    },
-    originalPrice: {
-        color: "red",
-        textDecorationLine: "line-through",
         fontSize: 12,
         fontFamily: "Medium",
-        lineHeight: Math.round(12 * 1.4),
+        lineHeight: Math.round(12 * 1.5),
     },
     centerState: {
         alignItems: "center",
@@ -1135,7 +1179,7 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         borderWidth: 1,
         borderColor: "#cacaca",
-        marginVertical: 6,
+        marginTop: 6,
         paddingHorizontal: 6,
         width: "87%"
     },
@@ -1146,5 +1190,19 @@ const styles = StyleSheet.create({
         fontFamily: "Medium",
         fontSize: 14,
         top: 3
+    },
+    voiceButton: {
+        paddingHorizontal: 6,
+        paddingVertical: 4,
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    voiceErrorText: {
+        color: "#c23b4d",
+        fontSize: 11,
+        fontFamily: "Medium",
+        marginLeft: 16,
+        marginTop: 4,
+        marginBottom: 2,
     },
 });

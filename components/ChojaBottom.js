@@ -5,12 +5,22 @@ import { useNavigation } from "@react-navigation/native";
 import { useRoute } from "@react-navigation/native";
 import { useContext } from "react";
 import { ThemeContext } from "../theme/ThemeContext";
+import { ensureAuthenticated } from "../services/authService";
 
 export default function ChojaBottom(){
     const navigation=useNavigation();
     const route = useRoute();
     const currentRoute = route.name;
     const {colors} = useContext(ThemeContext);
+
+    const handleProtectedNavigate = async (screenName) => {
+        try {
+            await ensureAuthenticated(navigation);
+            navigation.navigate(screenName);
+        } catch {
+            // Login screen is handled by ensureAuthenticated.
+        }
+    };
 
     return(
         <View style={[styles.top, {backgroundColor:colors.bottombar}]}>
@@ -32,7 +42,7 @@ export default function ChojaBottom(){
             </TouchableOpacity>
 
            <View style={styles.centerContainer}>
-  <TouchableOpacity  onPress={() => navigation.navigate("JahiratiCategory")}
+  <TouchableOpacity  onPress={() => handleProtectedNavigate("JahiratiCategory")}
     style={[styles.addButton, 
         {backgroundColor:currentRoute==="JahiratiCategory" ? "#f9a641" :"#4caf50"}
     ]} >
@@ -54,7 +64,7 @@ export default function ChojaBottom(){
   </Text>
 </View>
 
-            <TouchableOpacity style={styles.bar} onPress={()=>navigation.navigate("ChatPage")}>
+            <TouchableOpacity style={styles.bar} onPress={() => handleProtectedNavigate("ChatPage")}>
                 <Feather name="message-circle" size={24}
                 color= {currentRoute === "ChatPage" ? "#f9a641" : "black"}/>
                 <Text style={{textAlign:"auto",fontSize:11,color:currentRoute === "ChatPage" ? "#f9a641" : "black",
@@ -62,7 +72,7 @@ export default function ChojaBottom(){
                 }}>Chats</Text>
             </TouchableOpacity>
 
-                <TouchableOpacity style={styles.bar} onPress={()=>navigation.navigate("ProfilePage")}>
+                <TouchableOpacity style={styles.bar} onPress={() => handleProtectedNavigate("ProfilePage")}>
                 <MaterialCommunityIcons name="account-circle-outline" size={24} 
                 color={currentRoute === "ProfilePage" ? "#f9a641" : "black"}/>
                 <Text style={{textAlign:"auto",fontSize:11,color:currentRoute === "ProfilePage" ? "#f9a641" : "black",

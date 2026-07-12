@@ -169,7 +169,9 @@ function getCommonAdDetails(adData) {
 
 export default function AdDetails({ route, navigation }) {
   const { colors } = useContext(ThemeContext);
+  const routeAdId = route?.params?.adId || route?.params?.id || route?.params?.ad?.adId || route?.params?.ad?._id || "";
   const { adId } = route.params || {};
+  const resolvedAdId = routeAdId || adId || "";
   const [ad, setAd] = useState(null);
   const [seller, setSeller] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -189,7 +191,13 @@ export default function AdDetails({ route, navigation }) {
   const sellerPhone = seller?.profile?.phone || ad?.contactInfo?.phone || '';
   const sellerAvatar = seller?.profile?.avatar || null;
 
-  const handleOpenChat = () => {
+  const handleOpenChat = async () => {
+    try {
+      await ensureAuthenticated(navigation);
+    } catch {
+      return;
+    }
+
     const currentAdId = ad?.adId || ad?._id || adId;
     if (currentAdId) {
       console.log('[AdDetails] Tracking contact click for ad:', currentAdId);
@@ -208,8 +216,14 @@ export default function AdDetails({ route, navigation }) {
     });
   };
 
-  const handleCall = (phone) => {
+  const handleCall = async (phone) => {
     if (!phone) return;
+
+    try {
+      await ensureAuthenticated(navigation);
+    } catch {
+      return;
+    }
 
     // Remove +91 if present
     const cleanedNumber = phone.replace('+91', '');
@@ -227,19 +241,19 @@ export default function AdDetails({ route, navigation }) {
   useEffect(() => {
     const fetchAdDetails = async () => {
       try {
-        if (!adId) {
+        if (!resolvedAdId) {
           Alert.alert('Error', 'Ad ID not found');
           navigation.goBack();
           return;
         }
 
-        const res = await fetch(`${BASE_URL}/ads/${adId}`);
+        const res = await fetch(`${BASE_URL}/ads/${resolvedAdId}`);
         const json = await res.json();
 
         if (json.success && json.data) {
           setAd(json.data);
           // Use the same adId extraction logic as other handlers
-          const currentAdId = json.data?.adId || json.data?._id || adId;
+          const currentAdId = json.data?.adId || json.data?._id || resolvedAdId;
           if (route?.params?.skipCardTrack !== true) {
             console.log('[AdDetails] Tracking card click for ad:', currentAdId);
             trackAdCardClick(currentAdId);
@@ -276,7 +290,7 @@ export default function AdDetails({ route, navigation }) {
 
   useEffect(() => {
     const loadFavoriteState = async () => {
-      const currentAdId = getAdId(ad) || adId;
+      const currentAdId = getAdId(ad) || resolvedAdId;
       if (!currentAdId) return;
       const value = await isFavoriteAdId(currentAdId);
       setIsFavorite(value);
@@ -292,16 +306,16 @@ export default function AdDetails({ route, navigation }) {
       const payload = ad
         ? {
           ...ad,
-          adId: ad?.adId || ad?._id || adId,
+          adId: ad?.adId || ad?._id || resolvedAdId,
           images: ad?.images || [],
         }
-        : { adId };
+        : { adId: resolvedAdId };
 
       const result = await toggleFavoriteAd(payload);
       setIsFavorite(result.isFavorite);
 
       if (result.isFavorite) {
-        const currentAdId = ad?.adId || ad?._id || adId;
+        const currentAdId = ad?.adId || ad?._id || resolvedAdId;
         console.log('[AdDetails] Tracking wishlist save for ad:', currentAdId);
         trackWishlistSave(currentAdId);
       }
@@ -327,14 +341,14 @@ export default function AdDetails({ route, navigation }) {
 
   const handleShareExternally = async () => {
     try {
-      const resolvedAdId = ad?.adId || ad?._id || adId;
-      if (!resolvedAdId) {
+      const resolvedShareAdId = ad?.adId || ad?._id || resolvedAdId;
+      if (!resolvedShareAdId) {
         Alert.alert('Share Error', 'Ad details are not available yet');
         return;
       }
 
-      const shareUrl = `${BASE_URL}/ads/share/${encodeURIComponent(resolvedAdId)}`;
-      const deepLink = `golo://ad/${encodeURIComponent(resolvedAdId)}`;
+      const shareUrl = `${BASE_URL}/ads/share/${encodeURIComponent(resolvedShareAdId)}`;
+      const deepLink = `golo://ad/${encodeURIComponent(resolvedShareAdId)}`;
 
       const message = [
         `Check this ad on GOLO: ${ad?.title || 'Ad'}`,
@@ -344,7 +358,7 @@ export default function AdDetails({ route, navigation }) {
 
       await Share.share({
         message,
-        url: shareUrl,
+        url: deepLink || shareUrl,
         title: ad?.title || 'Shared Ad',
       });
     } catch (error) {
@@ -486,22 +500,16 @@ export default function AdDetails({ route, navigation }) {
               )}
             </View>
 
-            {/* Category & SubCategory */}
             <View style={styles.categoryRow}>
               <View style={styles.badge}>
-                <Text style={styles.badgeText}>{ad.category}</Text>
+                <Text style={styles.badgeText}>Category : {ad.category}</Text>
               </View>
             </View>
 
-            {/* Location & Views */}
-            <View style={styles.metaRow}>
+            <View style={styles.categoryRow}>
               <View style={styles.metaItem}>
-                <Ionicons name="location-outline" size={16} color="#157a4f" />
-                <Text style={[styles.metaText, { width: "80%" }]}>{ad.location || ad.city || 'N/A'}</Text>
-              </View>
-              <View style={styles.metaItem}>
-                <Ionicons name="eye-outline" size={16} color="#157a4f" />
-                <Text style={styles.metaText}>{ad.views || ad.uniqueVisitors || ad.viewHistory?.length || ad.viewCount || 0} views</Text>
+                <Ionicons name="location-outline" size={16} color="#146e47ff" />
+                <Text style={[styles.metaText, { color: "#146e47ff" }]}>{ad.location || ad.city || 'N/A'}</Text>
               </View>
             </View>
 
@@ -740,7 +748,7 @@ const styles = StyleSheet.create({
   },
   badge: {
     backgroundColor: '#f5b849',
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 6,
   },
@@ -750,23 +758,15 @@ const styles = StyleSheet.create({
     fontFamily: "Medium",
     lineHeight: Math.round(12 * 1.5)
   },
-  metaRow: {
-    marginBottom: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    gap: 20
-  },
   metaItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 3,
   },
   metaText: {
-    fontSize: 12,
-    color: '#000000',
+    fontSize: 14,
     fontFamily: "Medium",
-    lineHeight: Math.round(12 * 1.5),
+    lineHeight: Math.round(14 * 1.5),
   },
   section: {
     marginTop: 16,

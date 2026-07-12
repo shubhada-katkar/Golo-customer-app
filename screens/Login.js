@@ -1,19 +1,40 @@
-﻿import React, { useState } from "react";
+import React, { useState } from "react";
 import { View, TouchableOpacity, Text, TextInput, StyleSheet, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Dimensions } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Entypo } from "@expo/vector-icons";
 import { BASE_URL } from "../config";
+import { saveAuthData, clearAuthStorage } from "../services/authService";
+import { startCustomerNotificationPolling } from "../services/notificationService";
 
 const { width, height } = Dimensions.get("window");
 
-export default function Login({ navigation }) {
+export default function Login({ navigation, route }) {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [visiblepass, setvisiblepass] = useState(false);
+
+  const handleSkip = () => {
+    const returnTo = route?.params?.returnTo;
+    const returnParams = route?.params?.returnParams;
+
+    if (returnTo) {
+      navigation.reset({
+        index: 0,
+        routes: [{ name: returnTo, params: returnParams }],
+      });
+      return;
+    }
+
+    if (navigation.canGoBack?.()) {
+      navigation.goBack();
+      return;
+    }
+
+    navigation.reset({ index: 0, routes: [{ name: "GoloHome" }] });
+  };
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
@@ -46,7 +67,7 @@ export default function Login({ navigation }) {
       setLoading(false);
 
       if (!response.ok) {
-        await AsyncStorage.multiRemove(["customerToken", "customerData", "customerId", "customerRefreshToken"]);
+        await clearAuthStorage();
         Alert.alert("Login Failed", data.message || "Invalid credentials");
         return;
       }
@@ -56,16 +77,19 @@ export default function Login({ navigation }) {
         return;
       }
 
-      await AsyncStorage.multiSet([
-        ["customerToken", data.data.accessToken],
-        ["customerRefreshToken", data.data.refreshToken],
-        ["customerData", JSON.stringify(data.data.user)],
-        ["customerId", data.data.user.id]
-      ]);
+      await saveAuthData({
+        accessToken:  data.data.accessToken,
+        refreshToken: data.data.refreshToken,
+        user:         data.data.user,
+      });
+      await startCustomerNotificationPolling();
+
+      const returnTo = route?.params?.returnTo;
+      const returnParams = route?.params?.returnParams;
 
       navigation.reset({
         index: 0,
-        routes: [{ name: "GoloHome" }],
+        routes: [{ name: returnTo || "GoloHome", params: returnTo ? returnParams : undefined }],
       });
     } catch (error) {
       setLoading(false);
@@ -132,6 +156,10 @@ export default function Login({ navigation }) {
               {loading ? "Logging in..." : "Login"}
             </Text>
           </TouchableOpacity>
+
+          <TouchableOpacity onPress={handleSkip} style={styles.skipLink}>
+            <Text style={styles.skipText}>Skip for now</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={{ alignItems: "center", flexDirection: "row", marginTop: 10 }}>
@@ -191,6 +219,18 @@ const styles = StyleSheet.create({
 
   forgotPasswordLink: {
     alignSelf: "flex-end",
+  },
+
+  skipLink: {
+    alignSelf: "center",
+    marginTop: 2,
+  },
+
+  skipText: {
+    fontSize: 14,
+    color: "#157a4f",
+    fontFamily: "Medium",
+    lineHeight: Math.round(14 * 1.5),
   },
 
   forgotPasswordText: {

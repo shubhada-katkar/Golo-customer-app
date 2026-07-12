@@ -85,7 +85,7 @@ export default function Preview({ navigation, route }) {
                                     </View>
                                 </View>
 
-                                <Text style={styles.timeText}>20m ago</Text>
+                                <Text style={styles.timeText}>Date and Time</Text>
 
                                 {/* Image Carousel */}
                                 {formData?.images?.length > 0 ? (
@@ -170,7 +170,7 @@ export default function Preview({ navigation, route }) {
                                 )}
 
                                 <View style={styles.row}>
-                                    <Text style={styles.cardTitle}>
+                                    <Text style={styles.cardTitle} numberOfLines={1} ellipsizeMode="tail">
                                         {formData?.heading || "Your heading will appear here"}
                                     </Text>
                                     <Text style={styles.metaText}>
@@ -180,12 +180,14 @@ export default function Preview({ navigation, route }) {
                                     </Text>
                                 </View>
 
-                                <Text style={styles.cardDesc}>  {formData?.body || "Your description will appear here"}</Text>
+                                <Text style={styles.cardDesc} numberOfLines={1} ellipsizeMode="tail">
+                                   Description: {formData?.body || "Your description will appear here"}
+                                </Text>
 
                                 <View style={{ flexDirection: "row", alignItems: "center", gap: 26 }}>
                                     <View style={{ flexDirection: "row", alignItems: "center", marginTop: 10, gap: 5 }}>
                                         <Ionicons name="location-outline" size={16} />
-                                        <Text style={styles.metaText}>  {formData?.location || "Location"}</Text>
+                                        <Text style={styles.metaText} numberOfLines={1}>  {formData?.location || "Location"}</Text>
                                     </View>
                                     <View style={{ flexDirection: "row", alignItems: "center", marginTop: 10, gap: 5 }}>
                                         <Ionicons name="person" size={16} />
@@ -223,7 +225,7 @@ export default function Preview({ navigation, route }) {
                                 </View>
                             </View>
 
-                            <Text style={styles.timeText}>20m ago</Text>
+                            <Text style={styles.timeText}>Date and Time</Text>
 
                             <View style={styles.row2}>
                                 {formData?.image ? (
@@ -240,43 +242,32 @@ export default function Preview({ navigation, route }) {
                                 )}
 
                                 <View style={{ flex: 1 }}>
-                                    <Text style={styles.cardTitle}>
+                                    <Text style={styles.cardTitle} numberOfLines={1} ellipsizeMode="tail">
                                         {formData?.heading || "Your heading will appear here"}
                                     </Text>
-                                    <Text style={styles.cardDesc}>
-                                        {formData?.body || "Your description will appear here"}
+                                    <Text style={styles.cardDesc} numberOfLines={1} ellipsizeMode="tail">
+                                        Description: {formData?.body || "Your description will appear here"}
                                     </Text>
+                                    <Text style={styles.metaText}>Price</Text>
                                 </View>
                             </View>
 
-                            <View
-                                style={{
-                                    flexDirection: "row",
-                                    alignItems: "center",
-                                    justifyContent: "space-between",
-                                    marginTop: 10,
-                                }}
-                            >
-                                {formData?.price ? (
-                                    <Text style={styles.metaText}>₹{formData.price}</Text>
-                                ) : (
-                                    <Text style={styles.metaText}> </Text>
-                                )}
 
-                                <View style={{ flexDirection: "row", gap: 10 }}>
-                                    <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+                                <View style={styles.metaRow}>
+                                    <View style={styles.metaItem}>
                                         <Ionicons name="location-outline" size={16} />
-                                        <Text style={styles.metaText}>
+                                        <Text style={styles.metaText} numberOfLines={1} ellipsizeMode="tail">
                                             {formData?.location || "Location"}
                                         </Text>
                                     </View>
 
-                                    <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+                                    <View style={styles.metaItem}>
                                         <Ionicons name="person" size={16} />
-                                        <Text style={styles.metaText}>Seller</Text>
+                                        <Text numberOfLines={1} ellipsizeMode="tail" style={styles.metaText}>
+                                            Seller
+                                        </Text>
                                     </View>
                                 </View>
-                            </View>
 
                             <View
                                 style={{
@@ -293,6 +284,7 @@ export default function Preview({ navigation, route }) {
                                     <Text style={styles.btnText}>Call</Text>
                                 </View>
                             </View>
+
                         </View>
                     </View>
                 )}
@@ -309,23 +301,23 @@ export default function Preview({ navigation, route }) {
                                 </View>
                             </View>
 
-                            <Text style={styles.timeText}>20m ago</Text>
+                            <Text style={styles.timeText}>Date and Time</Text>
 
                             {/* Title */}
-                            <Text style={styles.cardTitle}>
+                            <Text style={styles.cardTitle} numberOfLines={1} ellipsizeMode="tail"> 
                                 {formData?.heading || "Your heading will appear here"}
                             </Text>
 
                             {/* Description */}
-                            <Text style={styles.cardDesc}>
-                                {formData?.body || "Your description will appear here"}
+                            <Text style={styles.cardDesc} numberOfLines={1} ellipsizeMode="tail">
+                                Description: {formData?.body || "Your description will appear here"}
                             </Text>
 
                             {/* Meta */}
                             <View style={styles.metaRow}>
                                 <View style={styles.metaItem}>
                                     <Ionicons name="location-outline" size={14} />
-                                    <Text style={styles.metaText}>
+                                    <Text style={styles.metaText} numberOfLines={1} ellipsizeMode="tail">
                                         {formData?.location || "Location"}
                                     </Text>
                                 </View>
@@ -477,34 +469,37 @@ const styles = StyleSheet.create({
     },
     cardTitle: {
         fontSize: 16,
-        fontWeight: "600",
         marginTop: 10,
         fontFamily: "Medium",
-        lineHeight: Math.round(16 * 1.5)
+        lineHeight: Math.round(16 * 1.5),
+        width: "80%",
     },
     cardDesc: {
         fontSize: 13,
         color: "#666",
         marginTop: 4,
         fontFamily: "Medium",
-        lineHeight: Math.round(13 * 1.5)
+        lineHeight: Math.round(13 * 1.5),
+        width: "90%",
     },
-    metaRow: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginTop: 10,
-    },
-    metaItem: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 4,
-    },
+metaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 10,
+},
+metaItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    flex: 1,
+    flexShrink: 1,
+},
     metaText: {
         fontSize: 12,
         color: "#444",
         fontFamily: "Medium",
-        lineHeight: Math.round(12 * 1.5)
+        lineHeight: Math.round(12 * 1.5),
+        width: "70%"
     },
     actionRow: {
         flexDirection: "row",

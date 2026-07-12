@@ -14,7 +14,23 @@ import { getMyAnalytics } from "../services/analyticsService";
 import { LinearGradient } from "expo-linear-gradient";
 
 const screenWidth = Dimensions.get("window").width;
-const CHART_COLORS = ["#157a4f", "#e8b923", "#e8743b", "#c0392b", "#2c6fbb", "#7c4dbd", "#16a0a0"];
+const CHART_COLORS = [
+  "#1ca168", // green
+  "#f5b849", // gold
+  "#3b58dd", // blue
+  "#c0392b", // red
+  "#949494", // gray
+  "#7c4dbd", // purple
+  "#16c2c2", // cyan
+  "#a5ca1d", // lime
+  "#f4ff58", // pale yellow
+  "#f078dc", // pink
+  "#1d699b", // dark blue
+  "#0c4725", // dark green
+  "#dba257", // tan/brown
+  "#e8752c", // orange (new)
+  "#a13d7c"  // plum/wine (new)
+];
 
 function formatDate(value) {
   if (!value) return "-";
@@ -184,7 +200,7 @@ export default function Analytics({ navigation }) {
 
     if (!categories.length) return fallback;
 
-    return categories.slice(0, 7).map((item, index) => ({
+    return categories.slice(0, 18).map((item, index) => ({
       name: item.name,
       population: Number(item.population || 0),
       color: CHART_COLORS[index % CHART_COLORS.length],
@@ -269,30 +285,30 @@ export default function Analytics({ navigation }) {
 
         {/* Statistics Card */}
         <View style={[styles.statsCard, { borderColor: colors.divider }]}>
-          <Text style={[styles.statsCardTitle, { color: colors.text }]}>Statistics</Text>
-          <View style={styles.pieRow}>
-            <PieChart
-              data={categoryData}
-              width={(screenWidth - 30) * 0.5}
-              height={160}
-              chartConfig={{ color: () => "#000" }}
-              accessor={"population"}
-              backgroundColor={"transparent"}
-              hasLegend={false}
-              center={[(screenWidth - 30) * 0.125, 0]}
-            />
-            <View style={styles.legendContainer}>
-              {categoryData.map((item, index) => (
-                <View key={index} style={styles.legendItem}>
-                  <View style={[styles.legendDot, { backgroundColor: item.color }]} />
-                  <Text style={[styles.legendText, { color: colors.text }]}>
-                    {item.population} {item.name}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          </View>
-        </View>
+  <Text style={[styles.statsCardTitle, { color: colors.text }]}>Statistics</Text>
+  <View style={styles.pieChartWrapper}>
+    <PieChart
+      data={categoryData}
+      width={screenWidth - 30}
+      height={200}
+      chartConfig={{ color: () => "#000" }}
+      accessor={"population"}
+      backgroundColor={"transparent"}
+      hasLegend={false}
+      center={[(screenWidth - 30) / 4, 0]}
+    />
+  </View>
+  <View style={styles.legendWrap}>
+    {categoryData.map((item, index) => (
+      <View key={index} style={styles.legendItem}>
+        <View style={[styles.legendDot, { backgroundColor: item.color }]} />
+        <Text style={[styles.legendText, { color: colors.text }]} numberOfLines={1} ellipsizeMode="tail">
+          {item.population} {item.name}
+        </Text>
+      </View>
+    ))}
+  </View>
+</View>
 
         {/* Ads Table */}
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Your Ads</Text>
@@ -447,28 +463,35 @@ const styles = StyleSheet.create({
     fontFamily: "Medium",
     lineHeight: Math.round(16 * 1.5)
   },
-  pieRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  legendContainer: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  legendItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 10,
-  },
+ pieChartWrapper: {
+  alignItems: "center",
+  justifyContent: "center",
+},
+legendWrap: {
+  flexDirection: "row",
+  flexWrap: "wrap",
+  marginTop: 12,
+},
+legendItem: {
+  flexDirection: "row",
+  alignItems: "center",
+  width: "33.33%",
+  marginBottom: 10,
+  paddingRight: 6,
+},
+legendText: {
+  fontSize: 12,
+  fontFamily: "Medium",
+  flexShrink: 1,
+  width: "82%",
+  lineHeight: Math.round(12 * 1.5),
+  paddingVertical: 2.5,
+},
   legendDot: {
-    width: 10,
-    height: 10,
+    width: 9,
+    height: 9,
     borderRadius: 5,
-    marginRight: 8,
-  },
-  legendText: {
-    fontSize: 14,
-    fontFamily: "Medium",
+    marginRight: 5,
   },
   tableHeader: {
     flexDirection: "row",

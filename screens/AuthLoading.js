@@ -1,36 +1,20 @@
 import React, { useEffect } from "react";
 import { View, ActivityIndicator, Text, StyleSheet } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
+/**
+ * AuthLoading – shown on every cold start.
+ *
+ * The app should open the home screen first. If the user later tries a
+ * protected action and is not authenticated, they will be redirected to Login.
+ */
 export default function AuthLoading({ navigation }) {
   useEffect(() => {
-    const bootstrap = async () => {
-      try {
-        const token = await AsyncStorage.getItem("customerToken");
+    const t = setTimeout(() => {
+      navigation.reset({ index: 0, routes: [{ name: "GoloHome" }] });
+    }, 300);
 
-        if (token) {
-          navigation.reset({
-            index: 0,
-            routes: [{ name: "GoloHome" }],
-          });
-        } else {
-          navigation.reset({
-            index: 0,
-            routes: [{ name: "Login" }],
-          });
-        }
-      } catch (e) {
-        navigation.reset({
-          index: 0,
-          routes: [{ name: "Login" }],
-        });
-      }
-    };
-
-    // tiny delay so users actually see the loading UI (optional)
-    const t = setTimeout(bootstrap, 300);
     return () => clearTimeout(t);
-  }, []);
+  }, [navigation]);
 
   return (
     <View style={styles.container}>
@@ -50,9 +34,6 @@ const styles = StyleSheet.create({
   title: {
     marginTop: 16,
     fontSize: 18,
-  },
-  sub: {
-    marginTop: 6,
-    color: "#888",
+    fontFamily: "Medium",
   },
 });

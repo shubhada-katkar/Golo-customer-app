@@ -32,7 +32,7 @@ export default function Topbar2() {
 const styles = StyleSheet.create({
     button:{
      flexDirection:"row",
-     borderRadius:12,
+     borderRadius:26,
      alignItems:"center",
      justifyContent:"center",
      gap:4,

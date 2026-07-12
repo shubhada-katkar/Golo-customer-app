@@ -5,12 +5,22 @@ import { useNavigation } from "@react-navigation/native";
 import { useRoute } from "@react-navigation/native";
 import { useContext } from "react";
 import { ThemeContext } from "../theme/ThemeContext";
+import { ensureAuthenticated } from "../services/authService";
 
 export default function GoloBottom() {
     const navigation = useNavigation();
     const route = useRoute();
     const currentRoute = route.name;
     const { colors } = useContext(ThemeContext);
+
+    const handleProtectedNavigate = async (screenName) => {
+        try {
+            await ensureAuthenticated(navigation);
+            navigation.navigate(screenName);
+        } catch {
+            // Login screen is handled by ensureAuthenticated.
+        }
+    };
 
     return (
         <View style={[styles.top, { backgroundColor: colors.bottombar }]}>
@@ -33,7 +43,7 @@ export default function GoloBottom() {
                 <Text style={{ textAlign: "auto", fontSize: 11, color: currentRoute === "Claimed" ? "#f5b849" : "black", fontFamily: "Medium" }}>Claimed</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.bar} onPress={()=>navigation.navigate("ProfilePage")}>
+            <TouchableOpacity style={styles.bar} onPress={() => handleProtectedNavigate("ProfilePage")}>
                 <MaterialCommunityIcons name="account-circle-outline" size={24}
                     color={currentRoute === "ProfilePage" ? "#f5b849" : "black"} />
                 <Text style={{ textAlign: "auto", fontSize: 11, color: currentRoute === "ProfilePage" ? "#f5b849" : "black", fontFamily: "Medium" }}>Profile</Text>

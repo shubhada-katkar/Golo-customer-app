@@ -6,13 +6,12 @@ import { useNavigation } from "@react-navigation/native";
 
 export default function Greetings({ formData, setFormData, category, onPrevious, template, price, selectedDays, selectedLocations, selectedDates, startDate, endDate }) {
   if (category?.id !== "greetings") return null;
-  const [selectedTab, setSelectedTab] = useState("greetings");
+  const [selectedTab, setSelectedTab] = useState("Greetings");
   const navigation = useNavigation();
 
-  // Ensure noticeType is always set
   React.useEffect(() => {
-    if (!formData.noticeType) {
-      setFormData({ ...formData, noticeType: "greetings" });
+    if (!formData.Type) {
+      setFormData({ ...formData, Type: "Greetings" });
     }
   }, []);
 
@@ -61,13 +60,13 @@ export default function Greetings({ formData, setFormData, category, onPrevious,
         <TouchableOpacity
           style={[
             styles.tab,
-            selectedTab === "greetings" && styles.activeTab
+            selectedTab === "Greetings" && styles.activeTab
           ]}
           onPress={() => {
-            setSelectedTab("greetings");
+            setSelectedTab("Greetings");
             setFormData({ 
               ...formData, 
-              noticeType: "greetings",
+              Type: "Greetings",
               // Clear tribute-specific fields
               name2: "",
               age2: "",
@@ -80,7 +79,7 @@ export default function Greetings({ formData, setFormData, category, onPrevious,
           <Text
             style={[
               styles.tabText,
-              selectedTab === "greetings" && styles.activeTabText
+              selectedTab === "Greetings" && styles.activeTabText
             ]}
           >
             Greetings
@@ -90,13 +89,13 @@ export default function Greetings({ formData, setFormData, category, onPrevious,
         <TouchableOpacity
           style={[
             styles.tab,
-            selectedTab === "tribute" && styles.activeTab
+            selectedTab === "Tribute" && styles.activeTab
           ]}
           onPress={() => {
-            setSelectedTab("tribute");
+            setSelectedTab("Tribute");
             setFormData({ 
               ...formData, 
-              noticeType: "tribute",
+              Type: "Tribute",
               // Clear greetings-specific fields
               relationType: "",
               from: ""
@@ -106,7 +105,7 @@ export default function Greetings({ formData, setFormData, category, onPrevious,
           <Text
             style={[
               styles.tabText,
-              selectedTab === "tribute" && styles.activeTabText
+              selectedTab === "Tribute" && styles.activeTabText
             ]}
           >
             Tribute
@@ -118,7 +117,7 @@ export default function Greetings({ formData, setFormData, category, onPrevious,
 
       <View style={styles.formCard}>
 
-        {selectedTab === "greetings" && (
+        {selectedTab === "Greetings" && (
           <>
             <Text style={styles.label}>Select Relationship</Text>
             <View style={styles.pickerWrap}>
@@ -128,13 +127,13 @@ export default function Greetings({ formData, setFormData, category, onPrevious,
                 mode="dropdown"
               >
                 <Picker.Item label="Relationship Type" value="" />
-                <Picker.Item label="Friend" value="friend" />
-                <Picker.Item label="Brother" value="brother" />
-                <Picker.Item label="Sister" value="sister" />
-                <Picker.Item label="Relative" value="relative" />
-                <Picker.Item label="Parent" value="parent" />
-                <Picker.Item label="Colleague" value="colleague" />
-                <Picker.Item label="Other" value="other" />
+                <Picker.Item label="Friend" value="Friend" />
+                <Picker.Item label="Brother" value="Brother" />
+                <Picker.Item label="Sister" value="Sister" />
+                <Picker.Item label="Relative" value="Relative" />
+                <Picker.Item label="Parent" value="Parent" />
+                <Picker.Item label="Colleague" value="Colleague" />
+                <Picker.Item label="Other" value="Other" />
               </Picker>
             </View>
 
@@ -194,7 +193,7 @@ export default function Greetings({ formData, setFormData, category, onPrevious,
           </>
         )}
 
-        {selectedTab === "tribute" && (
+        {selectedTab === "Tribute" && (
           <>
             <Text style={styles.label}>Full Name of Deceased</Text>
             <TextInput

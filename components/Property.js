@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import {
   View, Text, TextInput, StyleSheet, TouchableOpacity,
 } from "react-native";
@@ -8,20 +8,29 @@ import { useNavigation } from "@react-navigation/native";
 
 export default function Property({ formData, setFormData, category, onPrevious, template, price, selectedDays, selectedLocations, selectedDates, startDate, endDate }) {
   if (category?.id !== "property") return null;
-  const [selectedTab, setSelectedTab] = useState("sell");
+  const [selectedTab, setSelectedTab] = useState(
+    formData?.Type === "Rent" ? "Rent" : "Sell"
+  );
   const navigation = useNavigation();
+
+  useEffect(() => {
+    if (formData?.Type !== selectedTab) {
+      setFormData({ ...formData, Type: selectedTab });
+    }
+  }, [selectedTab, formData, setFormData]);
+
   const ConditionButton = ({ label, value }) => (
     <TouchableOpacity
       style={[
         styles.segmentBtn,
-        formData.condition === value && styles.segmentBtnSelected,
+        formData.parkingAvailable === value && styles.segmentBtnSelected,
       ]}
-      onPress={() => setFormData({ ...formData, condition: value })}
+      onPress={() => setFormData({ ...formData, parkingAvailable: value })}
     >
       <Text
         style={[
           styles.segmentText,
-          formData.condition === value && styles.segmentTextSelected,
+          formData.parkingAvailable === value && styles.segmentTextSelected,
         ]}
       >
         {label}
@@ -74,17 +83,17 @@ export default function Property({ formData, setFormData, category, onPrevious, 
         <TouchableOpacity
           style={[
             styles.tab,
-            selectedTab === "sell" && styles.activeTab
+            selectedTab === "Sell" && styles.activeTab
           ]}
           onPress={() => {
-            setSelectedTab("sell");
-            setFormData({ ...formData, noticeType: "sell" });
+            setSelectedTab("Sell");
+            setFormData({ ...formData, Type: "Sell" });
           }}
         >
           <Text
             style={[
               styles.tabText,
-              selectedTab === "sell" && styles.activeTabText
+              selectedTab === "Sell" && styles.activeTabText
             ]}
           >
             Sell
@@ -94,17 +103,17 @@ export default function Property({ formData, setFormData, category, onPrevious, 
         <TouchableOpacity
           style={[
             styles.tab,
-            selectedTab === "rent" && styles.activeTab
+            selectedTab === "Rent" && styles.activeTab
           ]}
           onPress={() => {
-            setSelectedTab("rent");
-            setFormData({ ...formData, noticeType: "rent" });
+            setSelectedTab("Rent");
+            setFormData({ ...formData, Type: "Rent" });
           }}
         >
           <Text
             style={[
               styles.tabText,
-              selectedTab === "rent" && styles.activeTabText
+              selectedTab === "Rent" && styles.activeTabText
             ]}
           >
             Rent
@@ -116,7 +125,7 @@ export default function Property({ formData, setFormData, category, onPrevious, 
 
       <View style={styles.formCard}>
 
-        {selectedTab === "sell" && (
+        {selectedTab === "Sell" && (
           <>
             <Text style={styles.label}>Property Type</Text>
             <View style={styles.pickerWrap}>
@@ -126,10 +135,10 @@ export default function Property({ formData, setFormData, category, onPrevious, 
                 mode="dropdown"
               >
                 <Picker.Item label="Property Type" value="" />
-                <Picker.Item label="Apartment" value="apartment" />
-                <Picker.Item label="House" value="house" />
-                <Picker.Item label="Plot" value="plot" />
-                <Picker.Item label="Commercial" value="commercial" />
+                <Picker.Item label="Apartment" value="Apartment" />
+                <Picker.Item label="House" value="House" />
+                <Picker.Item label="Plot" value="Plot" />
+                <Picker.Item label="Commercial" value="Commercial" />
               </Picker>
             </View>
 
@@ -191,16 +200,16 @@ export default function Property({ formData, setFormData, category, onPrevious, 
                 mode="dropdown"
               >
                 <Picker.Item label="Furnishing" value="" />
-                <Picker.Item label="Unfurnished" value="unfurnished" />
-                <Picker.Item label="Semi-Furnished" value="semiFurnished" />
-                <Picker.Item label="Fully Furnished" value="fullyFurnished" />
+                <Picker.Item label="Unfurnished" value="Unfurnished" />
+                <Picker.Item label="Semi-Furnished" value="Semi-Furnished" />
+                <Picker.Item label="Fully Furnished" value="Fully Furnished" />
               </Picker>
             </View>
 
             <Text style={styles.label}>Parking Available</Text>
             <View style={styles.segmentRow}>
-              <ConditionButton label="Yes" value="yes" />
-              <ConditionButton label="No" value="no" />
+              <ConditionButton label="Yes" value="Yes" />
+              <ConditionButton label="No" value="No" />
             </View>
 
 
@@ -226,7 +235,7 @@ export default function Property({ formData, setFormData, category, onPrevious, 
           </>
         )}
 
-        {selectedTab === "rent" && (
+        {selectedTab === "Rent" && (
           <>
             <Text style={styles.label}>Property Type</Text>
             <View style={styles.pickerWrap}>
@@ -236,10 +245,10 @@ export default function Property({ formData, setFormData, category, onPrevious, 
                 mode="dropdown"
               >
                 <Picker.Item label="Property Type" value="" />
-                <Picker.Item label="Apartment" value="apartment" />
-                <Picker.Item label="House" value="house" />
-                <Picker.Item label="Plot" value="plot" />
-                <Picker.Item label="Commercial" value="commercial" />
+                <Picker.Item label="Apartment" value="Apartment" />
+                <Picker.Item label="House" value="House" />
+                <Picker.Item label="Plot" value="Plot" />
+                <Picker.Item label="Commercial" value="Commercial" />
               </Picker>
             </View>
 
@@ -291,9 +300,9 @@ export default function Property({ formData, setFormData, category, onPrevious, 
                 mode="dropdown"
               >
                 <Picker.Item label="Tenant Type" value="" />
-                <Picker.Item label="Family" value="family" />
-                <Picker.Item label="Bachelor" value="bachelor" />
-                <Picker.Item label="Company" value="company" />
+                <Picker.Item label="Family" value="Family" />
+                <Picker.Item label="Bachelor" value="Bachelor" />
+                <Picker.Item label="Company" value="Company" />
               </Picker>
             </View>
 
@@ -324,7 +333,7 @@ const styles = StyleSheet.create({
   formCard: { backgroundColor: "#fff", paddingHorizontal: 16, borderRadius: 10, paddingBottom: 18, marginTop: 10 },
   label: { fontSize: 16, marginTop: 16, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
   value: { fontSize: 16, color: "#555", fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
-  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10, marginTop: 6 },
+  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10, marginTop: 6, fontSize:14, fontFamily:"Medium" },
   textArea: { height: 80, textAlignVertical: "top" },
   switchRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 12 },
 

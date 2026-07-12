@@ -14,6 +14,7 @@ import Template1Card from "../components/Template1Card";
 import Template2Card from "../components/Template2Card";
 import Template3Card from "../components/Template3Card";
 import { BASE_URL } from "../config";
+import { getBackendCategoryName, matchesCategorySubFilter } from "../utils/categorySubFilters";
 
 const normalizeText = (value) =>
     String(value || "").trim().toLowerCase().replace(/\s+/g, " ");
@@ -42,7 +43,7 @@ const adMatchesSearch = (ad, query) => {
     return candidates.some((value) => normalizeText(value).includes(needle));
 };
 
-export default function MyAds({ selectedCategory, searchQuery = "" }) {
+export default function MyAds({ selectedCategory, selectedSubFilter = null, searchQuery = "" }) {
 
     const { colors } = useContext(ThemeContext);
 
@@ -68,11 +69,13 @@ export default function MyAds({ selectedCategory, searchQuery = "" }) {
 
             const token = await AsyncStorage.getItem("customerToken");
 
+            const backendCategory = getBackendCategoryName(selectedCategory);
+
             // Build URL dynamically
             let url = `${BASE_URL}/ads/user/me?page=${pageNumber}&limit=10`;
 
-            if (selectedCategory && selectedCategory !== "null") {
-                url += `&category=${encodeURIComponent(selectedCategory)}`;
+            if (backendCategory) {
+                url += `&category=${encodeURIComponent(backendCategory)}`;
             }
 
             const res = await fetch(url, {
@@ -129,7 +132,11 @@ export default function MyAds({ selectedCategory, searchQuery = "" }) {
         }, [selectedCategory])
     );
 
-    const filteredAds = ads.filter((ad) => adMatchesSearch(ad, searchQuery));
+    const filteredAds = ads.filter((ad) => {
+        const matchesSearch = adMatchesSearch(ad, searchQuery);
+        const matchesSubFilter = matchesCategorySubFilter(ad, selectedCategory, selectedSubFilter);
+        return matchesSearch && matchesSubFilter;
+    });
 
     const renderItem = ({ item, index }) => {
 

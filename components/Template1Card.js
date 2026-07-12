@@ -8,6 +8,7 @@ import { Linking } from "react-native";
 import { getAdId, isFavoriteAdId, toggleFavoriteAd } from "../services/favoritesService";
 import { trackAdCardClick, trackContactClick } from "../services/analyticsService";
 import { BASE_URL } from "../config";
+import { ensureAuthenticated } from "../services/authService";
 
 const { width, height } = Dimensions.get("window");
 
@@ -87,7 +88,13 @@ export default function Template1Card({ ad, navigation }) {
     }
   };
 
-  const handleOpenChat = () => {
+  const handleOpenChat = async () => {
+    try {
+      await ensureAuthenticated(navigation);
+    } catch {
+      return;
+    }
+
     const adIdentifier = ad?.adId || ad?._id;
     if (adIdentifier) {
       trackContactClick(adIdentifier).catch((error) => {
@@ -142,8 +149,14 @@ export default function Template1Card({ ad, navigation }) {
     handleShareExternally();
   };
 
-  const handleCall = (phone) => {
+  const handleCall = async (phone) => {
     if (!phone) return;
+
+    try {
+      await ensureAuthenticated(navigation);
+    } catch {
+      return;
+    }
 
     const adIdentifier = ad?.adId || ad?._id;
     if (adIdentifier) {

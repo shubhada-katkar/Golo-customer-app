@@ -14,7 +14,7 @@ import {
     TouchableOpacity,
     View, KeyboardAvoidingView, Platform
 } from "react-native";
-import { Feather, Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
 import { ThemeContext } from "../theme/ThemeContext";
@@ -110,40 +110,6 @@ const getAgeFromDate = (dateValue) => {
     return age >= 0 ? age : null;
 };
 
-const findFirstValue = (source, paths = []) => {
-    if (!source || typeof source !== "object") {
-        return null;
-    }
-
-    for (const path of paths) {
-        let current = source;
-        let found = true;
-
-        for (const key of path) {
-            if (current == null || typeof current !== "object" || !(key in current)) {
-                found = false;
-                break;
-            }
-            current = current[key];
-        }
-
-        if (found && current !== null && current !== undefined && String(current).trim() !== "") {
-            return current;
-        }
-    }
-
-    return null;
-};
-
-const normalizePhoneNumber = (value) => {
-    if (value === undefined || value === null || value === "") {
-        return null;
-    }
-
-    const normalized = String(value).trim();
-    return normalized ? normalized : null;
-};
-
 export default function OfferDetails({ navigation, route }) {
     const scrollViewRef = useRef(null);
     const { colors } = useContext(ThemeContext);
@@ -219,69 +185,36 @@ export default function OfferDetails({ navigation, route }) {
         offerData?.bannerDescription ||
         offerData?.selectedProducts?.[0]?.description ||
         "Offer details will be available soon.";
-    const merchantId = normalizePhoneNumber(
-        findFirstValue(offerData, [
-            ["merchant", "merchantId"],
-            ["merchant", "userId"],
-            ["merchant", "id"],
-            ["merchant", "_id"],
-            ["merchant", "user", "id"],
-            ["merchant", "user", "_id"],
-            ["merchantId"],
-            ["merchant", "merchant", "id"],
-            ["merchant", "merchant", "_id"],
-            ["merchantProfile", "merchantId"],
-            ["merchantProfile", "userId"],
-            ["merchantProfile", "id"],
-            ["merchantProfile", "_id"],
-        ]) || merchantProfile?.merchantId || merchantProfile?.userId || merchantProfile?.id || merchantProfile?._id || ""
-    ) || "";
+    const merchantId =
+        offerData?.merchant?.merchantId ||
+        offerData?.merchantId ||
+        offerData?.merchant?._id ||
+        offerData?.merchant?.userId ||
+        offerData?.merchant?.id ||
+        "";
 
-    const phoneNumber = normalizePhoneNumber(
-        findFirstValue(offerData, [
-            ["merchant", "contactNumber"],
-            ["merchant", "phone"],
-            ["merchant", "phoneNumber"],
-            ["merchant", "mobile"],
-            ["merchant", "mobileNumber"],
-            ["merchant", "merchantPhone"],
-            ["merchant", "storePhone"],
-            ["merchant", "phoneNo"],
-            ["merchant", "contactNo"],
-            ["merchant", "mobileNo"],
-            ["merchant", "telephone"],
-            ["merchant", "contact"],
-            ["merchant", "user", "contactNumber"],
-            ["merchant", "user", "phoneNumber"],
-            ["merchant", "user", "mobile"],
-            ["merchant", "profile", "contactNumber"],
-            ["merchant", "profile", "phoneNumber"],
-            ["merchant", "profile", "mobile"],
-            ["merchant", "profile", "mobileNumber"],
-            ["contactNumber"],
-            ["phoneNumber"],
-            ["phone"],
-            ["mobile"],
-            ["merchantPhone"],
-            ["mobileNumber"],
-            ["merchant", "merchant", "contactNumber"],
-            ["merchant", "merchant", "phoneNumber"],
-            ["merchant", "merchant", "mobile"],
-        ]) ||
-        findFirstValue(merchantProfile, [
-            ["contactNumber"],
-            ["phone"],
-            ["phoneNumber"],
-            ["mobile"],
-            ["mobileNumber"],
-            ["merchantPhone"],
-            ["storePhone"],
-            ["user", "contactNumber"],
-            ["user", "phoneNumber"],
-            ["user", "mobile"],
-            ["user", "mobileNumber"],
-        ]) || null
-    );
+    const phoneNumber =
+        offerData?.merchant?.contactNumber ||
+        offerData?.merchant?.phone ||
+        offerData?.merchant?.phoneNumber ||
+        offerData?.merchant?.mobile ||
+        offerData?.merchant?.mobileNumber ||
+        offerData?.merchant?.merchantPhone ||
+        offerData?.merchant?.storePhone ||
+        offerData?.merchant?.phoneNo ||
+        offerData?.merchant?.phone_number ||
+        offerData?.merchant?.mobile_no ||
+        offerData?.contactNumber ||
+        offerData?.phoneNumber ||
+        offerData?.phone ||
+        offerData?.merchantPhone ||
+        offerData?.mobile ||
+        merchantProfile?.contactNumber ||
+        merchantProfile?.phone ||
+        merchantProfile?.phoneNumber ||
+        merchantProfile?.mobile ||
+        merchantProfile?.mobileNumber ||
+        null;
     const locationText =
         offerData?.address ||
         offerData?.shopAddress ||
@@ -555,6 +488,29 @@ export default function OfferDetails({ navigation, route }) {
         }
     };
 
+    const handleViewStore = () => {
+        if (!merchantId && !routeOfferData?.merchant) {
+            Alert.alert("Store unavailable", "Merchant store details are not available right now.");
+            return;
+        }
+
+        navigation.navigate("StorePage", {
+            merchantId,
+            merchantProfile: merchantProfile || routeOfferData?.merchant || routeOfferData,
+            offerId,
+            offerImage,
+            merchant: merchant,
+        });
+    };
+
+    const handleSeeReviews = () => {
+        navigation.navigate("ReviewsPage", {
+            offerId,
+            merchant,
+            offerImage,
+        });
+    };
+
     const handleClaim = async () => {
         if (!canClaimVoucher) {
             Alert.alert(
@@ -569,14 +525,12 @@ export default function OfferDetails({ navigation, route }) {
             return;
         }
 
-        const resolvedClaimLocation = claimLocationLabel?.trim() || "";
-
         setClaimLoading(true);
         try {
             const claimResult = await claimOfferVoucher(offerId, {
                 latitude: claimLatitude,
                 longitude: claimLongitude,
-                location: resolvedClaimLocation,
+                location: claimLocationLabel || locationText,
                 age: customerAge,
                 gender: customerGender,
             });
@@ -675,12 +629,12 @@ export default function OfferDetails({ navigation, route }) {
     return (
         <>
             <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-                <LinearGradient
-                    colors={["#f8a812", "#fad081", "#f8f6f265"]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 0, y: 1 }}
-                    style={{ height: 270, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0 }}
-                />
+                      <LinearGradient
+                                               colors={["#f8a812", "#fad081", "#f8f6f265"]}
+                                               start={{ x: 0, y: 0 }}
+                                               end={{ x: 0, y: 1 }}
+                                               style={{height: 270, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0}}
+                                          />
                 <Topbar />
                 <StatusBar barStyle="dark-content" />
 
@@ -711,185 +665,182 @@ export default function OfferDetails({ navigation, route }) {
                 </View>
 
                 <KeyboardAvoidingView
-                    style={{ flex: 1 }}
-                    behavior={Platform.OS === "ios" ? "padding" : "height"}
-                >
-                    <ScrollView
-                        ref={scrollViewRef}
-                        contentContainerStyle={{ paddingBottom: 40 }}
-                        keyboardShouldPersistTaps="handled"
-                    >
-                        <View style={styles.imageContainer}>
-                            {offerImage ? (
-                                <Image source={{ uri: offerImage }} style={styles.offerImage} />
-                            ) : (
-                                <View style={styles.fakeImage}>
-                                    <Ionicons name="image-outline" size={44} color="#9a9a9a" />
-                                </View>
+  style={{ flex: 1 }}
+  behavior={Platform.OS === "ios" ? "padding" : "height"}
+>
+  <ScrollView
+  ref={scrollViewRef}
+    contentContainerStyle={{ paddingBottom: 40 }}
+    keyboardShouldPersistTaps="handled"
+  >
+                    <View style={styles.imageContainer}>
+                        {offerImage ? (
+                            <Image source={{ uri: offerImage }} style={styles.offerImage} />
+                        ) : (
+                            <View style={styles.fakeImage}>
+                                <Ionicons name="image-outline" size={44} color="#9a9a9a" />
+                            </View>
+                        )}
+                    </View>
+
+                    <View style={styles.content}>
+                        <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+
+                        <Text style={[styles.by, { color: colors.text }]}>By {merchant}</Text>
+
+                        <View style={styles.card}>
+                            <Text style={styles.cardTitle}>Offer Details</Text>
+
+                            <Text style={styles.label}>Offer Type</Text>
+                            <Text style={styles.value}>{offerType || "-"}</Text>
+
+                            <Text style={styles.label}>Valid Till</Text>
+                            <Text style={styles.value}>
+                                {validTill ? new Date(validTill).toDateString() : "-"}
+                            </Text>
+
+                            <Text style={styles.label}>Location</Text>
+                            <Text style={styles.value}>{locationText}</Text>
+
+                            {products.length > 0 && (
+                                <>
+                                    <Text style={styles.label}>Products Included</Text>
+                                    <View style={styles.productsContainer}>
+                                        {products.map((product, index) => {
+                                            const productImage =
+                                                product?.imageUrl ||
+                                                product?.image?.url ||
+                                                product?.images?.[0] ||
+                                                null;
+                                            const productName = product?.productName || product?.name || product?.title || `Product ${index + 1}`;
+
+                                            return (
+                                                <TouchableOpacity
+                                                    key={index}
+                                                    style={styles.productCard}
+                                                    activeOpacity={0.8}
+                                                    onPress={() => navigation.navigate("ProductDetail", { product })}
+                                                >
+                                                    {productImage ? (
+                                                        <Image
+                                                            source={{ uri: productImage }}
+                                                            style={styles.productImage}
+                                                        />
+                                                    ) : (
+                                                        <View style={styles.productImagePlaceholder}>
+                                                            <Ionicons
+                                                                name="image-outline"
+                                                                size={24}
+                                                                color="#9a9a9a"
+                                                            />
+                                                        </View>
+                                                    )}
+                                                    <Text style={styles.productName} numberOfLines={2}>
+                                                        {productName}
+                                                    </Text>
+                                                </TouchableOpacity>
+                                            );
+                                        })}
+                                    </View>
+                                </>
+                            )}
+
+                            {termsAndConditions && termsAndConditions !== "No specific terms and conditions provided." && (
+                                <>
+                                    <Text style={styles.label}>Terms & Conditions</Text>
+                                    <Text style={styles.value}>{termsAndConditions}</Text>
+                                </>
                             )}
                         </View>
 
-                        <View style={styles.content}>
-                            <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
-
-                            <Text style={[styles.by, { color: colors.text }]}>By {merchant}</Text>
-
-                            <View style={styles.card}>
-                                <Text style={styles.cardTitle}>Offer Details</Text>
-
-                                <Text style={styles.label}>Offer Type</Text>
-                                <Text style={styles.value}>{offerType || "-"}</Text>
-
-                                <Text style={styles.label}>Valid Till</Text>
-                                <Text style={styles.value}>
-                                    {validTill ? new Date(validTill).toDateString() : "-"}
-                                </Text>
-
-                                <Text style={styles.label}>Location</Text>
-                                <Text style={styles.value}>{locationText}</Text>
-
-                                {products.length > 0 && (
-                                    <>
-                                        <Text style={styles.label}>Products Included</Text>
-                                        <View style={styles.productsContainer}>
-                                            {products.map((product, index) => {
-                                                const productImage =
-                                                    product?.imageUrl ||
-                                                    product?.image?.url ||
-                                                    product?.images?.[0] ||
-                                                    null;
-                                                const productName = product?.productName || product?.name || product?.title || `Product ${index + 1}`;
-
-                                                return (
-                                                    <TouchableOpacity
-                                                        key={index}
-                                                        style={styles.productCard}
-                                                        activeOpacity={0.8}
-                                                        onPress={() => navigation.navigate("ProductDetail", { product })}
-                                                    >
-                                                        {productImage ? (
-                                                            <Image
-                                                                source={{ uri: productImage }}
-                                                                style={styles.productImage}
-                                                            />
-                                                        ) : (
-                                                            <View style={styles.productImagePlaceholder}>
-                                                                <Ionicons
-                                                                    name="image-outline"
-                                                                    size={24}
-                                                                    color="#9a9a9a"
-                                                                />
-                                                            </View>
-                                                        )}
-                                                        <Text style={styles.productName} numberOfLines={2}>
-                                                            {productName}
-                                                        </Text>
-                                                    </TouchableOpacity>
-                                                );
-                                            })}
-                                        </View>
-                                    </>
-                                )}
-
-                                {termsAndConditions && termsAndConditions !== "No specific terms and conditions provided." && (
-                                    <>
-                                        <Text style={styles.label}>Terms & Conditions</Text>
-                                        <Text style={styles.value}>{termsAndConditions}</Text>
-                                    </>
-                                )}
-                            </View>
-
-                            <TouchableOpacity
-                                style={[
-                                    styles.buyBtn,
-                                    voucher ? styles.claimedBtn : null,
-                                    !canClaimVoucher ? styles.unavailableBtn : null,
-                                    claimLoading ? styles.disabledBtn : null,
-                                ]}
-                                onPress={handleClaim}
-                                disabled={!canClaimVoucher || claimLoading || claimCheckLoading}
-                            >
-                                {claimLoading || claimCheckLoading ? (
-                                    <ActivityIndicator size="small" color="#fff" />
-                                ) : (
-                                    <Text style={styles.buyText}>
-                                        {voucher ? "Claimed" : canClaimVoucher ? "Claim Now" : "Not Available"}
-                                    </Text>
-                                )}
+                        <View style={styles.actionRow}>
+                            <TouchableOpacity style={styles.secondaryButton} onPress={handleViewStore}>
+                                <Text style={styles.secondaryButtonText}>View Store</Text>
                             </TouchableOpacity>
-
-                            <View style={styles.bottomBar}>
-                                <TouchableOpacity
-                                    style={[styles.dirBtn, !phoneNumber && styles.disabledCallBtn]}
-                                    onPress={handleCallMerchant}
-                                    disabled={!phoneNumber}
-                                >
-                                    <Ionicons name="call" size={18} color="#fff" />
-                                    <Text style={styles.bottomText}>
-                                        {phoneNumber ? ` Call ${phoneNumber}` : " Number unavailable"}
-                                    </Text>
-                                </TouchableOpacity>
-                            </View>
-
-                            <View style={styles.bottomBar}>
-                                <TouchableOpacity
-                                    style={styles.button}
-                                    onPress={() => navigation.navigate("ReviewsPage", { offerId, merchant, offerImage })}
-                                >
-                                    <Feather name="thumbs-up" size={16} color="#157a4f" />
-                                    <Text style={[styles.bottomText, { color: "#157a4f" }]}>
-                                        View Reviews
-                                    </Text>
-                                </TouchableOpacity>
-                            </View>
-
-                            {isVoucherRedeemed(voucher) && !reviewSubmitted ? (
-                                <View style={styles.reviewContainer}>
-                                    <Text style={styles.reviewLabel}>Write a review</Text>
-                                    <Text style={styles.ratingLabel}>Rate your experience</Text>
-                                    <View style={styles.ratingRow}>
-                                        {Array.from({ length: 5 }).map((_, starIndex) => (
-                                            <TouchableOpacity
-                                                key={starIndex}
-                                                onPress={() => !reviewLoading && setReviewRating(starIndex + 1)}
-                                                disabled={reviewLoading}
-                                            >
-                                                <Ionicons
-                                                    name={starIndex < reviewRating ? "star" : "star-outline"}
-                                                    size={28}
-                                                    color={starIndex < reviewRating ? "#fbbf24" : "#9ca3af"}
-                                                    style={styles.ratingStar}
-                                                />
-                                            </TouchableOpacity>
-                                        ))}
-                                    </View>
-                                    <TextInput
-                                        style={styles.reviewInput}
-                                        placeholder="Write your review for the merchant or offer..."
-                                        placeholderTextColor="#6b7280"
-                                        value={reviewText}
-                                        onChangeText={setReviewText}
-                                        multiline
-                                        editable={!reviewLoading}
-                                    />
-                                    <TouchableOpacity
-                                        style={[
-                                            styles.reviewButton,
-                                            reviewLoading ? styles.disabledBtn : null,
-                                        ]}
-                                        onPress={submitReview}
-                                        disabled={reviewLoading}
-                                    >
-                                        {reviewLoading ? (
-                                            <ActivityIndicator size="small" color="#fff" />
-                                        ) : (
-                                            <Text style={styles.reviewButtonText}>Submit Review</Text>
-                                        )}
-                                    </TouchableOpacity>
-                                </View>
-                            ) : null}
+                            <TouchableOpacity style={styles.secondaryButton} onPress={handleSeeReviews}>
+                                <Text style={styles.secondaryButtonText}>See Reviews</Text>
+                            </TouchableOpacity>
                         </View>
-                    </ScrollView>
+
+                        <TouchableOpacity
+                            style={[
+                                styles.buyBtn,
+                                voucher ? styles.claimedBtn : null,
+                                !canClaimVoucher ? styles.unavailableBtn : null,
+                                claimLoading ? styles.disabledBtn : null,
+                            ]}
+                            onPress={handleClaim}
+                            disabled={!canClaimVoucher || claimLoading || claimCheckLoading}
+                        >
+                            {claimLoading || claimCheckLoading ? (
+                                <ActivityIndicator size="small" color="#fff" />
+                            ) : (
+                                <Text style={styles.buyText}>
+                                    {voucher ? "Claimed" : canClaimVoucher ? "Claim Now" : "Not Available"}
+                                </Text>
+                            )}
+                        </TouchableOpacity>
+
+                        <View style={styles.bottomBar}>
+                            <TouchableOpacity 
+                                style={[styles.dirBtn, !phoneNumber && styles.disabledCallBtn]} 
+                                onPress={handleCallMerchant}
+                                disabled={!phoneNumber}
+                            >
+                                <Ionicons name="call" size={18} color="#fff" />
+                                <Text style={styles.bottomText}>
+                                    {phoneNumber ? ` Call ${phoneNumber}` : " Number unavailable"}
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        {isVoucherRedeemed(voucher) && !reviewSubmitted ? (
+                            <View style={styles.reviewContainer}>
+                                <Text style={styles.reviewLabel}>Write a review</Text>
+                                <Text style={styles.ratingLabel}>Rate your experience</Text>
+                                <View style={styles.ratingRow}>
+                                    {Array.from({ length: 5 }).map((_, starIndex) => (
+                                        <TouchableOpacity
+                                            key={starIndex}
+                                            onPress={() => !reviewLoading && setReviewRating(starIndex + 1)}
+                                            disabled={reviewLoading}
+                                        >
+                                            <Ionicons
+                                                name={starIndex < reviewRating ? "star" : "star-outline"}
+                                                size={28}
+                                                color={starIndex < reviewRating ? "#fbbf24" : "#9ca3af"}
+                                                style={styles.ratingStar}
+                                            />
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+                                <TextInput
+                                    style={styles.reviewInput}
+                                    placeholder="Write your review for the merchant or offer..."
+                                    placeholderTextColor="#6b7280"
+                                    value={reviewText}
+                                    onChangeText={setReviewText}
+                                    multiline
+                                    editable={!reviewLoading}
+                                />
+                                <TouchableOpacity
+                                    style={[
+                                        styles.reviewButton,
+                                        reviewLoading ? styles.disabledBtn : null,
+                                    ]}
+                                    onPress={submitReview}
+                                    disabled={reviewLoading}
+                                >
+                                    {reviewLoading ? (
+                                        <ActivityIndicator size="small" color="#fff" />
+                                    ) : (
+                                        <Text style={styles.reviewButtonText}>Submit Review</Text>
+                                    )}
+                                </TouchableOpacity>
+                            </View>
+                        ) : null}
+                    </View>
+                </ScrollView>
                 </KeyboardAvoidingView>
 
                 <SafeAreaView
@@ -1014,6 +965,26 @@ const styles = StyleSheet.create({
         fontFamily: "Medium",
         fontSize: 14,
     },
+    actionRow: {
+        flexDirection: "row",
+        gap: 10,
+        marginTop: 18,
+    },
+    secondaryButton: {
+        flex: 1,
+        backgroundColor: "#ffffff",
+        borderWidth: 1,
+        borderColor: "#f8a812",
+        borderRadius: 10,
+        paddingVertical: 12,
+        alignItems: "center",
+    },
+    secondaryButtonText: {
+        color: "#f8a812",
+        fontFamily: "SemiBold",
+        fontSize: 14,
+        lineHeight: Math.round(14 * 1.5),
+    },
     buyBtn: {
         marginTop: 20,
         backgroundColor: "#FBBF24",
@@ -1029,18 +1000,6 @@ const styles = StyleSheet.create({
     },
     claimedBtn: {
         backgroundColor: "#157a4f",
-    },
-    button: {
-        flex: 1,
-        flexDirection: "row",
-        padding: 12,
-        borderRadius: 10,
-        justifyContent: "center",
-        alignItems: "center",
-        gap: 4,
-        borderWidth: 1,
-        borderColor: "#157a4f",
-        backgroundColor: "#fff"
     },
     unavailableBtn: {
         backgroundColor: "#9ca3af",
@@ -1235,7 +1194,7 @@ const styles = StyleSheet.create({
         padding: 12,
         color: "#111827",
         textAlignVertical: "top",
-        fontFamily: "Medium",
+        fontFamily:"Medium",
         fontSize: 14,
         lineHeight: Math.round(14 * 1.5),
     },

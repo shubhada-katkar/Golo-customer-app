@@ -1,5 +1,5 @@
 import React, { useCallback, useContext, useRef, useState, useEffect } from "react";
-import { ActivityIndicator, View, StyleSheet, Text, TouchableOpacity, ScrollView, TextInput, Keyboard } from "react-native";
+import { ActivityIndicator, View, StyleSheet, Text, TouchableOpacity, ScrollView, TextInput, Keyboard, TouchableWithoutFeedback } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemeContext } from "../theme/ThemeContext";
 import ChojaBottom from "../components/ChojaBottom";
@@ -10,6 +10,7 @@ import ChotyaJahirati from "../components/ChotyaJahirati";
 import Topbar2 from "../components/Topbar2";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Location from "expo-location";
+import { matchesCategorySubFilter } from "../utils/categorySubFilters";
 
 const categories = [
     { icon: "school-outline", label: "Education" },
@@ -26,14 +27,52 @@ const categories = [
     { icon: "briefcase-outline", label: "Employment" },
     { icon: "paw-outline", label: "Pets" },
     { icon: "phone-portrait-outline", label: "Mobiles" },
-    { icon: "tv-outline", label: "Electronics" },
+    { icon: "tv-outline", label: "Electronics & Home" },
     { icon: "cube-outline", label: "Furniture" },
     { icon: "gift", label: "Greetings" },
     { icon: "ellipsis-horizontal-outline", label: "Other" },
 ];
 
+const CATEGORY_COLORS = {
+    "Education": { bg: "#ece2fb", dark: "#6b3fc4" },
+    "Matrimonial": { bg: "#fbdfe2", dark: "#c23b4d" },
+    "Vehicle": { bg: "#d6e7fa", dark: "#1d5fa3" },
+    "Business": { bg: "#fdf2cf", dark: "#a8821a" },
+    "Travel": { bg: "#d2f3ea", dark: "#0f8a5f" },
+    "Astrology": { bg: "#ede1fb", dark: "#7b3fc4" },
+    "Property": { bg: "#d6f5ec", dark: "#117a5a" },
+    "Public Notice": { bg: "#fbdfe2", dark: "#c23b4d" },
+    "Lost & Found": { bg: "#fdeccb", dark: "#b3781a" },
+    "Service": { bg: "#fde3cf", dark: "#c2641a" },
+    "Personal": { bg: "#e1eaf0", dark: "#3c6685" },
+    "Employment": { bg: "#d6efe2", dark: "#1c7a4d" },
+    "Pets": { bg: "#fde3cf", dark: "#c2641a" },
+    "Mobiles": { bg: "#d6e7fa", dark: "#1d5fa3" },
+    "Electronics & Home": { bg: "#e1eaf0", dark: "#3c6685" },
+    "Furniture": { bg: "#fde3cf", dark: "#c2641a" },
+    "Greetings": { bg: "#fbdfe2", dark: "#c23b4d" },
+    "Other": { bg: "#f0f0f0", dark: "#555555" },
+};
+
+const SUB_FILTER_OPTIONS = {
+    Vehicle: [
+        { label: "Buy", value: "sell" },
+        { label: "Rent", value: "rent" },
+    ],
+    Property: [
+        { label: "Buy", value: "sell" },
+        { label: "Rent", value: "rent" },
+    ],
+    Greetings: [
+        { label: "Greetings", value: "greetings" },
+        { label: "Tribute", value: "tribute" },
+    ],
+};
+
 export default function ChojaHome() {
     const [selectedCategory, setSelectedCategory] = useState(null);
+    const [selectedSubFilter, setSelectedSubFilter] = useState(null);
+    const [showSubFilterMenu, setShowSubFilterMenu] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const { colors } = useContext(ThemeContext);
     const inputRef = useRef(null);
@@ -54,6 +93,10 @@ export default function ChojaHome() {
     const [suggestionsLoading, setSuggestionsLoading] = useState(false);
     const locationInputRef = useRef(null);
     const debounceTimer = useRef(null);
+
+    const [categoryLayouts, setCategoryLayouts] = useState({});
+    const scrollX = useRef(0);
+    const [dropdownLeft, setDropdownLeft] = useState(0);
 
     useEffect(() => {
         let isMounted = true;
@@ -153,7 +196,6 @@ export default function ChojaHome() {
         return () => { isMounted = false; };
     }, []);
 
-    // Nominatim-powered suggestions — neighbourhood/area level
     const fetchLocationSuggestions = useCallback(async (query) => {
         const trimmed = (query || "").trim();
         if (!trimmed) {
@@ -284,7 +326,50 @@ export default function ChojaHome() {
                 ? "Checking your location..."
                 : "Tap to set location";
 
+    const activeSubFilterOptions = selectedCategory ? SUB_FILTER_OPTIONS[selectedCategory] || null : null;
+
+   const handleCategoryPress = useCallback((label) => {
+    const isSameCategory = selectedCategory === label;
+
+    if (label === "Vehicle" || label === "Greetings" || label === "Property") {
+        if (!isSameCategory) {
+            // Picking a fresh category -> select it and open the dropdown
+            setSelectedCategory(label);
+            setSelectedSubFilter(null);
+            setShowSubFilterMenu(true);
+            const layout = categoryLayouts[label];
+            if (layout) setDropdownLeft(layout.x - scrollX.current);
+        } else if (showSubFilterMenu) {
+            // Chip tapped again while dropdown is open -> fully deselect
+            setSelectedCategory(null);
+            setSelectedSubFilter(null);
+            setShowSubFilterMenu(false);
+        } else {
+            // Chip tapped again while dropdown is closed -> reopen it
+            // (selectedSubFilter, if any, stays intact and will show green highlight)
+            setShowSubFilterMenu(true);
+            const layout = categoryLayouts[label];
+            if (layout) setDropdownLeft(layout.x - scrollX.current);
+        }
+        return;
+    }
+
+    setSelectedCategory(isSameCategory ? null : label);
+    setSelectedSubFilter(null);
+    setShowSubFilterMenu(false);
+}, [selectedCategory, categoryLayouts, showSubFilterMenu]);
+
+const handleCloseSubFilterMenu = useCallback(() => {
+    setShowSubFilterMenu(false);
+}, []);
+
+    const handleSelectSubFilter = useCallback((value) => {
+        setSelectedSubFilter((current) => (current === value ? null : value));
+        setShowSubFilterMenu(false);
+    }, []);
+
     return (
+        <TouchableWithoutFeedback onPress={handleCloseSubFilterMenu}>
         <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
             <LinearGradient
                 colors={["#f8a812", "#fad081", "#f8f6f265"]}
@@ -294,7 +379,6 @@ export default function ChojaHome() {
             />
             <Topbar2 />
 
-            {/* ---- Location Section ---- */}
             {isEditingLocation ? (
                 <View style={[styles.locationSection, styles.locationEditingSection]}>
                     <View style={styles.locationRow}>
@@ -309,8 +393,7 @@ export default function ChojaHome() {
                                 onChangeText={handleLocationQueryChange}
                                 returnKeyType="search"
                                 autoCorrect={false}
-                                autoCapitalize="words"
-                            />
+                                autoCapitalize="words" />
                         </View>
                         <TouchableOpacity onPress={handleCancelEditingLocation} style={styles.locationCancelBtn}>
                             <Ionicons name="close-circle" size={18} color="#555" />
@@ -330,8 +413,7 @@ export default function ChojaHome() {
                                         key={s.id}
                                         style={styles.suggestionItem}
                                         onPress={() => handleSelectSuggestion(s)}
-                                        activeOpacity={0.7}
-                                    >
+                                        activeOpacity={0.7} >
                                         <Ionicons name="location-sharp" size={14} color="#c47a00" style={{ marginRight: 8 }} />
                                         <Text style={styles.suggestionText} numberOfLines={2}>{s.label}</Text>
                                     </TouchableOpacity>
@@ -341,8 +423,7 @@ export default function ChojaHome() {
                                 <TouchableOpacity
                                     style={[styles.suggestionItem, styles.gpsResetItem]}
                                     onPress={handleResetToGPS}
-                                    activeOpacity={0.7}
-                                >
+                                    activeOpacity={0.7} >
                                     <Ionicons name="navigate" size={14} color="#157a4f" style={{ marginRight: 8 }} />
                                     <Text style={[styles.suggestionText, { color: "#157a4f" }]}>Use my current GPS location</Text>
                                 </TouchableOpacity>
@@ -394,46 +475,72 @@ export default function ChojaHome() {
             </View>
 
             {/* Categories */}
-            <View style={{ paddingVertical: 12 }}>
-                <ScrollView
-                    ref={scrollRef}
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.chipsRow}
+            <View style={{ paddingVertical: 12, position: "relative", zIndex: 10 }}>
+               <ScrollView
+    ref={scrollRef}
+    horizontal
+    showsHorizontalScrollIndicator={false}
+    contentContainerStyle={styles.chipsRow}
+    onScroll={(e) => {
+        scrollX.current = e.nativeEvent.contentOffset.x;
+        if (selectedCategory) {
+            const layout = categoryLayouts[selectedCategory];
+            if (layout) setDropdownLeft(layout.x - scrollX.current);
+        }
+    }}
+    scrollEventThrottle={16} >
+    {sortedCategories.map((item, index) => {
+        const isActive = selectedCategory === item.label;
+        const { bg, dark } = CATEGORY_COLORS[item.label] || { bg: "#f0f0f0", dark: "#555555" };
+        return (
+            <TouchableOpacity
+                key={index}
+                onPress={() => handleCategoryPress(item.label)}
+                onLayout={(e) => {
+                    const { x, width } = e.nativeEvent.layout;
+                    setCategoryLayouts((prev) => ({ ...prev, [item.label]: { x, width } }));
+                }}
+                style={styles.categoryItem}
+            >
+                <View style={[styles.categoryIconCircle, { backgroundColor: bg }]}>
+                    <Ionicons name={item.icon} size={20} color={dark} />
+                </View>
+                <Text style={[styles.categoryText, { color: dark }]} numberOfLines={1}>
+                    {item.label}
+                </Text>
+                {isActive && <View style={styles.categoryUnderline} />}
+            </TouchableOpacity>
+        );
+    })}
+</ScrollView>
+            
+
+               {showSubFilterMenu && activeSubFilterOptions && (
+    <View style={[styles.subFilterDropdown, { left: dropdownLeft }]}>
+        {activeSubFilterOptions.map((option, idx) => {
+            const isSelected = selectedSubFilter === option.value;
+            const isLast = idx === activeSubFilterOptions.length - 1;
+            return (
+                <TouchableOpacity
+                    key={option.value}
+                    style={[
+                        styles.subFilterDropdownItem,
+                        isLast && { borderBottomWidth: 0 },
+                        isSelected && styles.subFilterDropdownItemActive,
+                    ]}
+                    onPress={() => handleSelectSubFilter(option.value)}
+                    activeOpacity={0.8}
                 >
-                    {sortedCategories.map((item, index) => {
-                        const isActive = selectedCategory === item.label;
-                        return (
-                            <TouchableOpacity
-                                key={index}
-                                onPress={() => {
-                                    if (isActive) {
-                                        setSelectedCategory(null);
-                                    } else {
-                                        setSelectedCategory(item.label);
-                                    }
-                                }}
-                                style={styles.categoryItem}
-                            >
-                                <Ionicons
-                                    name={item.icon}
-                                    size={24}
-                                    color={isActive ? "#157a4f" : "#000"}
-                                />
-                                <Text
-                                    style={[
-                                        styles.categoryText,
-                                        isActive && { color: "#157a4f", fontFamily: "Medium" }
-                                    ]}
-                                    numberOfLines={1}
-                                >
-                                    {item.label}
-                                </Text>
-                            </TouchableOpacity>
-                        );
-                    })}
-                </ScrollView>
-            </View>
+                    <Text style={[styles.subFilterDropdownText, isSelected && styles.subFilterDropdownTextActive]}>
+                        {option.label}
+                    </Text>
+                    {isSelected && <Ionicons name="checkmark" size={14} color="#157a4f" />}
+                </TouchableOpacity>
+            );
+        })}
+    </View>
+)}
+        </View>
 
             <View style={{ paddingHorizontal: 8 }}>
                 <View style={styles.row2}>
@@ -478,6 +585,7 @@ export default function ChojaHome() {
                 {tab === "Chotya Jahirati" && (
                     <ChotyaJahirati
                         selectedCategory={selectedCategory}
+                        selectedSubFilter={selectedSubFilter}
                         searchQuery={searchQuery}
                         lat={userCoordinates?.lat}
                         lng={userCoordinates?.lng}
@@ -485,7 +593,13 @@ export default function ChojaHome() {
                     />
                 )}
                 {tab === "I Want" && <Iwant />}
-                {tab === "My Ads" && <MyAds selectedCategory={selectedCategory} searchQuery={searchQuery} />}
+                {tab === "My Ads" && (
+                    <MyAds
+                        selectedCategory={selectedCategory}
+                        selectedSubFilter={selectedSubFilter}
+                        searchQuery={searchQuery}
+                    />
+                )}
             </View>
 
             <SafeAreaView
@@ -495,6 +609,7 @@ export default function ChojaHome() {
             </SafeAreaView>
 
         </SafeAreaView>
+    </TouchableWithoutFeedback>
     );
 }
 
@@ -511,15 +626,21 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         borderWidth: 1,
         borderColor: "#cacaca",
-        marginVertical: 5,
+        marginVertical: 4,
         paddingHorizontal: 4,
     },
     searchInput: {
         flex: 1,
         marginHorizontal: 5,
         fontFamily: "Medium",
-        fontSize: 14,
+        fontSize: 13,
         top: 4
+    },
+    voiceButton: {
+        paddingHorizontal: 6,
+        paddingVertical: 4,
+        justifyContent: "center",
+        alignItems: "center",
     },
     row2: {
         flexDirection: "row",
@@ -555,7 +676,7 @@ const styles = StyleSheet.create({
     categoryItem: {
         alignItems: "center",
         justifyContent: "flex-start",
-        width: 70,
+        width: 72,
         marginRight: 8,
     },
     categoryText: {
@@ -564,16 +685,71 @@ const styles = StyleSheet.create({
         color: "#000",
         marginTop: 4,
         textAlign: "center",
-        lineHeight: Math.round(10 * 1.3),
+        lineHeight: Math.round(10 * 1.2),
     },
+    categoryIconCircle: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        alignItems: "center",
+        justifyContent: "center",
+        marginBottom: 4,
+    },
+    categoryUnderline: {
+        marginTop: 4,
+        width: 20,
+        height: 2,
+        backgroundColor: "#000000",
+        borderRadius: 1,
+    },
+   subFilterDropdown: {
+    position: "absolute",
+    top: "100%",
+    marginTop: 24,
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: "#f5b849",
+    overflow: "hidden",
+    minWidth: 120,
+    elevation: 8,
+    shadowColor: "#000",
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    zIndex: 200,
+},
+subFilterDropdownItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f5e9cf",
+},
+subFilterDropdownItemActive: {
+    backgroundColor: "#f0faf5",
+},
+subFilterDropdownText: {
+    fontSize: 12,
+    fontFamily: "Medium",
+    color: "#000",
+    lineHeight: Math.round(12 * 1.5),
+},
+subFilterDropdownTextActive: {
+    color: "#157a4f",
+    fontFamily: "SemiBold",
+},
     locationSection: {
-        backgroundColor: "#f5b949e5",
+        backgroundColor: "#ffffffe5",
         borderRadius: 12,
         paddingHorizontal: 10,
         height: 44,
         justifyContent: "center",
         marginHorizontal: 12,
         marginBottom: 5,
+        borderColor: "#f8a812",
+        borderWidth: 1,
     },
     locationEditingSection: {
         height: "auto",
@@ -603,11 +779,12 @@ const styles = StyleSheet.create({
     },
     locationInput: {
         flex: 1,
-        fontSize: 13,
+        fontSize: 12,
         fontFamily: "Medium",
         color: "#222",
         paddingVertical: 0,
         paddingHorizontal: 4,
+        marginTop: 3,
     },
     locationCancelBtn: {
         paddingLeft: 4,

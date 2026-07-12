@@ -1,9 +1,10 @@
-import React, { useState, useCallback, useRef } from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
 import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView,
   TextInput, Dimensions, Image, Alert, ActivityIndicator,
   Keyboard, TouchableWithoutFeedback
 } from "react-native";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 
@@ -127,6 +128,13 @@ export default function Card1({ category, formData, setFormData, onNext }) {
       return;
     }
 
+    if (images.length >= 5) {
+      Alert.alert("Limit reached", "You can upload up to 5 images only.");
+      return;
+    }
+
+    const remainingSlots = 5 - images.length;
+
     const result = await ImagePicker.launchImageLibraryAsync({
       // Support both deprecated MediaTypeOptions and newer MediaType API
       mediaTypes: ImagePicker.MediaTypeOptions
@@ -134,12 +142,14 @@ export default function Card1({ category, formData, setFormData, onNext }) {
         : "Images",
       allowsMultipleSelection: true,
       quality: 0.7,
-      selectionLimit: 10,
+      selectionLimit: remainingSlots,
     });
 
     if (!result.canceled && result.assets?.length > 0) {
-      const uris = result.assets.map((a) => a.uri);
+      const uris = result.assets.map((a) => a.uri).slice(0, remainingSlots);
       setFormData({ ...formData, images: [...images, ...uris] });
+      // user replaced images -> clear flagged marker
+      try { await AsyncStorage.removeItem('golo_images_flagged'); } catch (e) {}
     }
   };
 
@@ -150,10 +160,16 @@ export default function Card1({ category, formData, setFormData, onNext }) {
       return;
     }
 
+    if (images.length >= 5) {
+      Alert.alert("Limit reached", "You can upload up to 5 images only.");
+      return;
+    }
+
     const result = await ImagePicker.launchCameraAsync({ quality: 0.7 });
 
     if (!result.canceled) {
       setFormData({ ...formData, images: [...images, result.assets[0].uri] });
+      try { await AsyncStorage.removeItem('golo_images_flagged'); } catch (e) {}
     }
   };
 
@@ -232,10 +248,8 @@ export default function Card1({ category, formData, setFormData, onNext }) {
             value={formData.contact}
             onChangeText={(text) => setFormData({ ...formData, contact: text })}
             keyboardType="phone-pad"
-            placeholder="e.g. 9876543210"
+            placeholder="10 digit mobile number"
           />
-
-
 
           <Text style={styles.label}>Add Images</Text>
           <View style={styles.uploadBox}>
@@ -272,7 +286,7 @@ export default function Card1({ category, formData, setFormData, onNext }) {
           )}
         </View>
 
-        <TouchableOpacity style={styles.nextBtn} onPress={onNext}>
+        <TouchableOpacity style={styles.nextBtn} onPress={() => onNext && onNext()}>
           <Text style={styles.nextText}>Next</Text>
         </TouchableOpacity>
       </ScrollView>

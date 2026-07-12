@@ -1,8 +1,8 @@
 import React, { useContext, useEffect, useState } from "react";
-import { View, StyleSheet, Text, TouchableOpacity, ActivityIndicator, Alert } from "react-native";
+import { View, StyleSheet, Text, TouchableOpacity, ActivityIndicator, Alert, Modal } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
+import { MaterialCommunityIcons, MaterialIcons, Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { BASE_URL } from "../config";
@@ -46,12 +46,12 @@ const CATEGORY_PAYLOAD_RULES = {
     },
     propertyData: {
         allow: [
-            "noticeType", "propertyType", "bhk", "builtUpArea", "bathrooms", "floor", "propertyAge",
+            "Type", "propertyType", "bhk", "builtUpArea", "bathrooms", "floor", "propertyAge",
             "furnishing", "condition", "facingSide", "price", "monthlyRentAmount", "securityDeposit",
             "maintenanceAmount", "availableFrom", "tenantType", "leaseDuration",
         ],
         string: [
-            "noticeType", "propertyType", "bhk", "builtUpArea", "bathrooms", "floor", "propertyAge",
+            "Type", "propertyType", "bhk", "builtUpArea", "bathrooms", "floor", "propertyAge",
             "furnishing", "condition", "facingSide", "price", "monthlyRentAmount", "securityDeposit",
             "maintenanceAmount", "availableFrom", "tenantType", "leaseDuration",
         ],
@@ -118,7 +118,7 @@ const CATEGORY_PAYLOAD_RULES = {
         allow: ["noticetype", "issuingAuthority", "detailedNotice", "pdf"],
     },
     greetingsData: {
-        allow: ["noticeType", "relationType", "name", "age", "year", "wishes", "from", "name2", "age2", "year2", "summary", "funeralDetails", "message", "senderName", "occasion"],
+        allow: ["Type", "relationType", "name", "age", "year", "wishes", "from", "name2", "age2", "year2", "summary", "funeralDetails", "message", "senderName", "occasion"],
     },
 };
 
@@ -229,6 +229,38 @@ function getFileMetaFromUri(uri) {
     return { fileName, mimeType };
 }
 
+function getErrorMessageFromResponse(data) {
+    const candidates = [];
+
+    const pushValue = (value) => {
+        if (typeof value === "string" && value.trim()) {
+            candidates.push(value.trim());
+        } else if (Array.isArray(value)) {
+            value.forEach(pushValue);
+        } else if (value && typeof value === "object") {
+            Object.values(value).forEach(pushValue);
+        }
+    };
+
+    pushValue(data?.message);
+    pushValue(data?.error);
+    pushValue(data?.details);
+
+    return candidates.join(" ");
+}
+
+function isModerationFailureResponse(data) {
+    const message = getErrorMessageFromResponse(data).toLowerCase();
+    return [
+        "inappropriate",
+        "moderation",
+        "flagged",
+        "content policy",
+        "violat",
+        "unsafe",
+    ].some((token) => message.includes(token));
+}
+
 const CLOUDINARY_CLOUD_NAME = process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME || "dcm1plq42";
 const CLOUDINARY_UPLOAD_PRESET = process.env.EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "choja_preset";
 const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
@@ -267,6 +299,7 @@ export default function Payment({ navigation, route }) {
     const { template, selectedDays, selectedLocations, selectedDates, startDate, endDate, price, formData, category } = route.params || {};
     const [isFeatured, setIsFeatured] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [flaggedModalVisible, setFlaggedModalVisible] = useState(false);
 
     const normalizeDateInput = (value) => {
         if (!value) return null;
@@ -334,8 +367,14 @@ export default function Payment({ navigation, route }) {
     const total = subtotal + gst;
 
     const handlePaymentAndSubmit = async () => {
-        setIsSubmitting(true);
         try {
+            const storedFlag = await AsyncStorage.getItem("golo_images_flagged");
+            if (storedFlag === "true") {
+                setFlaggedModalVisible(true);
+                return;
+            }
+
+            setIsSubmitting(true);
             const token = await AsyncStorage.getItem("customerToken");
             const userId = await AsyncStorage.getItem("customerId");
 
@@ -403,14 +442,12 @@ export default function Payment({ navigation, route }) {
                     preferredContactMethod: "phone"
                 },
                 templateId: Number(template !== undefined ? (typeof template === 'string' ? template.replace('card', '') : template) : 1),
-                cities: selectedLocations || [],
+                // cities: selectedLocations || [],
                 selectedDates: resolvedSelectedDates,
                 expiryDate: resolvedExpiryDate,
                 isPromoted: isFeatured,
                 ...(categoryDtoField ? { [categoryDtoField]: categoryFormPayload } : {}),
             };
-
-            console.log("Submitting payload:", JSON.stringify(payload, null, 2));
 
             const response = await fetch(`${BASE_URL}/ads`, {
                 method: "POST",
@@ -421,22 +458,43 @@ export default function Payment({ navigation, route }) {
                 body: JSON.stringify(payload)
             });
 
-            const data = await response.json();
+            const data = await response.json().catch(() => ({}));
 
-            if (response.ok && data.success) {
+            if (!response.ok) {
+                if (isModerationFailureResponse(data)) {
+                    try {
+                        await AsyncStorage.setItem("golo_images_flagged", "true");
+                    } catch (storageError) {
+                        // Ignore storage issues for the moderation flow.
+                    }
+                    setFlaggedModalVisible(true);
+                    return;
+                }
+
+                let errorMessage = "Failed to post ad.";
+                if (data.message) {
+                    errorMessage = Array.isArray(data.message) ? data.message.join(" ") : data.message;
+                }
+                Alert.alert("Failed", errorMessage);
+                return;
+            }
+
+            if (data.success) {
+                try {
+                    await AsyncStorage.removeItem("golo_images_flagged");
+                } catch (storageError) {
+                    // Ignore storage issues for the moderation flow.
+                }
                 Alert.alert("Success", "Your ad has been posted successfully!");
-                // Clear any navigation state or go root
-                navigation.navigate("ChojaHome"); // Or wherever you want to go after success
+                navigation.navigate("ChojaHome");
             } else {
                 let errorMessage = "Failed to post ad.";
                 if (data.message) {
                     errorMessage = Array.isArray(data.message) ? data.message.join(" ") : data.message;
                 }
                 Alert.alert("Failed", errorMessage);
-                console.error("Ad creation error:", data);
             }
         } catch (error) {
-            console.error("Submission Error:", error);
             Alert.alert("Error", "An unexpected error occurred while posting.");
         } finally {
             setIsSubmitting(false);
@@ -602,6 +660,58 @@ export default function Payment({ navigation, route }) {
                     </View>
 
                 </ScrollView>
+
+                <Modal
+                    visible={flaggedModalVisible}
+                    transparent
+                    animationType="fade"
+                    onRequestClose={() => {}}
+                    statusBarTranslucent
+                >
+                    <View style={styles.flaggedOverlay}>
+                        <View style={styles.flaggedCard}>
+                            <View style={styles.flaggedHeaderRow}>
+                                <View style={styles.flaggedHeaderTextWrap}>
+                                    <View style={styles.flaggedHeaderIconCircle}>
+                                        <Feather name="alert-triangle" size={14} color="#d92d20" />
+                                    </View>
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={styles.flaggedHeaderTitle}>Inappropriate Content</Text>
+                                        <Text style={styles.flaggedHeaderSubtitle}>
+                                            Your image has been flagged by our safety system.
+                                        </Text>
+                                    </View>
+                                </View>
+                                <TouchableOpacity
+                                    onPress={() => setFlaggedModalVisible(false)}
+                                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                >
+                                    <Feather name="x" size={20} color="#8a8a8a" />
+                                </TouchableOpacity>
+                            </View>
+
+                            <View style={styles.flaggedIconWrap}>
+                                <View style={styles.flaggedIconCircle}>
+                                    <Feather name="shield" size={30} color="#d92d20" />
+                                </View>
+                            </View>
+
+                            <Text style={styles.flaggedTitle}>Upload Rejected</Text>
+                            <Text style={styles.flaggedDescription}>
+                                One or more of your uploaded images contains content that violates our community
+                                guidelines. Please remove the inappropriate images and try posting again.
+                            </Text>
+
+                            <TouchableOpacity
+                                style={styles.flaggedButton}
+                                onPress={() => setFlaggedModalVisible(false)}
+                                activeOpacity={0.85}
+                            >
+                                <Text style={styles.flaggedButtonText}>I Understand, Go Back</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </Modal>
             </LinearGradient>
         </SafeAreaView>
     );
@@ -661,9 +771,9 @@ const styles = StyleSheet.create({
         alignItems: "center",
     },
     totalText: {
-        fontSize: 16,
+        fontSize: 14,
         fontFamily: "Medium",
-        lineHeight: Math.round(16 * 1.5),
+        lineHeight: Math.round(14 * 1.5),
     },
     payButton: {
         flexDirection: "row",
@@ -695,5 +805,96 @@ const styles = StyleSheet.create({
         height: 16,
         borderRadius: 4,
         backgroundColor: "#f5b849",
+    },
+    flaggedOverlay: {
+        flex: 1,
+        backgroundColor: "rgba(20, 20, 20, 0.55)",
+        justifyContent: "center",
+        alignItems: "center",
+        paddingHorizontal: 24,
+    },
+    flaggedCard: {
+        width: "100%",
+        maxWidth: 360,
+        backgroundColor: "#fff",
+        borderRadius: 18,
+        paddingTop: 18,
+        paddingHorizontal: 18,
+        paddingBottom: 20,
+        elevation: 10,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
+    },
+    flaggedHeaderRow: {
+        flexDirection: "row",
+        alignItems: "flex-start",
+        justifyContent: "space-between",
+    },
+    flaggedHeaderTextWrap: {
+        flexDirection: "row",
+        alignItems: "flex-start",
+        flex: 1,
+        paddingRight: 12,
+    },
+    flaggedHeaderIconCircle: {
+        width: 26,
+        height: 26,
+        borderRadius: 13,
+        backgroundColor: "#fdecea",
+        alignItems: "center",
+        justifyContent: "center",
+        marginRight: 10,
+        marginTop: 1,
+    },
+    flaggedHeaderTitle: {
+        fontSize: 18,
+        fontFamily: "Bold",
+        color: "#1a1a1a",
+    },
+    flaggedHeaderSubtitle: {
+        fontSize: 12,
+        fontFamily: "Medium",
+        color: "#8a8a8a",
+        marginTop: 3,
+    },
+    flaggedIconWrap: {
+        alignItems: "center",
+        marginTop: 18,
+        marginBottom: 14,
+    },
+    flaggedIconCircle: {
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        backgroundColor: "#fdecea",
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    flaggedTitle: {
+        fontSize: 20,
+        fontFamily: "Bold",
+        color: "#1a1a1a",
+        textAlign: "center",
+        marginBottom: 8,
+    },
+    flaggedDescription: {
+        fontSize: 14,
+        fontFamily: "Medium",
+        color: "#6b6b6b",
+        textAlign: "center",
+        marginBottom: 20,
+    },
+    flaggedButton: {
+        backgroundColor: "#e0483e",
+        borderRadius: 12,
+        paddingVertical: 13,
+        alignItems: "center",
+    },
+    flaggedButtonText: {
+        color: "#fff",
+        fontSize: 15,
+        fontFamily: "Medium",
     },
 });

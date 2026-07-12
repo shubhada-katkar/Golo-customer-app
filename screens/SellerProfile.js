@@ -20,6 +20,7 @@ import { submitReport } from '../services/reportService';
 import { BASE_URL } from '../config';
 import Topbar from '../components/Topbar';
 import { ThemeContext } from '../theme/ThemeContext';
+import { ensureAuthenticated } from '../services/authService';
 
 const { width } = Dimensions.get('window');
 
@@ -74,17 +75,30 @@ export default function SellerProfile({ route, navigation }) {
     fetchSellerData();
   }, [sellerId, BASE_URL]);
 
-  const handleCall = () => {
+  const handleCall = async () => {
     const phone = seller?.profile?.phone;
     if (!phone) {
       Alert.alert("Error", "No phone number available for this seller.");
       return;
     }
+
+    try {
+      await ensureAuthenticated(navigation);
+    } catch {
+      return;
+    }
+
     const cleanedNumber = String(phone).replace('+91', '');
     Linking.openURL(`tel:${cleanedNumber}`);
   };
 
-  const handleOpenChat = () => {
+  const handleOpenChat = async () => {
+    try {
+      await ensureAuthenticated(navigation);
+    } catch {
+      return;
+    }
+
     navigation.navigate('ChatScreen', {
       adId: adId || 'general',
       sellerId: seller?.id || sellerId,

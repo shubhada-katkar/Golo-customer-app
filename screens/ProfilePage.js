@@ -6,11 +6,15 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemeContext } from "../theme/ThemeContext";
 import Topbar from "../components/Topbar";
-import { AntDesign, MaterialIcons, MaterialCommunityIcons, Feather, Entypo } from "@expo/vector-icons";
+import { AntDesign, MaterialIcons, Feather, FontAwesome } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { clearAuthStorage, getValidToken } from "../services/authService";
 import * as ImagePicker from "expo-image-picker";
 import { BASE_URL } from "../config";
 import { LinearGradient } from "expo-linear-gradient";
+
+const ORANGE = "#f5b849";
+const GREEN = "#157a4f";
 
 export default function ProfilePage({ navigation }) {
     const { theme, colors, toggleTheme } = useContext(ThemeContext);
@@ -35,7 +39,14 @@ export default function ProfilePage({ navigation }) {
     // ================= FETCH PROFILE =================
     const fetchProfile = async () => {
         try {
-            const token = await AsyncStorage.getItem("customerToken");
+            let token;
+            try {
+                token = await getValidToken();
+            } catch {
+                await clearAuthStorage();
+                navigation.reset({ index: 0, routes: [{ name: "Login" }] });
+                return;
+            }
 
             const res = await fetch(`${BASE_URL}/users/profile`, {
                 headers: {
@@ -46,7 +57,7 @@ export default function ProfilePage({ navigation }) {
             const data = await res.json();
 
             if (res.status === 401) {
-                await AsyncStorage.clear();
+                await clearAuthStorage();
                 navigation.reset({
                     index: 0,
                     routes: [{ name: "Login" }],
@@ -171,8 +182,8 @@ export default function ProfilePage({ navigation }) {
 
     if (loading) {
         return (
-            <View style={{ flex: 1, justifyContent: "center" }}>
-                <ActivityIndicator size="large" />
+            <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: colors?.background || "#fff" }}>
+                <ActivityIndicator size="large" color={GREEN} />
             </View>
         );
     }
@@ -208,11 +219,7 @@ export default function ProfilePage({ navigation }) {
         } catch (err) {
             console.log("Logout API failed:", err);
         } finally {
-            await AsyncStorage.multiRemove([
-                "customerToken",
-                "customerData",
-                "customerId",
-            ]);
+            await clearAuthStorage();
 
             navigation.reset({
                 index: 0,
@@ -230,22 +237,22 @@ export default function ProfilePage({ navigation }) {
     };
 
     return (
-        <SafeAreaView style={{ flex: 1 }}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: colors?.background || "#fdfdfd" }}>
             <KeyboardAvoidingView style={{ flex: 1 }}
                 behavior={Platform.OS === "ios" ? "padding" : "height"} >
                 <LinearGradient
-                    colors={["#f8a812", "#fad081", "#f8f6f265"]}
+                    colors={["#f8a812", "#fad081", "#f8f6f200"]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 0, y: 1 }}
-                    style={{ height: 220, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0 }}
+                    style={{ height: 240, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0 }}
                 />
                 <Topbar />
                 <View style={styles.row1}>
                     <TouchableOpacity onPress={() => navigation.goBack()}
-                        style={{ padding: 10 }}>
+                        style={styles.backButton}>
                         <MaterialIcons
                             name="arrow-back-ios"
-                            size={22}
+                            size={18}
                             color={colors.text}
                         />
                     </TouchableOpacity>
@@ -257,121 +264,144 @@ export default function ProfilePage({ navigation }) {
                         <Text style={{ fontSize: 20, fontFamily: "SemiBold", lineHeight: Math.round(20 * 1.5) }}>
                             Profile
                         </Text>
+                        <TouchableOpacity
+                            style={styles.bellButton}
+                            onPress={() => navigation.navigate("NotificationsPage")}>
+                            <FontAwesome name="bell-o" size={24} color={colors.text} />
+                        </TouchableOpacity>
                     </View>
-
                 </View>
+
+          <View style={{ backgroundColor: "#000000", height: 1, marginVertical:6}} />
 
                 <ScrollView
                     contentContainerStyle={{ paddingBottom: 30 }}
                     keyboardShouldPersistTaps="handled"
                     showsVerticalScrollIndicator={false} >
 
-                    <View style={{ height: 1, backgroundColor: "#000000", marginVertical: 6 }} />
-
                     {/* PROFILE IMAGE */}
-                    <View style={{ alignItems: "center", flexDirection: "row", paddingHorizontal: 14, justifyContent: "space-between", marginTop: 12 }}>
-                        <TouchableOpacity style={styles.avatarWrapper} onPress={pickImage}>
-                            <View>
+                    <View style={{ alignItems: "center", paddingHorizontal: 14, marginTop: 18 }}>
+                        <TouchableOpacity style={styles.avatarWrapper} onPress={pickImage} activeOpacity={0.85}>
+                            <View style={styles.avatarRing}>
                                 <Image
                                     source={profileImageSource}
                                     style={styles.profileImage}
                                 />
-                                <View style={styles.cameraIcon}>
-                                    <MaterialIcons name="camera-alt" size={22} color="#ffffff" />
-                                </View>
+                            </View>
+                            <View style={styles.cameraIcon}>
+                                <MaterialIcons name="camera-alt" size={16} color="#ffffff" />
                             </View>
                         </TouchableOpacity>
 
-                        <View style={styles.profileCard} >
-                            <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-                                <View>
-                                    <Text style={styles.cardTitle}>Loyalty Status</Text>
-                                    <Text style={styles.cardSubtitle}>{loyaltyTier} tier</Text>
-                                </View>
-                                <Text style={styles.cardValue}>{loyaltyPoints} points</Text>
+                        {!!username && (
+                            <Text style={[styles.nameText, { color: colors.text }]}>{username}</Text>
+                        )}
+
+                        <View style={styles.profileCard}>
+                            <View style={styles.loyaltyIconCircle}>
+                                <MaterialIcons name="workspace-premium" size={22} color={ORANGE} />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <Text style={styles.cardTitle}>{loyaltyTier} Tier</Text>
+                                <Text style={styles.cardSubtitle}>Loyalty status</Text>
+                            </View>
+                            <View style={styles.pointsPill}>
+                                <Text style={styles.cardValue}>{loyaltyPoints}</Text>
+                                <Text style={styles.pointsLabel}>pts</Text>
                             </View>
                         </View>
                     </View>
 
-                    <View style={{ paddingHorizontal: 14, marginTop: 10 }}>
+                    <View style={{ paddingHorizontal: 14, marginTop: 22 }}>
 
-                        <Text style={[styles.sectionHeader, { color: colors.text, marginTop: 12 }]}>PROFILE SETTINGS</Text>
+                        <Text style={[styles.sectionHeader, { color: colors.text }]}>PROFILE SETTINGS</Text>
 
-                        {/* NAME */}
-                        <Text style={[styles.text, { color: colors.text }]}>Your Name</Text>
-                        <View style={styles.inputWrapper}>
-                            <TextInput
-                                ref={nameRef}
-                                value={username}
-                                onChangeText={setUsername}
-                                editable={editName}
-                                style={[
-                                    styles.input,
-                                    !editName && styles.disabledInput,
-                                    { paddingRight: 40 } // space for icon
-                                ]}
-                            />
+                        <View style={styles.settingsCard}>
+                            {/* NAME */}
+                            <Text style={[styles.text, { color: colors.text }]}>Your Name</Text>
+                            <View style={styles.inputWrapper}>
+                                <TextInput
+                                    ref={nameRef}
+                                    value={username}
+                                    onChangeText={setUsername}
+                                    editable={editName}
+                                    style={[
+                                        styles.input,
+                                        editName && styles.inputActive,
+                                        { paddingRight: 40 }
+                                    ]}
+                                />
 
-                            <TouchableOpacity
-                                style={styles.editIcon}
-                                onPress={() => {
-                                    setEditName(true);
-                                    setEditPhone(false);
-                                    setTimeout(() => nameRef.current?.focus(), 100);
-                                }}
-                            >
-                                <MaterialIcons name="edit" size={20} color={colors.text} />
-                            </TouchableOpacity>
-                        </View>
+                                <TouchableOpacity
+                                    style={styles.editIcon}
+                                    onPress={() => {
+                                        setEditName(true);
+                                        setEditPhone(false);
+                                        setTimeout(() => nameRef.current?.focus(), 100);
+                                    }}
+                                >
+                                    <MaterialIcons name="edit" size={18} color={editName ? GREEN : "#9a9a9a"} />
+                                </TouchableOpacity>
+                            </View>
 
-                        {/* PHONE */}
-                        <Text style={[styles.text, { color: colors.text }]}>Contact Number</Text>
-                        <View style={styles.inputWrapper}>
-                            <TextInput
-                                ref={phoneRef}
-                                value={phone}
-                                onChangeText={setPhone}
-                                editable={editPhone}
-                                keyboardType="numeric"
-                                style={[
-                                    styles.input,
-                                    !editPhone && styles.disabledInput,
-                                    { paddingRight: 40 }
-                                ]} />
+                            {/* PHONE */}
+                            <Text style={[styles.text, { color: colors.text, marginTop: 16 }]}>Contact Number</Text>
+                            <View style={styles.inputWrapper}>
+                                <TextInput
+                                    ref={phoneRef}
+                                    value={phone}
+                                    onChangeText={setPhone}
+                                    editable={editPhone}
+                                    keyboardType="numeric"
+                                    style={[
+                                        styles.input,
+                                        editPhone && styles.inputActive,
+                                        { paddingRight: 40 }
+                                    ]} />
 
-                            <TouchableOpacity style={styles.editIcon}
-                                onPress={() => {
-                                    setEditPhone(true);
-                                    setEditName(false);
-                                    setTimeout(() => phoneRef.current?.focus(), 100);
-                                }}  >
-                                <MaterialIcons name="edit" size={22} style={{ marginLeft: 8, color: colors.text }} />
-                            </TouchableOpacity>
-                        </View>
+                                <TouchableOpacity style={styles.editIcon}
+                                    onPress={() => {
+                                        setEditPhone(true);
+                                        setEditName(false);
+                                        setTimeout(() => phoneRef.current?.focus(), 100);
+                                    }}  >
+                                    <MaterialIcons name="edit" size={18} color={editPhone ? GREEN : "#9a9a9a"} />
+                                </TouchableOpacity>
+                            </View>
 
-                        {/* EMAIL */}
-                        <Text style={[styles.text, { color: colors.text }]}>Email</Text>
-                        <View style={styles.inputWrapper}>
-                            <TextInput
-                                value={email}
-                                editable={false}
-                                keyboardType="email-address"
-                                autoCapitalize="none"
-                                style={[styles.input, styles.disabledInput]}
-                            />
+                            {/* EMAIL */}
+                            <Text style={[styles.text, { color: colors.text, marginTop: 16 }]}>Email</Text>
+                            <View style={styles.inputWrapper}>
+                                <TextInput
+                                    value={email}
+                                    editable={false}
+                                    keyboardType="email-address"
+                                    autoCapitalize="none"
+                                    style={[styles.input, styles.disabledInput]}
+                                />
+                                <View style={styles.lockIcon}>
+                                    <MaterialIcons name="lock-outline" size={16} color="#b5b5b5" />
+                                </View>
+                            </View>
                         </View>
 
                         {/* SAVE BUTTON */}
                         <TouchableOpacity
-                            style={styles.saveButton}
                             onPress={handleSave}
-                            disabled={saving} >
-                            <Text style={{
-                                color: "white", fontFamily: "Medium", lineHeight: Math.round(14 * 1.5),
-                                fontSize: 14
-                            }}>
-                                {saving ? "Saving..." : "Save Changes"}
-                            </Text>
+                            disabled={saving}
+                            activeOpacity={0.85}
+                            style={{ marginTop: 20 }} >
+                            <LinearGradient
+                                colors={[ORANGE, "#f5b849"]}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 0 }}
+                                style={styles.saveButton}
+                            >
+                                {saving
+                                    ? <ActivityIndicator size="small" color="#fff" />
+                                    : <Text style={styles.saveButtonText}>Save Changes</Text>
+                                }
+                            </LinearGradient>
                         </TouchableOpacity>
                     </View>
 
@@ -380,9 +410,9 @@ export default function ProfilePage({ navigation }) {
                     <View style={styles.menuContainer}>
                         <Text style={[styles.sectionHeader, { color: colors.text }]}>MENU</Text>
 
-                        <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.card || "#fff" }]} onPress={() => navigation.navigate("Analytics")}>
+                        <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.card || "#fff" }]} onPress={() => navigation.navigate("Analytics")} activeOpacity={0.7}>
                             <View style={styles.iconCircle}>
-                                <AntDesign name="unordered-list" size={20} color="#157a4f" />
+                                <AntDesign name="unordered-list" size={18} color={GREEN} />
                             </View>
                             <View style={styles.menuText}>
                                 <Text style={[styles.menuTitle, { color: colors.text }]}>Analytics</Text>
@@ -391,9 +421,9 @@ export default function ProfilePage({ navigation }) {
                             <Feather name="chevron-right" size={20} color={colors.subText || "#aaa"} />
                         </TouchableOpacity>
 
-                        <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.card || "#fff" }]} onPress={() => navigation.navigate("Transaction")}>
+                        <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.card || "#fff" }]} onPress={() => navigation.navigate("Transaction")} activeOpacity={0.7}>
                             <View style={styles.iconCircle}>
-                                <AntDesign name="credit-card" size={20} color="#157a4f" />
+                                <AntDesign name="credit-card" size={18} color={GREEN} />
                             </View>
                             <View style={styles.menuText}>
                                 <Text style={[styles.menuTitle, { color: colors.text }]}>Transactions</Text>
@@ -402,10 +432,10 @@ export default function ProfilePage({ navigation }) {
                             <Feather name="chevron-right" size={20} color={colors.subText || "#aaa"} />
                         </TouchableOpacity>
 
-                        <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.card || "#fff" }]}
-                            onPress={() => { confirmLogout(); }}>
+                        <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.card || "#fff", marginBottom: 0 }]}
+                            onPress={() => { confirmLogout(); }} activeOpacity={0.7}>
                             <View style={[styles.iconCircle, { backgroundColor: "#fff0f0" }]}>
-                                <MaterialIcons name="logout" size={20} color="#ff6b6b" />
+                                <MaterialIcons name="logout" size={18} color="#ff6b6b" />
                             </View>
                             <View style={styles.menuText}>
                                 <Text style={[styles.menuTitle, { color: "#ff6b6b" }]}>
@@ -426,88 +456,176 @@ const styles = StyleSheet.create({
     row1: {
         alignItems: "center",
         flexDirection: "row",
-        paddingLeft: 14,
+        paddingLeft: 8,
+    },
+    backButton: {
+        padding: 10,
+        borderRadius: 20,
+    },
+    bellButton: {
+        padding: 10,
+        borderRadius: 20,
     },
     disabledInput: {
-        backgroundColor: "#ffffff",
+        backgroundColor: "#f4f4f4",
+        color: "#8a8a8a",
     },
     text: {
-        fontSize: 14,
-        marginTop: 6,
+        fontSize: 13,
         fontFamily: "Medium",
-        lineHeight: Math.round(14 * 1.5),
-    },
-    inputRow: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
+        lineHeight: Math.round(13 * 1.5),
+        opacity: 0.7,
     },
     input: {
         flex: 1,
-        borderRadius: 10,
+        borderRadius: 12,
         paddingHorizontal: 14,
+        paddingVertical: 12,
         paddingRight: 40,
-        borderWidth: 0.5,
+        borderWidth: 1,
+        borderColor: "#ececec",
         fontSize: 14,
-        backgroundColor: "#ffffff",
+        backgroundColor: "#fafafa",
         fontFamily: "Medium",
-        lineHeight: Math.round(16 * 1.5),
+        lineHeight: Math.round(16 * 1.5),      
+    },
+    inputActive: {
+        borderColor: GREEN,
+        backgroundColor: "#ffffff",
     },
     saveButton: {
-        marginTop: 25,
-        backgroundColor: "#f5b849",
-        padding: 12,
-        borderRadius: 10,
+        paddingVertical: 14,
+        borderRadius: 14,
         alignItems: "center",
+        justifyContent: "center",
+        shadowColor: ORANGE,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.25,
+        shadowRadius: 8,
+        elevation: 3,
+    },
+    saveButtonText: {
+        color: "#ffffff",
+        fontFamily: "SemiBold",
+        fontSize: 14,
+        lineHeight: Math.round(14 * 1.5),
     },
     cameraIcon: {
         position: "absolute",
-        bottom: 4,
-        right: 5,
-        backgroundColor: "#4b4a4a",
-        padding: 4,
+        bottom: 2,
+        right: 2,
+        backgroundColor: GREEN,
+        padding: 6,
         borderRadius: 20,
+        borderWidth: 2,
+        borderColor: "#ffffff",
+    },
+    avatarRing: {
+        padding: 4,
+        borderRadius: 66,
+        backgroundColor: "#ffffff",
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.12,
+        shadowRadius: 8,
+        elevation: 4,
     },
     profileImage: {
-        width: 110,
-        height: 110,
-        borderRadius: 60,
-        alignSelf: "center",
+        width: 104,
+        height: 104,
+        borderRadius: 52,
     },
     avatarWrapper: {
         alignSelf: "center",
+        position: "relative",
+    },
+    nameText: {
+        fontSize: 17,
+        fontFamily: "SemiBold",
+        marginTop: 12,
+        lineHeight: Math.round(17 * 1.5),
     },
     inputWrapper: {
         position: "relative",
         marginTop: 6,
+        justifyContent: "center",
     },
     editIcon: {
         position: "absolute",
         right: 12,
-        top: "50%",
-        transform: [{ translateY: -10 }],
+        padding: 4,
+    },
+    lockIcon: {
+        position: "absolute",
+        right: 14,
     },
     profileCard: {
-        borderRadius: 12,
-        paddingHorizontal: 18,
-        paddingVertical: 25,
-        backgroundColor: "#f5b94981",
-        borderRadius: 14
+        flexDirection: "row",
+        alignItems: "center",
+        borderRadius: 16,
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        backgroundColor: "#ffffff",
+        marginTop: 16,
+        alignSelf: "stretch",
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.06,
+        shadowRadius: 6,
+        elevation: 2,
+    },
+    loyaltyIconCircle: {
+        width: 42,
+        height: 42,
+        borderRadius: 21,
+        backgroundColor: "#fdf1de",
+        alignItems: "center",
+        justifyContent: "center",
+        marginRight: 12,
     },
     cardTitle: {
-        fontSize: 16,
-        fontFamily: "Medium",
-        lineHeight: Math.round(16 * 1.5),
-    },
-    cardValue: {
-        fontSize: 20,
-        fontFamily: "Medium",
-        lineHeight: Math.round(20 * 1.5),
+        fontSize: 15,
+        fontFamily: "SemiBold",
+        lineHeight: Math.round(15 * 1.5),
     },
     cardSubtitle: {
         fontSize: 12,
         fontFamily: "Medium",
+        opacity: 0.55,
+        marginTop: 1,
         lineHeight: Math.round(12 * 1.5),
+    },
+    pointsPill: {
+        flexDirection: "row",
+        alignItems: "baseline",
+        backgroundColor: "#e8f5ee",
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 20,
+        gap: 3,
+    },
+    cardValue: {
+        fontSize: 15,
+        fontFamily: "SemiBold",
+        color: GREEN,
+        lineHeight: Math.round(15 * 1.5),
+    },
+    pointsLabel: {
+        fontSize: 11,
+        fontFamily: "Medium",
+        color: GREEN,
+        opacity: 0.8,
+        lineHeight: Math.round(11 * 1.5),
+    },
+    settingsCard: {
+        backgroundColor: "#ffffff",
+        borderRadius: 16,
+        padding: 16,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 6,
+        elevation: 1,
     },
     menuContainer: {
         paddingHorizontal: 16,
@@ -525,18 +643,18 @@ const styles = StyleSheet.create({
         alignItems: "center",
         paddingVertical: 13,
         paddingHorizontal: 14,
-        borderRadius: 12,
+        borderRadius: 14,
         marginBottom: 8,
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.05,
-        shadowRadius: 2,
+        shadowRadius: 3,
         elevation: 1,
     },
     iconCircle: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        width: 38,
+        height: 38,
+        borderRadius: 19,
         backgroundColor: "#e8f5ee",
         alignItems: "center",
         justifyContent: "center",
@@ -561,6 +679,6 @@ const styles = StyleSheet.create({
         height: 1,
         marginVertical: 20,
         marginHorizontal: 12,
-        backgroundColor: "#dadada",
+        backgroundColor: "#eeeeee",
     },
 });

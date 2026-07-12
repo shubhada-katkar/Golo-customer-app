@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import {
   View, Text, TextInput, StyleSheet, TouchableOpacity,
 } from "react-native";
@@ -8,8 +8,17 @@ import { useNavigation } from "@react-navigation/native";
 
 export default function Vehicles({ formData, setFormData, category, onPrevious, template, price, selectedDays, selectedLocations, selectedDates, startDate, endDate }) {
   if (category?.id !== "vehicles") return null;
-  const [selectedTab, setSelectedTab] = useState("sell");
+  const [selectedTab, setSelectedTab] = useState(
+    formData?.type === "Rent" ? "Rent" : "Sell"
+  );
   const navigation = useNavigation();
+
+  useEffect(() => {
+    const desiredType = selectedTab === "Rent" ? "Rent" : "Sell";
+    if (formData?.type !== desiredType) {
+      setFormData({ ...formData, type: desiredType });
+    }
+  }, [selectedTab, formData, setFormData]);
 
   const ConditionButton = ({ label, value, field }) => (
     <TouchableOpacity
@@ -75,17 +84,17 @@ export default function Vehicles({ formData, setFormData, category, onPrevious, 
         <TouchableOpacity
           style={[
             styles.tab,
-            selectedTab === "sell" && styles.activeTab
+            selectedTab === "Sell" && styles.activeTab
           ]}
           onPress={() => {
-            setSelectedTab("sell");
+            setSelectedTab("Sell");
             setFormData({ ...formData, type: "Sell" });
           }}
         >
           <Text
             style={[
               styles.tabText,
-              selectedTab === "sell" && styles.activeTabText
+              selectedTab === "Sell" && styles.activeTabText
             ]}
           >
             Sell
@@ -95,17 +104,17 @@ export default function Vehicles({ formData, setFormData, category, onPrevious, 
         <TouchableOpacity
           style={[
             styles.tab,
-            selectedTab === "rent" && styles.activeTab
+            selectedTab === "Rent" && styles.activeTab
           ]}
           onPress={() => {
-            setSelectedTab("rent");
+            setSelectedTab("Rent");
             setFormData({ ...formData, type: "Rent" });
           }}
         >
           <Text
             style={[
               styles.tabText,
-              selectedTab === "rent" && styles.activeTabText
+              selectedTab === "Rent" && styles.activeTabText
             ]}
           >
             Rent
@@ -117,7 +126,7 @@ export default function Vehicles({ formData, setFormData, category, onPrevious, 
 
       <View style={styles.formCard}>
 
-        {selectedTab === "sell" && (
+        {selectedTab === "Sell" && (
           <>
             <Text style={styles.label}>Vehicle Type</Text>
             <View style={styles.pickerWrap}>
@@ -127,11 +136,11 @@ export default function Vehicles({ formData, setFormData, category, onPrevious, 
                 mode="dropdown"
               >
                 <Picker.Item label="Vehicle Type" value="" />
-                <Picker.Item label="Four Wheeler" value="fourWheeler" />
-                <Picker.Item label="Two Wheeler" value="twoWheeler" />
-                <Picker.Item label="Three Wheeler" value="threeWheeler" />
-                <Picker.Item label="Truck" value="truck" />
-                <Picker.Item label="Other Vehicle" value="otherVehicle" />
+                <Picker.Item label="Four Wheeler" value="Four Wheeler" />
+                <Picker.Item label="Two Wheeler" value="Two Wheeler" />
+                <Picker.Item label="Three Wheeler" value="Three Wheeler" />
+                <Picker.Item label="Truck" value="Truck" />
+                <Picker.Item label="Other Vehicle" value="Other Vehicle" />
               </Picker>
             </View>
 
@@ -193,10 +202,10 @@ export default function Vehicles({ formData, setFormData, category, onPrevious, 
                 mode="dropdown"
               >
                 <Picker.Item label="Fuel Type" value="" />
-                <Picker.Item label="Petrol" value="petrol" />
-                <Picker.Item label="Diesel" value="diesel" />
-                <Picker.Item label="CNG" value="cng" />
-                <Picker.Item label="Electric" value="electric" />
+                <Picker.Item label="Petrol" value="Petrol" />
+                <Picker.Item label="Diesel" value="Diesel" />
+                <Picker.Item label="CNG" value="CNG" />
+                <Picker.Item label="Electric" value="Electric" />
               </Picker>
             </View>
 
@@ -214,9 +223,9 @@ export default function Vehicles({ formData, setFormData, category, onPrevious, 
                 mode="dropdown"
               >
                 <Picker.Item label="Ownership" value="" />
-                <Picker.Item label="Single Owner" value="singleOwner" />
-                <Picker.Item label="Second Owner" value="secondOwner" />
-                <Picker.Item label="Third Owner" value="thirdOwner" />
+                <Picker.Item label="Single Owner" value="Single Owner" />
+                <Picker.Item label="Second Owner" value="Second Owner" />
+                <Picker.Item label="Third Owner" value="Third Owner" />
               </Picker>
             </View>
 
@@ -238,9 +247,9 @@ export default function Vehicles({ formData, setFormData, category, onPrevious, 
 
             <Text style={styles.label}>Condition</Text>
             <View style={styles.segmentRow}>
-              <ConditionButton label="Excellent" value="excellent" field="condition" />
-              <ConditionButton label="Very Good" value="veryGood" field="condition" />
-              <ConditionButton label="Good" value="good" field="condition" />
+              <ConditionButton label="Excellent" value="Excellent" field="condition" />
+              <ConditionButton label="Very Good" value="Very Good" field="condition" />
+              <ConditionButton label="Good" value="Good" field="condition" />
             </View>
 
             <Text style={styles.label}>Price</Text>
@@ -255,7 +264,7 @@ export default function Vehicles({ formData, setFormData, category, onPrevious, 
           </>
         )}
 
-        {selectedTab === "rent" && (
+        {selectedTab === "Rent" && (
           <>
             <Text style={styles.label}>Vehicle Type</Text>
             <View style={styles.pickerWrap}>
@@ -265,11 +274,11 @@ export default function Vehicles({ formData, setFormData, category, onPrevious, 
                 mode="dropdown"
               >
                 <Picker.Item label="Vehicle Type" value="" />
-                <Picker.Item label="Four Wheeler" value="fourWheeler" />
-                <Picker.Item label="Two Wheeler" value="twoWheeler" />
-                <Picker.Item label="Three Wheeler" value="threeWheeler" />
-                <Picker.Item label="Truck" value="truck" />
-                <Picker.Item label="Other Vehicle" value="otherVehicle" />
+                <Picker.Item label="Four Wheeler" value="Four Wheeler" />
+                <Picker.Item label="Two Wheeler" value="Two Wheeler" />
+                <Picker.Item label="Three Wheeler" value="Three Wheeler" />
+                <Picker.Item label="Truck" value="Truck" />
+                <Picker.Item label="Other Vehicle" value="Other Vehicle" />
               </Picker>
             </View>
 
@@ -305,9 +314,9 @@ export default function Vehicles({ formData, setFormData, category, onPrevious, 
 
             <Text style={styles.label}>Includes Driver</Text>
             <View style={styles.segmentRow}>
-              <ConditionButton label="Yes" value="yes" field="includesDriver" />
-              <ConditionButton label="No" value="no" field="includesDriver" />
-              <ConditionButton label="Both" value="both" field="includesDriver" />
+              <ConditionButton label="Yes" value="Yes" field="includesDriver" />
+              <ConditionButton label="No" value="No" field="includesDriver" />
+              <ConditionButton label="Both" value="Both" field="includesDriver" />
             </View>
 
             <Text style={styles.label}>Min Rental Duration (Days)</Text>
@@ -335,7 +344,7 @@ const styles = StyleSheet.create({
   formCard: { backgroundColor: "#fff", paddingHorizontal: 16, borderRadius: 10, paddingBottom: 18, marginTop: 10 },
   label: { fontSize: 16, marginTop: 16, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
   value: { fontSize: 16, color: "#555", fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
-  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10, marginTop: 6 },
+  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10, marginTop: 6, fontFamily: "Medium", fontSize:14 },
   textArea: { height: 80, textAlignVertical: "top" },
   switchRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 12 },
 

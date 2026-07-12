@@ -8,6 +8,7 @@ import { Linking } from "react-native";
 import { getAdId, isFavoriteAdId, toggleFavoriteAd } from "../services/favoritesService";
 import { trackAdCardClick, trackContactClick } from "../services/analyticsService";
 import { BASE_URL } from "../config";
+import { ensureAuthenticated } from "../services/authService";
 
 const GENERIC_SELLER_NAMES = new Set(["seller", "user", "anonymous", "unknown"]);
 
@@ -85,7 +86,13 @@ export default function Template3Card({ ad, navigation }) {
         }
     };
 
-    const handleOpenChat = () => {
+    const handleOpenChat = async () => {
+        try {
+            await ensureAuthenticated(navigation);
+        } catch {
+            return;
+        }
+
         const adIdentifier = ad?.adId || ad?._id;
         if (adIdentifier) {
             trackContactClick(adIdentifier).catch((error) => {
