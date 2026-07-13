@@ -242,9 +242,17 @@ function getErrorMessageFromResponse(data) {
         }
     };
 
+    if (typeof data === "string" && data.trim()) {
+        candidates.push(data.trim());
+        return candidates.join(" ");
+    }
+
     pushValue(data?.message);
     pushValue(data?.error);
     pushValue(data?.details);
+    pushValue(data?.response?.message);
+    pushValue(data?.response?.error);
+    pushValue(data?.response?.details);
 
     return candidates.join(" ");
 }
@@ -256,6 +264,8 @@ function isModerationFailureResponse(data) {
         "moderation",
         "flagged",
         "content policy",
+        "cannot be uploaded",
+        "policy violation",
         "violat",
         "unsafe",
     ].some((token) => message.includes(token));
@@ -458,24 +468,36 @@ export default function Payment({ navigation, route }) {
                 body: JSON.stringify(payload)
             });
 
-            const data = await response.json().catch(() => ({}));
-
-            if (!response.ok) {
-                if (isModerationFailureResponse(data)) {
-                    try {
-                        await AsyncStorage.setItem("golo_images_flagged", "true");
-                    } catch (storageError) {
-                        // Ignore storage issues for the moderation flow.
-                    }
-                    setFlaggedModalVisible(true);
-                    return;
+            const rawResponseText = await response.text().catch(() => "");
+            let data = {};
+            if (rawResponseText.trim()) {
+                try {
+                    data = JSON.parse(rawResponseText);
+                } catch {
+                    data = { message: rawResponseText };
                 }
+            }
 
-                let errorMessage = "Failed to post ad.";
-                if (data.message) {
-                    errorMessage = Array.isArray(data.message) ? data.message.join(" ") : data.message;
+            const responseMessage = getErrorMessageFromResponse(data) || rawResponseText.trim();
+            const moderationDetected = isModerationFailureResponse(data)
+                || isModerationFailureResponse(responseMessage)
+                || (response.status === 400 && responseMessage.toLowerCase().includes("image"))
+                || (response.status === 400 && responseMessage.toLowerCase().includes("upload"))
+                || (data?.success === false && responseMessage.toLowerCase().includes("image"))
+                || (data?.success === false && responseMessage.toLowerCase().includes("upload"));
+
+            if (moderationDetected) {
+                try {
+                    await AsyncStorage.setItem("golo_images_flagged", "true");
+                } catch (storageError) {
+                    // Ignore storage issues for the moderation flow.
                 }
-                Alert.alert("Failed", errorMessage);
+                setFlaggedModalVisible(true);
+                return;
+            }
+
+            if (!response.ok || data?.success === false) {
+                Alert.alert("Failed", responseMessage || "Failed to post ad.");
                 return;
             }
 
@@ -495,6 +517,21 @@ export default function Payment({ navigation, route }) {
                 Alert.alert("Failed", errorMessage);
             }
         } catch (error) {
+            const errorMessage = getErrorMessageFromResponse(error);
+            const moderationDetected = isModerationFailureResponse(errorMessage)
+                || errorMessage.toLowerCase().includes("image")
+                || errorMessage.toLowerCase().includes("upload");
+
+            if (moderationDetected) {
+                try {
+                    await AsyncStorage.setItem("golo_images_flagged", "true");
+                } catch (storageError) {
+                    // Ignore storage issues for the moderation flow.
+                }
+                setFlaggedModalVisible(true);
+                return;
+            }
+
             Alert.alert("Error", "An unexpected error occurred while posting.");
         } finally {
             setIsSubmitting(false);
@@ -896,5 +933,6 @@ const styles = StyleSheet.create({
         color: "#fff",
         fontSize: 15,
         fontFamily: "Medium",
+        lineHeight: Math.round(15 * 1.4),
     },
 });

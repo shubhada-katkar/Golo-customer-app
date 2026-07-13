@@ -20,6 +20,7 @@ import Preview from './screens/Preview';
 import Payment from './screens/Payment';
 import ChatScreen from './screens/ChatScreen';
 import GoloHome from './screens/GoloHome';
+import GoloDeals from './screens/GoloDeals';
 import GoloFav from './screens/GoloFav';
 import OfferDetails from './screens/OfferDetails';
 import Claimed from './screens/Claimed';
@@ -109,6 +110,7 @@ export default function App() {
           <Stack.Screen name='Payment' component={Payment} />
           <Stack.Screen name='ChatScreen' component={ChatScreen} />
           <Stack.Screen name='GoloHome' component={GoloHome} />
+          <Stack.Screen name='GoloDeals' component={GoloDeals} />
           <Stack.Screen name='GoloFav' component={GoloFav} />
           <Stack.Screen name="OfferDetails" component={OfferDetails} />
           <Stack.Screen name="ProductDetail" component={ProductDetail} />

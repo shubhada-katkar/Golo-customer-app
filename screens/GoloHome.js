@@ -238,10 +238,18 @@ const offerTypeMatches = (offer, selectedOfferTypesStr) => {
 
 const DEFAULT_RADIUS_KM = 50;
 
-export default function GoloHome() {
+export default function GoloHome({ route }) {
     const navigation = useNavigation();
     const { colors } = useContext(ThemeContext);
     const [selectedCategory, setSelectedCategory] = useState(null);
+
+    React.useEffect(() => {
+        if (route?.params?.category) {
+            setSelectedCategory(route.params.category);
+            navigation.setParams({ category: undefined });
+        }
+    }, [route?.params?.category]);
+
     const [showAllCategories, setShowAllCategories] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [offers, setOffers] = useState([]);

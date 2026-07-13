@@ -281,8 +281,6 @@ export default function StorePage({ route, navigation }) {
               <View style={styles.profileTextBox}>
                 <Text style={styles.merchantName}>{merchantName}</Text>
                 <Text style={styles.storeName}>{storeName}</Text>
-                <View style={styles.metaRow}>
-                  <Text style={styles.followerCount}>{formatFollowerLabel(followersCount)}</Text>
                   <TouchableOpacity
                     style={[styles.followButton, isFollowing && styles.followButtonActive]}
                     onPress={handleFollowToggle}
@@ -296,7 +294,6 @@ export default function StorePage({ route, navigation }) {
                       </Text>
                     )}
                   </TouchableOpacity>
-                </View>
               </View>
             </View>
           </View>
@@ -451,6 +448,7 @@ const styles = StyleSheet.create({
     minWidth: 94,
     alignItems: 'center',
     justifyContent: 'center',
+    alignSelf: 'flex-end',
   },
   followButtonActive: {
     backgroundColor: '#fff4d8',

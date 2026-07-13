@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useRef, useMemo } from "react";
+import React, { useState, useEffect, useContext, useRef, useMemo, useCallback } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,9 @@ import {
   StyleSheet,
   StatusBar,
   Dimensions,
+  Share,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
 import { Feather, Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { ThemeContext } from "../theme/ThemeContext";
@@ -16,6 +19,9 @@ import Topbar from "../components/Topbar";
 import GoloBottom from "../components/GoloBottom";
 import { BASE_URL } from "../config";
 import { LinearGradient } from "expo-linear-gradient";
+import { Video, ResizeMode } from "expo-av";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFocusEffect } from "@react-navigation/native";
 
 const { width } = Dimensions.get("window");
 const CONTAINER_WIDTH = width - 32;
@@ -65,6 +71,22 @@ const getAllProductImages = (product) => {
   return singleImage ? [singleImage] : [];
 };
 
+const getAllMediaItems = (product) => {
+  const images = getAllProductImages(product);
+  const media = images.map((uri) => ({ type: "image", uri }));
+  const videoUrl = getProductVideo(product);
+
+  if (videoUrl) {
+    media.push({
+      type: "video",
+      uri: videoUrl,
+      title: getProductVideoName(product),
+    });
+  }
+
+  return media;
+};
+
 const getProductName = (product) => {
   return (
     product?.productName ||
@@ -83,6 +105,60 @@ const getProductPrice = (product) => {
     formatPrice(product?.salePrice) ||
     formatPrice(product?.finalPrice)
   );
+};
+
+const getVideoFileName = (videoUrl) => {
+  if (typeof videoUrl !== "string" || !videoUrl.trim()) {
+    return null;
+  }
+
+  const sanitizedUrl = videoUrl.split("?")[0].split("#")[0];
+  const fileName = sanitizedUrl.split("/").pop();
+
+  if (!fileName || fileName === "upload") {
+    return null;
+  }
+
+  return fileName;
+};
+
+const getProductVideo = (product) => {
+  if (!product) return null;
+
+  const videoObject = product?.video && typeof product.video === "object" ? product.video : null;
+
+  const candidate =
+    product?.videoUrl ||
+    product?.video ||
+    videoObject?.url ||
+    videoObject?.videoUrl ||
+    videoObject?.uri ||
+    null;
+
+  if (typeof candidate === "string" && candidate.trim()) {
+    return candidate.trim();
+  }
+
+  return null;
+};
+
+const getProductVideoName = (product) => {
+  const videoObject = product?.video && typeof product.video === "object" ? product.video : null;
+  const directName =
+    typeof videoObject?.fileName === "string" && videoObject.fileName.trim()
+      ? videoObject.fileName.trim()
+      : typeof videoObject?.name === "string" && videoObject.name.trim()
+        ? videoObject.name.trim()
+        : typeof product?.videoName === "string" && product.videoName.trim()
+          ? product.videoName.trim()
+          : typeof product?.fileName === "string" && product.fileName.trim()
+            ? product.fileName.trim()
+            : null;
+
+  if (directName) return directName;
+
+  const fallbackName = getVideoFileName(getProductVideo(product));
+  return fallbackName || "Uploaded video";
 };
 
 const buildProductFields = (product) => {
@@ -145,6 +221,27 @@ const buildProductFetchUrls = (resolvedProductId, product) => {
   return [webEndpoint, merchantPublicEndpoint];
 };
 
+// Helper to resolve the offerId associated with the product (for like/wishlist)
+const resolveOfferIdForProduct = (product, routeParams) => {
+  return (
+    routeParams?.offerId ||
+    product?.offerId ||
+    product?.offer_id ||
+    product?.requestId ||
+    null
+  );
+};
+
+async function getAuthHeaders() {
+  const token = await AsyncStorage.getItem("customerToken");
+  if (!token) return null;
+  return {
+    Authorization: `Bearer ${token}`,
+    Accept: "application/json",
+    "Content-Type": "application/json",
+  };
+}
+
 export default function ProductDetail({ route, navigation }) {
   const { colors } = useContext(ThemeContext);
   const routeProduct = route?.params?.product;
@@ -154,10 +251,15 @@ export default function ProductDetail({ route, navigation }) {
   const [hasFetchedProduct, setHasFetchedProduct] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
 
+  // Like / share state
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
+
   const sliderRef = useRef(null);
   const timerRef = useRef(null);
 
   const resolvedProductId = resolveProductId(initialProduct) || routeProductId;
+  const offerId = resolveOfferIdForProduct(initialProduct, route?.params);
 
   useEffect(() => {
     const shouldFetchDescription =
@@ -202,26 +304,137 @@ export default function ProductDetail({ route, navigation }) {
     };
   }, [resolvedProductId, product, hasFetchedProduct]);
 
+  // Check if product/offer is already in wishlist
+  const checkFavoriteStatus = useCallback(async () => {
+    const idToCheck = offerId || resolvedProductId;
+    if (!idToCheck) return;
+    try {
+      const headers = await getAuthHeaders();
+      if (!headers) return;
+      const response = await fetch(`${BASE_URL}/users/wishlist/ids`, { headers });
+      if (response?.ok) {
+        const json = await response.json();
+        if (Array.isArray(json?.data)) {
+          setIsFavorite(json.data.some((id) => String(id) === String(idToCheck)));
+        }
+      }
+    } catch (error) {
+      console.warn("[ProductDetail] Failed to check favorite status:", error);
+    }
+  }, [offerId, resolvedProductId]);
+
+  useFocusEffect(
+    useCallback(() => {
+      checkFavoriteStatus();
+    }, [checkFavoriteStatus])
+  );
+
+  const handleToggleFavorite = async () => {
+    if (favoriteLoading) return;
+    const idToLike = offerId || resolvedProductId;
+    if (!idToLike) {
+      Alert.alert("Cannot Like", "Product identifier is not available.");
+      return;
+    }
+    setFavoriteLoading(true);
+    try {
+      const headers = await getAuthHeaders();
+      if (!headers) {
+        Alert.alert("Login Required", "Please log in to like products.");
+        setFavoriteLoading(false);
+        return;
+      }
+
+      // If we have an offerId, use the product like endpoint which also records product details
+      if (offerId) {
+        const response = await fetch(`${BASE_URL}/users/likes/product`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            offerId,
+            product: {
+              productId: resolvedProductId || "",
+              productName: getProductName(product),
+              imageUrl: getProductImage(product) || "",
+              category: product?.category || "",
+              price: product?.price || product?.mrp || 0,
+            },
+          }),
+        });
+        if (response?.ok) {
+          const json = await response.json();
+          const liked = json?.data?.liked ?? true;
+          setIsFavorite(liked);
+          Alert.alert(liked ? "Liked!" : "Removed", liked ? "Product liked successfully." : "Product removed from likes.");
+          return;
+        }
+      }
+
+      // Fallback: use the general wishlist toggle
+      const response = await fetch(
+        `${BASE_URL}/users/wishlist/${encodeURIComponent(idToLike)}`,
+        { method: "POST", headers }
+      );
+      if (response?.ok) {
+        const json = await response.json();
+        const added = Boolean(json?.data?.added);
+        setIsFavorite(added);
+        Alert.alert(added ? "Liked!" : "Removed", added ? "Added to your favorites." : "Removed from favorites.");
+      } else {
+        Alert.alert("Error", "Unable to update like status.");
+      }
+    } catch (error) {
+      Alert.alert("Error", error?.message || "Unable to update like right now.");
+    } finally {
+      setFavoriteLoading(false);
+    }
+  };
+
+  const handleShareProduct = async () => {
+    try {
+      const name = getProductName(product);
+      const price = getProductPrice(product);
+      const description = getProductDescription(product);
+      const shareMessage = [
+        `Product: ${name}`,
+        price ? `Price: ${price}` : null,
+        product?.category ? `Category: ${product.category}` : null,
+        description ? `Details: ${description}` : null,
+      ]
+        .filter(Boolean)
+        .join("\n");
+
+      await Share.share({
+        title: name,
+        message: shareMessage,
+      });
+    } catch (error) {
+      Alert.alert("Share Error", error?.message || "Unable to share this product right now.");
+    }
+  };
+
   const name = getProductName(product);
   const price = getProductPrice(product);
   const details = getProductDescription(product) || "No additional product details available.";
   const extraFields = buildProductFields(product);
 
-  const allImages = useMemo(() => getAllProductImages(product), [product]);
+  const allMedia = useMemo(() => getAllMediaItems(product), [product]);
+
+  const [videoPlaying, setVideoPlaying] = useState(false);
 
   const startAutoSlide = () => {
     stopAutoSlide();
-    if (allImages.length <= 1) return;
+    if (allMedia.length <= 1) return;
     timerRef.current = setInterval(() => {
       setActiveImageIndex((prev) => {
-        const nextIndex = (prev + 1) % allImages.length;
+        const nextIndex = (prev + 1) % allMedia.length;
         sliderRef.current?.scrollTo({
           x: nextIndex * CONTAINER_WIDTH,
           animated: true,
         });
         return nextIndex;
       });
-    }, 3000);
+    }, 5000);
   };
 
   const stopAutoSlide = () => {
@@ -231,11 +444,21 @@ export default function ProductDetail({ route, navigation }) {
     }
   };
 
+
   useEffect(() => {
     setActiveImageIndex(0);
     startAutoSlide();
     return () => stopAutoSlide();
-  }, [allImages]);
+  }, [allMedia]);
+
+
+  useEffect(() => {
+    if (videoPlaying) {
+      stopAutoSlide();
+    } else {
+      startAutoSlide();
+    }
+  }, [videoPlaying]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
@@ -253,12 +476,28 @@ export default function ProductDetail({ route, navigation }) {
           <MaterialIcons name="arrow-back-ios" size={22} color={colors.text} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.text }]}>Product Details</Text>
-        <View style={styles.headerPlaceholder} />
+        <View style={styles.headerRight}>
+          <TouchableOpacity onPress={handleToggleFavorite} disabled={favoriteLoading}>
+            {favoriteLoading ? (
+              <ActivityIndicator size="small" color="#e74c3c" style={styles.icon} />
+            ) : (
+              <Ionicons
+                name={isFavorite ? "heart" : "heart-outline"}
+                size={22}
+                color={isFavorite ? "#e74c3c" : colors.text}
+                style={styles.icon}
+              />
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleShareProduct}>
+            <Ionicons name="share-social-outline" size={22} style={{ color: colors.text }} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.imageWrapper}>
-          {allImages.length > 1 ? (
+          {allMedia.length > 1 ? (
             <View style={styles.carouselContainer}>
               <ScrollView
                 ref={sliderRef}
@@ -272,17 +511,38 @@ export default function ProductDetail({ route, navigation }) {
                 onScrollBeginDrag={stopAutoSlide}
                 onScrollEndDrag={startAutoSlide}
               >
-                {allImages.map((uri, index) => (
-                  <Image
-                    key={index}
-                    source={{ uri }}
-                    style={{ width: CONTAINER_WIDTH, height: 260, resizeMode: "cover" }}
-                  />
-                ))}
+                {allMedia.map((item, index) =>
+                  item.type === "video" ? (
+                    <View
+                      key={`${item.uri}-${index}`}
+                      style={[styles.mediaSlide, { backgroundColor: colors.card || "#fff" }]}
+                    >
+                      <Video
+                        source={{ uri: item.uri }}
+                        style={styles.videoPlayer}
+                        useNativeControls
+                        resizeMode={ResizeMode.COVER}
+                        shouldPlay={false}
+                        isLooping={false}
+                        onPlaybackStatusUpdate={(status) => {
+                          if (status.isLoaded && status.isPlaying !== videoPlaying) {
+                            setVideoPlaying(status.isPlaying);
+                          }
+                        }}
+                      />
+                    </View>
+                  ) : (
+                    <Image
+                      key={`${item.uri}-${index}`}
+                      source={{ uri: item.uri }}
+                      style={{ width: CONTAINER_WIDTH, height: 260, resizeMode: "cover" }}
+                    />
+                  )
+                )}
               </ScrollView>
 
               <View style={styles.dotsContainer}>
-                {allImages.map((_, index) => (
+                {allMedia.map((_, index) => (
                   <View
                     key={index}
                     style={[
@@ -293,8 +553,21 @@ export default function ProductDetail({ route, navigation }) {
                 ))}
               </View>
             </View>
-          ) : allImages.length === 1 ? (
-            <Image source={{ uri: allImages[0] }} style={styles.productImage} />
+          ) : allMedia.length === 1 ? (
+            allMedia[0]?.type === "video" ? (
+              <View style={[styles.mediaSlide, { backgroundColor: colors.card || "#fff" }]}>
+                <Video
+                  source={{ uri: allMedia[0].uri }}
+                  style={styles.videoPlayer}
+                  useNativeControls
+                  resizeMode={ResizeMode.COVER}
+                  shouldPlay={false}
+                  isLooping={false}
+                />
+              </View>
+            ) : (
+              <Image source={{ uri: allMedia[0].uri }} style={styles.productImage} />
+            )
           ) : (
             <View style={[styles.imagePlaceholder, { backgroundColor: colors.card || "#fff" }]}>
               <Ionicons name="image-outline" size={60} color="#9a9a9a" />
@@ -355,6 +628,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
@@ -365,6 +639,14 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontFamily: "SemiBold",
     lineHeight: Math.round(20 * 1.5),
+    flex: 1,
+  },
+  headerRight: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  icon: {
+    marginRight: 12,
   },
   headerPlaceholder: {
     width: 32,
@@ -482,6 +764,21 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.12,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
+  },
+  mediaSlide: {
+    width: CONTAINER_WIDTH,
+    height: 260,
+    borderRadius: 18,
+    overflow: "hidden",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  videoPlayer: {
+    width: CONTAINER_WIDTH,
+    height: 260,
+    borderRadius: 18,
+    backgroundColor: "#000",
+    overflow: "hidden",
   },
   dotsContainer: {
     position: "absolute",
