@@ -61,17 +61,17 @@ export default function Others({ formData, setFormData, category, onPrevious, te
 
         <Text style={styles.label}>Description</Text>
 
-       <TextInput
-  style={styles.descriptionInput}
-  value={formData.description || ""}
-  onChangeText={(text) =>
-    setFormData({ ...formData, description: text })
-  }
-  placeholder="Enter a detailed description"
-  multiline
-  textAlignVertical="top" // Starts text from the top (Android)
-  scrollEnabled={true}    // Enables vertical scrolling
-/>
+        <TextInput
+          style={styles.descriptionInput}
+          value={formData.description || ""}
+          onChangeText={(text) =>
+            setFormData({ ...formData, description: text })
+          }
+          placeholder="Enter a detailed description"
+          multiline
+          textAlignVertical="top" // Starts text from the top (Android)
+          scrollEnabled={true}    // Enables vertical scrolling
+        />
 
         <Text style={styles.label}>Price</Text>
         <TextInput
@@ -84,9 +84,9 @@ export default function Others({ formData, setFormData, category, onPrevious, te
         />
       </View>
 
-            <TouchableOpacity style={styles.nextBtn} onPress={() => {navigation.navigate("Preview", {template, category, formData, price, selectedDays, selectedLocations, selectedDates, startDate, endDate });}}>
-                <Text style={styles.nextText}>See Preview</Text>
-            </TouchableOpacity>
+      <TouchableOpacity style={styles.nextBtn} onPress={() => { navigation.navigate("CalendarScreen", { category, template, formData, price }); }}>
+        <Text style={styles.nextText}>See Preview</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -97,20 +97,20 @@ const styles = StyleSheet.create({
   formCard: { backgroundColor: "#fff", paddingHorizontal: 16, borderRadius: 10, paddingBottom: 18 },
   label: { fontSize: 16, marginTop: 16, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
   value: { fontSize: 16, color: "#555", fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
-  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10, marginTop: 6, fontSize:14, fontFamily:"Medium" },
+  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10, marginTop: 6, fontSize: 14, fontFamily: "Medium" },
   textArea: { height: 80, textAlignVertical: "top" },
   switchRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 12 },
- descriptionInput: {
-  borderWidth: 1,
-  borderColor: "#ccc",
-  borderRadius: 8,
-  padding: 12,
-  minHeight: 150,      // Increased height
-  maxHeight: 150,      // Keeps the box fixed after this height
-  fontSize: 14,
-  textAlignVertical: "top",
-  fontFamily:"Medium"
-},
+  descriptionInput: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    padding: 12,
+    minHeight: 150,      // Increased height
+    maxHeight: 150,      // Keeps the box fixed after this height
+    fontSize: 14,
+    textAlignVertical: "top",
+    fontFamily: "Medium"
+  },
   uploadBox: {
     borderWidth: 1,
     borderStyle: "dashed",

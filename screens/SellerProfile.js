@@ -21,6 +21,7 @@ import { BASE_URL } from '../config';
 import Topbar from '../components/Topbar';
 import { ThemeContext } from '../theme/ThemeContext';
 import { ensureAuthenticated } from '../services/authService';
+import Template1Card from '../components/Template1Card';
 
 const { width } = Dimensions.get('window');
 
@@ -38,6 +39,8 @@ export default function SellerProfile({ route, navigation }) {
   const { sellerId, adId, adTitle, adImage } = route.params || {};
   const [seller, setSeller] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [ads, setAds] = useState([]);
+  const [adsLoading, setAdsLoading] = useState(true);
 
   // Report modal states
   const [showReportModal, setShowReportModal] = useState(false);
@@ -72,8 +75,24 @@ export default function SellerProfile({ route, navigation }) {
       }
     };
 
+    const fetchSellerAds = async () => {
+      try {
+        const res = await fetch(`${BASE_URL}/ads/user/${sellerId}`);
+        const json = await res.json();
+        if (json.success && Array.isArray(json.data)) {
+          const filtered = json.data.filter(item => (item.adId || item._id || item.id) !== adId);
+          setAds(filtered);
+        }
+      } catch (err) {
+        console.error('Error fetching seller ads:', err);
+      } finally {
+        setAdsLoading(false);
+      }
+    };
+
     fetchSellerData();
-  }, [sellerId, BASE_URL]);
+    fetchSellerAds();
+  }, [sellerId, adId, BASE_URL]);
 
   const handleCall = async () => {
     const phone = seller?.profile?.phone;
@@ -225,6 +244,33 @@ export default function SellerProfile({ route, navigation }) {
                   {seller?.profile?.phone ? `Call ${seller.profile.phone}` : "Phone Not Provided"}
                 </Text>
               </TouchableOpacity>
+            </View>
+
+            {/* Other Ads Section */}
+            <View style={styles.otherAdsSection}>
+              <Text style={styles.otherAdsTitle}>Other Ads Posted by Seller</Text>
+              {adsLoading ? (
+                <ActivityIndicator size="small" color="#157a4f" style={{ marginVertical: 20 }} />
+              ) : ads.length === 0 ? (
+                <Text style={styles.noAdsText}>No other ads posted by this seller.</Text>
+              ) : (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.horizontalAdsList}
+                >
+                  {ads.map((item, index) => {
+                    return (
+                      <View key={`${item._id || item.adId}-${index}`} style={styles.adCardWrapper}>
+                        <Template1Card
+                          ad={item}
+                          navigation={navigation}
+                        />
+                      </View>
+                    );
+                  })}
+                </ScrollView>
+              )}
             </View>
           </ScrollView>
       </SafeAreaView>
@@ -517,5 +563,32 @@ const styles = StyleSheet.create({
     fontFamily: "SemiBold",
     fontSize: 16,
     lineHeight: Math.round(16 * 1.5)
-  }
+  },
+  otherAdsSection: {
+    marginTop: 16,
+    paddingBottom: 20,
+  },
+  otherAdsTitle: {
+    fontSize: 16,
+    fontFamily: 'SemiBold',
+    color: '#333',
+    marginBottom: 12,
+    marginLeft: 16,
+    lineHeight: Math.round(16 * 1.5),
+  },
+  horizontalAdsList: {
+    paddingHorizontal: 16,
+    paddingBottom: 10,
+  },
+  adCardWrapper: {
+    width: width - 32,
+    marginRight: 16,
+  },
+  noAdsText: {
+    fontSize: 14,
+    color: '#666',
+    fontFamily: 'Medium',
+    textAlign: 'center',
+    marginTop: 10,
+  },
 });

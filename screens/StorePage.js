@@ -11,11 +11,13 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { WebView } from 'react-native-webview';
 import { BASE_URL } from '../config';
 import Topbar from '../components/Topbar';
 import { ensureAuthenticated } from '../services/authService';
 import {
   checkFollowStatus,
+  fetchAllOffers,
   fetchOfferDetails,
   fetchPublicMerchantProfile,
   toggleFollowMerchant,
@@ -40,6 +42,104 @@ const formatFollowerLabel = (value) => {
   return `${count} ${count === 1 ? 'follower' : 'followers'}`;
 };
 
+const leafletHtml = (lat, lng, name) => `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    html, body, #map {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      background: #f8f9fa;
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    var map = L.map('map', {
+      zoomControl: true,
+      attributionControl: false
+    }).setView([${lat}, ${lng}], 15);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19
+    }).addTo(map);
+
+    var marker = L.marker([${lat}, ${lng}]).addTo(map);
+    marker.bindPopup("<b>${name.replace(/"/g, '\\"')}</b>").openPopup();
+  </script>
+</body>
+</html>
+`;
+
+const getOfferImage = (item) =>
+  item?.imageUrl ||
+  item?.selectedProducts?.[0]?.imageUrl ||
+  item?.products?.[0]?.images?.[0] ||
+  item?.products?.[0]?.image?.url ||
+  "";
+
+const getOfferTitle = (item) => item?.bannerTitle || item?.title || "Untitled Offer";
+
+const getOfferSubtitle = (item) =>
+  item?.shopName ||
+  item?.merchantName ||
+  item?.businessName ||
+  item?.sellerName ||
+  item?.storeName ||
+  item?.merchant?.name ||
+  item?.merchant?.storeName ||
+  item?.selectedProducts?.[0]?.productName ||
+  item?.selectedProducts?.[0]?.name ||
+  "Nearby merchant";
+
+const formatPrice = (value) => {
+  if (value === undefined || value === null || value === "") {
+    return null;
+  }
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) ? `Rs ${numericValue}` : String(value);
+};
+
+const getOfferDisplayPrice = (item) => {
+  const directPrice = formatPrice(
+    item?.displayPrice ||
+    item?.discountedPrice ||
+    item?.offerPrice ||
+    item?.salePrice ||
+    item?.finalPrice ||
+    item?.price
+  );
+  if (directPrice) {
+    return directPrice;
+  }
+  const selectedProducts = Array.isArray(item?.selectedProducts)
+    ? item.selectedProducts
+    : [];
+  const lowestProductPrice = selectedProducts
+    .map((product) =>
+      formatPrice(
+        product?.offerPrice ||
+        product?.discountedPrice ||
+        product?.salePrice ||
+        product?.finalPrice ||
+        product?.displayPrice ||
+        product?.price
+      )
+    )
+    .filter(Boolean)
+    .map((value) => Number(String(value).replace(/[^0-9.-]/g, "")))
+    .filter((value) => Number.isFinite(value) && value > 0)
+    .sort((a, b) => a - b)[0];
+  return lowestProductPrice !== undefined ? formatPrice(lowestProductPrice) : null;
+};
+
 export default function StorePage({ route, navigation }) {
   const [merchantDetails, setMerchantDetails] = useState(null);
   const [merchantOwnerName, setMerchantOwnerName] = useState('');
@@ -47,6 +147,13 @@ export default function StorePage({ route, navigation }) {
   const [isFollowing, setIsFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  const [deals, setDeals] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [ratingStats, setRatingStats] = useState({ totalReviews: 0, averageRating: 0 });
+  const [dealsLoading, setDealsLoading] = useState(false);
+  const [productsLoading, setProductsLoading] = useState(false);
+  const [ratingLoading, setRatingLoading] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -119,12 +226,12 @@ export default function StorePage({ route, navigation }) {
           setFollowersCount(
             normalizeFollowerCount(
               details?.followersCount ||
-                details?.followerCount ||
-                passedMerchant?.followersCount ||
-                passedMerchant?.followerCount ||
-                route?.params?.followersCount ||
-                route?.params?.followerCount ||
-                0
+              details?.followerCount ||
+              passedMerchant?.followersCount ||
+              passedMerchant?.followerCount ||
+              route?.params?.followersCount ||
+              route?.params?.followerCount ||
+              0
             )
           );
         }
@@ -135,6 +242,52 @@ export default function StorePage({ route, navigation }) {
           const followState = await checkFollowStatus(resolvedMerchantId);
           if (isMounted) {
             setIsFollowing(Boolean(followState?.isFollowing));
+          }
+
+          // Fetch deals
+          if (isMounted) setDealsLoading(true);
+          try {
+            const allOffers = await fetchAllOffers({ limit: 1000 });
+            const merchantDeals = allOffers.filter(offer =>
+              String(offer?.merchantId || offer?.merchant?.merchantId || '') === String(resolvedMerchantId)
+            );
+            if (isMounted) setDeals(merchantDeals);
+          } catch (e) {
+            console.warn('Failed to load merchant deals', e);
+          } finally {
+            if (isMounted) setDealsLoading(false);
+          }
+
+          // Fetch products
+          if (isMounted) setProductsLoading(true);
+          try {
+            const prodRes = await fetch(`${BASE_URL}/merchant/products/public/${resolvedMerchantId}`);
+            if (prodRes.ok) {
+              const prodJson = await prodRes.json();
+              if (isMounted) {
+                setProducts(prodJson?.data?.products || []);
+              }
+            }
+          } catch (e) {
+            console.warn('Failed to load merchant products', e);
+          } finally {
+            if (isMounted) setProductsLoading(false);
+          }
+
+          // Fetch ratings
+          if (isMounted) setRatingLoading(true);
+          try {
+            const ratingRes = await fetch(`${BASE_URL}/reviews/merchant/${resolvedMerchantId}/public-stats`);
+            if (ratingRes.ok) {
+              const ratingJson = await ratingRes.json();
+              if (isMounted && ratingJson?.success && ratingJson?.data) {
+                setRatingStats(ratingJson.data);
+              }
+            }
+          } catch (e) {
+            console.warn('Failed to load rating stats', e);
+          } finally {
+            if (isMounted) setRatingLoading(false);
           }
         }
       } catch (error) {
@@ -220,20 +373,166 @@ export default function StorePage({ route, navigation }) {
 
   const profilePic = resolveImageUrl(
     merchantDetails?.profilePhoto ||
-      merchantDetails?.profilePic ||
-      merchantDetails?.avatar ||
-      merchantDetails?.merchant?.profilePhoto ||
-      merchantDetails?.merchant?.profilePic
+    merchantDetails?.profilePic ||
+    merchantDetails?.avatar ||
+    merchantDetails?.merchant?.profilePhoto ||
+    merchantDetails?.merchant?.profilePic
   );
 
   const storePic = resolveImageUrl(
     merchantDetails?.shopPhoto ||
-      merchantDetails?.storePic ||
-      merchantDetails?.storePhoto ||
-      merchantDetails?.merchant?.shopPhoto ||
-      merchantDetails?.merchant?.storePic ||
-      route?.params?.offerImage
+    merchantDetails?.storePic ||
+    merchantDetails?.storePhoto ||
+    merchantDetails?.merchant?.shopPhoto ||
+    merchantDetails?.merchant?.storePic ||
+    route?.params?.offerImage
   );
+
+  const latitude =
+    merchantDetails?.storeLocationLatitude ||
+    merchantDetails?.latitude ||
+    merchantDetails?.merchant?.storeLocationLatitude ||
+    null;
+
+  const longitude =
+    merchantDetails?.storeLocationLongitude ||
+    merchantDetails?.longitude ||
+    merchantDetails?.merchant?.storeLocationLongitude ||
+    null;
+
+  const hasCoords =
+    latitude !== null &&
+    longitude !== null &&
+    Number(latitude) !== 0 &&
+    Number(longitude) !== 0;
+
+  const DealCard = ({ item }) => {
+    const productImage = getOfferImage(item);
+    const title = getOfferTitle(item);
+    const subtitle = getOfferSubtitle(item);
+    const offerType = item?.bannerCategory || item?.offerType || item?.category || "-";
+    const endDate = item?.endDate || item?.validTo || null;
+    const displayPrice = getOfferDisplayPrice(item);
+
+    return (
+      <TouchableOpacity
+        activeOpacity={0.9}
+        style={styles.card}
+        onPress={() => navigation.navigate("OfferDetails", { offerData: item })}
+      >
+        <View style={styles.cardInner}>
+          {productImage ? (
+            <Image source={{ uri: resolveImageUrl(productImage) }} style={styles.image} />
+          ) : (
+            <View style={[styles.image, styles.imageFallback]}>
+              <MaterialIcons name="image" size={28} color="#8a8a8a" />
+            </View>
+          )}
+
+          <View style={styles.cardContent}>
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+              {displayPrice ? (
+                <Text style={styles.discountPrice} numberOfLines={1}>
+                  {displayPrice}
+                </Text>
+              ) : null}
+            </View>
+
+            <Text style={styles.title} numberOfLines={1}>
+              {title}
+            </Text>
+
+            <Text style={styles.subtitle} numberOfLines={1}>
+              By {subtitle}
+            </Text>
+
+            <Text style={styles.metaText} numberOfLines={1}>Offer Type: {offerType}</Text>
+
+            <Text style={styles.validText} numberOfLines={1}>
+              Expires: {endDate ? new Date(endDate).toDateString() : "-"}
+            </Text>
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  const ProductCard = ({ item }) => {
+    const productImage = item?.image;
+    const title = item?.name || "Product";
+    const subtitle = item?.category || "Category";
+    const displayPrice = item?.priceLabel || (item?.price ? `₹${item?.price}` : null);
+
+    // Stock and Status calculation
+    const stockInfo = item?.stock !== undefined && item?.stock !== null ? String(item.stock) : (item?.stockQuantity !== undefined && item?.stockQuantity !== null ? `${item.stockQuantity} units` : "N/A");
+
+    const getStockStatus = (p) => {
+      if (p?.status === "out of stock" || p?.status === "out_of_stock") {
+        return "Out of stock";
+      }
+      if (p?.status === "in stock" || p?.status === "in_stock") {
+        return "In stock";
+      }
+      const qty = Number(p?.stock ?? p?.stockQuantity ?? p?.quantity ?? 1);
+      if (Number.isFinite(qty) && qty <= 0) {
+        return "Out of stock";
+      }
+      return "In stock";
+    };
+
+    const statusLabel = getStockStatus(item);
+    const isOutOfStock = statusLabel.toLowerCase() === "out of stock";
+
+    return (
+      <TouchableOpacity
+        activeOpacity={0.9}
+        style={styles.card}
+        onPress={() => navigation.navigate("ProductDetail", { product: item })}
+      >
+        <View style={styles.cardInner}>
+          {productImage ? (
+            <Image source={{ uri: resolveImageUrl(productImage) }} style={styles.image} />
+          ) : (
+            <View style={[styles.image, styles.imageFallback]}>
+              <MaterialIcons name="image" size={28} color="#8a8a8a" />
+            </View>
+          )}
+
+          <View style={styles.cardContent}>
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+              {displayPrice ? (
+                <Text style={styles.discountPrice} numberOfLines={1}>
+                  {displayPrice}
+                </Text>
+              ) : null}
+              <Text
+                style={[
+                  styles.distanceMetaText,
+                  { color: isOutOfStock ? "#e74c3c" : "#27ae60", fontFamily: "Bold" }
+                ]}
+                numberOfLines={1}
+              >
+                {statusLabel}
+              </Text>
+            </View>
+
+            <Text style={styles.title} numberOfLines={1}>
+              {title}
+            </Text>
+
+            <Text style={styles.subtitle} numberOfLines={1}>
+              Category: {subtitle}
+            </Text>
+
+            <Text style={styles.metaText} numberOfLines={1}>Stock: {stockInfo}</Text>
+            <Text style={styles.validText} numberOfLines={1}>
+              Status: {statusLabel}
+            </Text>
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -260,7 +559,7 @@ export default function StorePage({ route, navigation }) {
           <Text style={styles.emptyText}>Loading merchant details...</Text>
         </View>
       ) : (
-        <ScrollView contentContainerStyle={styles.content}>
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <View style={styles.coverCard}>
             {storePic ? (
               <Image source={{ uri: storePic }} style={styles.coverImage} />
@@ -281,19 +580,30 @@ export default function StorePage({ route, navigation }) {
               <View style={styles.profileTextBox}>
                 <Text style={styles.merchantName}>{merchantName}</Text>
                 <Text style={styles.storeName}>{storeName}</Text>
-                  <TouchableOpacity
-                    style={[styles.followButton, isFollowing && styles.followButtonActive]}
-                    onPress={handleFollowToggle}
-                    disabled={followLoading}
-                  >
-                    {followLoading ? (
-                      <ActivityIndicator size="small" color={isFollowing ? '#f8a812' : '#fff'} />
-                    ) : (
-                      <Text style={[styles.followButtonText, isFollowing && styles.followButtonTextActive]}>
-                        {isFollowing ? 'Following' : 'Follow'}
-                      </Text>
-                    )}
-                  </TouchableOpacity>
+
+                <View style={styles.statsRow}>
+                  <View style={styles.ratingRow}>
+                    <MaterialIcons name="star" size={16} color="#f8a812" />
+                    <Text style={styles.ratingText}>
+                      {ratingStats.averageRating > 0 ? ratingStats.averageRating.toFixed(1) : '0.0'}
+                      {` (${ratingStats.totalReviews})`}
+                    </Text>
+                  </View>
+                </View>
+
+                <TouchableOpacity
+                  style={[styles.followButton, isFollowing && styles.followButtonActive]}
+                  onPress={handleFollowToggle}
+                  disabled={followLoading}
+                >
+                  {followLoading ? (
+                    <ActivityIndicator size="small" color={isFollowing ? '#f8a812' : '#fff'} />
+                  ) : (
+                    <Text style={[styles.followButtonText, isFollowing && styles.followButtonTextActive]}>
+                      {isFollowing ? 'Following' : 'Follow'}
+                    </Text>
+                  )}
+                </TouchableOpacity>
               </View>
             </View>
           </View>
@@ -321,6 +631,63 @@ export default function StorePage({ route, navigation }) {
               <Text style={styles.infoValue}>{storeLocation}</Text>
             </View>
           </View>
+
+          {/* Map Card */}
+          {hasCoords ? (
+            <View style={styles.mapCard}>
+              <Text style={styles.sectionTitle}>Store Location on Map</Text>
+              <View style={styles.mapContainer}>
+                <WebView
+                  originWhitelist={['*']}
+                  source={{ html: leafletHtml(latitude, longitude, storeName) }}
+                  style={styles.mapWebView}
+                  scrollEnabled={false}
+                />
+              </View>
+            </View>
+          ) : (
+            <View style={styles.mapCard}>
+              <Text style={styles.sectionTitle}>Store Location on Map</Text>
+              <View style={[styles.mapContainer, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#f9f9f9', height: 180 }]}>
+                <MaterialIcons name="map" size={36} color="#ccc" />
+                <Text style={styles.noDealsText}>Store location coordinates are not available.</Text>
+              </View>
+            </View>
+          )}
+
+          {/* Deals & Offers Section */}
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Merchant's Active Deals</Text>
+            {dealsLoading && <ActivityIndicator size="small" color="#f8a812" style={{ marginLeft: 8 }} />}
+          </View>
+          {deals.length > 0 ? (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalList}>
+              {deals.map((item, index) => (
+                <DealCard key={item?.offerId || item?._id || `deal-${index}`} item={item} />
+              ))}
+            </ScrollView>
+          ) : (
+            <View style={styles.emptySection}>
+              <Text style={styles.noDealsText}>No active deals available for this merchant.</Text>
+            </View>
+          )}
+
+          {/* Products Section */}
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Products</Text>
+            {productsLoading && <ActivityIndicator size="small" color="#f8a812" style={{ marginLeft: 8 }} />}
+          </View>
+          {products.length > 0 ? (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalList}>
+              {products.map((item, index) => (
+                <ProductCard key={item?.id || item?._id || `product-${index}`} item={item} />
+              ))}
+            </ScrollView>
+          ) : (
+            <View style={styles.emptySection}>
+              <Text style={styles.noDealsText}>No products available for this merchant.</Text>
+            </View>
+          )}
         </ScrollView>
       )}
     </SafeAreaView>
@@ -514,5 +881,147 @@ const styles = StyleSheet.create({
     marginLeft: 6,
     lineHeight: Math.round(13 * 1.5),
     fontFamily: 'Medium',
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 20,
+    marginBottom: 10,
+  },
+  horizontalList: {
+    paddingLeft: 4,
+    paddingRight: 16,
+    paddingBottom: 8,
+  },
+  emptySection: {
+    backgroundColor: '#f9fafb',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#f3f4f6',
+  },
+  noDealsText: {
+    fontSize: 13,
+    color: '#6b7280',
+    fontFamily: 'Medium',
+    textAlign: 'center',
+  },
+  statsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+    marginBottom: 6,
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  ratingText: {
+    fontSize: 12,
+    color: '#111827',
+    fontFamily: 'SemiBold',
+    marginLeft: 4,
+    lineHeight: Math.round(12 * 1.5),
+  },
+  bulletSeparator: {
+    marginHorizontal: 8,
+    color: '#9ca3af',
+  },
+  followersText: {
+    fontSize: 12,
+    color: '#6b7280',
+    fontFamily: 'Medium',
+  },
+  card: {
+    width: 170,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#ececec",
+    elevation: 2,
+    backgroundColor: "#fff",
+    overflow: "hidden",
+    marginRight: 14,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  cardInner: {
+    flexDirection: "column",
+  },
+  image: {
+    width: "100%",
+    height: 100,
+    backgroundColor: "#f3f4f6",
+  },
+  imageFallback: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  cardContent: {
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+  },
+  title: {
+    fontSize: 14,
+    fontFamily: "Bold",
+    lineHeight: 18,
+    color: '#111827',
+    marginTop: 4,
+  },
+  subtitle: {
+    marginTop: 2,
+    color: "#6b7280",
+    fontFamily: "Medium",
+    fontSize: 11,
+    lineHeight: 15,
+  },
+  metaText: {
+    marginTop: 2,
+    fontFamily: "Medium",
+    fontSize: 11,
+    lineHeight: 15,
+    color: "#6b7280",
+  },
+  validText: {
+    fontSize: 9,
+    marginTop: 4,
+    color: "#9ca3af",
+    fontFamily: "Medium",
+    lineHeight: 12,
+  },
+  discountPrice: {
+    color: "green",
+    fontFamily: "Bold",
+    fontSize: 13,
+  },
+  distanceMetaText: {
+    fontSize: 11,
+    fontFamily: "Medium",
+    color: '#6b7280',
+  },
+  mapCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+    marginTop: 20,
+    marginBottom: 20,
+  },
+  mapContainer: {
+    borderRadius: 12,
+    overflow: 'hidden',
+    height: 200,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  mapWebView: {
+    flex: 1,
   },
 });

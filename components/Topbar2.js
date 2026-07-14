@@ -13,43 +13,48 @@ export default function Topbar2() {
     const currentRoute = route.name;
     return (
         <View style={styles.row}>
-        <TouchableOpacity style={styles.button}
-            onPress={() => navigation.navigate("GoloHome")}>
-                <Feather name="shopping-bag" size={16} color={currentRoute === "GoloHome" ? "#157a4f" : "black"} />
-                <Text style={{ fontSize: 18, fontFamily: "SemiBold", lineHeight: Math.round(20 * 1.5),
-                    color : currentRoute === "GoloHome" ? "#157a4f" : "black" }}>GOLO</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.button}
-            onPress={() => navigation.navigate("ChojaHome")}>
+            <TouchableOpacity style={styles.button}
+                onPress={() => navigation.navigate("GoloDeals")}>
+                <Feather name="shopping-bag" size={16}
+                    color={currentRoute === "GoloHome" || currentRoute === "GoloDeals" ? "#157a4f" : "black"} />
+                <Text style={{
+                    fontSize: 18, fontFamily: "SemiBold", lineHeight: Math.round(20 * 1.5),
+                    color: currentRoute === "GoloHome" || currentRoute === "GoloDeals" ? "#157a4f" : "black"
+                }}>GOLO</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.button}
+                onPress={() => navigation.navigate("ChojaHome")}>
                 <MaterialCommunityIcons name="ticket-outline" size={16} color={currentRoute === "ChojaHome" ? "#157a4f" : "black"} />
-                <Text style={{ fontSize: 18, fontFamily: "SemiBold", lineHeight: Math.round(20 * 1.5),
-                    color : currentRoute === "ChojaHome" ? "#157a4f" : "black" }}>CHOJA</Text>
-        </TouchableOpacity>
-        </View>      
+                <Text style={{
+                    fontSize: 18, fontFamily: "SemiBold", lineHeight: Math.round(20 * 1.5),
+                    color: currentRoute === "ChojaHome" ? "#157a4f" : "black"
+                }}>CHOJA</Text>
+            </TouchableOpacity>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
-    button:{
-     flexDirection:"row",
-     borderRadius:26,
-     alignItems:"center",
-     justifyContent:"center",
-     gap:4,
-     backgroundColor:"#ffffff",
-     width:"45%",
-     paddingVertical:10,
-    elevation: 6,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
+    button: {
+        flexDirection: "row",
+        borderRadius: 26,
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 4,
+        backgroundColor: "#ffffff",
+        width: "45%",
+        paddingVertical: 10,
+        elevation: 6,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 6,
     },
-    row:{
-        flexDirection:"row",
-        alignItems:"center",
-        paddingHorizontal:16,
-        justifyContent:"space-between",
-        marginVertical:18
+    row: {
+        flexDirection: "row",
+        alignItems: "center",
+        paddingHorizontal: 16,
+        justifyContent: "space-between",
+        marginVertical: 18
     }
 })

@@ -10,7 +10,7 @@ import { View, ActivityIndicator, Text, StyleSheet } from "react-native";
 export default function AuthLoading({ navigation }) {
   useEffect(() => {
     const t = setTimeout(() => {
-      navigation.reset({ index: 0, routes: [{ name: "GoloHome" }] });
+      navigation.reset({ index: 0, routes: [{ name: "GoloDeals" }] });
     }, 300);
 
     return () => clearTimeout(t);

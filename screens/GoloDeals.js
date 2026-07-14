@@ -14,7 +14,7 @@ import {
     RefreshControl,
     Modal,
 } from "react-native";
-import { Feather, Ionicons, EvilIcons } from "@expo/vector-icons";
+import { Feather, Ionicons, EvilIcons, MaterialIcons } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
@@ -90,6 +90,13 @@ const STRIP_CATEGORIES = [
     { label: "Healthcare & Medical", displayLabel: "Healthcare", icon: "medkit-outline" },
 ];
 
+const staticBanners = [
+    { id: "static-1", imageUrl: require("../assets/banner1.png"), isStatic: true },
+    { id: "static-2", imageUrl: require("../assets/banner2.png"), isStatic: true },
+    { id: "static-3", imageUrl: require("../assets/banner3.png"), isStatic: true },
+    { id: "static-4", imageUrl: require("../assets/banner4.png"), isStatic: true },
+];
+
 export default function GoloDeals() {
     const navigation = useNavigation();
     const { colors } = useContext(ThemeContext);
@@ -100,6 +107,8 @@ export default function GoloDeals() {
     const [gpsCoordinates, setGpsCoordinates] = useState(null);
     const [gpsPlaceName, setGpsPlaceName] = useState("");
     const [locationPlaceName, setLocationPlaceName] = useState("");
+    const [customerCity, setCustomerCity] = useState("");
+    const [gpsCity, setGpsCity] = useState("");
     const [searchQuery, setSearchQuery] = useState("");
 
     // Location editing state
@@ -162,6 +171,10 @@ export default function GoloDeals() {
                     if (!isMounted) return;
 
                     const place = geocode?.[0] || {};
+                    const resolvedCity = place?.city || place?.subregion || "";
+                    setCustomerCity(resolvedCity);
+                    setGpsCity(resolvedCity);
+
                     const parts = [
                         place?.name !== place?.street ? place?.name : null,
                         place?.district,
@@ -325,6 +338,12 @@ export default function GoloDeals() {
         const newCoords = { lat: suggestion.lat, lng: suggestion.lng };
         setUserCoordinates(newCoords);
         setLocationPlaceName(suggestion.label);
+
+        // Extract city from suggestion label
+        const parts = suggestion.label.split(",").map(p => p.trim());
+        const resolvedCity = parts[parts.length - 3] || parts[parts.length - 2] || "";
+        setCustomerCity(resolvedCity);
+
         setLocationStatus("granted");
     }, []);
 
@@ -332,9 +351,10 @@ export default function GoloDeals() {
         if (gpsCoordinates) {
             setUserCoordinates(gpsCoordinates);
             setLocationPlaceName(gpsPlaceName);
+            setCustomerCity(gpsCity);
         }
         handleCancelEditingLocation();
-    }, [gpsCoordinates, gpsPlaceName, handleCancelEditingLocation]);
+    }, [gpsCoordinates, gpsPlaceName, gpsCity, handleCancelEditingLocation]);
 
     // ─── Fetch banners from backend ──────────────────────────
     const fetchBanners = useCallback(async () => {
@@ -345,26 +365,37 @@ export default function GoloDeals() {
 
         try {
             setBannersLoading(true);
-            const response = await fetch(`${BASE_URL}/banners/promotions/active?limit=10`);
+            const cityParam = customerCity || "";
+            const url = `${BASE_URL}/banners/promotions/active?limit=10&city=${encodeURIComponent(cityParam)}&fullLocation=${encodeURIComponent(locationPlaceName || "")}`;
+            const response = await fetch(url);
             const payload = await response.json().catch(() => ({}));
             if (response.ok && Array.isArray(payload?.data)) {
-                setBanners(payload.data);
+                const merchantBanners = payload.data;
+                const merchantCount = merchantBanners.length;
+                const staticCountNeeded = Math.max(0, Math.min(4, 10 - merchantCount));
+                const neededStaticBanners = staticBanners.slice(0, staticCountNeeded);
+                const combinedBanners = [...merchantBanners, ...neededStaticBanners];
+                setBanners(combinedBanners);
             } else {
-                setBanners([]);
+                setBanners(staticBanners);
             }
         } catch (err) {
             console.error("Failed to fetch banners:", err);
-            setBanners([]);
+            setBanners(staticBanners);
         } finally {
             setBannersLoading(false);
         }
-    }, []);
+    }, [locationPlaceName, customerCity]);
 
     useFocusEffect(
         useCallback(() => {
             fetchBanners();
         }, [fetchBanners])
     );
+
+    useEffect(() => {
+        fetchBanners();
+    }, [locationPlaceName, customerCity, fetchBanners]);
 
     // ─── Auto-scroll banners ─────────────────────────────────
     useEffect(() => {
@@ -422,57 +453,52 @@ export default function GoloDeals() {
                 : "Tap to set location";
 
     // ─── Render banner item ──────────────────────────────────
+    const BANNER_GAP = 12;
     const renderBannerItem = useCallback(({ item }) => {
+        const imageSource = item.isStatic ? item.imageUrl : { uri: item.imageUrl };
         return (
-            <View style={styles.bannerSlide}>
+            <View style={[styles.bannerSlide, { marginRight: BANNER_GAP }]}>
                 <Image
-                    source={{ uri: item.imageUrl }}
+                    source={imageSource}
                     style={styles.bannerImage}
                     resizeMode="cover"
                 />
-                {/* Optional overlay title */}
-                {item.bannerTitle ? (
-                    <View style={styles.bannerOverlay}>
-                        <Text style={styles.bannerTitle} numberOfLines={1}>
-                            {item.bannerTitle}
-                        </Text>
-                        {item.bannerCategory ? (
-                            <Text style={styles.bannerCategory} numberOfLines={1}>
-                                {item.bannerCategory}
-                            </Text>
-                        ) : null}
-                    </View>
-                ) : null}
             </View>
         );
     }, []);
 
+    const SLIDE_WIDTH = SCREEN_WIDTH - 32;
     const getItemLayout = useCallback((data, index) => ({
-        length: SCREEN_WIDTH - 32,
-        offset: (SCREEN_WIDTH - 32) * index,
+        length: SLIDE_WIDTH + BANNER_GAP,
+        offset: (SLIDE_WIDTH + BANNER_GAP) * index,
         index,
     }), []);
 
     // ─── Render static deals sections ─────────────────────────
+    // ─── Render static deals sections ─────────────────────────
     const renderDealSection = (title) => {
-        const isHot = title === "Flash Deals" || title === "Trending Deals";
-        const badgeText = isHot ? "HOT DEAL" : "50% OFF";
 
         const mockCards = [
             {
                 id: `card-${title}-1`,
-                title: "Local Shop 1",
-                description: "High-quality local products available at a special price",
-                badge: badgeText,
+                title: "20% Off on All Products",
+                subtitle: "Golo Superstore",
+                offerType: "Flat Discount",
+                price: "Rs 499",
+                distance: "1.2 km",
+                endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
                 image: "https://images.unsplash.com/photo-1542838132-92c53300491e?w=500&auto=format&fit=crop&q=60",
             },
             {
                 id: `card-${title}-2`,
-                title: "Local Shop 2",
-                description: "High-quality local products available at a special price",
-                badge: badgeText,
+                title: "Buy 1 Get 1 Free",
+                subtitle: "Fresh Mart",
+                offerType: "Combo Offer",
+                price: "Rs 299",
+                distance: "2.8 km",
+                endDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
                 image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=500&auto=format&fit=crop&q=60",
-            }
+            },
         ];
 
         return (
@@ -481,37 +507,56 @@ export default function GoloDeals() {
                     <Text style={styles.sectionTitle}>{title}</Text>
                     <TouchableOpacity onPress={() => navigation.navigate("GoloHome")} style={styles.viewAllBtn}>
                         <Text style={styles.viewAllText}>See All</Text>
-                        <Ionicons name="arrow-forward" size={14} color="#555" style={{ marginLeft: 2 }} />
+                        <MaterialIcons name="arrow-forward-ios" size={14} color="#555" style={{ marginLeft: 2 }} />
                     </TouchableOpacity>
                 </View>
 
                 <View style={styles.dealCardsRow}>
-                    {mockCards.map((card) => (
+                    {mockCards.map((item) => (
                         <TouchableOpacity
-                            key={card.id}
-                            style={styles.dealCard}
+                            key={item.id}
                             activeOpacity={0.9}
+                            style={styles.card}
                             onPress={() => navigation.navigate("GoloHome")}
                         >
-                            <View style={styles.dealCardImageContainer}>
-                                <Image source={{ uri: card.image }} style={styles.dealCardImage} />
-                                <View style={styles.badgeContainer}>
-                                    <Text style={styles.badgeText}>{card.badge}</Text>
+                            <View style={styles.cardInner}>
+                                {item.image ? (
+                                    <Image source={{ uri: item.image }} style={styles.image} />
+                                ) : (
+                                    <View style={[styles.image, styles.imageFallback]}>
+                                        <Ionicons name="image-outline" size={28} color="#8a8a8a" />
+                                    </View>
+                                )}
+
+                                <View style={styles.cardContent}>
+                                    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                                        {item.price ? (
+                                            <Text style={styles.discountPrice} numberOfLines={1}>
+                                                {item.price}
+                                            </Text>
+                                        ) : null}
+
+                                        {item.distance ? (
+                                            <Text style={styles.distanceMetaText}>{item.distance}</Text>
+                                        ) : null}
+                                    </View>
+
+                                    <Text style={styles.title} numberOfLines={1}>
+                                        {item.title}
+                                    </Text>
+
+                                    <Text style={styles.subtitle} numberOfLines={1}>
+                                        By {item.subtitle}
+                                    </Text>
+
+                                    <Text style={styles.metaText} numberOfLines={1}>
+                                        Offer Type: {item.offerType}
+                                    </Text>
+
+                                    <Text style={styles.validText} numberOfLines={1}>
+                                        Expires on: {item.endDate ? new Date(item.endDate).toDateString() : "-"}
+                                    </Text>
                                 </View>
-                            </View>
-                            <View style={styles.dealCardContent}>
-                                <Text style={styles.dealCardTitle} numberOfLines={1}>
-                                    {card.title}
-                                </Text>
-                                <Text style={styles.dealCardDescription} numberOfLines={2}>
-                                    {card.description}
-                                </Text>
-                                <TouchableOpacity
-                                    style={styles.viewDealButton}
-                                    onPress={() => navigation.navigate("GoloHome")}
-                                >
-                                    <Text style={styles.viewDealButtonText}>View Deal</Text>
-                                </TouchableOpacity>
                             </View>
                         </TouchableOpacity>
                     ))}
@@ -649,7 +694,7 @@ export default function GoloDeals() {
                                     <View style={[styles.stripIconCircle, { backgroundColor: bg }]}>
                                         <Ionicons name={item.icon} size={18} color={dark} />
                                     </View>
-                                    <Text style={[styles.stripText, { color: dark }]} numberOfLines={1}>
+                                    <Text style={[styles.stripText, { color: dark }]} numberOfLines={2}>
                                         {item.displayLabel}
                                     </Text>
                                 </TouchableOpacity>
@@ -689,7 +734,7 @@ export default function GoloDeals() {
                             <FlatList
                                 ref={bannerFlatListRef}
                                 data={banners}
-                                keyExtractor={(item) => item.requestId || item._id || String(Math.random())}
+                                keyExtractor={(item) => item.requestId || item._id || item.id || String(Math.random())}
                                 renderItem={renderBannerItem}
                                 horizontal
                                 pagingEnabled
@@ -699,7 +744,7 @@ export default function GoloDeals() {
                                 onScrollEndDrag={onBannerScrollEndDrag}
                                 scrollEventThrottle={16}
                                 getItemLayout={getItemLayout}
-                                snapToInterval={SCREEN_WIDTH - 32}
+                                snapToInterval={SLIDE_WIDTH + BANNER_GAP}
                                 decelerationRate="fast"
                                 contentContainerStyle={{ paddingRight: 0 }}
                             />
@@ -927,8 +972,6 @@ const styles = StyleSheet.create({
         fontFamily: "Medium",
         color: "#888",
     },
-
-    // ─── Search ──────────────────────────────────────────────
     searchContainer: {
         flexDirection: "row",
         alignItems: "center",
@@ -980,8 +1023,9 @@ const styles = StyleSheet.create({
         fontSize: 10,
         fontFamily: "SemiBold",
         textAlign: "center",
+        minHeight: 32,
+        lineHeight: Math.round(10 * 1.5)
     },
-
     // ─── Banner Carousel ─────────────────────────────────────
     bannerSection: {
         marginTop: 14,
@@ -1004,27 +1048,6 @@ const styles = StyleSheet.create({
     bannerImage: {
         width: "100%",
         height: "100%",
-    },
-    bannerOverlay: {
-        position: "absolute",
-        bottom: 0,
-        left: 0,
-        right: 0,
-        paddingHorizontal: 14,
-        paddingVertical: 10,
-        backgroundColor: "rgba(0,0,0,0.35)",
-    },
-    bannerTitle: {
-        color: "#fff",
-        fontSize: 15,
-        fontFamily: "Bold",
-        lineHeight: Math.round(15 * 1.4),
-    },
-    bannerCategory: {
-        color: "#ffffffcc",
-        fontSize: 12,
-        fontFamily: "Medium",
-        marginTop: 2,
     },
     dotsContainer: {
         flexDirection: "row",
@@ -1073,7 +1096,6 @@ const styles = StyleSheet.create({
         fontFamily: "Medium",
         fontSize: 13,
     },
-
     // ─── Deal Sections ───────────────────────────────────────
     sectionContainer: {
         marginTop: 18,
@@ -1096,26 +1118,13 @@ const styles = StyleSheet.create({
     },
     viewAllText: {
         fontSize: 12,
-        color: "#555",
+        color: "#666",
         fontFamily: "SemiBold",
-        lineHeight: Math.round(12 * 1.4),
+        lineHeight: Math.round(12 * 1.5),
     },
     dealCardsRow: {
         flexDirection: "row",
         justifyContent: "space-between",
-    },
-    dealCard: {
-        width: "48%",
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: "#eaeaea",
-        backgroundColor: "#ffffff",
-        overflow: "hidden",
-        shadowColor: "#000",
-        shadowOpacity: 0.04,
-        shadowRadius: 5,
-        shadowOffset: { width: 0, height: 2 },
-        elevation: 3,
     },
     dealCardImageContainer: {
         width: "100%",
@@ -1126,20 +1135,6 @@ const styles = StyleSheet.create({
     dealCardImage: {
         width: "100%",
         height: "100%",
-    },
-    badgeContainer: {
-        position: "absolute",
-        top: 8,
-        left: 8,
-        backgroundColor: "#ff4d4d",
-        borderRadius: 4,
-        paddingHorizontal: 6,
-        paddingVertical: 2,
-    },
-    badgeText: {
-        color: "#ffffff",
-        fontSize: 9,
-        fontFamily: "Bold",
     },
     dealCardContent: {
         paddingHorizontal: 10,
@@ -1159,20 +1154,80 @@ const styles = StyleSheet.create({
         height: 30,
         marginBottom: 8,
     },
-    viewDealButton: {
-        backgroundColor: "#157a4f",
-        borderRadius: 6,
-        paddingVertical: 8,
-        alignItems: "center",
-        justifyContent: "center",
-    },
     viewDealButtonText: {
         color: "#ffffff",
         fontSize: 12,
         fontFamily: "Bold",
-        lineHeight: Math.round(12 * 1.4),
+        lineHeight: Math.round(12 * 1.5),
     },
-
+    card: {
+        width: "48%",
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: "#eaeaea",
+        backgroundColor: "#ffffff",
+        overflow: "hidden",
+        shadowColor: "#000",
+        shadowOpacity: 0.04,
+        shadowRadius: 5,
+        shadowOffset: { width: 0, height: 2 },
+        elevation: 3,
+    },
+    cardInner: {
+        width: "100%",
+    },
+    image: {
+        width: "100%",
+        height: 110,
+        backgroundColor: "#f2f2f2",
+    },
+    imageFallback: {
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    cardContent: {
+        paddingHorizontal: 10,
+        paddingVertical: 10,
+    },
+    discountPrice: {
+        fontSize: 12,
+        fontFamily: "Medium",
+        color: "green",
+        lineHeight: Math.round(12 * 1.5),
+    },
+    distanceMetaText: {
+        fontSize: 12,
+        fontFamily: "Medium",
+        lineHeight: Math.round(12 * 1.5),
+    },
+    title: {
+        fontSize: 14,
+        fontFamily: "Bold",
+        color: "#111",
+        marginTop: 4,
+        lineHeight: Math.round(14 * 1.5),
+    },
+    subtitle: {
+        fontSize: 12,
+        fontFamily: "Medium",
+        color: "#666",
+        marginTop: 5,
+        lineHeight: Math.round(12 * 1.5),
+    },
+    metaText: {
+        fontSize: 12,
+        fontFamily: "Medium",
+        color: "#777",
+        marginTop: 5,
+        lineHeight: Math.round(12 * 1.5),
+    },
+    validText: {
+        fontSize: 10,
+        fontFamily: "Medium",
+        marginTop: 6,
+        lineHeight: Math.round(10 * 1.5),
+        color: "#666"
+    },
     // ─── Modal styling ───────────────────────────────────────
     modalHeaderGradient: {
         paddingTop: 16,
@@ -1190,7 +1245,7 @@ const styles = StyleSheet.create({
         fontSize: 20,
         fontFamily: "Bold",
         color: "#111",
-        lineHeight: Math.round(20 * 1.4),
+        lineHeight: Math.round(20 * 1.5),
     },
     modalCloseBtn: {
         flexDirection: "row",
@@ -1211,7 +1266,7 @@ const styles = StyleSheet.create({
         fontSize: 13,
         fontFamily: "SemiBold",
         color: "#333",
-        lineHeight: Math.round(13 * 1.4),
+        lineHeight: Math.round(13 * 1.5),
     },
     modalSearchContainer: {
         flexDirection: "row",
@@ -1221,16 +1276,15 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: "#e2e2e2",
         paddingHorizontal: 12,
-        paddingVertical: 10,
+        paddingVertical: 5,
         shadowColor: "#000",
         shadowOpacity: 0.02,
         shadowRadius: 5,
         shadowOffset: { width: 0, height: 2 },
-        elevation: 1,
+        elevation: 1
     },
     modalSearchInput: {
-        flex: 1,
-        fontSize: 15,
+        fontSize: 14,
         fontFamily: "Medium",
         color: "#222",
         paddingVertical: 0,
@@ -1253,7 +1307,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10,
         alignItems: "center",
         justifyContent: "center",
-        marginBottom: 16,
+        marginBottom: 14,
         shadowColor: "#000",
         shadowOpacity: 0.03,
         shadowRadius: 4,

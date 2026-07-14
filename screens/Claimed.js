@@ -21,6 +21,7 @@ import { LinearGradient } from "expo-linear-gradient";
 export default function Claimed({ navigation }) {
     const { colors } = useContext(ThemeContext);
     const [claimedOffers, setClaimedOffers] = useState([]);
+    const [selectedFilter, setSelectedFilter] = useState("active"); // "active" | "all" | "redeemed" | "expired"
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState("");
@@ -81,10 +82,6 @@ export default function Claimed({ navigation }) {
         );
     };
 
-    const activeClaimedOffers = claimedOffers.filter(
-        (item) => !isOfferExpired(item) && isValidClaimedDeal(item)
-    );
-
     const loadClaimedOffers = useCallback(async ({ isRefresh = false } = {}) => {
         try {
             if (isRefresh) {
@@ -95,9 +92,7 @@ export default function Claimed({ navigation }) {
 
             setError("");
             const data = await fetchMyClaimedOffers({ limit: 100 });
-            const normalizedOffers = Array.isArray(data)
-                ? data.filter((item) => !isOfferExpired(item) && isValidClaimedDeal(item))
-                : [];
+            const normalizedOffers = Array.isArray(data) ? data : [];
             setClaimedOffers(normalizedOffers);
         } catch (err) {
             const message = String(err?.message || "Unable to load claimed offers");
@@ -113,6 +108,34 @@ export default function Claimed({ navigation }) {
             loadClaimedOffers();
         }, [loadClaimedOffers]),
     );
+
+    const activeSavingsCount = claimedOffers.filter(
+        (item) => item.status === "active" && !isOfferExpired(item) && isValidClaimedDeal(item)
+    ).length;
+
+    const claimedCodesCount = claimedOffers.filter(isValidClaimedDeal).length;
+
+    const totalRedeemedCount = claimedOffers.filter(
+        (item) => item.status === "redeemed" && isValidClaimedDeal(item)
+    ).length;
+
+    const expiredCount = claimedOffers.filter(
+        (item) => (item.status === "expired" || isOfferExpired(item)) && isValidClaimedDeal(item)
+    ).length;
+
+    const filteredOffers = claimedOffers.filter((item) => {
+        if (!isValidClaimedDeal(item)) return false;
+        if (selectedFilter === "active") {
+            return item.status === "active" && !isOfferExpired(item);
+        }
+        if (selectedFilter === "redeemed") {
+            return item.status === "redeemed";
+        }
+        if (selectedFilter === "expired") {
+            return item.status === "expired" || isOfferExpired(item);
+        }
+        return true; // "all"
+    });
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
@@ -158,17 +181,90 @@ export default function Claimed({ navigation }) {
                         />
                     }
                 >
+                    <View style={styles.metricsGrid}>
+                        <TouchableOpacity
+                            activeOpacity={0.8}
+                            onPress={() => setSelectedFilter("active")}
+                            style={[
+                                styles.metricCard,
+                                selectedFilter === "active" && styles.metricCardActive,
+                            ]}
+                        >
+                            <View style={[styles.iconWrap, { backgroundColor: "#ecfdf5" }]}>
+                                <MaterialIcons name="local-offer" size={20} color="#10b981" />
+                            </View>
+                            <View style={styles.metricTextWrap}>
+                                <Text style={styles.metricCount}>{activeSavingsCount}</Text>
+                                <Text style={styles.metricLabel}>Active Savings</Text>
+                            </View>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            activeOpacity={0.8}
+                            onPress={() => setSelectedFilter("all")}
+                            style={[
+                                styles.metricCard,
+                                selectedFilter === "all" && styles.metricCardActive,
+                            ]}
+                        >
+                            <View style={[styles.iconWrap, { backgroundColor: "#eff6ff" }]}>
+                                <MaterialIcons name="qr-code" size={20} color="#3b82f6" />
+                            </View>
+                            <View style={styles.metricTextWrap}>
+                                <Text style={styles.metricCount}>{claimedCodesCount}</Text>
+                                <Text style={styles.metricLabel}>Claimed Codes</Text>
+                            </View>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            activeOpacity={0.8}
+                            onPress={() => setSelectedFilter("redeemed")}
+                            style={[
+                                styles.metricCard,
+                                selectedFilter === "redeemed" && styles.metricCardActive,
+                            ]}
+                        >
+                            <View style={[styles.iconWrap, { backgroundColor: "#fffbeb" }]}>
+                                <MaterialIcons name="check-circle" size={20} color="#d97706" />
+                            </View>
+                            <View style={styles.metricTextWrap}>
+                                <Text style={styles.metricCount}>{totalRedeemedCount}</Text>
+                                <Text style={styles.metricLabel}>Total Redeemed</Text>
+                            </View>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            activeOpacity={0.8}
+                            onPress={() => setSelectedFilter("expired")}
+                            style={[
+                                styles.metricCard,
+                                selectedFilter === "expired" && styles.metricCardActive,
+                            ]}
+                        >
+                            <View style={[styles.iconWrap, { backgroundColor: "#fef2f2" }]}>
+                                <MaterialIcons name="history" size={20} color="#ef4444" />
+                            </View>
+                            <View style={styles.metricTextWrap}>
+                                <Text style={styles.metricCount}>{expiredCount}</Text>
+                                <Text style={styles.metricLabel}>Expired</Text>
+                            </View>
+                        </TouchableOpacity>
+                    </View>
+
                     {error ? (
                         <Text style={[styles.infoText, { color: "#D32F2F" }]}>{error}</Text>
                     ) : null}
 
-                    {!error && activeClaimedOffers.length === 0 ? (
+                    {!error && filteredOffers.length === 0 ? (
                         <Text style={[styles.infoText, { color: colors.text }]}>
-                            No active claimed offers yet.
+                            {selectedFilter === "active" && "No active claimed offers."}
+                            {selectedFilter === "redeemed" && "No redeemed offers."}
+                            {selectedFilter === "expired" && "No expired offers."}
+                            {selectedFilter === "all" && "No claimed offers found."}
                         </Text>
                     ) : null}
 
-                    {activeClaimedOffers.map((item, index) => {
+                    {filteredOffers.map((item, index) => {
                         const displayItem = getClaimDisplayItem(item);
                         const offerTitle = displayItem?.title || displayItem?.bannerTitle || "Untitled Offer";
                         const merchantName =
@@ -185,6 +281,9 @@ export default function Claimed({ navigation }) {
                             displayItem?.selectedProducts?.[0]?.imageUrl ||
                             null;
 
+                        const isExpired = isOfferExpired(item);
+                        const isRedeemed = item.status === "redeemed";
+
                         return (
                             <TouchableOpacity
                                 key={displayItem?.offerId || displayItem?._id || displayItem?.requestId || item?.id || `claimed-${index}`}
@@ -199,11 +298,26 @@ export default function Claimed({ navigation }) {
                                 )}
 
                                 <View style={{ flex: 1, marginLeft: 12 }}>
-                                    <Text style={{ fontSize: 16, fontFamily: "SemiBold", color: colors.text, lineHeight: Math.round(16 * 1.5) }} numberOfLines={1}>
-                                        {offerTitle}
-                                    </Text>
+                                    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                                        <Text style={{ fontSize: 16, fontFamily: "SemiBold", color: colors.text, flex: 1, marginRight: 8, lineHeight: Math.round(16 * 1.5) }} numberOfLines={1}>
+                                            {offerTitle}
+                                        </Text>
+                                        {isRedeemed ? (
+                                            <View style={[styles.badge, { backgroundColor: "#e8f5e9" }]}>
+                                                <Text style={[styles.badgeText, { color: "#2e7d32" }]}>REDEEMED</Text>
+                                            </View>
+                                        ) : isExpired ? (
+                                            <View style={[styles.badge, { backgroundColor: "#ffebee" }]}>
+                                                <Text style={[styles.badgeText, { color: "#c62828" }]}>EXPIRED</Text>
+                                            </View>
+                                        ) : (
+                                            <View style={[styles.badge, { backgroundColor: "#e3f2fd" }]}>
+                                                <Text style={[styles.badgeText, { color: "#1565c0" }]}>ACTIVE</Text>
+                                            </View>
+                                        )}
+                                    </View>
 
-                                    <Text style={{ fontSize: 12, color: colors.text, lineHeight: Math.round(12 * 1.5), fontFamily: "Medium" }} numberOfLines={1}>
+                                    <Text style={{ fontSize: 12, color: colors.text, lineHeight: Math.round(12 * 1.5), fontFamily: "Medium", marginTop: 2 }} numberOfLines={1}>
                                         Deal by {merchantName}
                                     </Text>
                                 </View>
@@ -228,6 +342,64 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         paddingHorizontal: 14
     },
+    metricsGrid: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        justifyContent: "space-between",
+        paddingHorizontal: 14,
+        marginTop: 10,
+    },
+    metricCard: {
+        width: "48%",
+        backgroundColor: "#ffffff",
+        borderRadius: 12,
+        padding: 10,
+        marginBottom: 10,
+        flexDirection: "row",
+        alignItems: "center",
+        elevation: 3,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+        borderWidth: 1,
+        borderColor: "transparent",
+    },
+    metricCardActive: {
+        borderColor: "#f8a812",
+        backgroundColor: "#fffdf9",
+    },
+    iconWrap: {
+        width: 32,
+        height: 32,
+        borderRadius: 8,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    metricTextWrap: {
+        marginLeft: 8,
+        flex: 1,
+    },
+    metricCount: {
+        fontSize: 14,
+        fontFamily: "SemiBold",
+        color: "#111827",
+    },
+    metricLabel: {
+        fontSize: 10,
+        fontFamily: "Medium",
+        color: "#6b7280",
+        marginTop: 1,
+    },
+    badge: {
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 4,
+    },
+    badgeText: {
+        fontSize: 8,
+        fontFamily: "Bold",
+    },
     card: {
         flexDirection: "row",
         alignItems: "center",
@@ -243,14 +415,14 @@ const styles = StyleSheet.create({
         shadowRadius: 6,
     },
     imagePlaceholder: {
-        width: 80,
-        height: 80,
+        width: 60,
+        height: 60,
         borderRadius: 8,
         backgroundColor: "#D9D9D9",
     },
     offerImage: {
-        width: 80,
-        height: 80,
+        width: 60,
+        height: 60,
         borderRadius: 8,
         backgroundColor: "#D9D9D9",
     },
@@ -265,4 +437,4 @@ const styles = StyleSheet.create({
         fontFamily: "Medium",
         paddingHorizontal: 20,
     },
-})
+});

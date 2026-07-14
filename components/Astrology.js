@@ -206,7 +206,7 @@ export default function Astrology({ formData, setFormData, category, onPrevious,
 
             </View>
 
-            <TouchableOpacity style={styles.nextBtn} onPress={() => { navigation.navigate("Preview", { template, category, formData, selectedDays, selectedLocations, selectedDates, startDate, endDate, price }); }}>
+            <TouchableOpacity style={styles.nextBtn} onPress={() => { navigation.navigate("CalendarScreen", { category, template, formData, price }); }}>
                 <Text style={styles.nextText}>See Preview</Text>
             </TouchableOpacity>
         </View>

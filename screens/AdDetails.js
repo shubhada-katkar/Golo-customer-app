@@ -513,6 +513,12 @@ export default function AdDetails({ route, navigation }) {
               </View>
             </View>
 
+            {/* Description */}
+            <View style={{ marginVertical: 12 }}>
+              <Text style={styles.sectionTitle}>Ad Description</Text>
+              <Text style={styles.description}>{ad.description}</Text>
+            </View>
+
             {/* Details */}
             <Text style={styles.sectionTitle}>Details</Text>
             {hasDetails ? (
@@ -534,13 +540,6 @@ export default function AdDetails({ route, navigation }) {
             ) : (
               <Text style={styles.description}>No additional details available for this ad.</Text>
             )}
-
-
-            {/* Description */}
-            <View style={{ marginTop: 12 }}>
-              <Text style={styles.sectionTitle}>Ad Description</Text>
-              <Text style={styles.description}>{ad.description}</Text>
-            </View>
 
             {/* Seller Info */}
             <View style={styles.section}>
@@ -830,8 +829,8 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     alignItems: 'flex-start',
     paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
   },
   detailLabel: {
     fontSize: 14,

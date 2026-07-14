@@ -14,42 +14,44 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-  "supportsTablet": true,
-  "infoPlist": {
-    "NSMicrophoneUsageDescription": "This app uses the microphone for voice search.",
-    "NSSpeechRecognitionUsageDescription": "This app uses speech recognition for voice search."
-  }
-},
-"android": {
-  "edgeToEdgeEnabled": true,
-  "softwareKeyboardLayoutMode": "resize",
-  "package": "com.shubhadakatkar.golocustomerapp",
-  "permissions": [
-    "RECORD_AUDIO"
-  ]
-},
-"plugins": [
-  "@react-native-community/datetimepicker",
-  "expo-font",
-  "expo-speech-recognition",
-  "./plugins/withExcludeSupportLib",
-  [
-    "expo-build-properties",
-    {
-      "android": {
-        "packagingOptions": {
-          "exclude": [
-            "META-INF/com.android.support/*"
-          ]
-        }
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "This app uses the microphone for voice search.",
+        "NSSpeechRecognitionUsageDescription": "This app uses speech recognition for voice search."
       }
-    }
-  ]
-],
+    },
+    "android": {
+      "edgeToEdgeEnabled": true,
+      "softwareKeyboardLayoutMode": "resize",
+      "package": "com.shubhadakatkar.golocustomerapp",
+      "permissions": [
+        "RECORD_AUDIO",
+        "android.permission.RECORD_AUDIO"
+      ]
+    },
+    "plugins": [
+      "@react-native-community/datetimepicker",
+      "expo-font",
+      "expo-speech-recognition",
+      "./plugins/withExcludeSupportLib",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "packagingOptions": {
+              "exclude": [
+                "META-INF/com.android.support/*"
+              ]
+            }
+          }
+        }
+      ]
+    ],
     "extra": {
       "eas": {
-        "projectId": "b4cff4df-51f4-4d7b-86d6-a6c7121d3b75"
+        "projectId": "cf44db4a-66e3-439f-a6a9-0f82e321b203"
       }
-    }
+    },
+    "owner": "katkar-shubhada"
   }
 }

@@ -151,16 +151,11 @@ export default function LostandFound({
             <TouchableOpacity
                 style={styles.nextBtn}
                 onPress={() =>
-                    navigation.navigate("Preview", {
-                        template,
+                    navigation.navigate("CalendarScreen", {
                         category,
+                        template,
                         formData,
                         price,
-                        selectedDays,
-                        selectedLocations,
-                        selectedDates,
-                        startDate,
-                        endDate,
                     })
                 }
             >

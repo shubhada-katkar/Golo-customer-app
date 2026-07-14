@@ -31,10 +31,10 @@ export default function GoloBottom() {
                 <Text style={{ textAlign: "auto", fontSize: 11, color: currentRoute === "GoloHome" ? "#f5b849" : "black", fontFamily: "Medium" }}>Dashboard</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.bar} onPress={()=>navigation.navigate("GoloFav")}>
+            <TouchableOpacity style={styles.bar} onPress={() => navigation.navigate("GoloFav")}>
                 <FontAwesome name="heart-o" size={24}
                     color={currentRoute === "GoloFav" ? "#f5b849" : "black"} />
-                <Text style={{ textAlign: "auto", fontSize: 11, color: currentRoute === "GoloFav" ? "#f5b849" : "black", fontFamily: "Medium" }}>Saved</Text>
+                <Text style={{ textAlign: "auto", fontSize: 11, color: currentRoute === "GoloFav" ? "#f5b849" : "black", fontFamily: "Medium" }}>Wishlist</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.bar} onPress={() => navigation.navigate("Claimed")}>

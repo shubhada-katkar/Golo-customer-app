@@ -161,7 +161,24 @@ const getProductVideoName = (product) => {
   return fallbackName || "Uploaded video";
 };
 
+const getStockStatus = (product) => {
+  if (product?.status === "out of stock" || product?.status === "out_of_stock") {
+    return "Out of Stock";
+  }
+  if (product?.status === "in stock" || product?.status === "in_stock") {
+    return "In Stock";
+  }
+  const qty = Number(product?.stock ?? product?.stockQuantity ?? product?.quantity ?? 1);
+  if (Number.isFinite(qty) && qty <= 0) {
+    return "Out of Stock";
+  }
+  return "In Stock";
+};
+
 const buildProductFields = (product) => {
+  const stockVal = product?.stock ?? product?.stockQuantity;
+  const statusVal = getStockStatus(product);
+
   const fields = [
     { label: "Quantity", value: product?.quantity || product?.qty, icon: "format-list-numbered" },
     { label: "Unit", value: product?.unit, icon: "straighten" },
@@ -169,6 +186,8 @@ const buildProductFields = (product) => {
     { label: "Brand", value: product?.brand || product?.manufacturer, icon: "verified" },
     { label: "Color", value: product?.color, icon: "palette" },
     { label: "Size", value: product?.size || product?.dimension, icon: "aspect-ratio" },
+    { label: "Stock", value: stockVal !== undefined && stockVal !== null ? String(stockVal) : null, icon: "inventory" },
+    { label: "Status", value: statusVal, icon: "info" },
   ];
 
   return fields.filter((item) => item.value != null && String(item.value).trim().length > 0);
@@ -597,7 +616,7 @@ export default function ProductDetail({ route, navigation }) {
             <View style={styles.chipsWrap}>
               {extraFields.map((field) => (
                 <View key={field.label} style={styles.chip}>
-                  <Feather name="box" size={16} color="#157a4f" style={styles.chipIcon} />
+                  <MaterialIcons name={field.icon || "info"} size={16} color="#157a4f" style={styles.chipIcon} />
                   <Text style={styles.chipLabel}>{field.label}: </Text>
                   <Text style={styles.chipValue}>{field.value}</Text>
                 </View>
@@ -710,27 +729,36 @@ const styles = StyleSheet.create({
   },
   chipsWrap: {
     flexDirection: "row",
+    flexWrap: "wrap",
     alignItems: "center",
-    marginBottom: 10
+    marginBottom: 16,
   },
   chip: {
     flexDirection: "row",
     alignItems: "center",
+    backgroundColor: "#f4fcf8",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#e1f5eb",
+    marginRight: 8,
+    marginBottom: 8,
   },
   chipIcon: {
-    marginRight: 10,
+    marginRight: 6,
   },
   chipLabel: {
-    fontSize: 16,
+    fontSize: 12,
     fontFamily: "SemiBold",
-    color: "#000",
-    lineHeight: Math.round(16 * 1.5),
+    color: "#222",
+    lineHeight: Math.round(12 * 1.5)
   },
   chipValue: {
-    fontSize: 13,
-    fontFamily: "SemiBold",
-    lineHeight: Math.round(13 * 1.5),
-    color: "#666"
+    fontSize: 12,
+    fontFamily: "Medium",
+    color: "#157a4f",
+    lineHeight: Math.round(12 * 1.5)
   },
   card: {
     borderRadius: 16,

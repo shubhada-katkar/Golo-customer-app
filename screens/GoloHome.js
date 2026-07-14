@@ -25,6 +25,31 @@ import { fetchAllOffers } from "../services/offersService";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+const CATEGORY_ICONS = {
+    "Food & Restaurants": "restaurant-outline",
+    "Home Services": "construct-outline",
+    "Beauty & Wellness": "flower-outline",
+    "Healthcare & Medical": "medkit-outline",
+    "Hotels & Accommodation": "bed-outline",
+    "Shopping & Retail": "bag-handle-outline",
+    "Education & Training": "school-outline",
+    "Real Estate": "home-outline",
+    "Events & Entertainment": "musical-notes-outline",
+    "Professional Services": "briefcase-outline",
+    "Automotive Services": "car-outline",
+    "Home Improvement": "hammer-outline",
+    "Fitness & Sports": "barbell-outline",
+    "Daily Needs & Utilities": "cart-outline",
+    "Local Businesses & Vendors": "storefront-outline",
+};
+
+const STRIP_CATEGORIES = [
+    { label: "Food & Restaurants", displayLabel: "Food", icon: "restaurant-outline" },
+    { label: "Home Services", displayLabel: "Home services", icon: "construct-outline" },
+    { label: "Beauty & Wellness", displayLabel: "Beauty", icon: "flower-outline" },
+    { label: "Healthcare & Medical", displayLabel: "Healthcare", icon: "medkit-outline" },
+];
+
 const MAIN_STORE_CATEGORIES = [
     "Food & Restaurants",
     "Home Services",
@@ -250,7 +275,8 @@ export default function GoloHome({ route }) {
         }
     }, [route?.params?.category]);
 
-    const [showAllCategories, setShowAllCategories] = useState(false);
+    const [allCategoriesModalOpen, setAllCategoriesModalOpen] = useState(false);
+    const [categorySearchQuery, setCategorySearchQuery] = useState("");
     const [searchQuery, setSearchQuery] = useState("");
     const [offers, setOffers] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -775,7 +801,7 @@ export default function GoloHome({ route }) {
                     )}
                 </View>
                 <TouchableOpacity style={styles.filterbtn} onPress={() => navigation.navigate("FilterPage")}>
-                    <Feather name="filter" size={18} />
+                    <Ionicons name="options-outline" size={18} />
 
                 </TouchableOpacity>
             </View>
@@ -788,31 +814,50 @@ export default function GoloHome({ route }) {
                 showsVerticalScrollIndicator={false}
             >
 
+                {/* ---- Category Strip (First 4 Categories + See All) ---- */}
                 <View style={styles.categorySection}>
-                    <View style={styles.categoryStrip}>
-                        <ScrollView
-                            ref={scrollRef}
-                            horizontal
-                            showsHorizontalScrollIndicator={false}
+                    <View style={styles.categoryStripRow}>
+                        {STRIP_CATEGORIES.map((item, index) => {
+                            const { bg, dark } = CATEGORY_COLORS[item.label] || { bg: "#f0f0f0", dark: "#555" };
+                            const isActive = selectedCategory === item.label;
+                            return (
+                                <TouchableOpacity
+                                    key={index}
+                                    style={styles.stripChip}
+                                    activeOpacity={0.8}
+                                    onPress={() => {
+                                        if (selectedCategory === item.label) {
+                                            setSelectedCategory(null);
+                                        } else {
+                                            setSelectedCategory(item.label);
+                                        }
+                                    }}
+                                >
+                                    <View style={[styles.stripIconCircle, { backgroundColor: bg }]}>
+                                        <Ionicons name={item.icon} size={18} color={dark} />
+                                    </View>
+                                    <Text style={[styles.stripText, { color: dark }]} numberOfLines={2}>
+                                        {item.displayLabel}
+                                    </Text>
+                                    {isActive && <View style={styles.chipUnderline} />}
+                                </TouchableOpacity>
+                            );
+                        })}
+                        <TouchableOpacity
+                            style={styles.stripChip}
+                            activeOpacity={0.8}
+                            onPress={() => setAllCategoriesModalOpen(true)}
                         >
-                            <View style={styles.chipsRow}>
-                                {sortedCategories.map((item, index) => (
-                                    <CategoryChip
-                                        key={`${item.label}-${index}`}
-                                        icon={item.icon}
-                                        label={item.label}
-                                        isActive={selectedCategory === item.label}
-                                        onPress={() => {
-                                            if (selectedCategory === item.label) {
-                                                setSelectedCategory(null);
-                                            } else {
-                                                setSelectedCategory(item.label);
-                                            }
-                                        }}
-                                    />
-                                ))}
+                            <View style={[styles.stripIconCircle, { backgroundColor: "#f2f2f2" }]}>
+                                <Ionicons name="grid" size={18} color="#444" />
                             </View>
-                        </ScrollView>
+                            <Text style={[styles.stripText, { color: "#444" }]} numberOfLines={1}>
+                                See All
+                            </Text>
+                            {selectedCategory && !STRIP_CATEGORIES.some(c => c.label === selectedCategory) && (
+                                <View style={styles.chipUnderline} />
+                            )}
+                        </TouchableOpacity>
                     </View>
                 </View>
 
@@ -842,6 +887,110 @@ export default function GoloHome({ route }) {
                     </View>
                 )}
             </ScrollView>
+
+            {/* ---- All Categories Modal ---- */}
+            <Modal
+                visible={allCategoriesModalOpen}
+                animationType="slide"
+                transparent={false}
+                onRequestClose={() => setAllCategoriesModalOpen(false)}
+                statusBarTranslucent
+            >
+                <SafeAreaView style={{ flex: 1, backgroundColor: "#ffffff" }}>
+                    <LinearGradient
+                        colors={["#f8a812", "#fad081", "#ffffff"]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 0, y: 1 }}
+                        style={styles.modalHeaderGradient}
+                    >
+                        <View style={styles.modalHeaderRow}>
+                            <Text style={styles.modalTitle}>All Categories</Text>
+                            <TouchableOpacity
+                                style={styles.modalCloseBtn}
+                                onPress={() => setAllCategoriesModalOpen(false)}
+                            >
+                                <Ionicons name="close" size={16} color="#333" style={{ marginRight: 2 }} />
+                                <Text style={styles.modalCloseText}>Close</Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        {/* Modal Search Input */}
+                        <View style={styles.modalSearchContainer}>
+                            <Ionicons name="search" size={18} color="#888" style={{ marginRight: 8 }} />
+                            <TextInput
+                                placeholder="Search categories..."
+                                placeholderTextColor="#888"
+                                value={categorySearchQuery}
+                                onChangeText={setCategorySearchQuery}
+                                style={styles.modalSearchInput}
+                            />
+                            {categorySearchQuery.length > 0 && (
+                                <TouchableOpacity onPress={() => setCategorySearchQuery("")}>
+                                    <Ionicons name="close-circle" size={18} color="#888" />
+                                </TouchableOpacity>
+                            )}
+                        </View>
+                    </LinearGradient>
+
+                    {/* Scrollable grid content */}
+                    <ScrollView
+                        contentContainerStyle={styles.modalGridContent}
+                        showsVerticalScrollIndicator={false}
+                    >
+                        <View style={styles.modalGridRow}>
+                            {MAIN_STORE_CATEGORIES.filter((cat) =>
+                                cat.toLowerCase().includes(categorySearchQuery.toLowerCase())
+                            ).map((cat) => {
+                                const { bg, dark } = CATEGORY_COLORS[cat] || { bg: "#f0f0f0", dark: "#555" };
+                                const iconName = CATEGORY_ICONS[cat] || "grid-outline";
+                                const isSelected = selectedCategory === cat;
+
+                                return (
+                                    <TouchableOpacity
+                                        key={cat}
+                                        style={[
+                                            styles.modalGridCard,
+                                            { backgroundColor: bg },
+                                            isSelected && {
+                                                borderWidth: 1.5,
+                                                borderColor: dark,
+                                                shadowOpacity: 0.15,
+                                                elevation: 5,
+                                            },
+                                        ]}
+                                        activeOpacity={0.8}
+                                        onPress={() => {
+                                            setAllCategoriesModalOpen(false);
+                                            setCategorySearchQuery("");
+                                            if (selectedCategory === cat) {
+                                                setSelectedCategory(null);
+                                            } else {
+                                                setSelectedCategory(cat);
+                                            }
+                                        }}
+                                    >
+                                        <View style={[
+                                            styles.modalCardIconCircle,
+                                            isSelected && {
+                                                borderWidth: 1,
+                                                borderColor: dark,
+                                            },
+                                        ]}>
+                                            <Ionicons name={iconName} size={22} color={dark} />
+                                        </View>
+                                        <Text style={[
+                                            styles.modalCardText,
+                                            isSelected && { color: dark, fontFamily: "Bold" },
+                                        ]} numberOfLines={2}>
+                                            {cat}
+                                        </Text>
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </View>
+                    </ScrollView>
+                </SafeAreaView>
+            </Modal>
 
             <SafeAreaView
                 edges={["bottom"]}
@@ -896,14 +1045,14 @@ const OfferCard = ({ item, navigation }) => {
 
                 <View style={styles.cardContent}>
                     <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-                    {displayPrice ? (
-                        <Text style={styles.discountPrice} numberOfLines={1}>
-                            {displayPrice}
-                        </Text>
-                    ) : null}
+                        {displayPrice ? (
+                            <Text style={styles.discountPrice} numberOfLines={1}>
+                                {displayPrice}
+                            </Text>
+                        ) : null}
 
-                    {distanceText ? <Text style={styles.distanceMetaText}>{distanceText}</Text> : null}
-                    
+                        {distanceText ? <Text style={styles.distanceMetaText}>{distanceText}</Text> : null}
+
                     </View>
 
                     <Text style={styles.title} numberOfLines={1}>
@@ -1044,32 +1193,41 @@ const styles = StyleSheet.create({
         alignItems: "center",
         borderRadius: 10,
         backgroundColor: "#f5b949e5",
-        padding: 12.5,
-        justifyContent: "center"
+        padding: 13,
+        justifyContent: "center",
     },
     categorySection: {
-        marginBottom: 8
+        marginTop: 6,
+        marginBottom: 4,
     },
-    categoryStrip: {
+    categoryStripRow: {
         flexDirection: "row",
+        justifyContent: "space-between",
         alignItems: "center",
     },
-    chipsRow: {
-        flexDirection: "row",
+    stripChip: {
         alignItems: "center",
-        gap: 16
+        width: "18%",
     },
-    chip: {
-        alignItems: "center",
-        width: 80,
-    },
-    chipIconCircle: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+    stripIconCircle: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
         alignItems: "center",
         justifyContent: "center",
-        marginBottom: 4,
+        marginBottom: 5,
+        shadowColor: "#000",
+        shadowOpacity: 0.05,
+        shadowRadius: 3,
+        shadowOffset: { width: 0, height: 1 },
+        elevation: 1,
+    },
+    stripText: {
+        fontSize: 10,
+        fontFamily: "SemiBold",
+        textAlign: "center",
+        minHeight: 32,
+        lineHeight: Math.round(10 * 1.5)
     },
     chipUnderline: {
         marginTop: 4,
@@ -1077,12 +1235,112 @@ const styles = StyleSheet.create({
         height: 2,
         backgroundColor: "#000000",
     },
-    chipText: {
-        fontSize: 10,
+    // ─── Modal styling ───────────────────────────────────────
+    modalHeaderGradient: {
+        paddingTop: 16,
+        paddingBottom: 20,
+        paddingHorizontal: 16,
+    },
+    modalHeaderRow: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginTop: 10,
+        marginBottom: 16,
+    },
+    modalTitle: {
+        fontSize: 20,
+        fontFamily: "Bold",
+        color: "#111",
+        lineHeight: Math.round(20 * 1.5),
+    },
+    modalCloseBtn: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#ffffff",
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: "#ddd",
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        shadowColor: "#000",
+        shadowOpacity: 0.05,
+        shadowRadius: 3,
+        shadowOffset: { width: 0, height: 1 },
+        elevation: 2,
+    },
+    modalCloseText: {
+        fontSize: 13,
+        fontFamily: "SemiBold",
+        color: "#333",
+        lineHeight: Math.round(13 * 1.5),
+    },
+    modalSearchContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#ffffff",
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: "#e2e2e2",
+        paddingHorizontal: 12,
+        paddingVertical: 5,
+        shadowColor: "#000",
+        shadowOpacity: 0.02,
+        shadowRadius: 5,
+        shadowOffset: { width: 0, height: 2 },
+        elevation: 1,
+    },
+    modalSearchInput: {
+        fontSize: 14,
         fontFamily: "Medium",
-        lineHeight: Math.round(10 * 1.5),
+        color: "#222",
+        paddingVertical: 0,
+        top: 3
+    },
+    modalGridContent: {
+        paddingHorizontal: 16,
+        paddingTop: 10,
+        paddingBottom: 40,
+    },
+    modalGridRow: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        justifyContent: "space-between",
+    },
+    modalGridCard: {
+        width: "48%",
+        borderRadius: 16,
+        paddingVertical: 20,
+        paddingHorizontal: 10,
+        alignItems: "center",
+        justifyContent: "center",
+        marginBottom: 14,
+        shadowColor: "#000",
+        shadowOpacity: 0.03,
+        shadowRadius: 4,
+        shadowOffset: { width: 0, height: 2 },
+        elevation: 2,
+    },
+    modalCardIconCircle: {
+        width: 46,
+        height: 46,
+        borderRadius: 23,
+        backgroundColor: "#ffffff",
+        alignItems: "center",
+        justifyContent: "center",
+        marginBottom: 10,
+        shadowColor: "#000",
+        shadowOpacity: 0.04,
+        shadowRadius: 3,
+        shadowOffset: { width: 0, height: 1 },
+        elevation: 1,
+    },
+    modalCardText: {
+        fontSize: 12,
+        fontFamily: "Bold",
         textAlign: "center",
-        minHeight: 32
+        color: "#111",
+        lineHeight: 16,
     },
     card: {
         width: "48%",
@@ -1187,7 +1445,7 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         borderWidth: 1,
         borderColor: "#cacaca",
-        marginTop: 6,
+        marginVertical: 6,
         paddingHorizontal: 6,
         width: "87%"
     },

@@ -44,7 +44,7 @@ const adMatchesSearch = (ad, query) => {
     return candidates.some((value) => normalizeText(value).includes(needle));
 };
 
-export default function ChotyaJahirati({ selectedCategory, selectedSubFilter = null, searchQuery = "", lat, lng, locationPlaceName = "" }) {
+export default function ChotyaJahirati({ selectedCategory, selectedSubFilter = null, searchQuery = "", lat, lng, locationPlaceName = "", selectedSort = "newest" }) {
     const { colors } = useContext(ThemeContext);
     const [ads, setAds] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -67,21 +67,47 @@ export default function ChotyaJahirati({ selectedCategory, selectedSubFilter = n
             const backendCategory = getBackendCategoryName(selectedCategory);
             let url;
 
+            let sortBy = 'createdAt';
+            let sortOrder = 'desc';
+
+            if (selectedSort === 'oldest') {
+                sortBy = 'createdAt';
+                sortOrder = 'asc';
+            } else if (selectedSort === 'price_desc') {
+                sortBy = 'price';
+                sortOrder = 'desc';
+            } else if (selectedSort === 'price_asc') {
+                sortBy = 'price';
+                sortOrder = 'asc';
+            } else if (selectedSort === 'nearby') {
+                sortBy = 'distance';
+                sortOrder = 'asc';
+            }
+
             if (locationPlaceName && locationPlaceName.trim() && locationPlaceName !== "your current area") {
                 // PRIMARY: text-based location search — matches ad's `cities` array on backend
-                url = `${BASE_URL}/ads/search?location=${encodeURIComponent(locationPlaceName)}&page=${pageNumber}&limit=10`;
+                url = `${BASE_URL}/ads/search?location=${encodeURIComponent(locationPlaceName)}&page=${pageNumber}&limit=10&sortBy=${sortBy}&sortOrder=${sortOrder}`;
+                // Only pass lat/lng when sorting by distance (nearby) to avoid a backend casting/query crash on /ads/search
+                if (selectedSort === 'nearby' && lat && lng) {
+                    url += `&lat=${lat}&lng=${lng}`;
+                }
                 if (backendCategory) {
                     url += `&category=${encodeURIComponent(backendCategory)}`;
                 }
             } else if (lat && lng) {
                 // FALLBACK: geo nearby when we have coordinates but no resolved place name yet
-                url = `${BASE_URL}/ads/nearby?lat=${lat}&lng=${lng}&distance=50000&page=${pageNumber}&limit=10`;
+                if (selectedSort !== 'nearby') {
+                    url = `${BASE_URL}/ads/search?lat=${lat}&lng=${lng}&page=${pageNumber}&limit=10&sortBy=${sortBy}&sortOrder=${sortOrder}`;
+                } else {
+                    url = `${BASE_URL}/ads/nearby?lat=${lat}&lng=${lng}&distance=50000&page=${pageNumber}&limit=10`;
+                }
                 if (backendCategory) {
                     url += `&category=${encodeURIComponent(backendCategory)}`;
                 }
             } else {
-                // LAST RESORT: general listing with optional category
-                url = `${BASE_URL}/ads?page=${pageNumber}&limit=10`;
+                // LAST RESORT: general listing using /ads/search (not cached, honours sortBy/sortOrder)
+                // Note: /ads is cached server-side without sort in the cache key, so it ignores sort params
+                url = `${BASE_URL}/ads/search?page=${pageNumber}&limit=10&sortBy=${sortBy}&sortOrder=${sortOrder}`;
                 if (backendCategory) {
                     url += `&category=${encodeURIComponent(backendCategory)}`;
                 }
@@ -109,9 +135,9 @@ export default function ChotyaJahirati({ selectedCategory, selectedSubFilter = n
             setLoading(false);
             setLoadingMore(false);
         }
-    }, [lat, lng, locationPlaceName, selectedCategory]);
+    }, [lat, lng, locationPlaceName, selectedCategory, selectedSort]);
 
-    // Re-fetch from page 1 whenever category or location changes
+    // Re-fetch from page 1 whenever category, location, or sort changes
     useEffect(() => {
         setPage(1);
         setHasMore(true);

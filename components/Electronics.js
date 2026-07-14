@@ -157,7 +157,7 @@ export default function Electronics({ formData, setFormData, category, onPreviou
 
             </View>
 
-            <TouchableOpacity style={styles.nextBtn} onPress={() => { navigation.navigate("Preview", { template, category, formData, price, selectedDays, selectedLocations, selectedDates, startDate, endDate }); }}>
+            <TouchableOpacity style={styles.nextBtn} onPress={() => { navigation.navigate("CalendarScreen", { category, template, formData, price }); }}>
                 <Text style={styles.nextText}>See Preview</Text>
             </TouchableOpacity>
         </View>

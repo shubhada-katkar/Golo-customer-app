@@ -285,30 +285,30 @@ export default function Analytics({ navigation }) {
 
         {/* Statistics Card */}
         <View style={[styles.statsCard, { borderColor: colors.divider }]}>
-  <Text style={[styles.statsCardTitle, { color: colors.text }]}>Statistics</Text>
-  <View style={styles.pieChartWrapper}>
-    <PieChart
-      data={categoryData}
-      width={screenWidth - 30}
-      height={200}
-      chartConfig={{ color: () => "#000" }}
-      accessor={"population"}
-      backgroundColor={"transparent"}
-      hasLegend={false}
-      center={[(screenWidth - 30) / 4, 0]}
-    />
-  </View>
-  <View style={styles.legendWrap}>
-    {categoryData.map((item, index) => (
-      <View key={index} style={styles.legendItem}>
-        <View style={[styles.legendDot, { backgroundColor: item.color }]} />
-        <Text style={[styles.legendText, { color: colors.text }]} numberOfLines={1} ellipsizeMode="tail">
-          {item.population} {item.name}
-        </Text>
-      </View>
-    ))}
-  </View>
-</View>
+          <Text style={[styles.statsCardTitle, { color: colors.text }]}>Statistics</Text>
+          <View style={styles.pieChartWrapper}>
+            <PieChart
+              data={categoryData}
+              width={screenWidth - 30}
+              height={200}
+              chartConfig={{ color: () => "#000" }}
+              accessor={"population"}
+              backgroundColor={"transparent"}
+              hasLegend={false}
+              center={[(screenWidth - 30) / 4, 0]}
+            />
+          </View>
+          <View style={styles.legendWrap}>
+            {categoryData.map((item, index) => (
+              <View key={index} style={styles.legendItem}>
+                <View style={[styles.legendDot, { backgroundColor: item.color }]} />
+                <Text style={[styles.legendText, { color: colors.text }]} numberOfLines={1} ellipsizeMode="tail">
+                  {item.population} {item.name}
+                </Text>
+              </View>
+            ))}
+          </View>
+        </View>
 
         {/* Ads Table */}
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Your Ads</Text>
@@ -366,16 +366,18 @@ export default function Analytics({ navigation }) {
                   <Entypo name="eye" size={20} color="#157a4f" />
                 </TouchableOpacity>
 
-                <TouchableOpacity
-                  style={styles.actionIconBtn}
-                  onPress={() =>
-                    navigation.navigate("AdEdit", {
-                      adId: resolvedAdId,
-                    })
-                  }
-                >
-                  <MaterialIcons name="edit" size={20} color="#d89633" />
-                </TouchableOpacity>
+                {String(ad.status || "").toLowerCase() !== "expired" && String(ad.status || "").toLowerCase() !== "deleted" && (
+                  <TouchableOpacity
+                    style={styles.actionIconBtn}
+                    onPress={() =>
+                      navigation.navigate("AdEdit", {
+                        adId: resolvedAdId,
+                      })
+                    }
+                  >
+                    <MaterialIcons name="edit" size={20} color="#d89633" />
+                  </TouchableOpacity>
+                )}
               </View>
             </View>
           );
@@ -463,30 +465,30 @@ const styles = StyleSheet.create({
     fontFamily: "Medium",
     lineHeight: Math.round(16 * 1.5)
   },
- pieChartWrapper: {
-  alignItems: "center",
-  justifyContent: "center",
-},
-legendWrap: {
-  flexDirection: "row",
-  flexWrap: "wrap",
-  marginTop: 12,
-},
-legendItem: {
-  flexDirection: "row",
-  alignItems: "center",
-  width: "33.33%",
-  marginBottom: 10,
-  paddingRight: 6,
-},
-legendText: {
-  fontSize: 12,
-  fontFamily: "Medium",
-  flexShrink: 1,
-  width: "82%",
-  lineHeight: Math.round(12 * 1.5),
-  paddingVertical: 2.5,
-},
+  pieChartWrapper: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  legendWrap: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginTop: 12,
+  },
+  legendItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    width: "33.33%",
+    marginBottom: 10,
+    paddingRight: 6,
+  },
+  legendText: {
+    fontSize: 12,
+    fontFamily: "Medium",
+    flexShrink: 1,
+    width: "82%",
+    lineHeight: Math.round(12 * 1.5),
+    paddingVertical: 2.5,
+  },
   legendDot: {
     width: 9,
     height: 9,
@@ -510,8 +512,8 @@ legendText: {
   actionCell: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    minWidth: 40,
+    justifyContent: "flex-start",  // was "center"
+    width: 64,                      // was minWidth: 40 — fixed width, not just a min
   },
   actionIconBtn: {
     paddingHorizontal: 4,

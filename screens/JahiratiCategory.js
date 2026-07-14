@@ -215,7 +215,7 @@ export default function JahiratiCategory({ navigation }) {
                             alert("Please select a category first");
                             return;
                         }
-                        navigation.navigate("CalendarScreen", { category: selectedCategory });
+                        navigation.navigate("Template", { category: selectedCategory });
                     }}
                 >
                     <Text style={{ color: "#ffffff", fontSize: 18, fontFamily: "Medium", lineHeight: Math.round(18 * 1.2) }}>

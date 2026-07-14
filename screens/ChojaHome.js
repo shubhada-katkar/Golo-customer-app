@@ -1,5 +1,5 @@
 import React, { useCallback, useContext, useRef, useState, useEffect } from "react";
-import { ActivityIndicator, View, StyleSheet, Text, TouchableOpacity, ScrollView, TextInput, Keyboard, TouchableWithoutFeedback } from "react-native";
+import { ActivityIndicator, View, StyleSheet, Text, TouchableOpacity, ScrollView, TextInput, Keyboard, TouchableWithoutFeedback, Modal, Dimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemeContext } from "../theme/ThemeContext";
 import ChojaBottom from "../components/ChojaBottom";
@@ -11,6 +11,8 @@ import Topbar2 from "../components/Topbar2";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Location from "expo-location";
 import { matchesCategorySubFilter } from "../utils/categorySubFilters";
+
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 const categories = [
     { icon: "school-outline", label: "Education" },
@@ -69,6 +71,14 @@ const SUB_FILTER_OPTIONS = {
     ],
 };
 
+const SORT_OPTIONS = [
+    { label: "Newest First", value: "newest" },
+    { label: "Oldest First", value: "oldest" },
+    { label: "Price High to Low", value: "price_desc" },
+    { label: "Price Low to High", value: "price_asc" },
+    { label: "Nearby", value: "nearby" },
+];
+
 export default function ChojaHome() {
     const [selectedCategory, setSelectedCategory] = useState(null);
     const [selectedSubFilter, setSelectedSubFilter] = useState(null);
@@ -97,6 +107,23 @@ export default function ChojaHome() {
     const [categoryLayouts, setCategoryLayouts] = useState({});
     const scrollX = useRef(0);
     const [dropdownLeft, setDropdownLeft] = useState(0);
+
+    // Modal state
+    const [allCategoriesModalOpen, setAllCategoriesModalOpen] = useState(false);
+    const [categorySearchQuery, setCategorySearchQuery] = useState("");
+
+    // Sort state
+    const [showSortDropdown, setShowSortDropdown] = useState(false);
+    const [selectedSort, setSelectedSort] = useState("newest");
+
+    useEffect(() => {
+        if (selectedCategory) {
+            const layout = categoryLayouts[selectedCategory];
+            if (layout) {
+                setDropdownLeft(layout.x);
+            }
+        }
+    }, [selectedCategory, categoryLayouts]);
 
     useEffect(() => {
         let isMounted = true;
@@ -328,288 +355,418 @@ export default function ChojaHome() {
 
     const activeSubFilterOptions = selectedCategory ? SUB_FILTER_OPTIONS[selectedCategory] || null : null;
 
-   const handleCategoryPress = useCallback((label) => {
-    const isSameCategory = selectedCategory === label;
+    const handleCategoryPress = useCallback((label) => {
+        const isSameCategory = selectedCategory === label;
 
-    if (label === "Vehicle" || label === "Greetings" || label === "Property") {
-        if (!isSameCategory) {
-            // Picking a fresh category -> select it and open the dropdown
-            setSelectedCategory(label);
-            setSelectedSubFilter(null);
-            setShowSubFilterMenu(true);
-            const layout = categoryLayouts[label];
-            if (layout) setDropdownLeft(layout.x - scrollX.current);
-        } else if (showSubFilterMenu) {
-            // Chip tapped again while dropdown is open -> fully deselect
-            setSelectedCategory(null);
-            setSelectedSubFilter(null);
-            setShowSubFilterMenu(false);
-        } else {
-            // Chip tapped again while dropdown is closed -> reopen it
-            // (selectedSubFilter, if any, stays intact and will show green highlight)
-            setShowSubFilterMenu(true);
-            const layout = categoryLayouts[label];
-            if (layout) setDropdownLeft(layout.x - scrollX.current);
+        if (label === "Vehicle" || label === "Greetings" || label === "Property") {
+            if (!isSameCategory) {
+                // Picking a fresh category -> select it and open the dropdown
+                setSelectedCategory(label);
+                setSelectedSubFilter(null);
+                setShowSubFilterMenu(true);
+                const layout = categoryLayouts[label];
+                if (layout) setDropdownLeft(layout.x);
+            } else if (showSubFilterMenu) {
+                // Chip tapped again while dropdown is open -> fully deselect
+                setSelectedCategory(null);
+                setSelectedSubFilter(null);
+                setShowSubFilterMenu(false);
+            } else {
+                // Chip tapped again while dropdown is closed -> reopen it
+                // (selectedSubFilter, if any, stays intact and will show green highlight)
+                setShowSubFilterMenu(true);
+                const layout = categoryLayouts[label];
+                if (layout) setDropdownLeft(layout.x);
+            }
+            return;
         }
-        return;
-    }
 
-    setSelectedCategory(isSameCategory ? null : label);
-    setSelectedSubFilter(null);
-    setShowSubFilterMenu(false);
-}, [selectedCategory, categoryLayouts, showSubFilterMenu]);
+        setSelectedCategory(isSameCategory ? null : label);
+        setSelectedSubFilter(null);
+        setShowSubFilterMenu(false);
+    }, [selectedCategory, categoryLayouts, showSubFilterMenu]);
 
-const handleCloseSubFilterMenu = useCallback(() => {
-    setShowSubFilterMenu(false);
-}, []);
+    const handleCloseSubFilterMenu = useCallback(() => {
+        setShowSubFilterMenu(false);
+    }, []);
 
     const handleSelectSubFilter = useCallback((value) => {
         setSelectedSubFilter((current) => (current === value ? null : value));
         setShowSubFilterMenu(false);
     }, []);
 
-    return (
-        <TouchableWithoutFeedback onPress={handleCloseSubFilterMenu}>
-        <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-            <LinearGradient
-                colors={["#f8a812", "#fad081", "#f8f6f265"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 0, y: 1 }}
-                style={{ height: 220, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0 }}
-            />
-            <Topbar2 />
-
-            {isEditingLocation ? (
-                <View style={[styles.locationSection, styles.locationEditingSection]}>
-                    <View style={styles.locationRow}>
-                        <View style={styles.locationLeftGroup}>
-                            <Ionicons name="location-outline" size={16} color="#c47a00" />
-                            <TextInput
-                                ref={locationInputRef}
-                                style={styles.locationInput}
-                                placeholder="Type a city or area..."
-                                placeholderTextColor="#888"
-                                value={locationQuery}
-                                onChangeText={handleLocationQueryChange}
-                                returnKeyType="search"
-                                autoCorrect={false}
-                                autoCapitalize="words" />
-                        </View>
-                        <TouchableOpacity onPress={handleCancelEditingLocation} style={styles.locationCancelBtn}>
-                            <Ionicons name="close-circle" size={18} color="#555" />
-                        </TouchableOpacity>
-                    </View>
-
-                    {(suggestionsLoading || locationSuggestions.length > 0) && (
-                        <View style={styles.suggestionsContainer}>
-                            {suggestionsLoading ? (
-                                <View style={styles.suggestionLoading}>
-                                    <ActivityIndicator size="small" color="#c47a00" />
-                                    <Text style={styles.suggestionLoadingText}>Searching...</Text>
-                                </View>
-                            ) : (
-                                locationSuggestions.map((s) => (
-                                    <TouchableOpacity
-                                        key={s.id}
-                                        style={styles.suggestionItem}
-                                        onPress={() => handleSelectSuggestion(s)}
-                                        activeOpacity={0.7} >
-                                        <Ionicons name="location-sharp" size={14} color="#c47a00" style={{ marginRight: 8 }} />
-                                        <Text style={styles.suggestionText} numberOfLines={2}>{s.label}</Text>
-                                    </TouchableOpacity>
-                                ))
-                            )}
-                            {gpsCoordinates && (
-                                <TouchableOpacity
-                                    style={[styles.suggestionItem, styles.gpsResetItem]}
-                                    onPress={handleResetToGPS}
-                                    activeOpacity={0.7} >
-                                    <Ionicons name="navigate" size={14} color="#157a4f" style={{ marginRight: 8 }} />
-                                    <Text style={[styles.suggestionText, { color: "#157a4f" }]}>Use my current GPS location</Text>
-                                </TouchableOpacity>
-                            )}
-                        </View>
-                    )}
-                </View>
-            ) : (
-                <TouchableOpacity
-                    style={styles.locationSection}
-                    onPress={handleStartEditingLocation}
-                    activeOpacity={0.75}
-                >
-                    <View style={styles.locationRow}>
-                        <View style={styles.locationLeftGroup}>
-                            <Ionicons name="location-outline" size={16} color="#000000" />
-                            <Text style={styles.locationText} numberOfLines={1} ellipsizeMode="tail">
-                                {locationLabel}
-                            </Text>
-                        </View>
-                        <Ionicons name="chevron-down" size={14} color="#555" />
-                    </View>
-                </TouchableOpacity>
-            )}
-
-            <View style={styles.row1}>
-                <TouchableOpacity
-                    style={styles.search}
-                    activeOpacity={1}
-                    onPress={() => inputRef.current?.focus()} >
-
-                    <EvilIcons name="search" size={24} color="#555" />
-                    <TextInput
-                        ref={inputRef}
-                        placeholder="Search ads by name or category"
-                        value={searchQuery}
-                        onChangeText={setSearchQuery}
-                        style={styles.searchInput}
-                        textAlignVertical="center"
-                        returnKeyType="search"
-                    />
-
-                    {searchQuery.length > 0 && (
-                        <TouchableOpacity onPress={() => setSearchQuery("")} style={{ padding: 4 }}>
-                            <Ionicons name="close-circle" size={19} color="#555" />
-                        </TouchableOpacity>
-                    )}
-                </TouchableOpacity>
-            </View>
-
-            {/* Categories */}
-            <View style={{ paddingVertical: 12, position: "relative", zIndex: 10 }}>
-               <ScrollView
-    ref={scrollRef}
-    horizontal
-    showsHorizontalScrollIndicator={false}
-    contentContainerStyle={styles.chipsRow}
-    onScroll={(e) => {
-        scrollX.current = e.nativeEvent.contentOffset.x;
-        if (selectedCategory) {
-            const layout = categoryLayouts[selectedCategory];
-            if (layout) setDropdownLeft(layout.x - scrollX.current);
+    const STRIP_CATEGORIES = categories.slice(0, 4);
+    let displayedCategories = [...STRIP_CATEGORIES];
+    if (selectedCategory) {
+        const selectedIndex = categories.findIndex(cat => cat.label === selectedCategory);
+        if (selectedIndex >= 4) {
+            const selectedItem = categories[selectedIndex];
+            displayedCategories[3] = selectedItem;
         }
-    }}
-    scrollEventThrottle={16} >
-    {sortedCategories.map((item, index) => {
-        const isActive = selectedCategory === item.label;
-        const { bg, dark } = CATEGORY_COLORS[item.label] || { bg: "#f0f0f0", dark: "#555555" };
-        return (
-            <TouchableOpacity
-                key={index}
-                onPress={() => handleCategoryPress(item.label)}
-                onLayout={(e) => {
-                    const { x, width } = e.nativeEvent.layout;
-                    setCategoryLayouts((prev) => ({ ...prev, [item.label]: { x, width } }));
-                }}
-                style={styles.categoryItem}
-            >
-                <View style={[styles.categoryIconCircle, { backgroundColor: bg }]}>
-                    <Ionicons name={item.icon} size={20} color={dark} />
-                </View>
-                <Text style={[styles.categoryText, { color: dark }]} numberOfLines={1}>
-                    {item.label}
-                </Text>
-                {isActive && <View style={styles.categoryUnderline} />}
-            </TouchableOpacity>
-        );
-    })}
-</ScrollView>
-            
+    }
 
-               {showSubFilterMenu && activeSubFilterOptions && (
-    <View style={[styles.subFilterDropdown, { left: dropdownLeft }]}>
-        {activeSubFilterOptions.map((option, idx) => {
-            const isSelected = selectedSubFilter === option.value;
-            const isLast = idx === activeSubFilterOptions.length - 1;
-            return (
-                <TouchableOpacity
-                    key={option.value}
-                    style={[
-                        styles.subFilterDropdownItem,
-                        isLast && { borderBottomWidth: 0 },
-                        isSelected && styles.subFilterDropdownItemActive,
-                    ]}
-                    onPress={() => handleSelectSubFilter(option.value)}
-                    activeOpacity={0.8}
+    return (
+        <TouchableWithoutFeedback onPress={() => {
+            handleCloseSubFilterMenu();
+            setShowSortDropdown(false);
+        }}>
+            <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+                <LinearGradient
+                    colors={["#f8a812", "#fad081", "#f8f6f265"]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 0, y: 1 }}
+                    style={{ height: 220, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0 }}
+                />
+                <Topbar2 />
+
+                {isEditingLocation ? (
+                    <View style={[styles.locationSection, styles.locationEditingSection]}>
+                        <View style={styles.locationRow}>
+                            <View style={styles.locationLeftGroup}>
+                                <Ionicons name="location-outline" size={16} color="#c47a00" />
+                                <TextInput
+                                    ref={locationInputRef}
+                                    style={styles.locationInput}
+                                    placeholder="Type a city or area..."
+                                    placeholderTextColor="#888"
+                                    value={locationQuery}
+                                    onChangeText={handleLocationQueryChange}
+                                    returnKeyType="search"
+                                    autoCorrect={false}
+                                    autoCapitalize="words" />
+                            </View>
+                            <TouchableOpacity onPress={handleCancelEditingLocation} style={styles.locationCancelBtn}>
+                                <Ionicons name="close-circle" size={18} color="#555" />
+                            </TouchableOpacity>
+                        </View>
+
+                        {(suggestionsLoading || locationSuggestions.length > 0) && (
+                            <View style={styles.suggestionsContainer}>
+                                {suggestionsLoading ? (
+                                    <View style={styles.suggestionLoading}>
+                                        <ActivityIndicator size="small" color="#c47a00" />
+                                        <Text style={styles.suggestionLoadingText}>Searching...</Text>
+                                    </View>
+                                ) : (
+                                    locationSuggestions.map((s) => (
+                                        <TouchableOpacity
+                                            key={s.id}
+                                            style={styles.suggestionItem}
+                                            onPress={() => handleSelectSuggestion(s)}
+                                            activeOpacity={0.7} >
+                                            <Ionicons name="location-sharp" size={14} color="#c47a00" style={{ marginRight: 8 }} />
+                                            <Text style={styles.suggestionText} numberOfLines={2}>{s.label}</Text>
+                                        </TouchableOpacity>
+                                    ))
+                                )}
+                                {gpsCoordinates && (
+                                    <TouchableOpacity
+                                        style={[styles.suggestionItem, styles.gpsResetItem]}
+                                        onPress={handleResetToGPS}
+                                        activeOpacity={0.7} >
+                                        <Ionicons name="navigate" size={14} color="#157a4f" style={{ marginRight: 8 }} />
+                                        <Text style={[styles.suggestionText, { color: "#157a4f" }]}>Use my current GPS location</Text>
+                                    </TouchableOpacity>
+                                )}
+                            </View>
+                        )}
+                    </View>
+                ) : (
+                    <TouchableOpacity
+                        style={styles.locationSection}
+                        onPress={handleStartEditingLocation}
+                        activeOpacity={0.75}
+                    >
+                        <View style={styles.locationRow}>
+                            <View style={styles.locationLeftGroup}>
+                                <Ionicons name="location-outline" size={16} color="#000000" />
+                                <Text style={styles.locationText} numberOfLines={1} ellipsizeMode="tail">
+                                    {locationLabel}
+                                </Text>
+                            </View>
+                            <Ionicons name="chevron-down" size={14} color="#555" />
+                        </View>
+                    </TouchableOpacity>
+                )}
+
+                <View style={styles.row1}>
+                    <TouchableOpacity
+                        style={[styles.search, { flex: 1 }]}
+                        activeOpacity={1}
+                        onPress={() => inputRef.current?.focus()} >
+
+                        <EvilIcons name="search" size={24} color="#555" />
+                        <TextInput
+                            ref={inputRef}
+                            placeholder="Search ads by name or category"
+                            value={searchQuery}
+                            onChangeText={setSearchQuery}
+                            style={styles.searchInput}
+                            textAlignVertical="center"
+                            returnKeyType="search"
+                        />
+
+                        {searchQuery.length > 0 && (
+                            <TouchableOpacity onPress={() => setSearchQuery("")} style={{ padding: 4 }}>
+                                <Ionicons name="close-circle" size={19} color="#555" />
+                            </TouchableOpacity>
+                        )}
+                    </TouchableOpacity>
+
+                    {/* Filter Button */}
+                    <TouchableOpacity
+                        style={styles.filterBtn}
+                        onPress={() => setShowSortDropdown(!showSortDropdown)}
+                    >
+                        <Ionicons name="options-outline" size={20} color="#157a4f" />
+                    </TouchableOpacity>
+
+                    {/* Sort Dropdown */}
+                    {showSortDropdown && (
+                        <View style={styles.sortDropdown}>
+                            {SORT_OPTIONS.map((option) => {
+                                const isSelected = selectedSort === option.value;
+                                return (
+                                    <TouchableOpacity
+                                        key={option.value}
+                                        style={[
+                                            styles.sortDropdownItem,
+                                            isSelected && styles.sortDropdownItemActive
+                                        ]}
+                                        onPress={() => {
+                                            setSelectedSort(option.value);
+                                            setShowSortDropdown(false);
+                                        }}
+                                    >
+                                        <Text style={[
+                                            styles.sortDropdownText,
+                                            isSelected && styles.sortDropdownTextActive
+                                        ]}>
+                                            {option.label}
+                                        </Text>
+                                        {isSelected && <Ionicons name="checkmark" size={14} color="#157a4f" />}
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </View>
+                    )}
+                </View>
+
+                {/* Categories */}
+                <View style={{ paddingVertical: 12, position: "relative", zIndex: 10, paddingHorizontal: 10 }}>
+                    <View style={styles.categoryStripRow}>
+                        {displayedCategories.map((item, index) => {
+                            const isActive = selectedCategory === item.label;
+                            const { bg, dark } = CATEGORY_COLORS[item.label] || { bg: "#f0f0f0", dark: "#555555" };
+                            return (
+                                <TouchableOpacity
+                                    key={index}
+                                    onPress={() => handleCategoryPress(item.label)}
+                                    onLayout={(e) => {
+                                        const { x, width } = e.nativeEvent.layout;
+                                        setCategoryLayouts((prev) => ({ ...prev, [item.label]: { x, width } }));
+                                    }}
+                                    style={styles.stripChip}
+                                >
+                                    <View style={[styles.stripIconCircle, { backgroundColor: isActive ? dark : bg }]}>
+                                        <Ionicons name={item.icon} size={18} color={isActive ? "#fff" : dark} />
+                                    </View>
+                                    <Text style={[styles.stripText, { color: dark, fontFamily: isActive ? "Bold" : "SemiBold" }]} numberOfLines={2}>
+                                        {item.label}
+                                    </Text>
+                                </TouchableOpacity>
+                            );
+                        })}
+                        <TouchableOpacity
+                            style={styles.stripChip}
+                            activeOpacity={0.8}
+                            onPress={() => setAllCategoriesModalOpen(true)}
+                        >
+                            <View style={[styles.stripIconCircle, { backgroundColor: "#f2f2f2" }]}>
+                                <Ionicons name="grid" size={18} color="#444" />
+                            </View>
+                            <Text style={[styles.stripText, { color: "#444" }]} numberOfLines={1}>
+                                See All
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    {showSubFilterMenu && activeSubFilterOptions && (
+                        <View style={[styles.subFilterDropdown, { left: dropdownLeft }]}>
+                            {activeSubFilterOptions.map((option, idx) => {
+                                const isSelected = selectedSubFilter === option.value;
+                                const isLast = idx === activeSubFilterOptions.length - 1;
+                                return (
+                                    <TouchableOpacity
+                                        key={option.value}
+                                        style={[
+                                            styles.subFilterDropdownItem,
+                                            isLast && { borderBottomWidth: 0 },
+                                            isSelected && styles.subFilterDropdownItemActive,
+                                        ]}
+                                        onPress={() => handleSelectSubFilter(option.value)}
+                                        activeOpacity={0.8}
+                                    >
+                                        <Text style={[styles.subFilterDropdownText, isSelected && styles.subFilterDropdownTextActive]}>
+                                            {option.label}
+                                        </Text>
+                                        {isSelected && <Ionicons name="checkmark" size={14} color="#157a4f" />}
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </View>
+                    )}
+                </View>
+
+                <View style={{ paddingHorizontal: 8 }}>
+                    <View style={styles.row2}>
+
+                        <TouchableOpacity
+                            onPress={() => setTab("Chotya Jahirati")}
+                            style={[
+                                styles.tabButton,
+                                tab === "Chotya Jahirati" && styles.activeTab]} >
+                            <Text style={[
+                                styles.text,
+                                tab === "Chotya Jahirati" && styles.activeText]} >
+                                Chotya Jahirati </Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            onPress={() => setTab("My Ads")}
+                            style={[
+                                styles.tabButton,
+                                tab === "My Ads" && styles.activeTab]} >
+                            <Text style={[
+                                styles.text,
+                                tab === "My Ads" && styles.activeText]} >
+                                My Ads </Text>
+                        </TouchableOpacity>
+                        {/* 
+                        <TouchableOpacity
+                            onPress={() => setTab("I Want")}
+                            style={[
+                                styles.tabButton,
+                                tab === "I Want" && styles.activeTab]} >
+                            <Text style={[
+                                styles.text,
+                                tab === "I Want" && styles.activeText]} >
+                                I Want </Text>
+                        </TouchableOpacity> */}
+
+                    </View>
+                </View>
+
+                <View style={{ flex: 1, marginTop: 10 }}>
+                    {tab === "Chotya Jahirati" && (
+                        <ChotyaJahirati
+                            selectedCategory={selectedCategory}
+                            selectedSubFilter={selectedSubFilter}
+                            searchQuery={searchQuery}
+                            lat={userCoordinates?.lat}
+                            lng={userCoordinates?.lng}
+                            locationPlaceName={locationPlaceName}
+                            selectedSort={selectedSort}
+                        />
+                    )}
+                    {tab === "I Want" && <Iwant />}
+                    {tab === "My Ads" && (
+                        <MyAds
+                            selectedCategory={selectedCategory}
+                            selectedSubFilter={selectedSubFilter}
+                            searchQuery={searchQuery}
+                        />
+                    )}
+                </View>
+
+                <SafeAreaView
+                    edges={["bottom"]}
+                    style={{ position: "absolute", bottom: 0, width: "100%" }} >
+                    <ChojaBottom />
+                </SafeAreaView>
+
+                {/* ---- All Categories Modal ---- */}
+                <Modal
+                    visible={allCategoriesModalOpen}
+                    animationType="slide"
+                    transparent={false}
+                    onRequestClose={() => setAllCategoriesModalOpen(false)}
+                    statusBarTranslucent
                 >
-                    <Text style={[styles.subFilterDropdownText, isSelected && styles.subFilterDropdownTextActive]}>
-                        {option.label}
-                    </Text>
-                    {isSelected && <Ionicons name="checkmark" size={14} color="#157a4f" />}
-                </TouchableOpacity>
-            );
-        })}
-    </View>
-)}
-        </View>
+                    <SafeAreaView style={{ flex: 1, backgroundColor: "#ffffff" }}>
+                        <LinearGradient
+                            colors={["#f8a812", "#fad081", "#ffffff"]}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 0, y: 1 }}
+                            style={styles.modalHeaderGradient}
+                        >
+                            <View style={styles.modalHeaderRow}>
+                                <Text style={styles.modalTitle}>All Categories</Text>
+                                <TouchableOpacity
+                                    style={styles.modalCloseBtn}
+                                    onPress={() => setAllCategoriesModalOpen(false)}
+                                >
+                                    <Ionicons name="close" size={16} color="#333" style={{ marginRight: 2 }} />
+                                    <Text style={styles.modalCloseText}>Close</Text>
+                                </TouchableOpacity>
+                            </View>
 
-            <View style={{ paddingHorizontal: 8 }}>
-                <View style={styles.row2}>
+                            {/* Modal Search Input */}
+                            <View style={styles.modalSearchContainer}>
+                                <Ionicons name="search" size={18} color="#888" style={{ marginRight: 8 }} />
+                                <TextInput
+                                    placeholder="Search categories..."
+                                    placeholderTextColor="#888"
+                                    value={categorySearchQuery}
+                                    onChangeText={setCategorySearchQuery}
+                                    style={styles.modalSearchInput}
+                                />
+                                {categorySearchQuery.length > 0 && (
+                                    <TouchableOpacity onPress={() => setCategorySearchQuery("")}>
+                                        <Ionicons name="close-circle" size={18} color="#888" />
+                                    </TouchableOpacity>
+                                )}
+                            </View>
+                        </LinearGradient>
 
-                    <TouchableOpacity
-                        onPress={() => setTab("Chotya Jahirati")}
-                        style={[
-                            styles.tabButton,
-                            tab === "Chotya Jahirati" && styles.activeTab]} >
-                        <Text style={[
-                            styles.text,
-                            tab === "Chotya Jahirati" && styles.activeText]} >
-                            Chotya Jahirati </Text>
-                    </TouchableOpacity>
+                        {/* Scrollable grid content */}
+                        <ScrollView
+                            contentContainerStyle={styles.modalGridContent}
+                            showsVerticalScrollIndicator={false}
+                        >
+                            <View style={styles.modalGridRow}>
+                                {categories.filter((item) =>
+                                    item.label.toLowerCase().includes(categorySearchQuery.toLowerCase())
+                                ).map((item) => {
+                                    const { bg, dark } = CATEGORY_COLORS[item.label] || { bg: "#f0f0f0", dark: "#555" };
 
-                    <TouchableOpacity
-                        onPress={() => setTab("My Ads")}
-                        style={[
-                            styles.tabButton,
-                            tab === "My Ads" && styles.activeTab]} >
-                        <Text style={[
-                            styles.text,
-                            tab === "My Ads" && styles.activeText]} >
-                            My Ads </Text>
-                    </TouchableOpacity>
+                                    return (
+                                        <TouchableOpacity
+                                            key={item.label}
+                                            style={[styles.modalGridCard, { backgroundColor: bg }]}
+                                            activeOpacity={0.8}
+                                            onPress={() => {
+                                                setAllCategoriesModalOpen(false);
+                                                setCategorySearchQuery("");
+                                                handleCategoryPress(item.label);
+                                            }}
+                                        >
+                                            <View style={styles.modalCardIconCircle}>
+                                                <Ionicons name={item.icon} size={22} color={dark} />
+                                            </View>
+                                            <Text style={styles.modalCardText} numberOfLines={2}>
+                                                {item.label}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </View>
+                        </ScrollView>
+                    </SafeAreaView>
+                </Modal>
 
-                    <TouchableOpacity
-                        onPress={() => setTab("I Want")}
-                        style={[
-                            styles.tabButton,
-                            tab === "I Want" && styles.activeTab]} >
-                        <Text style={[
-                            styles.text,
-                            tab === "I Want" && styles.activeText]} >
-                            I Want </Text>
-                    </TouchableOpacity>
-
-                </View>
-            </View>
-
-            <View style={{ flex: 1, marginTop: 10 }}>
-                {tab === "Chotya Jahirati" && (
-                    <ChotyaJahirati
-                        selectedCategory={selectedCategory}
-                        selectedSubFilter={selectedSubFilter}
-                        searchQuery={searchQuery}
-                        lat={userCoordinates?.lat}
-                        lng={userCoordinates?.lng}
-                        locationPlaceName={locationPlaceName}
-                    />
-                )}
-                {tab === "I Want" && <Iwant />}
-                {tab === "My Ads" && (
-                    <MyAds
-                        selectedCategory={selectedCategory}
-                        selectedSubFilter={selectedSubFilter}
-                        searchQuery={searchQuery}
-                    />
-                )}
-            </View>
-
-            <SafeAreaView
-                edges={["bottom"]}
-                style={{ position: "absolute", bottom: 0, width: "100%" }} >
-                <ChojaBottom />
             </SafeAreaView>
-
-        </SafeAreaView>
-    </TouchableWithoutFeedback>
+        </TouchableWithoutFeedback>
     );
 }
 
@@ -618,6 +775,8 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         paddingHorizontal: 10,
+        position: "relative",
+        zIndex: 500,
     },
     search: {
         flexDirection: "row",
@@ -627,7 +786,8 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: "#cacaca",
         marginVertical: 4,
-        paddingHorizontal: 4,
+        paddingHorizontal: 8,
+        height: 44,
     },
     searchInput: {
         flex: 1,
@@ -641,6 +801,56 @@ const styles = StyleSheet.create({
         paddingVertical: 4,
         justifyContent: "center",
         alignItems: "center",
+    },
+    filterBtn: {
+        marginLeft: 8,
+        backgroundColor: "#ffffff",
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: "#cacaca",
+        paddingHorizontal: 10,
+        justifyContent: "center",
+        alignItems: "center",
+        height: 44,
+        width: 44,
+    },
+    sortDropdown: {
+        position: "absolute",
+        top: 52,
+        right: 10,
+        backgroundColor: "#ffffff",
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: "#cacaca",
+        width: 170,
+        elevation: 10,
+        shadowColor: "#000",
+        shadowOpacity: 0.15,
+        shadowRadius: 10,
+        shadowOffset: { width: 0, height: 4 },
+        zIndex: 1000,
+        overflow: "hidden",
+    },
+    sortDropdownItem: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: "#f0f0f0",
+    },
+    sortDropdownItemActive: {
+        backgroundColor: "#f0faf5",
+    },
+    sortDropdownText: {
+        fontSize: 12,
+        fontFamily: "Medium",
+        color: "#333",
+    },
+    sortDropdownTextActive: {
+        color: "#157a4f",
+        fontFamily: "SemiBold",
     },
     row2: {
         flexDirection: "row",
@@ -668,78 +878,188 @@ const styles = StyleSheet.create({
         fontFamily: "Medium",
         lineHeight: Math.round(14 * 2.4),
     },
-    chipsRow: {
-        flexDirection: "row",
+    // Category Strip Styling
+    categorySection: {
+        marginTop: 6,
+        marginBottom: 4,
         paddingHorizontal: 10,
-        alignItems: "flex-start",
     },
-    categoryItem: {
+    categoryStripRow: {
+        flexDirection: "row",
+        justifyContent: "space-between",
         alignItems: "center",
-        justifyContent: "flex-start",
-        width: 72,
-        marginRight: 8,
+        width: "100%",
     },
-    categoryText: {
-        fontSize: 10,
-        fontFamily: "Medium",
-        color: "#000",
-        marginTop: 4,
-        textAlign: "center",
-        lineHeight: Math.round(10 * 1.2),
+    stripChip: {
+        alignItems: "center",
+        width: "18%",
     },
-    categoryIconCircle: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+    stripIconCircle: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
         alignItems: "center",
         justifyContent: "center",
-        marginBottom: 4,
+        marginBottom: 5,
+        shadowColor: "#000",
+        shadowOpacity: 0.05,
+        shadowRadius: 3,
+        shadowOffset: { width: 0, height: 1 },
+        elevation: 1,
     },
-    categoryUnderline: {
-        marginTop: 4,
-        width: 20,
-        height: 2,
-        backgroundColor: "#000000",
-        borderRadius: 1,
+    stripText: {
+        fontSize: 10,
+        fontFamily: "SemiBold",
+        textAlign: "center",
+        minHeight: 32,
+        lineHeight: 14,
     },
-   subFilterDropdown: {
-    position: "absolute",
-    top: "100%",
-    marginTop: 24,
-    backgroundColor: "#ffffff",
-    borderWidth: 1,
-    borderColor: "#f5b849",
-    overflow: "hidden",
-    minWidth: 120,
-    elevation: 8,
-    shadowColor: "#000",
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 3 },
-    zIndex: 200,
-},
-subFilterDropdownItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f5e9cf",
-},
-subFilterDropdownItemActive: {
-    backgroundColor: "#f0faf5",
-},
-subFilterDropdownText: {
-    fontSize: 12,
-    fontFamily: "Medium",
-    color: "#000",
-    lineHeight: Math.round(12 * 1.5),
-},
-subFilterDropdownTextActive: {
-    color: "#157a4f",
-    fontFamily: "SemiBold",
-},
+    // Modal Styling
+    modalHeaderGradient: {
+        paddingTop: 16,
+        paddingBottom: 20,
+        paddingHorizontal: 16,
+    },
+    modalHeaderRow: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginTop: 10,
+        marginBottom: 16,
+    },
+    modalTitle: {
+        fontSize: 20,
+        fontFamily: "Bold",
+        color: "#111",
+        lineHeight: 30,
+    },
+    modalCloseBtn: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#ffffff",
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: "#ddd",
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        shadowColor: "#000",
+        shadowOpacity: 0.05,
+        shadowRadius: 3,
+        shadowOffset: { width: 0, height: 1 },
+        elevation: 2,
+    },
+    modalCloseText: {
+        fontSize: 13,
+        fontFamily: "SemiBold",
+        color: "#333",
+        lineHeight: 20,
+    },
+    modalSearchContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#ffffff",
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: "#e2e2e2",
+        paddingHorizontal: 12,
+        paddingVertical: 5,
+        shadowColor: "#000",
+        shadowOpacity: 0.02,
+        shadowRadius: 5,
+        shadowOffset: { width: 0, height: 2 },
+        elevation: 1
+    },
+    modalSearchInput: {
+        flex: 1,
+        fontSize: 14,
+        fontFamily: "Medium",
+        color: "#222",
+        paddingVertical: 0,
+        top: 3
+    },
+    modalGridContent: {
+        paddingHorizontal: 16,
+        paddingTop: 10,
+        paddingBottom: 40,
+    },
+    modalGridRow: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        justifyContent: "space-between",
+    },
+    modalGridCard: {
+        width: "48%",
+        borderRadius: 16,
+        paddingVertical: 20,
+        paddingHorizontal: 10,
+        alignItems: "center",
+        justifyContent: "center",
+        marginBottom: 14,
+        shadowColor: "#000",
+        shadowOpacity: 0.03,
+        shadowRadius: 4,
+        shadowOffset: { width: 0, height: 2 },
+        elevation: 2,
+    },
+    modalCardIconCircle: {
+        width: 46,
+        height: 46,
+        borderRadius: 23,
+        backgroundColor: "#ffffff",
+        alignItems: "center",
+        justifyContent: "center",
+        marginBottom: 10,
+        shadowColor: "#000",
+        shadowOpacity: 0.04,
+        shadowRadius: 3,
+        shadowOffset: { width: 0, height: 1 },
+        elevation: 1,
+    },
+    modalCardText: {
+        fontSize: 12,
+        fontFamily: "Bold",
+        textAlign: "center",
+        color: "#111",
+        lineHeight: 16,
+    },
+    subFilterDropdown: {
+        position: "absolute",
+        top: "100%",
+        marginTop: 24,
+        backgroundColor: "#ffffff",
+        borderWidth: 1,
+        borderColor: "#f5b849",
+        overflow: "hidden",
+        minWidth: 120,
+        elevation: 8,
+        shadowColor: "#000",
+        shadowOpacity: 0.12,
+        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 3 },
+        zIndex: 200,
+    },
+    subFilterDropdownItem: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        paddingHorizontal: 14,
+        paddingVertical: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: "#f5e9cf",
+    },
+    subFilterDropdownItemActive: {
+        backgroundColor: "#f0faf5",
+    },
+    subFilterDropdownText: {
+        fontSize: 12,
+        fontFamily: "Medium",
+        color: "#000",
+        lineHeight: Math.round(12 * 1.5),
+    },
+    subFilterDropdownTextActive: {
+        color: "#157a4f",
+        fontFamily: "SemiBold",
+    },
     locationSection: {
         backgroundColor: "#ffffffe5",
         borderRadius: 12,

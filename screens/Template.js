@@ -7,7 +7,7 @@ import { Dimensions } from "react-native";
 const { width, height } = Dimensions.get("window");
 
 export default function Template({ navigation, route }) {
-    const { category, selectedDays, selectedLocations, selectedDates, startDate, endDate } = route.params || {};
+    const { category } = route.params || {};
     return (
         <SafeAreaView style={{ flex: 1 }}>
             <LinearGradient
@@ -91,7 +91,7 @@ export default function Template({ navigation, route }) {
                         </View>
 
                         <TouchableOpacity style={styles.selectStrip} onPress={() => navigation.navigate("FormPage",
-                            { template:1, category: category, selectedDays, selectedLocations, selectedDates, startDate, endDate, price:15 })}>
+                            { template: 1, category: category, price: 15 })}>
                             <Text style={styles.stripText}>Select This Template</Text>
                         </TouchableOpacity>
 
@@ -162,7 +162,7 @@ export default function Template({ navigation, route }) {
                         </View>
 
                         <TouchableOpacity style={styles.selectStrip} onPress={() => navigation.navigate("FormPage",
-                            { template: 2, category: category, selectedDays, selectedLocations, selectedDates, startDate, endDate, price:10 })}>
+                            { template: 2, category: category, price: 10 })}>
                             <Text style={styles.stripText}>Select This Template</Text>
                         </TouchableOpacity>
                     </View>
@@ -217,7 +217,7 @@ export default function Template({ navigation, route }) {
                         </View>
 
                         <TouchableOpacity style={styles.selectStrip} onPress={() => navigation.navigate("FormPage",
-                            { template: 3, category: category, selectedDays, selectedLocations, selectedDates, startDate, endDate, price:5 })}>
+                            { template: 3, category: category, price: 5 })}>
                             <Text style={styles.stripText}>Select This Template</Text>
                         </TouchableOpacity>
 

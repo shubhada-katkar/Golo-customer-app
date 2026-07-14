@@ -31,7 +31,7 @@ import Property from "../components/Property";
 import Vehicles from "../components/Vehicles";
 
 export default function FormPage({ route, navigation }) {
-    const { category, template, selectedDays, selectedLocations, selectedDates, startDate, endDate, price } = route.params || {};
+    const { category, template, price } = route.params || {};
 
     const [step, setStep] = useState(1);
     const [formData, setFormData] = useState({});
@@ -151,11 +151,6 @@ export default function FormPage({ route, navigation }) {
                                         onPrevious={() => setStep(1)}
                                         template={template}
                                         navigation={navigation}
-                                        selectedDays={selectedDays}
-                                        selectedLocations={selectedLocations}
-                                        selectedDates={selectedDates}
-                                        startDate={startDate}
-                                        endDate={endDate}
                                         price={price}
                                     />
                                 )}

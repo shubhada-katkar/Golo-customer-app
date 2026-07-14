@@ -10,7 +10,7 @@ import { TouchableWithoutFeedback, Keyboard } from "react-native";
 import { Alert } from "react-native";
 
 export default function CalendarScreen({ navigation, route }) {
-  const { category } = route.params || {};
+  const { category, template, formData, price } = route.params || {};
 
   const [showCalendar, setShowCalendar] = useState(false);
   const [selectedDates, setSelectedDates] = useState({});
@@ -189,8 +189,11 @@ export default function CalendarScreen({ navigation, route }) {
     const endDate = datesArray[datesArray.length - 1];
     const selectedDateRange = buildDateRange(startDate, endDate);
 
-    navigation.navigate("Template", {
+    navigation.navigate("Preview", {
       category,
+      template,
+      formData,
+      price,
       selectedDays: selectedDateRange.length,
       selectedDates: selectedDateRange,
       startDate,
