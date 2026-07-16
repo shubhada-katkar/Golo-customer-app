@@ -59,18 +59,18 @@ export default function Education({ formData, setFormData, category, onPrevious,
 
       <View style={styles.formCard}>
 
-        <Text style={styles.label}>Course Type</Text>
+        <Text style={styles.label}>Institution Type</Text>
         <View style={styles.pickerWrap}>
           <Picker
             selectedValue={formData.courseType || ""}
             onValueChange={(value) => setFormData({ ...formData, courseType: value })}
             mode="dropdown"
           >
-            <Picker.Item label="Select course type" value="" />
-            <Picker.Item label="Tuition" value="tuition" />
+            <Picker.Item label="Select institution type" value="" />
+            <Picker.Item label="School" value="school" />
             <Picker.Item label="Coaching" value="coaching" />
+            <Picker.Item label="College" value="college" />
             <Picker.Item label="Online Course" value="online course" />
-            <Picker.Item label="Workshop" value="workshop" />
             <Picker.Item label="Other" value="other" />
           </Picker>
         </View>
@@ -113,7 +113,7 @@ export default function Education({ formData, setFormData, category, onPrevious,
           placeholder="e.g. 10th Grade, JEE"
         />
 
-        <Text style={styles.label}>Subject</Text>
+        <Text style={styles.label}>Course Name</Text>
         <TextInput
           style={styles.input}
           value={formData.subject || ""}
@@ -123,7 +123,7 @@ export default function Education({ formData, setFormData, category, onPrevious,
           placeholder="Mathematics, Physics, Chemistry..."
         />
 
-        <Text style={styles.label}>Institute Name / Personal Brand </Text>
+        <Text style={styles.label}>Institute Name</Text>
         <TextInput
           style={styles.input}
           value={formData.institute || ""}
@@ -150,7 +150,7 @@ export default function Education({ formData, setFormData, category, onPrevious,
           onChangeText={(text) =>
             setFormData({ ...formData, fees: text })
           }
-          placeholder="Amount per month/course"
+          placeholder="e.g. 5000"
         />
 
         <Text style={styles.label}>Teaching Experience</Text>
@@ -160,7 +160,7 @@ export default function Education({ formData, setFormData, category, onPrevious,
           onChangeText={(text) =>
             setFormData({ ...formData, experience: text })
           }
-          placeholder="Years of Experience"
+          placeholder="e.g. 5 years"
         />
 
         <Text style={styles.label}>Qualification</Text>

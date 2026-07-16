@@ -59,7 +59,7 @@ export default function Matrimonial({ formData, setFormData, category, onPreviou
           onChangeText={(text) =>
             setFormData({ ...formData, age: text })
           }
-          placeholder="Enter age"
+          placeholder="e.g. 28"
         />
 
         {/* new dropdowns inserted before religion */}
@@ -72,7 +72,7 @@ export default function Matrimonial({ formData, setFormData, category, onPreviou
             }
             mode="dropdown"
           >
-            <Picker.Item label="Select profile for" value="" />
+            <Picker.Item label="Profile for" value="" />
             <Picker.Item label="Self" value="self" />
             <Picker.Item label="Relative" value="relative" />
             <Picker.Item label="Friend" value="friend" />
@@ -105,7 +105,7 @@ export default function Matrimonial({ formData, setFormData, category, onPreviou
             }
             mode="dropdown"
           >
-            <Picker.Item label="Select status" value="" />
+            <Picker.Item label="Marital Status" value="" />
             <Picker.Item label="Divorced" value="divorced" />
             <Picker.Item label="Single" value="single" />
             <Picker.Item label="Widow" value="widow" />
@@ -226,7 +226,7 @@ const styles = StyleSheet.create({
   formCard: { backgroundColor: "#fff", paddingBottom: 18, borderRadius: 10, paddingHorizontal: 16 },
   label: { fontSize: 16, marginTop: 16, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
   value: { fontSize: 16, color: "#555", fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
-  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10, marginTop: 6, fontSize:14, fontFamily:"Medium" },
+  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10, marginTop: 6, fontSize: 14, fontFamily: "Medium" },
   textArea: { height: 80, textAlignVertical: "top" },
   switchRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 12 },
 
@@ -253,16 +253,16 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     overflow: "hidden",
   },
-   descriptionInput: {
-  borderWidth: 1,
-  borderColor: "#ccc",
-  borderRadius: 8,
-  padding: 12,
-  minHeight: 100,      // Increased height
-  maxHeight: 100,      // Keeps the box fixed after this height
-  fontSize: 14,
-  textAlignVertical: "top",
-  fontFamily:"Medium"
-},
+  descriptionInput: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    padding: 12,
+    minHeight: 100,      // Increased height
+    maxHeight: 100,      // Keeps the box fixed after this height
+    fontSize: 14,
+    textAlignVertical: "top",
+    fontFamily: "Medium"
+  },
 });
 

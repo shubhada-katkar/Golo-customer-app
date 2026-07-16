@@ -60,36 +60,36 @@ export default function LostandFound({
             <View style={styles.formCard}>
 
                 {/* Status */}
-                <Text style={styles.label}>Status *</Text>
+                <Text style={styles.label}>Status</Text>
                 <View style={styles.segmentRow}>
                     <StatusButton label="Lost" value="lost" />
                     <StatusButton label="Found" value="found" />
                 </View>
 
                 {/* Item Name */}
-                <Text style={styles.label}>Item Name *</Text>
+                <Text style={styles.label}>Item Name</Text>
                 <TextInput
                     style={styles.input}
                     value={formData.itemName || ""}
                     onChangeText={(text) =>
                         setFormData({ ...formData, itemName: text })
                     }
-                    placeholder="e.g. Wallet, Mobile Phone"
+                    placeholder="e.g. iPhone 15 Pro Max, Brown Leather Wallet"
                 />
 
                 {/* Item Type */}
-                <Text style={styles.label}>Item Type *</Text>
+                <Text style={styles.label}>Item Type</Text>
                 <TextInput
                     style={styles.input}
                     value={formData.itemType || ""}
                     onChangeText={(text) =>
                         setFormData({ ...formData, itemType: text })
                     }
-                    placeholder="e.g. Electronics, Documents"
+                    placeholder="e.g. Phone, Wallet, Keys, Jewellery"
                 />
 
                 {/* Date */}
-                <Text style={styles.label}>Date *</Text>
+                <Text style={styles.label}>Date</Text>
                 <TextInput
                     style={styles.input}
                     value={formData.date || ""}
@@ -100,28 +100,28 @@ export default function LostandFound({
                 />
 
                 {/* Location */}
-                <Text style={styles.label}>Location *</Text>
+                <Text style={styles.label}>Location</Text>
                 <TextInput
                     style={styles.input}
                     value={formData.location || ""}
                     onChangeText={(text) =>
                         setFormData({ ...formData, location: text })
                     }
-                    placeholder="Where item was lost/found"
+                    placeholder="e.g. Bandra, Mumbai"
                 />
 
                 {/* Description */}
-                <Text style={styles.label}>Description *</Text>
+                <Text style={styles.label}>Description</Text>
                 <TextInput
                     style={styles.descriptionInput}
                     value={formData.description || ""}
                     onChangeText={(text) =>
                         setFormData({ ...formData, description: text })
                     }
-                    placeholder="Describe the item"
+                    placeholder="Describe the item, markings, condition"
                     multiline
                     scrollEnabled
-                     textAlignVertical="top" 
+                    textAlignVertical="top"
                 />
 
                 {/* Reward */}
@@ -132,19 +132,10 @@ export default function LostandFound({
                     onChangeText={(text) =>
                         setFormData({ ...formData, reward: text })
                     }
-                    placeholder="Optional reward amount"
+                    placeholder="₹5,000 or No Reward"
                 />
 
-                {/* Contact Details */}
-                <Text style={styles.label}>Contact Details *</Text>
-                <TextInput
-                    style={styles.input}
-                    value={formData.contactDetails || ""}
-                    onChangeText={(text) =>
-                        setFormData({ ...formData, contactDetails: text })
-                    }
-                    placeholder="Phone number or email"
-                />
+
 
             </View>
 
@@ -215,21 +206,21 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         padding: 10,
         marginTop: 6,
-        fontSize:14,
-        fontFamily:"Medium"
+        fontSize: 14,
+        fontFamily: "Medium"
     },
 
- descriptionInput: {
-  borderWidth: 1,
-  borderColor: "#ccc",
-  borderRadius: 8,
-  padding: 12,
-  minHeight: 100,      // Increased height
-  maxHeight: 100,      // Keeps the box fixed after this height
-  fontSize: 14,
-  textAlignVertical: "top",
-  fontFamily:"Medium"
-},
+    descriptionInput: {
+        borderWidth: 1,
+        borderColor: "#ccc",
+        borderRadius: 8,
+        padding: 12,
+        minHeight: 100,      // Increased height
+        maxHeight: 100,      // Keeps the box fixed after this height
+        fontSize: 14,
+        textAlignVertical: "top",
+        fontFamily: "Medium"
+    },
 
     segmentRow: {
         flexDirection: "row",

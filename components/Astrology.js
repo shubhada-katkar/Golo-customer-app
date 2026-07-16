@@ -1,6 +1,6 @@
 import React, { useContext } from "react";
 import { View, Text, TextInput, StyleSheet, TouchableOpacity } from "react-native";
-import { AntDesign, MaterialIcons, Feather } from "@expo/vector-icons";
+import { AntDesign } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 
 export default function Astrology({ formData, setFormData, category, onPrevious, template, selectedDays, selectedLocations, selectedDates, startDate, endDate, price }) {
@@ -107,7 +107,7 @@ export default function Astrology({ formData, setFormData, category, onPrevious,
                 </View>
 
                 <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-                    <View style={{ flexDirection: "row", alignItems: "center", marginTop: 20, gap: 78 }}>
+                    <View style={{ flexDirection: "row", alignItems: "center", marginTop: 20, gap: 80 }}>
                         <Text style={[styles.label, { marginTop: 0, fontSize: 14 }]}>Vaastu</Text>
                         <TouchableOpacity
                             style={styles.checkbox}
@@ -132,6 +132,18 @@ export default function Astrology({ formData, setFormData, category, onPrevious,
                     </View>
                 </View>
 
+                <View style={{ flexDirection: "row", alignItems: "center", marginTop: 20, gap: 85 }}>
+                    <Text style={[styles.label, { marginTop: 0, fontSize: 14 }]}>Other</Text>
+                    <TouchableOpacity
+                        style={styles.checkbox}
+                        onPress={() =>
+                            setFormData({ ...formData, other: !formData.other })
+                        }
+                    >
+                        {formData.other && <View style={styles.checkboxTick} />}
+                    </TouchableOpacity>
+                </View>
+
                 <Text style={styles.label}>Experience</Text>
                 <TextInput
                     style={styles.input}
@@ -139,7 +151,7 @@ export default function Astrology({ formData, setFormData, category, onPrevious,
                     onChangeText={(text) =>
                         setFormData({ ...formData, experience: text })
                     }
-                    placeholder="e.g. 5 years, 10 years"
+                    placeholder="e.g. 15 years"
                 />
 
                 <Text style={styles.label}>Langauge Spoken</Text>
@@ -152,23 +164,7 @@ export default function Astrology({ formData, setFormData, category, onPrevious,
                     placeholder="e.g. English, Hindi"
                 />
 
-                <Text style={styles.label}>Preferred Contact Method</Text>
-                <View style={styles.segmentRow}>
-                    <ConditionButton
-                        label="Voice Call"
-                        value="call"
-                        selected={formData.contactMethod === "call"}
-                        onPress={(val) => setFormData({ ...formData, contactMethod: val })}
-                        icon={<Feather name="phone" size={16} color={formData.contactMethod === "call" ? "#fff" : "#000"} />}
-                    />
-                    <ConditionButton
-                        label="Email"
-                        value="email"
-                        selected={formData.contactMethod === "email"}
-                        onPress={(val) => setFormData({ ...formData, contactMethod: val })}
-                        icon={<MaterialIcons name="email" size={16} color={formData.contactMethod === "email" ? "#fff" : "#000"} />}
-                    />
-                </View>
+
 
                 <Text style={styles.label}>Consultation Mode</Text>
                 <View style={{ flexDirection: "row", marginTop: 6 }}>
@@ -182,6 +178,11 @@ export default function Astrology({ formData, setFormData, category, onPrevious,
                         selected={formData.demoAvailable === "offline"}
                         onPress={() => setFormData({ ...formData, demoAvailable: "offline" })}
                     />
+                    <Radio
+                        label="Both"
+                        selected={formData.demoAvailable === "both"}
+                        onPress={() => setFormData({ ...formData, demoAvailable: "both" })}
+                    />
                 </View>
 
                 <Text style={styles.label}>Consultation Fee</Text>
@@ -191,7 +192,7 @@ export default function Astrology({ formData, setFormData, category, onPrevious,
                     onChangeText={(text) =>
                         setFormData({ ...formData, fee: text })
                     }
-                    placeholder="e.g. 100 INR"
+                    placeholder="e.g. ₹100"
                 />
 
                 <Text style={styles.label}>Availability Time</Text>
@@ -219,7 +220,7 @@ const styles = StyleSheet.create({
     formCard: { backgroundColor: "#fff", paddingHorizontal: 16, borderRadius: 10, paddingBottom: 18 },
     label: { fontSize: 16, marginTop: 16, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
     value: { fontSize: 16, color: "#555", fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
-    input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10, marginTop: 6, fontSize:14, fontFamily:"Medium" },
+    input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10, marginTop: 6, fontSize: 14, fontFamily: "Medium" },
     textArea: { height: 80, textAlignVertical: "top" },
     switchRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 12 },
 

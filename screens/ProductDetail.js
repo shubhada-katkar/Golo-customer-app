@@ -414,11 +414,44 @@ export default function ProductDetail({ route, navigation }) {
       const name = getProductName(product);
       const price = getProductPrice(product);
       const description = getProductDescription(product);
+
+      const getWebsiteBaseUrl = () => {
+        if (BASE_URL.includes("api.")) {
+          return BASE_URL.replace("api.", "").replace(/\/+$/, "");
+        }
+        return "https://golo.co.in";
+      };
+
+      const getAbsoluteImageUrl = (url) => {
+        if (!url) return null;
+        if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:")) {
+          return url;
+        }
+        const baseUrlClean = BASE_URL.replace(/\/+$/, "");
+        const urlClean = url.startsWith("/") ? url : `/${url}`;
+        return `${baseUrlClean}${urlClean}`;
+      };
+
+      // Since product details can be shared with or without an offer context
+      const websiteUrl = offerId 
+        ? `${getWebsiteBaseUrl()}/product/${encodeURIComponent(resolvedProductId)}/${encodeURIComponent(offerId)}`
+        : `${getWebsiteBaseUrl()}/product/${encodeURIComponent(resolvedProductId)}`;
+
+      const deepLink = offerId
+        ? `golo://product/${encodeURIComponent(resolvedProductId)}/${encodeURIComponent(offerId)}`
+        : `golo://product/${encodeURIComponent(resolvedProductId)}`;
+
+      const pImage = getProductImage(product);
+      const absoluteImage = getAbsoluteImageUrl(pImage);
+
       const shareMessage = [
         `Product: ${name}`,
         price ? `Price: ${price}` : null,
         product?.category ? `Category: ${product.category}` : null,
         description ? `Details: ${description}` : null,
+        absoluteImage ? `Image: ${absoluteImage}` : null,
+        `Website Link: ${websiteUrl}`,
+        `App Link: ${deepLink}`,
       ]
         .filter(Boolean)
         .join("\n");
@@ -426,6 +459,7 @@ export default function ProductDetail({ route, navigation }) {
       await Share.share({
         title: name,
         message: shareMessage,
+        url: websiteUrl,
       });
     } catch (error) {
       Alert.alert("Share Error", error?.message || "Unable to share this product right now.");

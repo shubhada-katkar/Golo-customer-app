@@ -347,18 +347,42 @@ export default function AdDetails({ route, navigation }) {
         return;
       }
 
-      const shareUrl = `${BASE_URL}/ads/share/${encodeURIComponent(resolvedShareAdId)}`;
+      const getWebsiteBaseUrl = () => {
+        if (BASE_URL.includes("api.")) {
+          return BASE_URL.replace("api.", "").replace(/\/+$/, "");
+        }
+        return "https://golo.co.in";
+      };
+
+      const getAbsoluteImageUrl = (url) => {
+        if (!url) return null;
+        if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:")) {
+          return url;
+        }
+        const baseUrlClean = BASE_URL.replace(/\/+$/, "");
+        const urlClean = url.startsWith("/") ? url : `/${url}`;
+        return `${baseUrlClean}${urlClean}`;
+      };
+
+      const websiteUrl = `${getWebsiteBaseUrl()}/ad/${encodeURIComponent(resolvedShareAdId)}`;
       const deepLink = `golo://ad/${encodeURIComponent(resolvedShareAdId)}`;
 
-      const message = [
+      const firstImage = ad?.images?.[0] || null;
+      const absoluteImage = getAbsoluteImageUrl(firstImage);
+
+      const messageLines = [
         `Check this ad on GOLO: ${ad?.title || 'Ad'}`,
-        shareUrl,
-        `App link: ${deepLink}`,
-      ].join('\n');
+        ad?.description ? `Details: ${ad.description}` : null,
+        absoluteImage ? `Image: ${absoluteImage}` : null,
+        `Website Link: ${websiteUrl}`,
+        `App Link: ${deepLink}`,
+      ].filter(Boolean);
+
+      const message = messageLines.join('\n');
 
       await Share.share({
         message,
-        url: deepLink || shareUrl,
+        url: websiteUrl,
         title: ad?.title || 'Shared Ad',
       });
     } catch (error) {

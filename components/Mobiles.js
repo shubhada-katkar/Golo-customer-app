@@ -77,7 +77,7 @@ export default function Mobiles({ formData, setFormData, category, onPrevious, t
           onChangeText={(text) =>
             setFormData({ ...formData, brand: text })
           }
-          placeholder="e.g. Apple, Samsung, OnePlus.."
+          placeholder="e.g. Apple, Samsung"
         />
 
         <Text style={styles.label}>Model</Text>
@@ -87,7 +87,7 @@ export default function Mobiles({ formData, setFormData, category, onPrevious, t
           onChangeText={(text) =>
             setFormData({ ...formData, model: text })
           }
-          placeholder="e.g. iPhone 14 Pro, Galaxy S23 Ultra.."
+          placeholder="Model Name / Number"
         />
 
         <Text style={styles.label}>Condition</Text>
@@ -114,7 +114,7 @@ export default function Mobiles({ formData, setFormData, category, onPrevious, t
           onChangeText={(text) =>
             setFormData({ ...formData, price: text })
           }
-          placeholder="Enter price in INR"
+          placeholder="₹"
         />
 
         <View style={{ flexDirection: "row", alignItems: "center", marginTop: 20, justifyContent: "space-between" }}>

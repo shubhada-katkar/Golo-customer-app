@@ -80,7 +80,7 @@ export default function Others({ formData, setFormData, category, onPrevious, te
           onChangeText={(text) =>
             setFormData({ ...formData, price: text })
           }
-          placeholder="Price of your listing"
+          placeholder="₹ (Optional)"
         />
       </View>
 

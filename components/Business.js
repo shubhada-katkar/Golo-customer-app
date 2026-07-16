@@ -80,7 +80,7 @@ export default function Business({ formData, setFormData, category, onPrevious, 
                     onChangeText={(text) =>
                         setFormData({ ...formData, businessName: text })
                     }
-                    placeholder="Enter Business Name"
+                    placeholder="Your Business Name"
                 />
 
                 <Text style={styles.label}>Business Type</Text>
@@ -93,17 +93,17 @@ export default function Business({ formData, setFormData, category, onPrevious, 
                     placeholder="e.g. Retail, Service, Manufacturing"
                 />
 
-                <Text style={styles.label}>Service Offered</Text>
+                <Text style={styles.label}>Services Offered</Text>
                 <TextInput
-                    style={[styles.descriptionInput, { minHeight:100, maxHeight:100}]}
+                    style={[styles.descriptionInput, { minHeight: 100, maxHeight: 100 }]}
                     value={formData.serviceOffered || ""}
                     onChangeText={(text) =>
                         setFormData({ ...formData, serviceOffered: text })
                     }
-                    placeholder="List the main service or product"
-                     multiline
-  textAlignVertical="top" // Starts text from the top (Android)
-  scrollEnabled={true}
+                    placeholder="e.g. Web Development, Consulting"
+                    multiline
+                    textAlignVertical="top" // Starts text from the top (Android)
+                    scrollEnabled={true}
                 />
 
                 <Text style={styles.label}>GST Number</Text>
@@ -196,7 +196,7 @@ export default function Business({ formData, setFormData, category, onPrevious, 
                     onChangeText={(text) =>
                         setFormData({ ...formData, campaignName: text })
                     }
-                    placeholder="Enter Campaign Name"
+                    placeholder="e.g. Summer Sale"
                 />
 
                 <Text style={styles.label}>Valid Till</Text>
@@ -216,23 +216,23 @@ export default function Business({ formData, setFormData, category, onPrevious, 
                     onChangeText={(text) =>
                         setFormData({ ...formData, description: text })
                     }
-                    placeholder="Enter Description"
-                      multiline
-  textAlignVertical="top" // Starts text from the top (Android)
-  scrollEnabled={true}
+                    placeholder="Descibe your campaign details"
+                    multiline
+                    textAlignVertical="top" // Starts text from the top (Android)
+                    scrollEnabled={true}
                 />
 
                 <Text style={styles.label}>Shop Address</Text>
                 <TextInput
-                    style={[styles.descriptionInput,{minHeight:100, maxHeight:100}]}
+                    style={[styles.descriptionInput, { minHeight: 100, maxHeight: 100 }]}
                     value={formData.shopAddress || ""}
                     onChangeText={(text) =>
                         setFormData({ ...formData, shopAddress: text })
                     }
                     placeholder="Enter Shop Address"
-                     multiline
-  textAlignVertical="top" // Starts text from the top (Android)
-  scrollEnabled={true}
+                    multiline
+                    textAlignVertical="top" // Starts text from the top (Android)
+                    scrollEnabled={true}
                 />
             </View>
 
@@ -249,7 +249,7 @@ const styles = StyleSheet.create({
     formCard: { backgroundColor: "#fff", paddingHorizontal: 16, borderRadius: 10, paddingBottom: 18 },
     label: { fontSize: 16, marginTop: 16, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
     value: { fontSize: 16, color: "#555", fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
-    input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10, marginTop: 6, fontSize:14, fontFamily:"Medium" },
+    input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10, marginTop: 6, fontSize: 14, fontFamily: "Medium" },
     textArea: { height: 80, textAlignVertical: "top" },
     switchRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 12 },
 
@@ -277,16 +277,16 @@ const styles = StyleSheet.create({
         justifyContent: "center"
     },
     nextText: { color: "#fff", fontSize: 16, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
- descriptionInput: {
-  borderWidth: 1,
-  borderColor: "#ccc",
-  borderRadius: 8,
-  padding: 12,
-  minHeight: 150,      // Increased height
-  maxHeight: 150,      // Keeps the box fixed after this height
-  fontSize: 14,
-  textAlignVertical: "top",
-  fontFamily:"Medium"
-},
+    descriptionInput: {
+        borderWidth: 1,
+        borderColor: "#ccc",
+        borderRadius: 8,
+        padding: 12,
+        minHeight: 150,      // Increased height
+        maxHeight: 150,      // Keeps the box fixed after this height
+        fontSize: 14,
+        textAlignVertical: "top",
+        fontFamily: "Medium"
+    },
 });
 

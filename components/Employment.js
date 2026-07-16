@@ -1,6 +1,7 @@
 import React, { useContext } from "react";
 import { View, Text, TextInput, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
+import { Picker } from "@react-native-picker/picker";
 import { useNavigation } from "@react-navigation/native";
 
 export default function Employment({ formData, setFormData, category, onPrevious, template, price, selectedDays, selectedLocations, selectedDates, startDate, endDate }) {
@@ -69,18 +70,52 @@ export default function Employment({ formData, setFormData, category, onPrevious
       <View style={styles.formCard}>
 
         <Text style={styles.label}>Employment Type</Text>
-        <View style={styles.segmentRow}>
-          <ConditionButton label="Full Time" value="full time" field="employmentType" />
-          <ConditionButton label="Part Time" value="part time" field="employmentType" />
-          <ConditionButton label="Contract" value="contract" field="employmentType" />
+        <View style={styles.pickerWrap}>
+          <Picker
+            selectedValue={formData.employmentType || ""}
+            onValueChange={(value) =>
+              setFormData({ ...formData, employmentType: value })
+            }
+            mode="dropdown"
+          >
+            <Picker.Item label="Select Employment Type" value="" />
+            <Picker.Item label="Full Time" value="full time" />
+            <Picker.Item label="Part Time" value="part time" />
+            <Picker.Item label="Contract" value="contract" />
+            <Picker.Item label="Freelance" value="freelance" />
+            <Picker.Item label="Internship" value="internship" />
+          </Picker>
         </View>
 
-        <Text style={styles.label}>Experience Level</Text>
-        <View style={styles.segmentRow}>
-          <ConditionButton label="Entry Level" value="entry level" field="experienceLevel" />
-          <ConditionButton label="Mid Level" value="mid level" field="experienceLevel" />
-          <ConditionButton label="Senior Level" value="senior level" field="experienceLevel" />
-        </View>
+        <Text style={styles.label}>Job Title</Text>
+        <TextInput
+          style={styles.input}
+          value={formData.jobTitle || ""}
+          onChangeText={(text) =>
+            setFormData({ ...formData, jobTitle: text })
+          }
+          placeholder="e.g. Software Engineer"
+        />
+
+        <Text style={styles.label}>Company Name</Text>
+        <TextInput
+          style={styles.input}
+          value={formData.companyName || ""}
+          onChangeText={(text) =>
+            setFormData({ ...formData, companyName: text })
+          }
+          placeholder="e.g. Acme Corp"
+        />
+
+        <Text style={styles.label}>Experience</Text>
+        <TextInput
+          style={styles.input}
+          value={formData.experience || ""}
+          onChangeText={(text) =>
+            setFormData({ ...formData, experience: text })
+          }
+          placeholder="e.g. 2+ years"
+        />
 
         <Text style={styles.label}>Industry</Text>
         <TextInput
@@ -89,7 +124,7 @@ export default function Employment({ formData, setFormData, category, onPrevious
           onChangeText={(text) =>
             setFormData({ ...formData, industry: text })
           }
-          placeholder="e.g. IT, Healthcare, Finance..."
+          placeholder="Industry (e.g. IT)"
         />
 
         <Text style={styles.label}>Salary Range (Monthly)</Text>
@@ -123,64 +158,44 @@ export default function Employment({ formData, setFormData, category, onPrevious
           onChangeText={(text) =>
             setFormData({ ...formData, vacancies: text })
           }
-          placeholder="Number of vacancies available"
+          placeholder="Number of openings"
         />
 
-        <Text style={styles.label}>
-          Benifits & Perks
-        </Text>
+        <Text style={styles.label}>Job Description</Text>
+        <TextInput
+          style={styles.descriptionInput}
+          value={formData.jobDescription || ""}
+          onChangeText={(text) =>
+            setFormData({ ...formData, jobDescription: text })
+          }
+          placeholder="Describe the job role and responsibilities..."
+          multiline
+          scrollEnabled
+          textAlignVertical="top"
+        />
 
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-          <View style={{ flexDirection: "row", alignItems: "center", marginTop: 20 }}>
-            <TouchableOpacity
-              style={styles.checkbox}
-              onPress={() =>
-                setFormData({ ...formData, insurance: !formData.insurance })
-              }
-            >
-              {formData.insurance && <View style={styles.checkboxTick} />}
-            </TouchableOpacity>
-            <Text style={[styles.label, { marginTop: 0, fontSize: 14 }]}>Health Insurance</Text>
-          </View>
+        <Text style={styles.label}>Requirements</Text>
+        <TextInput
+          style={styles.descriptionInput}
+          value={formData.requirements || ""}
+          onChangeText={(text) =>
+            setFormData({ ...formData, requirements: text })
+          }
+          placeholder="e.g. Bachelor's degree, 2 years experience..."
+          multiline
+          scrollEnabled
+          textAlignVertical="top"
+        />
 
-          <View style={{ flexDirection: "row", alignItems: "center", marginTop: 20 }}>
-            <TouchableOpacity
-              style={styles.checkbox}
-              onPress={() =>
-                setFormData({ ...formData, paidoff: !formData.paidoff })
-              }
-            >
-              {formData.paidoff && <View style={styles.checkboxTick} />}
-            </TouchableOpacity>
-            <Text style={[styles.label, { marginTop: 0, fontSize: 14 }]}>Paid Time Off</Text>
-          </View>
-        </View>
-
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-          <View style={{ flexDirection: "row", alignItems: "center", marginTop: 20 }}>
-            <TouchableOpacity
-              style={styles.checkbox}
-              onPress={() =>
-                setFormData({ ...formData, workFromHome: !formData.workFromHome })
-              }
-            >
-              {formData.workFromHome && <View style={styles.checkboxTick} />}
-            </TouchableOpacity>
-            <Text style={[styles.label, { marginTop: 0, fontSize: 14 }]}>Work From Home</Text>
-          </View>
-
-          <View style={{ flexDirection: "row", alignItems: "center", marginTop: 20 }}>
-            <TouchableOpacity
-              style={styles.checkbox}
-              onPress={() =>
-                setFormData({ ...formData, annualBonus: !formData.annualBonus })
-              }
-            >
-              {formData.annualBonus && <View style={styles.checkboxTick} />}
-            </TouchableOpacity>
-            <Text style={[styles.label, { marginTop: 0, fontSize: 14 }]}>Annual Bonus</Text>
-          </View>
-        </View>
+        <Text style={styles.label}>Benefits & Perks</Text>
+        <TextInput
+          style={styles.input}
+          value={formData.benefits || ""}
+          onChangeText={(text) =>
+            setFormData({ ...formData, benefits: text })
+          }
+          placeholder="e.g. Health Insurance, Paid Time Off, WFH"
+        />
 
       </View>
 
@@ -265,6 +280,25 @@ const styles = StyleSheet.create({
     height: 16,
     borderRadius: 4,
     backgroundColor: "#f5b849",
+  },
+  pickerWrap: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 8,
+    overflow: "hidden",
+    marginTop: 6,
+  },
+  descriptionInput: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    padding: 12,
+    minHeight: 100,
+    maxHeight: 100,
+    fontSize: 14,
+    textAlignVertical: "top",
+    fontFamily: "Medium",
+    marginTop: 6,
   },
 });
 

@@ -100,7 +100,7 @@ const CATEGORY_PAYLOAD_RULES = {
         boolean: ["horoscope", "kundli", "vaastu", "palm"],
     },
     employmentData: {
-        allow: ["employmentType", "experienceLevel", "industry", "salaryRangeMin", "salaryRangeMax", "vacancies", "insurance", "paidoff", "workFromHome", "annualBonus"],
+        allow: ["employmentType", "experienceLevel", "industry", "salaryRangeMin", "salaryRangeMax", "vacancies", "insurance", "paidoff", "workFromHome", "annualBonus", "jobTitle", "companyName", "experience", "jobDescription", "requirements", "benefits", "salaryRange"],
         number: ["vacancies"],
         boolean: ["insurance", "paidoff", "workFromHome", "annualBonus"],
     },
@@ -702,7 +702,7 @@ export default function Payment({ navigation, route }) {
                     visible={flaggedModalVisible}
                     transparent
                     animationType="fade"
-                    onRequestClose={() => {}}
+                    onRequestClose={() => { }}
                     statusBarTranslucent
                 >
                     <View style={styles.flaggedOverlay}>

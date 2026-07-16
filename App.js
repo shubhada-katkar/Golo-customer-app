@@ -44,16 +44,19 @@ SplashScreen.preventAutoHideAsync();
 const Stack = createStackNavigator();
 
 const SHARE_WEB_BASE = BASE_URL.replace(/\/+$/, "");
+const WEBSITE_BASE = SHARE_WEB_BASE.replace("api.", "");
 
 const linking = {
   prefixes: [
     "golo://",
     ...(SHARE_WEB_BASE ? [SHARE_WEB_BASE] : []),
+    ...(WEBSITE_BASE ? [WEBSITE_BASE] : []),
   ],
   config: {
     screens: {
       AdDetails: "ad/:adId",
       OfferDetails: "offer/:offerId",
+      ProductDetail: "product/:productId/:offerId?",
     },
   },
 };

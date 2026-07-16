@@ -14,14 +14,128 @@ import {
   Dimensions
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { MaterialIcons, Ionicons } from '@expo/vector-icons';
+import { MaterialIcons, Ionicons, Entypo } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { submitReport } from '../services/reportService';
 import { BASE_URL } from '../config';
 import Topbar from '../components/Topbar';
 import { ThemeContext } from '../theme/ThemeContext';
 import { ensureAuthenticated } from '../services/authService';
-import Template1Card from '../components/Template1Card';
+
+// Fixed-size ad card that deliberately avoids FlatList/VirtualizedList internally
+// so it is safe to render inside a plain ScrollView without the nested-list warning.
+const AD_CARD_WIDTH = 220;
+const AD_CARD_HEIGHT = 260;
+
+function SellerAdCard({ ad, navigation }) {
+  const coverImage = ad?.images?.[0] || null;
+  const title = ad?.title || 'Ad';
+  const price = ad?.price ? `₹${ad.price}` : '';
+  const description = ad?.description || '';
+  const location = ad?.location || ad?.city || '';
+  const adId = ad?.adId || ad?._id;
+
+  return (
+    <TouchableOpacity
+      activeOpacity={0.85}
+      style={sellerAdStyles.card}
+      onPress={() => navigation.navigate('AdDetails', { adId })}
+    >
+      {coverImage ? (
+        <Image source={{ uri: coverImage }} style={sellerAdStyles.image} resizeMode="cover" />
+      ) : (
+        <View style={sellerAdStyles.imagePlaceholder}>
+          {/* <Ionicons name="image-outline" size={32} color="#bbb" /> */}
+          <Text style={sellerAdStyles.noImageText}>Text Only Ad</Text>
+        </View>
+      )}
+      <View style={sellerAdStyles.info}>
+        <Text style={sellerAdStyles.title} numberOfLines={1} ellipsizeMode="tail">{title}</Text>
+        {!!description && <Text style={sellerAdStyles.description} numberOfLines={1} ellipsizeMode="tail">{description}</Text>}
+        {!!location && (
+          <View style={sellerAdStyles.locationRow}>
+            <Entypo name="location-pin" size={13} color="#d62c2c" />
+            <Text style={sellerAdStyles.locationText} numberOfLines={1} ellipsizeMode="tail">{location}</Text>
+          </View>
+        )}
+        {!!price && <Text style={sellerAdStyles.price}>{price}</Text>}
+      </View>
+    </TouchableOpacity>
+  );
+}
+
+const sellerAdStyles = StyleSheet.create({
+  card: {
+    width: AD_CARD_WIDTH,
+    height: AD_CARD_HEIGHT,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    marginRight: 12,
+    overflow: 'hidden',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  image: {
+    width: AD_CARD_WIDTH,
+    height: 150,
+    backgroundColor: '#eee',
+  },
+  imagePlaceholder: {
+    width: AD_CARD_WIDTH,
+    height: 150,
+    backgroundColor: '#f0f0f0',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  noImageText: {
+    fontSize: 12,
+    fontFamily: 'Medium',
+    color: '#555',
+    textAlign: 'center',
+  },
+  info: {
+    flex: 1,
+    padding: 10,
+  },
+  title: {
+    fontSize: 14,
+    fontFamily: 'SemiBold',
+    color: '#222',
+    lineHeight: Math.round(14 * 1.4),
+    marginBottom: 4,
+  },
+  description: {
+    fontSize: 12,
+    fontFamily: 'Medium',
+    color: '#555',
+    lineHeight: Math.round(12 * 1.4),
+    marginBottom: 4,
+  },
+  price: {
+    fontSize: 12,
+    fontFamily: 'SemiBold',
+    color: '#157a4f',
+    lineHeight: Math.round(12 * 1.4),
+    marginBottom: 4,
+    alignSelf: "flex-end"
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    marginBottom: 4,
+  },
+  locationText: {
+    fontSize: 12,
+    fontFamily: 'Medium',
+    color: '#555',
+    flex: 1,
+    lineHeight: Math.round(12 * 1.4),
+  },
+});
 
 const { width } = Dimensions.get('window');
 
@@ -46,7 +160,7 @@ export default function SellerProfile({ route, navigation }) {
   const [showReportModal, setShowReportModal] = useState(false);
   const [selectedReason, setSelectedReason] = useState(null);
   const [details, setDetails] = useState("");
-  const {colors}=useContext(ThemeContext);
+  const { colors } = useContext(ThemeContext);
 
   useEffect(() => {
     const fetchSellerData = async () => {
@@ -138,13 +252,15 @@ export default function SellerProfile({ route, navigation }) {
 
     try {
       await submitReport('SELLER', sellerId, selectedReason, details);
-      
+
       Alert.alert("Thank You", "Profile has been reported and sent for review.", [
-        { text: 'OK', onPress: () => {
-          setShowReportModal(false);
-          setSelectedReason(null);
-          setDetails("");
-        }}
+        {
+          text: 'OK', onPress: () => {
+            setShowReportModal(false);
+            setSelectedReason(null);
+            setDetails("");
+          }
+        }
       ]);
     } catch (err) {
       Alert.alert("Error", err.message || "Failed to submit report. Please try again.");
@@ -164,115 +280,103 @@ export default function SellerProfile({ route, navigation }) {
   return (
     <>
       <SafeAreaView style={{ flex: 1 }}>
-         <LinearGradient
-                     colors={["#f8a812", "#fad081", "#f8f6f265"]}
-                     start={{ x: 0, y: 0 }}
-                     end={{ x: 0, y: 1 }}
-                     style={{height: 220, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0}}
-                />
-          <Topbar/>
-          {/* Header */}
-          <View style={styles.header}>
-            <View style={{flexDirection:"row", alignItems:"center"}}>
+        <LinearGradient
+          colors={["#f8a812", "#fad081", "#f8f6f265"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+          style={{ height: 220, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0 }}
+        />
+        <Topbar />
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
             <TouchableOpacity onPress={() => navigation.goBack()}>
-              <MaterialIcons name="arrow-back-ios" size={22} color="#000" 
-              style={{padding:10}}/>
+              <MaterialIcons name="arrow-back-ios" size={22} color="#000"
+                style={{ padding: 10 }} />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Seller Profile</Text>
+          </View>
+          <TouchableOpacity onPress={() => setShowReportModal(true)}>
+            <Ionicons name="flag-outline" size={24} color="#000" />
+          </TouchableOpacity>
+        </View>
+
+        <View style={{ backgroundColor: "#000000", height: 1, marginVertical: 6 }} />
+
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          {/* Profile Card */}
+          <View style={styles.profileCard}>
+            <View style={styles.avatarWrapper}>
+              {seller?.profile?.avatar ? (
+                <Image source={{ uri: seller.profile.avatar }} style={styles.avatarImage} />
+              ) : (
+                <Ionicons name="person-circle" size={100} color="#157a4f" style={styles.fallbackAvatar} />
+              )}
             </View>
-            <TouchableOpacity onPress={() => setShowReportModal(true)}>
-              <Ionicons name="flag-outline" size={24} color="#000" />
+
+            <Text style={styles.sellerName}>{seller?.name || "Anonymous User"}</Text>
+
+            <View style={styles.memberSinceContainer}>
+              <Ionicons name="calendar-outline" size={14} color="#666" />
+              <Text style={styles.memberSinceText}>
+                Member since {seller?.createdAt ? new Date(seller.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'Unknown'}
+              </Text>
+            </View>
+
+            {/* Bio Section */}
+            {seller?.profile?.bio && (
+              <View style={styles.bioContainer}>
+                <Text style={styles.bioText}>"{seller.profile.bio}"</Text>
+              </View>
+            )}
+          </View>
+
+          {/* Actions Card */}
+          <View style={styles.actionsCard}>
+            <Text style={styles.sectionTitle}>Contact Seller</Text>
+
+            <TouchableOpacity style={styles.chatButtonLarge} onPress={handleOpenChat}>
+              <Ionicons name="chatbubbles" size={20} color="#fff" />
+              <Text style={styles.chatButtonText}>Start Chat</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.callButtonLarge, !seller?.profile?.phone && { backgroundColor: '#ccc' }]}
+              onPress={handleCall}
+              disabled={!seller?.profile?.phone}
+            >
+              <Ionicons name="call" size={20} color="#fff" />
+              <Text style={styles.callButtonText}>
+                {seller?.profile?.phone ? `Call ${seller.profile.phone}` : "Phone Not Provided"}
+              </Text>
             </TouchableOpacity>
           </View>
 
-          <View style={{ backgroundColor: "#000000", height: 1, marginVertical:6}} />
-
-          <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-            {/* Profile Card */}
-            <View style={styles.profileCard}>
-              <View style={styles.avatarWrapper}>
-                {seller?.profile?.avatar ? (
-                  <Image source={{ uri: seller.profile.avatar }} style={styles.avatarImage} />
-                ) : (
-                  <Ionicons name="person-circle" size={100} color="#157a4f" style={styles.fallbackAvatar} />
-                )}
-              </View>
-
-              <Text style={styles.sellerName}>{seller?.name || "Anonymous User"}</Text>
-
-              <View style={styles.memberSinceContainer}>
-                <Ionicons name="calendar-outline" size={14} color="#666" />
-                <Text style={styles.memberSinceText}>
-                  Member since {seller?.createdAt ? new Date(seller.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'Unknown'}
-                </Text>
-              </View>
-
-              {/* Bio Section */}
-              {seller?.profile?.bio && (
-                <View style={styles.bioContainer}>
-                  <Text style={styles.bioText}>"{seller.profile.bio}"</Text>
-                </View>
-              )}
-
-              {/* Location */}
-              {(seller?.profile?.city || seller?.profile?.state) && (
-                <View style={[styles.infoRow, { marginTop: 15 }]}>
-                  <Ionicons name="location" size={20} color="#157a4f" />
-                  <Text style={styles.infoText}>
-                    {[seller?.profile?.city, seller?.profile?.state].filter(Boolean).join(', ')}
-                  </Text>
-                </View>
-              )}
-            </View>
-
-            {/* Actions Card */}
-            <View style={styles.actionsCard}>
-              <Text style={styles.sectionTitle}>Contact Seller</Text>
-
-              <TouchableOpacity style={styles.chatButtonLarge} onPress={handleOpenChat}>
-                <Ionicons name="chatbubbles" size={20} color="#fff" />
-                <Text style={styles.chatButtonText}>Start Chat</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.callButtonLarge, !seller?.profile?.phone && { backgroundColor: '#ccc' }]}
-                onPress={handleCall}
-                disabled={!seller?.profile?.phone}
+          {/* Other Ads Section */}
+          <View style={styles.otherAdsSection}>
+            <Text style={styles.otherAdsTitle}>Other Ads Posted by Seller</Text>
+            {adsLoading ? (
+              <ActivityIndicator size="small" color="#157a4f" style={{ marginVertical: 20 }} />
+            ) : ads.length === 0 ? (
+              <Text style={styles.noAdsText}>No other ads posted by this seller.</Text>
+            ) : (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.horizontalAdsList}
+                nestedScrollEnabled={false}
               >
-                <Ionicons name="call" size={20} color="#fff" />
-                <Text style={styles.callButtonText}>
-                  {seller?.profile?.phone ? `Call ${seller.profile.phone}` : "Phone Not Provided"}
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Other Ads Section */}
-            <View style={styles.otherAdsSection}>
-              <Text style={styles.otherAdsTitle}>Other Ads Posted by Seller</Text>
-              {adsLoading ? (
-                <ActivityIndicator size="small" color="#157a4f" style={{ marginVertical: 20 }} />
-              ) : ads.length === 0 ? (
-                <Text style={styles.noAdsText}>No other ads posted by this seller.</Text>
-              ) : (
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.horizontalAdsList}
-                >
-                  {ads.map((item, index) => {
-                    return (
-                      <View key={`${item._id || item.adId}-${index}`} style={styles.adCardWrapper}>
-                        <Template1Card
-                          ad={item}
-                          navigation={navigation}
-                        />
-                      </View>
-                    );
-                  })}
-                </ScrollView>
-              )}
-            </View>
-          </ScrollView>
+                {ads.map((item, index) => (
+                  <SellerAdCard
+                    key={`${item._id || item.adId}-${index}`}
+                    ad={item}
+                    navigation={navigation}
+                  />
+                ))}
+              </ScrollView>
+            )}
+          </View>
+        </ScrollView>
       </SafeAreaView>
 
       {/* Report Modal */}
@@ -579,10 +683,6 @@ const styles = StyleSheet.create({
   horizontalAdsList: {
     paddingHorizontal: 16,
     paddingBottom: 10,
-  },
-  adCardWrapper: {
-    width: width - 32,
-    marginRight: 16,
   },
   noAdsText: {
     fontSize: 14,

@@ -286,7 +286,7 @@ export default function Template1Card({ ad, navigation }) {
       </View>
 
       <View style={styles.row}>
-        <Text style={styles.title} numberOfLines={2} ellipsizeMode="tail">{ad.title}</Text>
+        <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">{ad.title}</Text>
         <Text style={styles.price}>{ad.price ? `₹${ad.price}` : ""}</Text>
       </View>
 

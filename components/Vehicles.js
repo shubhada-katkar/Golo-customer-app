@@ -151,7 +151,7 @@ export default function Vehicles({ formData, setFormData, category, onPrevious, 
               onChangeText={(text) =>
                 setFormData({ ...formData, brand: text })
               }
-              placeholder="Enter brand of the vehicle"
+              placeholder="e.g. Maruti"
             />
 
             <Text style={styles.label}>Model</Text>
@@ -161,7 +161,7 @@ export default function Vehicles({ formData, setFormData, category, onPrevious, 
               onChangeText={(text) =>
                 setFormData({ ...formData, model: text })
               }
-              placeholder="Enter model of the vehicle"
+              placeholder="e.g. Swift"
             />
 
             <Text style={styles.label}>Variant</Text>
@@ -171,7 +171,7 @@ export default function Vehicles({ formData, setFormData, category, onPrevious, 
               onChangeText={(text) =>
                 setFormData({ ...formData, variant: text })
               }
-              placeholder="Enter variant of the vehicle"
+              placeholder="e.g. VXi"
             />
 
             <Text style={styles.label}>Year</Text>
@@ -181,7 +181,7 @@ export default function Vehicles({ formData, setFormData, category, onPrevious, 
               onChangeText={(text) =>
                 setFormData({ ...formData, year: text })
               }
-              placeholder="Enter year of the vehicle"
+              placeholder="e.g. 2022"
             />
 
             <Text style={styles.label}>KM Driven</Text>
@@ -191,7 +191,7 @@ export default function Vehicles({ formData, setFormData, category, onPrevious, 
               onChangeText={(text) =>
                 setFormData({ ...formData, kilometersDriven: text })
               }
-              placeholder="Enter KM driven of the vehicle"
+              placeholder="e.g. 25000"
             />
 
             <Text style={styles.label}>Fuel Type</Text>
@@ -206,6 +206,7 @@ export default function Vehicles({ formData, setFormData, category, onPrevious, 
                 <Picker.Item label="Diesel" value="Diesel" />
                 <Picker.Item label="CNG" value="CNG" />
                 <Picker.Item label="Electric" value="Electric" />
+                <Picker.Item label="Hybrid" value="Hybrid" />
               </Picker>
             </View>
 
@@ -242,7 +243,7 @@ export default function Vehicles({ formData, setFormData, category, onPrevious, 
               onChangeText={(text) =>
                 setFormData({ ...formData, insurance: text })
               }
-              placeholder="Enter insurance valid till date"
+              placeholder="e.g. DEC 2026"
             />
 
             <Text style={styles.label}>Condition</Text>
@@ -259,7 +260,7 @@ export default function Vehicles({ formData, setFormData, category, onPrevious, 
               onChangeText={(text) =>
                 setFormData({ ...formData, price: text })
               }
-              placeholder="Enter price of the vehicle"
+              placeholder="e.g. 5,00,000"
             />
           </>
         )}
@@ -282,14 +283,14 @@ export default function Vehicles({ formData, setFormData, category, onPrevious, 
               </Picker>
             </View>
 
-            <Text style={styles.label}>Brand</Text>
+            <Text style={styles.label}>Brand / Model</Text>
             <TextInput
               style={styles.input}
               value={formData.brand2 || ""}
               onChangeText={(text) =>
                 setFormData({ ...formData, brand2: text })
               }
-              placeholder="Enter brand of the vehicle"
+              placeholder="e.g. Maruti"
             />
 
             <Text style={styles.label}>Per Day Rent Amount</Text>
@@ -299,7 +300,7 @@ export default function Vehicles({ formData, setFormData, category, onPrevious, 
               onChangeText={(text) =>
                 setFormData({ ...formData, perDayRentAmount: text })
               }
-              placeholder="Enter per day rent amount"
+              placeholder="e.g. 1000"
             />
 
             <Text style={styles.label}>Security Deposit</Text>
@@ -309,7 +310,7 @@ export default function Vehicles({ formData, setFormData, category, onPrevious, 
               onChangeText={(text) =>
                 setFormData({ ...formData, securityDeposit: text })
               }
-              placeholder="Enter security deposit amount"
+              placeholder="e.g. 5000"
             />
 
             <Text style={styles.label}>Includes Driver</Text>
@@ -326,7 +327,7 @@ export default function Vehicles({ formData, setFormData, category, onPrevious, 
               onChangeText={(text) =>
                 setFormData({ ...formData, minRentalDuration: text })
               }
-              placeholder="Enter minimum rental duration in days"
+              placeholder="e.g. 2 days"
             />
           </>
         )}
@@ -344,7 +345,7 @@ const styles = StyleSheet.create({
   formCard: { backgroundColor: "#fff", paddingHorizontal: 16, borderRadius: 10, paddingBottom: 18, marginTop: 10 },
   label: { fontSize: 16, marginTop: 16, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
   value: { fontSize: 16, color: "#555", fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
-  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10, marginTop: 6, fontFamily: "Medium", fontSize:14 },
+  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10, marginTop: 6, fontFamily: "Medium", fontSize: 14 },
   textArea: { height: 80, textAlignVertical: "top" },
   switchRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 12 },
 
@@ -381,7 +382,7 @@ const styles = StyleSheet.create({
   },
   tab: {
     borderRadius: 60,
-    backgroundColor: "#c9e9e9",
+    backgroundColor: "#f8f8f8ff",
     paddingHorizontal: 40,
     alignItems: "center",
     justifyContent: "center",
@@ -389,7 +390,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6
   },
   activeTab: {
-    backgroundColor: "#156e7a",
+    backgroundColor: "#157a4f",
   },
 
   tabText: {

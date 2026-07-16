@@ -61,9 +61,9 @@ export default function Travel({ formData, setFormData, category, onPrevious, te
           >
             <Picker.Item label="Select package type" value="" />
             <Picker.Item label="Tour Package" value="tour package" />
-            <Picker.Item label="Cab Service" value="cab service" />
             <Picker.Item label="Bus Rental" value="bus rental" />
             <Picker.Item label="Hotel Only" value="hotel only" />
+            <Picker.Item label="Other" value="other" />
           </Picker>
         </View>
 
@@ -97,9 +97,7 @@ export default function Travel({ formData, setFormData, category, onPrevious, te
           placeholder="e.g. 15th June 2024"
         />
 
-        <View style={{ height: 1, backgroundColor: "#a7a7a7", marginTop: 20 }} />
-
-        <Text style={styles.label}>Price / Person</Text>
+        <Text style={styles.label}>Price Per Person</Text>
         <TextInput
           style={styles.input}
           value={formData.price || ""}
@@ -116,7 +114,7 @@ export default function Travel({ formData, setFormData, category, onPrevious, te
           onChangeText={(text) =>
             setFormData({ ...formData, availableSeats: text })
           }
-          placeholder="Available Seats"
+          placeholder="e.g. 20"
         />
 
         <Text style={styles.label}>Pickup Location</Text>
@@ -136,7 +134,7 @@ export default function Travel({ formData, setFormData, category, onPrevious, te
           onChangeText={(text) =>
             setFormData({ ...formData, inclusions: text })
           }
-          placeholder="Inclusions"
+          placeholder="Flights, Hotels, Meals, Tours..."
           multiline
           textAlignVertical="top"
           scrollEnabled
@@ -149,7 +147,7 @@ export default function Travel({ formData, setFormData, category, onPrevious, te
           onChangeText={(text) =>
             setFormData({ ...formData, exclusions: text })
           }
-          placeholder="Exclusions"
+          placeholder="Personal expenses, Travel insurance..."
           multiline
           scrollEnabled
           textAlignVertical="top"

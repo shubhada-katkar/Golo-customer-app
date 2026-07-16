@@ -37,6 +37,7 @@ import {
 } from "../services/offersService";
 import { isFavoriteOfferId, toggleFavoriteOffer } from "../services/offerFavoritesService";
 import { LinearGradient } from "expo-linear-gradient";
+import { BASE_URL } from "../config";
 
 const getOfferImage = (item) =>
     item?.imageUrl ||
@@ -487,6 +488,29 @@ export default function OfferDetails({ navigation, route }) {
     const handleShareOffer = async () => {
         try {
             const shareTitle = title || "Shared Offer";
+            const getWebsiteBaseUrl = () => {
+                if (BASE_URL.includes("api.")) {
+                    return BASE_URL.replace("api.", "").replace(/\/+$/, "");
+                }
+                return "https://golo.co.in";
+            };
+
+            const getAbsoluteImageUrl = (url) => {
+                if (!url) return null;
+                if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:")) {
+                    return url;
+                }
+                const baseUrlClean = BASE_URL.replace(/\/+$/, "");
+                const urlClean = url.startsWith("/") ? url : `/${url}`;
+                return `${baseUrlClean}${urlClean}`;
+            };
+
+            const resolvedOfferId = offerId || "";
+            const websiteUrl = `${getWebsiteBaseUrl()}/offer/${encodeURIComponent(resolvedOfferId)}`;
+            const deepLink = `golo://offer/${encodeURIComponent(resolvedOfferId)}`;
+
+            const absoluteImage = getAbsoluteImageUrl(offerImage);
+
             const shareMessage = [
                 `Offer: ${title}`,
                 `By: ${merchant}`,
@@ -495,6 +519,9 @@ export default function OfferDetails({ navigation, route }) {
                 validTill ? `Valid Till: ${new Date(validTill).toDateString()}` : null,
                 locationText ? `Location: ${locationText}` : null,
                 details ? `Details: ${details}` : null,
+                absoluteImage ? `Image: ${absoluteImage}` : null,
+                `Website Link: ${websiteUrl}`,
+                `App Link: ${deepLink}`,
             ]
                 .filter(Boolean)
                 .join("\n");
@@ -502,6 +529,7 @@ export default function OfferDetails({ navigation, route }) {
             await Share.share({
                 title: shareTitle,
                 message: shareMessage,
+                url: websiteUrl,
             });
         } catch (error) {
             Alert.alert("Share Error", error?.message || "Unable to share this offer right now.");

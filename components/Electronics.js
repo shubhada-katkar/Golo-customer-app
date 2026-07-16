@@ -74,14 +74,14 @@ export default function Electronics({ formData, setFormData, category, onPreviou
 
             <View style={styles.formCard}>
 
-                <Text style={styles.label}>Electronics Type</Text>
+                <Text style={styles.label}>Appliance Name</Text>
                 <TextInput
                     style={styles.input}
                     value={formData.electronicsType || ""}
                     onChangeText={(text) =>
                         setFormData({ ...formData, electronicsType: text })
                     }
-                    placeholder="e.g.TV, Washing Machine.."
+                    placeholder="e.g. Washing Machine"
                 />
 
                 <Text style={styles.label}>Brand</Text>
@@ -91,7 +91,7 @@ export default function Electronics({ formData, setFormData, category, onPreviou
                     onChangeText={(text) =>
                         setFormData({ ...formData, brand: text })
                     }
-                    placeholder="e.g. Samsung, LG.."
+                    placeholder="Brand"
                 />
 
                 <Text style={styles.label}>Model Name / Number</Text>
@@ -101,7 +101,7 @@ export default function Electronics({ formData, setFormData, category, onPreviou
                     onChangeText={(text) =>
                         setFormData({ ...formData, modelNumber: text })
                     }
-                    placeholder="Enter model name or number"
+                    placeholder="Model"
                 />
 
                 <Text style={styles.label}>Warranty Remaining</Text>
@@ -111,17 +111,17 @@ export default function Electronics({ formData, setFormData, category, onPreviou
                     onChangeText={(text) =>
                         setFormData({ ...formData, warrantyRemaining: text })
                     }
-                    placeholder="Enter warranty remaining in months"
+                    placeholder="e.g. 1 year"
                 />
 
-                <Text style={styles.label}>Capacity / Size</Text>
+                <Text style={styles.label}>Capacity</Text>
                 <TextInput
                     style={styles.input}
                     value={formData.capacity || ""}
                     onChangeText={(text) =>
                         setFormData({ ...formData, capacity: text })
                     }
-                    placeholder="e.g. 8.0 kg, 55 inch.."
+                    placeholder="e.g. 7 kg, 5000 L"
                 />
 
                 <Text style={styles.label}>Condition</Text>
@@ -130,6 +130,16 @@ export default function Electronics({ formData, setFormData, category, onPreviou
                     <ConditionButton label="Like new" value="like new" />
                     <ConditionButton label="Fair" value="fair" />
                 </View>
+
+                <Text style={styles.label}>Price</Text>
+                <TextInput
+                    style={styles.input}
+                    value={formData.price || ""}
+                    onChangeText={(text) =>
+                        setFormData({ ...formData, price: text })
+                    }
+                    placeholder="₹"
+                />
 
                 <View style={{ flexDirection: "row", alignItems: "center", marginTop: 20, justifyContent: "space-between" }}>
                     <Text style={[styles.label, { marginTop: 0 }]}>
@@ -144,16 +154,6 @@ export default function Electronics({ formData, setFormData, category, onPreviou
                         {formData.negotiable && <View style={styles.checkboxTick} />}
                     </TouchableOpacity>
                 </View>
-
-                <Text style={styles.label}>Price</Text>
-                <TextInput
-                    style={styles.input}
-                    value={formData.price || ""}
-                    onChangeText={(text) =>
-                        setFormData({ ...formData, price: text })
-                    }
-                    placeholder="Enter price in INR"
-                />
 
             </View>
 

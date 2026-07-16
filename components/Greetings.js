@@ -64,8 +64,8 @@ export default function Greetings({ formData, setFormData, category, onPrevious,
           ]}
           onPress={() => {
             setSelectedTab("Greetings");
-            setFormData({ 
-              ...formData, 
+            setFormData({
+              ...formData,
               Type: "Greetings",
               // Clear tribute-specific fields
               name2: "",
@@ -93,8 +93,8 @@ export default function Greetings({ formData, setFormData, category, onPrevious,
           ]}
           onPress={() => {
             setSelectedTab("Tribute");
-            setFormData({ 
-              ...formData, 
+            setFormData({
+              ...formData,
               Type: "Tribute",
               // Clear greetings-specific fields
               relationType: "",
@@ -119,14 +119,14 @@ export default function Greetings({ formData, setFormData, category, onPrevious,
 
         {selectedTab === "Greetings" && (
           <>
-            <Text style={styles.label}>Select Relationship</Text>
+            <Text style={styles.label}>Relationship</Text>
             <View style={styles.pickerWrap}>
               <Picker
                 selectedValue={formData.relationType || ""}
                 onValueChange={(value) => setFormData({ ...formData, relationType: value })}
                 mode="dropdown"
               >
-                <Picker.Item label="Relationship Type" value="" />
+                <Picker.Item label="Select Relationship" value="" />
                 <Picker.Item label="Friend" value="Friend" />
                 <Picker.Item label="Brother" value="Brother" />
                 <Picker.Item label="Sister" value="Sister" />
@@ -137,14 +137,14 @@ export default function Greetings({ formData, setFormData, category, onPrevious,
               </Picker>
             </View>
 
-            <Text style={styles.label}>Name of Person</Text>
+            <Text style={styles.label}>Name of the Person</Text>
             <TextInput
               style={styles.input}
               value={formData.name || ""}
               onChangeText={(text) =>
                 setFormData({ ...formData, name: text })
               }
-              placeholder="Enter name of person"
+              placeholder="e.g. John"
             />
 
             <Text style={styles.label}>Age Turning</Text>
@@ -154,7 +154,7 @@ export default function Greetings({ formData, setFormData, category, onPrevious,
               onChangeText={(text) =>
                 setFormData({ ...formData, age: text })
               }
-              placeholder="Enter age"
+              placeholder="e.g. 25"
             />
 
             <Text style={styles.label}>Date of Birthday</Text>
@@ -174,20 +174,20 @@ export default function Greetings({ formData, setFormData, category, onPrevious,
               onChangeText={(text) =>
                 setFormData({ ...formData, wishes: text })
               }
-              placeholder="Enter Message"
+              placeholder="Share your heartfelt message and wishes..."
               multiline
-  textAlignVertical="top" // Starts text from the top (Android)
-  scrollEnabled={true}
+              textAlignVertical="top" // Starts text from the top (Android)
+              scrollEnabled={true}
             />
 
-            <Text style={styles.label}>From</Text>
+            <Text style={styles.label}>From (Your Name)</Text>
             <TextInput
               style={styles.input}
               value={formData.from || ""}
               onChangeText={(text) =>
                 setFormData({ ...formData, from: text })
               }
-              placeholder="Enter Your Name"
+              placeholder="Your Name"
             />
 
           </>
@@ -202,7 +202,7 @@ export default function Greetings({ formData, setFormData, category, onPrevious,
               onChangeText={(text) =>
                 setFormData({ ...formData, name2: text })
               }
-              placeholder="Enter name"
+              placeholder="Full name of deceased"
             />
 
             <Text style={styles.label}>Age</Text>
@@ -212,7 +212,7 @@ export default function Greetings({ formData, setFormData, category, onPrevious,
               onChangeText={(text) =>
                 setFormData({ ...formData, age2: text })
               }
-              placeholder="Enter age"
+              placeholder="Age at the time of passing"
             />
 
             <Text style={styles.label}>Date of Birthday</Text>
@@ -232,10 +232,10 @@ export default function Greetings({ formData, setFormData, category, onPrevious,
               onChangeText={(text) =>
                 setFormData({ ...formData, summary: text })
               }
-              placeholder="Enter Message"
+              placeholder="Share memories and life achievements..."
               multiline
-  textAlignVertical="top" // Starts text from the top (Android)
-  scrollEnabled={true}
+              textAlignVertical="top" // Starts text from the top (Android)
+              scrollEnabled={true}
             />
 
             <Text style={styles.label}>Funeral / Prayer Meetings Details(Optional)</Text>
@@ -247,8 +247,8 @@ export default function Greetings({ formData, setFormData, category, onPrevious,
               }
               placeholder="Venue, Date, Time and Other Details"
               multiline
-  textAlignVertical="top" // Starts text from the top (Android)
-  scrollEnabled={true}
+              textAlignVertical="top" // Starts text from the top (Android)
+              scrollEnabled={true}
             />
 
           </>
@@ -267,7 +267,7 @@ const styles = StyleSheet.create({
   formCard: { backgroundColor: "#fff", paddingHorizontal: 16, borderRadius: 10, paddingBottom: 18, marginTop: 10 },
   label: { fontSize: 16, marginTop: 16, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
   value: { fontSize: 16, color: "#555", fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
-  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10, marginTop: 6, fontSize:14, fontFamily:"Medium" },
+  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10, marginTop: 6, fontSize: 14, fontFamily: "Medium" },
   textArea: { height: 80, textAlignVertical: "top" },
   switchRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 12 },
 
@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
   },
   tab: {
     borderRadius: 60,
-    backgroundColor: "#c9e9e9",
+    backgroundColor: "#f8f8f8ff",
     paddingHorizontal: 24,
     alignItems: "center",
     justifyContent: "center",
@@ -312,14 +312,14 @@ const styles = StyleSheet.create({
     paddingVertical: 6
   },
   activeTab: {
-    backgroundColor: "#156e7a",
+    backgroundColor: "#157a4f",
   },
 
   tabText: {
     fontFamily: "Medium",
     fontSize: 15,
     lineHeight: Math.round(15 * 1.5),
-    color: "#0a3d3d",
+    color: "#868686ff",
   },
 
   activeTabText: {
@@ -350,16 +350,16 @@ const styles = StyleSheet.create({
   segmentTextSelected: {
     color: "#fff",
   },
-   descriptionInput: {
-  borderWidth: 1,
-  borderColor: "#ccc",
-  borderRadius: 8,
-  padding: 12,
-  minHeight: 150,      // Increased height
-  maxHeight: 150,      // Keeps the box fixed after this height
-  fontSize: 14,
-  textAlignVertical: "top",
-  fontFamily:"Medium"
-},
+  descriptionInput: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    padding: 12,
+    minHeight: 150,      // Increased height
+    maxHeight: 150,      // Keeps the box fixed after this height
+    fontSize: 14,
+    textAlignVertical: "top",
+    fontFamily: "Medium"
+  },
 });
 

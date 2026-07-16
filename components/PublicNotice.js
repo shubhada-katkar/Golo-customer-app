@@ -4,6 +4,7 @@ import {
 } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
+import { Picker } from "@react-native-picker/picker";
 import { useNavigation } from "@react-navigation/native";
 
 export default function PublicNotice({ formData, setFormData, category, onPrevious, template, price, selectedDays, selectedLocations, selectedDates, startDate, endDate }) {
@@ -77,14 +78,21 @@ export default function PublicNotice({ formData, setFormData, category, onPrevio
       <View style={styles.formCard}>
 
         <Text style={styles.label}>Notice Type</Text>
-        <TextInput
-          style={styles.input}
-          value={formData.noticetype || ""}
-          onChangeText={(text) =>
-            setFormData({ ...formData, noticetype: text })
-          }
-          placeholder="e.g. Event Announcement"
-        />
+        <View style={styles.pickerWrap}>
+          <Picker
+            selectedValue={formData.noticetype || ""}
+            onValueChange={(value) =>
+              setFormData({ ...formData, noticetype: value })
+            }
+            mode="dropdown"
+          >
+            <Picker.Item label="Select Notice Type" value="" />
+            <Picker.Item label="Tender" value="tender" />
+            <Picker.Item label="Government" value="government" />
+            <Picker.Item label="Legal" value="legal" />
+            <Picker.Item label="Announcement" value="announcement" />
+          </Picker>
+        </View>
 
         <Text style={styles.label}>Issuing Authority</Text>
         <TextInput
@@ -93,7 +101,7 @@ export default function PublicNotice({ formData, setFormData, category, onPrevio
           onChangeText={(text) =>
             setFormData({ ...formData, issuingAuthority: text })
           }
-          placeholder="e.g. City Council, Company Name"
+          placeholder="Department Name/Organization Name"
         />
 
         <Text style={styles.label}>Detailed Notice Text</Text>
@@ -103,13 +111,13 @@ export default function PublicNotice({ formData, setFormData, category, onPrevio
           onChangeText={(text) =>
             setFormData({ ...formData, detailedNotice: text })
           }
-          placeholder="Enter Detailed Notice Text"
+          placeholder="Enter complete notice details..."
           multiline
-  textAlignVertical="top" // Starts text from the top (Android)
-  scrollEnabled={true}
+          textAlignVertical="top" // Starts text from the top (Android)
+          scrollEnabled={true}
         />
 
-        <Text style={styles.label}>Upload PDF</Text>
+        <Text style={styles.label}>Supporting Documents</Text>
         <View
           style={styles.uploadBox}
         >
@@ -139,7 +147,7 @@ const styles = StyleSheet.create({
   formCard: { backgroundColor: "#fff", paddingHorizontal: 16, borderRadius: 10, paddingBottom: 18 },
   label: { fontSize: 16, marginTop: 16, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
   value: { fontSize: 16, color: "#555", fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
-  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10, marginTop: 6, fontSize:14, fontFamily:"Medium" },
+  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10, marginTop: 6, fontSize: 14, fontFamily: "Medium" },
   textArea: { height: 80, textAlignVertical: "top", borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10, marginTop: 6, fontFamily: "Medium" },
   switchRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 12 },
 
@@ -174,16 +182,16 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     overflow: "hidden",
   },
-   descriptionInput: {
-  borderWidth: 1,
-  borderColor: "#ccc",
-  borderRadius: 8,
-  padding: 12,
-  minHeight: 150,      // Increased height
-  maxHeight: 150,      // Keeps the box fixed after this height
-  fontSize: 14,
-  textAlignVertical: "top",
-  fontFamily:"Medium"
-},
+  descriptionInput: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    padding: 12,
+    minHeight: 150,      // Increased height
+    maxHeight: 150,      // Keeps the box fixed after this height
+    fontSize: 14,
+    textAlignVertical: "top",
+    fontFamily: "Medium"
+  },
 });
 

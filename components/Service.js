@@ -7,6 +7,7 @@ import {
     TouchableOpacity,
 } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
+import { Picker } from "@react-native-picker/picker";
 import { useNavigation } from "@react-navigation/native";
 
 export default function Service({ formData, setFormData, category, onPrevious, template, price, selectedDays, selectedLocations, selectedDates, startDate, endDate }) {
@@ -56,23 +57,33 @@ export default function Service({ formData, setFormData, category, onPrevious, t
             <View style={styles.formCard}>
 
                 <Text style={styles.label}>Service Category</Text>
-                <TextInput
-                    style={styles.input}
-                    value={formData.serviceCategory || ""}
-                    onChangeText={(text) =>
-                        setFormData({ ...formData, serviceCategory: text })
-                    }
-                    placeholder="Enter type of service"
-                />
+                <View style={styles.pickerWrap}>
+                    <Picker
+                        selectedValue={formData.serviceCategory || ""}
+                        onValueChange={(value) =>
+                            setFormData({ ...formData, serviceCategory: value })
+                        }
+                        mode="dropdown"
+                    >
+                        <Picker.Item label="Select Service Category" value="" />
+                        <Picker.Item label="Plumbing" value="plumbing" />
+                        <Picker.Item label="Electrical" value="electrical" />
+                        <Picker.Item label="Carpentry" value="carpentry" />
+                        <Picker.Item label="Cleaning" value="cleaning" />
+                        <Picker.Item label="Beauty" value="beauty" />
+                        <Picker.Item label="IT Support" value="it support" />
+                        <Picker.Item label="Tutoring" value="tutoring" />
+                    </Picker>
+                </View>
 
-                <Text style={styles.label}>Experience</Text>
+                <Text style={styles.label}>Years of Experience</Text>
                 <TextInput
                     style={styles.input}
                     value={formData.experience || ""}
                     onChangeText={(text) =>
                         setFormData({ ...formData, experience: text })
                     }
-                    placeholder="e.g. 5 years"
+                    placeholder="e.g. * years"
                 />
 
                 <Text style={styles.label}>Service Area</Text>
@@ -82,7 +93,7 @@ export default function Service({ formData, setFormData, category, onPrevious, t
                     onChangeText={(text) =>
                         setFormData({ ...formData, serviceArea: text })
                     }
-                    placeholder="e.g. Mumbai, Pune"
+                    placeholder="Mumbai Central, Bandra, Andheri"
                 />
 
                 <Text style={styles.label}>Available Time</Text>
@@ -92,22 +103,22 @@ export default function Service({ formData, setFormData, category, onPrevious, t
                     onChangeText={(text) =>
                         setFormData({ ...formData, availableTime: text })
                     }
-                    placeholder="e.g. 9:00 AM - 5:00 PM"
+                    placeholder="9 AM - 6 PM, Monday to Saturday"
                 />
 
-                <Text style={styles.label}>Charges</Text>
+                <Text style={styles.label}>Service Charges</Text>
                 <TextInput
                     style={styles.input}
                     value={formData.charges || ""}
                     onChangeText={(text) =>
                         setFormData({ ...formData, charges: text })
                     }
-                    placeholder="Enter your service charges"
+                    placeholder="e.g. ₹500 per hour"
                 />
 
                 <View style={{ flexDirection: "row", alignItems: "center", marginTop: 20, justifyContent: "space-between" }}>
                     <Text style={[styles.label, { marginTop: 0 }]}>
-                        Emergency Service
+                        Available 24/7
                     </Text>
                     <TouchableOpacity
                         style={styles.checkbox}
@@ -119,17 +130,17 @@ export default function Service({ formData, setFormData, category, onPrevious, t
                     </TouchableOpacity>
                 </View>
 
-                <Text style={styles.label}>Service Bio / Skills</Text>
+                <Text style={styles.label}>Service Bio & Skills</Text>
                 <TextInput
                     style={styles.descriptionInput}
                     value={formData.serviceBio || ""}
                     onChangeText={(text) =>
                         setFormData({ ...formData, serviceBio: text })
                     }
-                    placeholder="Enter your service bio / skills"
+                    placeholder="Describe your expertise, certifications, special skills..."
                     scrollEnabled
                     multiline
-                     textAlignVertical="top" 
+                    textAlignVertical="top"
                 />
 
             </View>
@@ -147,7 +158,7 @@ const styles = StyleSheet.create({
     formCard: { backgroundColor: "#fff", paddingHorizontal: 16, borderRadius: 10, paddingBottom: 18 },
     label: { fontSize: 16, marginTop: 16, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
     value: { fontSize: 16, color: "#555", fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
-    input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10, marginTop: 6, fontSize:14, fontFamily:"Medium" },
+    input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10, marginTop: 6, fontSize: 14, fontFamily: "Medium" },
     textArea: { height: 80, textAlignVertical: "top" },
     switchRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 12 },
 
@@ -176,17 +187,17 @@ const styles = StyleSheet.create({
     },
     nextText: { color: "#fff", fontSize: 16, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
 
-     descriptionInput: {
-  borderWidth: 1,
-  borderColor: "#ccc",
-  borderRadius: 8,
-  padding: 12,
-  minHeight: 100,      // Increased height
-  maxHeight: 100,      // Keeps the box fixed after this height
-  fontSize: 14,
-  textAlignVertical: "top",
-  fontFamily:"Medium"
-},
+    descriptionInput: {
+        borderWidth: 1,
+        borderColor: "#ccc",
+        borderRadius: 8,
+        padding: 12,
+        minHeight: 100,      // Increased height
+        maxHeight: 100,      // Keeps the box fixed after this height
+        fontSize: 14,
+        textAlignVertical: "top",
+        fontFamily: "Medium"
+    },
     checkbox: {
         width: 26,
         height: 26,
@@ -200,6 +211,13 @@ const styles = StyleSheet.create({
         height: 16,
         borderRadius: 4,
         backgroundColor: "#f5b849",
+    },
+    pickerWrap: {
+        borderWidth: 1,
+        borderColor: "#ddd",
+        borderRadius: 8,
+        overflow: "hidden",
+        marginTop: 6,
     },
 });
 

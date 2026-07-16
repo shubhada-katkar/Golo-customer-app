@@ -81,7 +81,7 @@ export default function Furniture({ formData, setFormData, category, onPrevious,
                     onChangeText={(text) =>
                         setFormData({ ...formData, furnitureType: text })
                     }
-                    placeholder="Enter type of furniture (e.g.Sofa, Bed, Table..)"
+                    placeholder="e.g.Sofa, Bed, Table"
                 />
 
                 <Text style={styles.label}>Material</Text>
@@ -91,17 +91,17 @@ export default function Furniture({ formData, setFormData, category, onPrevious,
                     onChangeText={(text) =>
                         setFormData({ ...formData, material: text })
                     }
-                    placeholder="e.g. Wood, Metal, Plastic.."
+                    placeholder="e.g. Wood, Metal"
                 />
 
-                <Text style={styles.label}>Size</Text>
+                <Text style={styles.label}>Seating Capacity / Size</Text>
                 <TextInput
                     style={styles.input}
                     value={formData.size || ""}
                     onChangeText={(text) =>
                         setFormData({ ...formData, size: text })
                     }
-                    placeholder="e.g. 5ft x 4ft"
+                    placeholder="e.g. 3 seater / 6ft x 3ft"
                 />
 
                 <Text style={styles.label}>Condition</Text>
@@ -111,9 +111,20 @@ export default function Furniture({ formData, setFormData, category, onPrevious,
                     <ConditionButton label="Fair" value="fair" />
                 </View>
 
+                <Text style={styles.label}>Price</Text>
+                <TextInput
+                    style={styles.input}
+                    value={formData.price || ""}
+                    onChangeText={(text) =>
+                        setFormData({ ...formData, price: text })
+                    }
+                    placeholder="₹"
+                />
+
+
                 <View style={{ flexDirection: "row", alignItems: "center", marginTop: 20, justifyContent: "space-between" }}>
                     <Text style={[styles.label, { marginTop: 0 }]}>
-                        Price negotiable
+                        Price Negotiable
                     </Text>
                     <TouchableOpacity
                         style={styles.checkbox}
@@ -124,16 +135,6 @@ export default function Furniture({ formData, setFormData, category, onPrevious,
                         {formData.negotiable && <View style={styles.checkboxTick} />}
                     </TouchableOpacity>
                 </View>
-
-                <Text style={styles.label}>Price</Text>
-                <TextInput
-                    style={styles.input}
-                    value={formData.price || ""}
-                    onChangeText={(text) =>
-                        setFormData({ ...formData, price: text })
-                    }
-                    placeholder="Enter price in INR"
-                />
 
             </View>
 
@@ -150,7 +151,7 @@ const styles = StyleSheet.create({
     formCard: { backgroundColor: "#fff", paddingHorizontal: 16, borderRadius: 10, paddingBottom: 18 },
     label: { fontSize: 16, marginTop: 16, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
     value: { fontSize: 16, color: "#555", fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
-    input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10, marginTop: 6 },
+    input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10, marginTop: 6, fontSize: 14, fontFamily: "Medium" },
     textArea: { height: 80, textAlignVertical: "top" },
     switchRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 12 },
 

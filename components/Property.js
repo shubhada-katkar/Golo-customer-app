@@ -134,7 +134,7 @@ export default function Property({ formData, setFormData, category, onPrevious, 
                 onValueChange={(value) => setFormData({ ...formData, propertyType: value })}
                 mode="dropdown"
               >
-                <Picker.Item label="Property Type" value="" />
+                <Picker.Item label="Select Property Type" value="" />
                 <Picker.Item label="Apartment" value="Apartment" />
                 <Picker.Item label="House" value="House" />
                 <Picker.Item label="Plot" value="Plot" />
@@ -149,7 +149,7 @@ export default function Property({ formData, setFormData, category, onPrevious, 
               onChangeText={(text) =>
                 setFormData({ ...formData, bhk: text })
               }
-              placeholder="Enter BHK of the property"
+              placeholder="e.g. 2BHK"
             />
 
             <Text style={styles.label}>Built-up Area</Text>
@@ -169,7 +169,7 @@ export default function Property({ formData, setFormData, category, onPrevious, 
               onChangeText={(text) =>
                 setFormData({ ...formData, bathrooms: text })
               }
-              placeholder="Enter number of bathrooms"
+              placeholder="e.g. 2"
             />
 
             <Text style={styles.label}>Floor</Text>
@@ -179,7 +179,7 @@ export default function Property({ formData, setFormData, category, onPrevious, 
               onChangeText={(text) =>
                 setFormData({ ...formData, floor: text })
               }
-              placeholder="Enter floor number"
+              placeholder="e.g. 3rd Floor"
             />
 
             <Text style={styles.label}>Property Age</Text>
@@ -189,7 +189,7 @@ export default function Property({ formData, setFormData, category, onPrevious, 
               onChangeText={(text) =>
                 setFormData({ ...formData, propertyAge: text })
               }
-              placeholder="Enter property age in years"
+              placeholder="e.g. 5 years"
             />
 
             <Text style={styles.label}>Furnishing</Text>
@@ -199,7 +199,7 @@ export default function Property({ formData, setFormData, category, onPrevious, 
                 onValueChange={(value) => setFormData({ ...formData, furnishing: value })}
                 mode="dropdown"
               >
-                <Picker.Item label="Furnishing" value="" />
+                <Picker.Item label="Select Furnishing" value="" />
                 <Picker.Item label="Unfurnished" value="Unfurnished" />
                 <Picker.Item label="Semi-Furnished" value="Semi-Furnished" />
                 <Picker.Item label="Fully Furnished" value="Fully Furnished" />
@@ -230,7 +230,7 @@ export default function Property({ formData, setFormData, category, onPrevious, 
               onChangeText={(text) =>
                 setFormData({ ...formData, price: text })
               }
-              placeholder="Enter price of the vehicle"
+              placeholder="e.g. ₹40,00,000"
             />
           </>
         )}
@@ -244,42 +244,42 @@ export default function Property({ formData, setFormData, category, onPrevious, 
                 onValueChange={(value) => setFormData({ ...formData, propertyType: value })}
                 mode="dropdown"
               >
-                <Picker.Item label="Property Type" value="" />
-                <Picker.Item label="Apartment" value="Apartment" />
-                <Picker.Item label="House" value="House" />
-                <Picker.Item label="Plot" value="Plot" />
+                <Picker.Item label="Select Property Type" value="" />
+                <Picker.Item label="Residential" value="Residential" />
                 <Picker.Item label="Commercial" value="Commercial" />
+                <Picker.Item label="Office" value="Office" />
+                <Picker.Item label="Plot" value="Plot" />
               </Picker>
             </View>
 
-            <Text style={styles.label}>Monthly Rent Amount</Text>
+            <Text style={styles.label}>Monthly Rent</Text>
             <TextInput
               style={styles.input}
               value={formData.monthlyRentAmount || ""}
               onChangeText={(text) =>
                 setFormData({ ...formData, monthlyRentAmount: text })
               }
-              placeholder="Enter monthly rent amount"
+              placeholder="e.g. ₹10,000"
             />
 
-            <Text style={styles.label}>Security Deposit Amount</Text>
+            <Text style={styles.label}>Security Deposit</Text>
             <TextInput
               style={styles.input}
               value={formData.securityDeposit || ""}
               onChangeText={(text) =>
                 setFormData({ ...formData, securityDeposit: text })
               }
-              placeholder="Enter security deposit amount"
+              placeholder="e.g. ₹20,000"
             />
 
-            <Text style={styles.label}>Maintenance Amount Per Month</Text>
+            <Text style={styles.label}>Maintenance Cost Per Month</Text>
             <TextInput
               style={styles.input}
               value={formData.maintenanceAmount || ""}
               onChangeText={(text) =>
                 setFormData({ ...formData, maintenanceAmount: text })
               }
-              placeholder="Enter maintenance amount per month"
+              placeholder="e.g. ₹1000"
             />
 
             <Text style={styles.label}>Available From</Text>
@@ -299,7 +299,7 @@ export default function Property({ formData, setFormData, category, onPrevious, 
                 onValueChange={(value) => setFormData({ ...formData, tenantType: value })}
                 mode="dropdown"
               >
-                <Picker.Item label="Tenant Type" value="" />
+                <Picker.Item label="Select Tenant Type" value="" />
                 <Picker.Item label="Family" value="Family" />
                 <Picker.Item label="Bachelor" value="Bachelor" />
                 <Picker.Item label="Company" value="Company" />
@@ -313,7 +313,7 @@ export default function Property({ formData, setFormData, category, onPrevious, 
               onChangeText={(text) =>
                 setFormData({ ...formData, leaseDuration: text })
               }
-              placeholder="e.g. 11 months, 2 years"
+              placeholder="e.g. 6 months, 1 year"
             />
           </>
         )}
@@ -333,7 +333,7 @@ const styles = StyleSheet.create({
   formCard: { backgroundColor: "#fff", paddingHorizontal: 16, borderRadius: 10, paddingBottom: 18, marginTop: 10 },
   label: { fontSize: 16, marginTop: 16, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
   value: { fontSize: 16, color: "#555", fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
-  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10, marginTop: 6, fontSize:14, fontFamily:"Medium" },
+  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10, marginTop: 6, fontSize: 14, fontFamily: "Medium" },
   textArea: { height: 80, textAlignVertical: "top" },
   switchRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 12 },
 
@@ -370,7 +370,7 @@ const styles = StyleSheet.create({
   },
   tab: {
     borderRadius: 60,
-    backgroundColor: "#c9e9e9",
+    backgroundColor: "#f8f8f8ff",
     paddingHorizontal: 40,
     alignItems: "center",
     justifyContent: "center",
@@ -378,14 +378,14 @@ const styles = StyleSheet.create({
     paddingVertical: 6
   },
   activeTab: {
-    backgroundColor: "#156e7a",
+    backgroundColor: "#157a4f",
   },
 
   tabText: {
     fontFamily: "Medium",
     fontSize: 15,
     lineHeight: Math.round(15 * 1.5),
-    color: "#0a3d3d",
+    color: "#868686ff",
   },
 
   activeTabText: {
