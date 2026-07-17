@@ -4,15 +4,14 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  TextInput,
   ScrollView,
   ActivityIndicator,
   Alert,
   Image,
-  Switch,
+  Modal,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { MaterialIcons } from "@expo/vector-icons";
+import { MaterialIcons, Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import * as ImagePicker from "expo-image-picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -21,6 +20,48 @@ import { ThemeContext } from "../theme/ThemeContext";
 import Topbar from "../components/Topbar";
 import ChojaBottom from "../components/ChojaBottom";
 import { BASE_URL } from "../config";
+
+// Category-specific form components
+import AstrologyForm from "../components/Astrology";
+import BusinessForm from "../components/Business";
+import EducationForm from "../components/Education";
+import ElectronicsForm from "../components/Electronics";
+import EmploymentForm from "../components/Employment";
+import FurnitureForm from "../components/Furniture";
+import GreetingsForm from "../components/Greetings";
+import LostandFoundForm from "../components/LostandFound";
+import MatrimonialForm from "../components/Matrimonial";
+import MobilesForm from "../components/Mobiles";
+import OthersForm from "../components/Others";
+import PersonalForm from "../components/Personal";
+import PetsForm from "../components/Pets";
+import PropertyForm from "../components/Property";
+import ServiceForm from "../components/Service";
+import TravelForm from "../components/Travel";
+import VehiclesForm from "../components/Vehicles";
+
+// Maps ad.category label → component category.id (used by each form's guard)
+const CATEGORY_ID_MAP = {
+  Vehicle: "vehicles",
+  Property: "property",
+  Service: "service",
+  Mobiles: "mobiles",
+  "Electronics & Home appliances": "electronics_home",
+  Furniture: "furniture",
+  Education: "education",
+  Pets: "pets",
+  Matrimonial: "matrimonial",
+  Business: "business",
+  Travel: "travel",
+  Astrology: "astrology",
+  Employment: "employment",
+  "Lost & Found": "lostandfound",
+  Personal: "personal",
+  Greetings: "greetings",
+  "Greetings & Tributes": "greetings",
+  Others: "others",
+  Other: "others",
+};
 
 const CATEGORY_DTO_FIELD_BY_LABEL = {
   Vehicle: "vehicleData",
@@ -44,15 +85,6 @@ const CATEGORY_DTO_FIELD_BY_LABEL = {
   Other: "otherData",
 };
 
-function getResolvedAdId(ad, fallbackAdId) {
-  return ad?.adId || ad?._id || fallbackAdId;
-}
-
-function parseNumberInput(value, fallback = 0) {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : fallback;
-}
-
 function isRemoteUrl(value) {
   return typeof value === "string" && /^https?:\/\//i.test(value);
 }
@@ -61,153 +93,82 @@ function getFileMetaFromUri(uri) {
   const fileName = uri?.split("/")?.pop() || `ad-${Date.now()}.jpg`;
   const match = /\.([a-zA-Z0-9]+)$/.exec(fileName);
   const ext = (match?.[1] || "jpg").toLowerCase();
-  const mimeType = ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : "image/jpeg";
-
+  const mimeType =
+    ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : "image/jpeg";
   return { fileName, mimeType };
 }
 
-const CLOUDINARY_CLOUD_NAME = process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME || "dcm1plq42";
-const CLOUDINARY_UPLOAD_PRESET = process.env.EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "choja_preset";
+function getErrorMessageFromResponse(data) {
+  const candidates = [];
+  const pushValue = (value) => {
+    if (typeof value === "string" && value.trim()) {
+      candidates.push(value.trim());
+    } else if (Array.isArray(value)) {
+      value.forEach(pushValue);
+    } else if (value && typeof value === "object") {
+      Object.values(value).forEach(pushValue);
+    }
+  };
+  if (typeof data === "string" && data.trim()) return data.trim();
+  pushValue(data?.message);
+  pushValue(data?.error);
+  pushValue(data?.details);
+  return candidates.join(" ");
+}
+
+function isModerationFailureResponse(data) {
+  const message = getErrorMessageFromResponse(data).toLowerCase();
+  return [
+    "inappropriate",
+    "moderation",
+    "flagged",
+    "content policy",
+    "cannot be uploaded",
+    "policy violation",
+    "violat",
+    "unsafe",
+  ].some((token) => message.includes(token));
+}
+
+const CLOUDINARY_CLOUD_NAME =
+  process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME || "dcm1plq42";
+const CLOUDINARY_UPLOAD_PRESET =
+  process.env.EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "choja_preset";
 const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
 
 async function uploadAdImageToCloud(uri) {
   if (!uri) return null;
   if (isRemoteUrl(uri)) return uri;
-
   const { fileName, mimeType } = getFileMetaFromUri(uri);
   const uploadBody = new FormData();
-  uploadBody.append("file", {
-    uri,
-    name: fileName,
-    type: mimeType,
-  });
+  uploadBody.append("file", { uri, name: fileName, type: mimeType });
   uploadBody.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
   uploadBody.append("cloud_name", CLOUDINARY_CLOUD_NAME);
-
   const response = await fetch(CLOUDINARY_UPLOAD_URL, {
     method: "POST",
     body: uploadBody,
   });
-
   const data = await response.json().catch(() => ({}));
   const imageUrl = data?.secure_url || data?.url;
-
   if (!response.ok || !imageUrl) {
     throw new Error(data?.error?.message || "Failed to upload image");
   }
-
   return imageUrl;
 }
 
-function prettifyKey(key = "") {
-  return key
-    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
-    .replace(/[_-]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .replace(/^./, (c) => c.toUpperCase());
-}
-
-function buildCategoryEditorData(source = {}) {
-  const draft = {};
-  const typeMap = {};
-
-  Object.entries(source || {}).forEach(([key, value]) => {
-    if (value == null) return;
-
-    if (typeof value === "boolean") {
-      draft[key] = value;
-      typeMap[key] = "boolean";
-      return;
-    }
-
-    if (typeof value === "number") {
-      draft[key] = String(value);
-      typeMap[key] = "number";
-      return;
-    }
-
-    if (Array.isArray(value)) {
-      draft[key] = value.map((item) => String(item)).join(", ");
-      typeMap[key] = "array";
-      return;
-    }
-
-    if (typeof value === "object") {
-      draft[key] = JSON.stringify(value);
-      typeMap[key] = "json";
-      return;
-    }
-
-    draft[key] = String(value);
-    typeMap[key] = "string";
-  });
-
-  return { draft, typeMap };
-}
-
-function buildTypedCategoryPayload(draft = {}, typeMap = {}) {
-  const payload = {};
-
-  Object.entries(draft).forEach(([key, value]) => {
-    const fieldType = typeMap[key] || "string";
-
-    if (fieldType === "boolean") {
-      payload[key] = Boolean(value);
-      return;
-    }
-
-    if (fieldType === "number") {
-      const parsed = Number(value);
-      if (Number.isFinite(parsed)) payload[key] = parsed;
-      return;
-    }
-
-    if (fieldType === "array") {
-      const arr = String(value || "")
-        .split(",")
-        .map((item) => item.trim())
-        .filter(Boolean);
-      payload[key] = arr;
-      return;
-    }
-
-    if (fieldType === "json") {
-      try {
-        payload[key] = JSON.parse(String(value || "{}"));
-      } catch {
-        payload[key] = value;
-      }
-      return;
-    }
-
-    const text = String(value || "").trim();
-    if (text.length) payload[key] = text;
-  });
-
-  return payload;
+function parseNumberInput(value, fallback = 0) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
 }
 
 export default function AdEdit({ route, navigation }) {
-  const [reporting, setReporting] = useState(false);
-  const [reportReason, setReportReason] = useState("");
-  const [showReportBox, setShowReportBox] = useState(false);
-
   const { adId } = route.params || {};
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [ad, setAd] = useState(null);
   const [images, setImages] = useState([]);
-  const [categoryDraft, setCategoryDraft] = useState({});
-  const [categoryTypeMap, setCategoryTypeMap] = useState({});
-  const [form, setForm] = useState({
-    title: "",
-    description: "",
-    price: "",
-    location: "",
-    contactName: "",
-    contactPhone: "",
-  });
+  const [formData, setFormData] = useState({});
+  const [flaggedModalVisible, setFlaggedModalVisible] = useState(false);
 
   const colors = useContext(ThemeContext);
 
@@ -219,6 +180,13 @@ export default function AdEdit({ route, navigation }) {
   const showImageSection = templateNumber === 1 || templateNumber === 2;
   const allowsMultipleImages = templateNumber === 1;
 
+  // Derive the category object expected by each form component
+  const categoryObj = useMemo(() => {
+    const label = ad?.category || "";
+    const id = CATEGORY_ID_MAP[label] || label.toLowerCase();
+    return { id, label };
+  }, [ad?.category]);
+
   useEffect(() => {
     const fetchAd = async () => {
       try {
@@ -227,37 +195,44 @@ export default function AdEdit({ route, navigation }) {
           navigation.goBack();
           return;
         }
-
-        if (!BASE_URL) {
-          throw new Error("BASE_URL is not configured");
-        }
-
-        const response = await fetch(`${BASE_URL}/ads/${encodeURIComponent(adId)}`);
+        const response = await fetch(
+          `${BASE_URL}/ads/${encodeURIComponent(adId)}`
+        );
         const data = await response.json().catch(() => ({}));
-
         if (!response.ok || !data?.success || !data?.data) {
           throw new Error(data?.message || "Failed to load ad details");
         }
-
         const fetchedAd = data.data;
-        const categoryDtoField = CATEGORY_DTO_FIELD_BY_LABEL[fetchedAd?.category] || null;
-        const categorySource = fetchedAd?.categorySpecificData || (categoryDtoField ? fetchedAd?.[categoryDtoField] : null) || {};
-        const editorData = buildCategoryEditorData(categorySource);
-        const fetchedImages = Array.isArray(fetchedAd?.images) ? fetchedAd.images : [];
-        const normalizedImages = Number(fetchedAd?.templateId ?? fetchedAd?.template ?? 1) === 2 ? fetchedImages.slice(0, 1) : fetchedImages;
+        const categoryDtoField =
+          CATEGORY_DTO_FIELD_BY_LABEL[fetchedAd?.category] || null;
+        const categorySource =
+          fetchedAd?.categorySpecificData ||
+          (categoryDtoField ? fetchedAd?.[categoryDtoField] : null) ||
+          {};
+
+        const fetchedImages = Array.isArray(fetchedAd?.images)
+          ? fetchedAd.images
+          : [];
+        const normalizedImages =
+          Number(fetchedAd?.templateId ?? fetchedAd?.template ?? 1) === 2
+            ? fetchedImages.slice(0, 1)
+            : fetchedImages;
+
+        // Build formData from ad fields + category-specific data
+        const initialFormData = {
+          heading: fetchedAd?.title || "",
+          body: fetchedAd?.description || "",
+          price: fetchedAd?.price != null ? String(fetchedAd.price) : "",
+          location: fetchedAd?.location || "",
+          contact: fetchedAd?.contactInfo?.phone || "",
+          contactPerson: fetchedAd?.contactInfo?.name || "",
+          images: normalizedImages,
+          ...(categorySource || {}),
+        };
 
         setAd(fetchedAd);
         setImages(normalizedImages);
-        setCategoryDraft(editorData.draft);
-        setCategoryTypeMap(editorData.typeMap);
-        setForm({
-          title: fetchedAd?.title || "",
-          description: fetchedAd?.description || "",
-          price: fetchedAd?.price != null ? String(fetchedAd.price) : "",
-          location: fetchedAd?.location || "",
-          contactName: fetchedAd?.contactInfo?.name || "",
-          contactPhone: fetchedAd?.contactInfo?.phone || "",
-        });
+        setFormData(initialFormData);
       } catch (error) {
         Alert.alert("Error", error?.message || "Unable to load ad details");
         navigation.goBack();
@@ -265,32 +240,24 @@ export default function AdEdit({ route, navigation }) {
         setLoading(false);
       }
     };
-
     fetchAd();
-  }, [adId, BASE_URL, navigation]);
-
-  const onChange = (key, value) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
-  };
-
-  const onCategoryFieldChange = (key, value) => {
-    setCategoryDraft((prev) => ({ ...prev, [key]: value }));
-  };
+  }, [adId]);
 
   const pickImages = async () => {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    const permission =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert("Permission required", "Allow gallery access to upload images");
+      Alert.alert(
+        "Permission required",
+        "Allow gallery access to upload images"
+      );
       return;
     }
-
     if (images.length >= 5) {
       Alert.alert("Limit reached", "You can upload up to 5 images only.");
       return;
     }
-
     const remainingSlots = 5 - images.length;
-
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions
         ? ImagePicker.MediaTypeOptions.Images
@@ -299,35 +266,50 @@ export default function AdEdit({ route, navigation }) {
       quality: 0.7,
       selectionLimit: remainingSlots,
     });
-
     if (!result.canceled && result.assets?.length > 0) {
-      const selectedUris = result.assets.map((asset) => asset.uri).filter(Boolean).slice(0, remainingSlots);
-      const incomingUris = allowsMultipleImages ? selectedUris : selectedUris.slice(0, 1);
-
+      const selectedUris = result.assets
+        .map((a) => a.uri)
+        .filter(Boolean)
+        .slice(0, remainingSlots);
+      const incoming = allowsMultipleImages
+        ? selectedUris
+        : selectedUris.slice(0, 1);
       setImages((prev) => {
-        const combined = [...prev, ...incomingUris];
+        const combined = [...prev, ...incoming];
         return allowsMultipleImages ? combined.slice(0, 5) : combined.slice(0, 1);
+      });
+      setFormData((prev) => {
+        const combined = [...(prev.images || []), ...incoming];
+        return {
+          ...prev,
+          images: allowsMultipleImages
+            ? combined.slice(0, 5)
+            : combined.slice(0, 1),
+        };
       });
     }
   };
 
   const removeImageAt = (index) => {
     setImages((prev) => prev.filter((_, i) => i !== index));
+    setFormData((prev) => ({
+      ...prev,
+      images: (prev.images || []).filter((_, i) => i !== index),
+    }));
   };
 
   const handleSubmit = async () => {
     try {
-      if (!form.title.trim()) {
+      if (!formData.heading?.trim()) {
         Alert.alert("Validation", "Title is required");
         return;
       }
-
-      if (!form.description.trim()) {
+      if (!formData.body?.trim()) {
         Alert.alert("Validation", "Description is required");
         return;
       }
 
-      const resolvedAdId = getResolvedAdId(ad, adId);
+      const resolvedAdId = ad?.adId || ad?._id || adId;
       if (!resolvedAdId) {
         Alert.alert("Error", "Ad id is missing");
         return;
@@ -335,54 +317,106 @@ export default function AdEdit({ route, navigation }) {
 
       setSaving(true);
 
-
-      const existingContactInfo = ad?.contactInfo || {};
       const token = await AsyncStorage.getItem("customerToken");
-      if (!token) {
-        throw new Error("Please login again to update ad");
-      }
+      if (!token) throw new Error("Please login again to update ad");
 
-      if (!BASE_URL) {
-        throw new Error("BASE_URL is not configured");
-      }
-
+      // Upload images and check moderation
       const uploadedImages = [];
       if (showImageSection) {
         for (const imageUri of images) {
-          const uploaded = await uploadAdImageToCloud(imageUri);
-          if (uploaded) uploadedImages.push(uploaded);
+          try {
+            const uploaded = await uploadAdImageToCloud(imageUri);
+            if (uploaded) uploadedImages.push(uploaded);
+          } catch (uploadError) {
+            const msg = uploadError?.message || "";
+            if (isModerationFailureResponse(msg) || msg.toLowerCase().includes("image")) {
+              await AsyncStorage.setItem("golo_images_flagged", "true").catch(() => { });
+              setFlaggedModalVisible(true);
+              setSaving(false);
+              return;
+            }
+            throw uploadError;
+          }
         }
       }
 
-      // Clean contactInfo: only allowed fields
-      const allowedContactFields = ["name", "phone", "email", "whatsapp", "website", "preferredContactMethod"];
+      const existingContactInfo = ad?.contactInfo || {};
+      const allowedContactFields = [
+        "name", "phone", "email", "whatsapp", "website", "preferredContactMethod",
+      ];
       const cleanedContactInfo = {};
       for (const key of allowedContactFields) {
-        if ((form[key] && typeof form[key] === "string" && form[key].trim()) || existingContactInfo[key]) {
-          cleanedContactInfo[key] = form[key]?.trim() || existingContactInfo[key];
+        const val =
+          key === "name"
+            ? formData.contactPerson || existingContactInfo.name
+            : key === "phone"
+              ? formData.contact || existingContactInfo.phone
+              : existingContactInfo[key];
+        if (val && typeof val === "string" && val.trim()) {
+          cleanedContactInfo[key] = val.trim();
         }
       }
 
-      const categoryDtoField = CATEGORY_DTO_FIELD_BY_LABEL[ad?.category] || null;
-      const categoryPayload = buildTypedCategoryPayload(categoryDraft, categoryTypeMap);
+      const categoryDtoField =
+        CATEGORY_DTO_FIELD_BY_LABEL[ad?.category] || null;
+
+      // Build category payload from formData (excluding top-level fields)
+      const EXCLUDED = new Set([
+        "heading", "body", "price", "location", "contact", "contactPerson",
+        "image", "images",
+      ]);
+      const categoryPayload = {};
+      Object.entries(formData).forEach(([key, value]) => {
+        if (EXCLUDED.has(key)) return;
+        if (value == null) return;
+        if (typeof value === "string" && value.trim() === "") return;
+        if (Array.isArray(value) && value.length === 0) return;
+        categoryPayload[key] = value;
+      });
+
       const payload = {
-        title: form.title.trim(),
-        description: form.description.trim(),
-        price: parseNumberInput(form.price, parseNumberInput(ad?.price, 0)),
-        location: form.location.trim() || ad?.location || "",
+        title: formData.heading.trim(),
+        description: formData.body.trim(),
+        price: parseNumberInput(formData.price, parseNumberInput(ad?.price, 0)),
+        location: formData.location?.trim() || ad?.location || "",
         images: uploadedImages,
         contactInfo: cleanedContactInfo,
         ...(categoryDtoField ? { [categoryDtoField]: categoryPayload } : {}),
-        // Do NOT include categorySpecificData
       };
 
-      await updateAd(resolvedAdId, payload);
-
-      Alert.alert("Success", "Ad updated successfully", [
-        {
-          text: "OK",
-          onPress: () => navigation.goBack(),
+      const response = await fetch(`${BASE_URL}/ads/${resolvedAdId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
+        body: JSON.stringify(payload),
+      });
+
+      const rawText = await response.text().catch(() => "");
+      let data = {};
+      try { data = JSON.parse(rawText); } catch { data = { message: rawText }; }
+
+      const responseMsg = getErrorMessageFromResponse(data) || rawText.trim();
+      const moderationDetected =
+        isModerationFailureResponse(data) ||
+        isModerationFailureResponse(responseMsg) ||
+        (response.status === 400 && responseMsg.toLowerCase().includes("image"));
+
+      if (moderationDetected) {
+        await AsyncStorage.setItem("golo_images_flagged", "true").catch(() => { });
+        setFlaggedModalVisible(true);
+        return;
+      }
+
+      if (!response.ok || data?.success === false) {
+        Alert.alert("Failed", responseMsg || "Failed to update ad.");
+        return;
+      }
+
+      await AsyncStorage.removeItem("golo_images_flagged").catch(() => { });
+      Alert.alert("Success", "Ad updated successfully", [
+        { text: "OK", onPress: () => navigation.goBack() },
       ]);
     } catch (error) {
       Alert.alert("Update failed", error?.message || "Unable to update ad");
@@ -399,85 +433,56 @@ export default function AdEdit({ route, navigation }) {
     );
   }
 
+  // Shared props passed to all category form components
+  const sharedFormProps = {
+    formData,
+    setFormData,
+    category: categoryObj,
+    onPrevious: () => navigation.goBack(),
+    isEditMode: true,
+  };
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <LinearGradient
         colors={["#f8a812", "#fad081", "#f8f6f265"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 0, y: 1 }}
-        style={{ height: 220, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0 }}
+        style={{
+          height: 220,
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 0,
+        }}
       />
       <Topbar />
 
       <View style={[styles.header, { backgroundColor: colors.background }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} >
-          <MaterialIcons name="arrow-back-ios" size={22} style={{ padding: 10 }} />
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <MaterialIcons
+            name="arrow-back-ios"
+            size={22}
+            style={{ padding: 10 }}
+          />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Edit Ad</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>
+          Edit Ad
+        </Text>
         <View style={{ width: 24 }} />
       </View>
 
       <View style={{ height: 1, backgroundColor: "#000000", marginVertical: 6 }} />
 
-      <ScrollView contentContainerStyle={styles.content} style={{ backgroundColor: colors.background }}>
-
-        <Text style={[styles.sectionTitle, { marginTop: 10 }]}>Ad Details</Text>
-
-        <Text style={styles.label}>Title</Text>
-        <TextInput
-          style={styles.input}
-          value={form.title}
-          onChangeText={(text) => onChange("title", text)}
-          placeholder="Enter title"
-        />
-
-        <Text style={styles.label}>Description</Text>
-        <TextInput
-          style={[styles.input, styles.textArea]}
-          value={form.description}
-          onChangeText={(text) => onChange("description", text)}
-          placeholder="Enter description"
-          multiline
-          textAlignVertical="top"
-        />
-
-        <Text style={styles.label}>Price</Text>
-        <TextInput
-          style={styles.input}
-          value={form.price}
-          onChangeText={(text) => onChange("price", text)}
-          keyboardType="numeric"
-          placeholder="Enter price"
-        />
-
-        <Text style={styles.label}>Location</Text>
-        <TextInput
-          style={styles.input}
-          value={form.location}
-          onChangeText={(text) => onChange("location", text)}
-          placeholder="Enter location"
-        />
-
-        <Text style={styles.label}>Contact Name</Text>
-        <TextInput
-          style={styles.input}
-          value={form.contactName}
-          onChangeText={(text) => onChange("contactName", text)}
-          placeholder="Enter contact person"
-        />
-
-        <Text style={styles.label}>Contact Phone</Text>
-        <TextInput
-          style={styles.input}
-          value={form.contactPhone}
-          onChangeText={(text) => onChange("contactPhone", text)}
-          keyboardType="phone-pad"
-          placeholder="Enter phone number"
-        />
-
-        {showImageSection ? (
-          <>
-            <Text style={styles.sectionTitle}>Images</Text>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        style={{ backgroundColor: colors.background }}
+      >
+        {/* ── Image Section ── */}
+        {showImageSection && (
+          <View style={styles.imageSection}>
+            <Text style={styles.sectionTitle}>Photos</Text>
             <View style={styles.imageList}>
               {images.map((uri, index) => (
                 <View key={`${uri}-${index}`} style={styles.imageTileWrap}>
@@ -490,85 +495,142 @@ export default function AdEdit({ route, navigation }) {
                   </TouchableOpacity>
                 </View>
               ))}
+
+              {/* Add image tile */}
+              {images.length < (allowsMultipleImages ? 5 : 1) && (
+                <TouchableOpacity
+                  style={styles.addImageTile}
+                  onPress={pickImages}
+                >
+                  <MaterialIcons name="add-photo-alternate" size={28} color="#888" />
+                  <Text style={styles.addImageText}>Add</Text>
+                </TouchableOpacity>
+              )}
             </View>
-
-            <TouchableOpacity style={styles.secondaryBtn} onPress={pickImages}>
-              <Text style={styles.secondaryBtnText}>{allowsMultipleImages ? "Add Images" : "Add Image"}</Text>
-            </TouchableOpacity>
-
-            {!allowsMultipleImages ? (
-              <Text style={styles.helperText}>Only one image is allowed for this template.</Text>
-            ) : null}
-          </>
-        ) : null}
-
-        <Text style={[styles.sectionTitle, { marginTop: 22 }]}>Category Details</Text>
-        {!Object.keys(categoryDraft).length && (
-          <Text style={styles.emptyText}>No category-specific fields found for this ad.</Text>
+            {!allowsMultipleImages && (
+              <Text style={styles.helperText}>
+                Only one image is allowed for this template.
+              </Text>
+            )}
+          </View>
         )}
 
-        {Object.keys(categoryDraft).map((key) => {
-          const fieldType = categoryTypeMap[key];
+        {/* ── Category-Specific Form ── */}
+        <View style={styles.formWrapper}>
+          <AstrologyForm {...sharedFormProps} />
+          <BusinessForm {...sharedFormProps} />
+          <EducationForm {...sharedFormProps} />
+          <ElectronicsForm {...sharedFormProps} />
+          <EmploymentForm {...sharedFormProps} />
+          <FurnitureForm {...sharedFormProps} />
+          <GreetingsForm {...sharedFormProps} />
+          <LostandFoundForm {...sharedFormProps} />
+          <MatrimonialForm {...sharedFormProps} />
+          <MobilesForm {...sharedFormProps} />
+          <OthersForm {...sharedFormProps} />
+          <PersonalForm {...sharedFormProps} />
+          <PetsForm {...sharedFormProps} />
+          <PropertyForm {...sharedFormProps} />
+          <ServiceForm {...sharedFormProps} />
+          <TravelForm {...sharedFormProps} />
+          <VehiclesForm {...sharedFormProps} />
+        </View>
 
-          if (fieldType === "boolean") {
-            return (
-              <View key={key} style={styles.switchRow}>
-                <Text style={[styles.label, { marginTop: 0 }]}>{prettifyKey(key)}</Text>
-                <Switch
-                  value={Boolean(categoryDraft[key])}
-                  onValueChange={(value) => onCategoryFieldChange(key, value)}
-                />
-              </View>
-            );
-          }
-
-          return (
-            <View key={key}>
-              <Text style={styles.label}>{prettifyKey(key)}</Text>
-              <TextInput
-                style={styles.input}
-                value={String(categoryDraft[key] || "")}
-                onChangeText={(text) => onCategoryFieldChange(key, text)}
-                placeholder={`Enter ${prettifyKey(key)}`}
-                multiline={fieldType === "json"}
-                textAlignVertical={fieldType === "json" ? "top" : "center"}
-              />
-            </View>
-          );
-        })}
-
+        {/* ── Update Button ── */}
         <TouchableOpacity
           onPress={handleSubmit}
           style={[styles.submitBtn, saving && { opacity: 0.7 }]}
           disabled={saving}
         >
-          {saving ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.submitText}>Update Ad</Text>}
+          {saving ? (
+            <ActivityIndicator color="#ffffff" />
+          ) : (
+            <Text style={styles.submitText}>Update Ad</Text>
+          )}
         </TouchableOpacity>
 
         <View style={styles.noticeBox}>
-          <MaterialIcons name="info-outline" size={18} color="#9a6700" style={{ marginRight: 8 }} />
+          <MaterialIcons
+            name="info-outline"
+            size={18}
+            color="#9a6700"
+            style={{ marginRight: 8 }}
+          />
           <Text style={styles.noticeText}>
-            You can edit this ad only once. Please review all details carefully before updating.
+            You can edit this ad only once. Please review all details carefully
+            before updating.
           </Text>
         </View>
       </ScrollView>
 
+      {/* ── Image Moderation Modal (from Payment.js) ── */}
+      <Modal
+        visible={flaggedModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => { }}
+        statusBarTranslucent
+      >
+        <View style={styles.flaggedOverlay}>
+          <View style={styles.flaggedCard}>
+            <View style={styles.flaggedHeaderRow}>
+              <View style={styles.flaggedHeaderTextWrap}>
+                <View style={styles.flaggedHeaderIconCircle}>
+                  <Feather name="alert-triangle" size={14} color="#d92d20" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.flaggedHeaderTitle}>
+                    Inappropriate Content
+                  </Text>
+                  <Text style={styles.flaggedHeaderSubtitle}>
+                    Your image has been flagged by our safety system.
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                onPress={() => setFlaggedModalVisible(false)}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Feather name="x" size={20} color="#8a8a8a" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.flaggedIconWrap}>
+              <View style={styles.flaggedIconCircle}>
+                <Feather name="shield" size={30} color="#d92d20" />
+              </View>
+            </View>
+
+            <Text style={styles.flaggedTitle}>Upload Rejected</Text>
+            <Text style={styles.flaggedDescription}>
+              One or more of your uploaded images contains content that violates
+              our community guidelines. Please remove the inappropriate images
+              and try updating again.
+            </Text>
+
+            <TouchableOpacity
+              style={styles.flaggedButton}
+              onPress={() => setFlaggedModalVisible(false)}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.flaggedButtonText}>I Understand, Go Back</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
       <SafeAreaView
         edges={["bottom"]}
-        style={{ position: "absolute", bottom: 0, width: "100%" }} >
+        style={{ position: "absolute", bottom: 0, width: "100%" }}
+      >
         <ChojaBottom />
       </SafeAreaView>
-
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  centered: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
+  centered: { flex: 1, justifyContent: "center", alignItems: "center" },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -578,64 +640,21 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontFamily: "Medium",
     lineHeight: Math.round(22 * 1.0),
-  },
-  content: {
-    paddingHorizontal: 14,
-    paddingBottom: 110,
-  },
-  noticeBox: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    backgroundColor: "#fff8e1",
-    borderWidth: 1,
-    borderColor: "#f3d98a",
-    borderRadius: 10,
-    padding: 12,
-    marginTop: 14,
-  },
-  noticeText: {
     flex: 1,
-    color: "#7a5b00",
-    fontSize: 13,
-    fontFamily: "Medium",
-    lineHeight: Math.round(13 * 1.5),
+    textAlign: "center",
   },
-  label: {
-    fontSize: 14,
-    color: "#333",
-    marginBottom: 6,
-    marginTop: 14,
-    fontFamily: "Medium",
-    lineHeight: Math.round(14 * 1.5),
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ddd",
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontFamily: "Medium",
-    lineHeight: Math.round(14 * 1.5),
-  },
-  textArea: {
-    minHeight: 100,
-  },
+  content: { paddingHorizontal: 14, paddingBottom: 110 },
+
+  // Image section
+  imageSection: { marginTop: 10, marginBottom: 8 },
   sectionTitle: {
     fontSize: 16,
     color: "#111",
-    marginBottom: 8,
+    marginBottom: 10,
     fontFamily: "Medium",
-    lineHeight: Math.round(16 * 1.5),
   },
-  imageList: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-  },
-  imageTileWrap: {
-    position: "relative",
-  },
+  imageList: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+  imageTileWrap: { position: "relative" },
   imageTile: {
     width: 84,
     height: 84,
@@ -653,48 +672,140 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  secondaryBtn: {
-    marginTop: 12,
-    backgroundColor: "#fff",
-    borderRadius: 10,
+  addImageTile: {
+    width: 84,
+    height: 84,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderStyle: "dashed",
+    borderColor: "#bbb",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 10,
-    borderWidth: 1,
-    borderColor: "#cfcfcf",
+    backgroundColor: "#fafafa",
   },
-  secondaryBtnText: {
-    color: "#157a4f",
-    fontSize: 14,
-    fontFamily: "Medium",
-    lineHeight: Math.round(14 * 1.5),
-  },
-  switchRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginTop: 14,
-    paddingVertical: 6,
-  },
-  emptyText: {
-    color: "#666",
-    fontFamily: "Medium",
-    marginBottom: 4,
-    fontSize: 14,
-    lineHeight: Math.round(14 * 1.5),
-  },
+  addImageText: { fontSize: 11, color: "#888", fontFamily: "Medium", marginTop: 2 },
+  helperText: { fontSize: 12, color: "#888", fontFamily: "Medium", marginTop: 6 },
+
+  // Form wrapper
+  formWrapper: { marginTop: 4 },
+
+  // Submit button
   submitBtn: {
     marginTop: 24,
     backgroundColor: "#157a4f",
     borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 12,
+    paddingVertical: 14,
   },
   submitText: {
     color: "#fff",
     fontSize: 16,
     fontFamily: "Medium",
     lineHeight: Math.round(16 * 1.5),
+  },
+
+  // Notice box
+  noticeBox: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    backgroundColor: "#fff8e1",
+    borderWidth: 1,
+    borderColor: "#f3d98a",
+    borderRadius: 10,
+    padding: 12,
+    marginTop: 14,
+  },
+  noticeText: {
+    flex: 1,
+    color: "#7a5b00",
+    fontSize: 13,
+    fontFamily: "Medium",
+    lineHeight: Math.round(13 * 1.5),
+  },
+
+  // Moderation modal (mirrored from Payment.js)
+  flaggedOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 24,
+  },
+  flaggedCard: {
+    width: "100%",
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 20,
+    elevation: 6,
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  flaggedHeaderRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    marginBottom: 16,
+  },
+  flaggedHeaderTextWrap: { flexDirection: "row", alignItems: "flex-start", flex: 1 },
+  flaggedHeaderIconCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "#fef3f2",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
+  },
+  flaggedHeaderTitle: {
+    fontSize: 14,
+    fontFamily: "Medium",
+    color: "#111",
+    lineHeight: Math.round(14 * 1.4),
+  },
+  flaggedHeaderSubtitle: {
+    fontSize: 12,
+    color: "#666",
+    fontFamily: "Medium",
+    lineHeight: Math.round(12 * 1.4),
+    marginTop: 2,
+  },
+  flaggedIconWrap: { alignItems: "center", marginBottom: 12 },
+  flaggedIconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: "#fef3f2",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  flaggedTitle: {
+    fontSize: 18,
+    fontFamily: "Medium",
+    color: "#111",
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  flaggedDescription: {
+    fontSize: 13,
+    color: "#555",
+    fontFamily: "Medium",
+    textAlign: "center",
+    lineHeight: Math.round(13 * 1.5),
+    marginBottom: 20,
+  },
+  flaggedButton: {
+    backgroundColor: "#d92d20",
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  flaggedButtonText: {
+    color: "#fff",
+    fontSize: 15,
+    fontFamily: "Medium",
+    lineHeight: Math.round(15 * 1.5),
   },
 });

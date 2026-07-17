@@ -26,12 +26,12 @@ export default function ChojaBottom() {
         <View style={[styles.top, { backgroundColor: colors.bottombar }]}>
 
             <TouchableOpacity style={[styles.bar]} onPress={() => navigation.navigate("ChojaHome")}>
-                <MaterialCommunityIcons name="view-dashboard-outline" size={24}
+                <MaterialCommunityIcons name="home-outline" size={26}
                     color={currentRoute === "ChojaHome" ? "#f9a641" : "black"} />
                 <Text style={{
                     textAlign: "auto", fontSize: 11, color: currentRoute === "ChojaHome" ? "#f9a641" : "black",
                     fontFamily: "Medium", lineHeight: Math.round(11 * 1.5)
-                }}>Dashboard</Text>
+                }}>Home</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.bar} onPress={() => navigation.navigate("Fav")}>

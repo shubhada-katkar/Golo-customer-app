@@ -6,7 +6,7 @@ import { AntDesign } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
 import { useNavigation } from "@react-navigation/native";
 
-export default function Travel({ formData, setFormData, category, onPrevious, template, price, selectedDays, selectedLocations, selectedDates, startDate, endDate }) {
+export default function Travel({ formData, setFormData, category, onPrevious, template, price, selectedDays, selectedLocations, selectedDates, startDate, endDate, isEditMode }) {
   if (category?.id !== "travel") return null;
   const navigation = useNavigation();
 
@@ -153,9 +153,11 @@ export default function Travel({ formData, setFormData, category, onPrevious, te
           textAlignVertical="top"
         />
       </View>
-      <TouchableOpacity style={styles.nextBtn} onPress={() => { navigation.navigate("CalendarScreen", { category, template, formData, price }); }}>
-        <Text style={styles.nextText}>See Preview</Text>
-      </TouchableOpacity>
+      {!isEditMode && (
+        <TouchableOpacity style={styles.nextBtn} onPress={() => { navigation.navigate("CalendarScreen", { category, template, formData, price }); }}>
+          <Text style={styles.nextText}>See Preview</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }

@@ -158,7 +158,7 @@ export default function OfferDetails({ navigation, route }) {
     const routeOfferData = route?.params?.offerData || {};
     const offerData = remoteOfferData || routeOfferData;
 
-    const routeOfferId = getOfferIdFromData(routeOfferData);
+    const routeOfferId = getOfferIdFromData(routeOfferData) || route?.params?.offerId;
     const remoteOfferId = getOfferIdFromData(remoteOfferData);
     const offerId = remoteOfferId || routeOfferId;
     const canClaimVoucher = Boolean(offerId);
@@ -488,12 +488,8 @@ export default function OfferDetails({ navigation, route }) {
     const handleShareOffer = async () => {
         try {
             const shareTitle = title || "Shared Offer";
-            const getWebsiteBaseUrl = () => {
-                if (BASE_URL.includes("api.")) {
-                    return BASE_URL.replace("api.", "").replace(/\/+$/, "");
-                }
-                return "https://golo.co.in";
-            };
+            const resolvedOfferId = offerId || "";
+            const sharedUrl = `https://golo.co.in/nearby-deals/deal?offerId=${encodeURIComponent(resolvedOfferId)}`;
 
             const getAbsoluteImageUrl = (url) => {
                 if (!url) return null;
@@ -504,10 +500,6 @@ export default function OfferDetails({ navigation, route }) {
                 const urlClean = url.startsWith("/") ? url : `/${url}`;
                 return `${baseUrlClean}${urlClean}`;
             };
-
-            const resolvedOfferId = offerId || "";
-            const websiteUrl = `${getWebsiteBaseUrl()}/offer/${encodeURIComponent(resolvedOfferId)}`;
-            const deepLink = `golo://offer/${encodeURIComponent(resolvedOfferId)}`;
 
             const absoluteImage = getAbsoluteImageUrl(offerImage);
 
@@ -520,8 +512,7 @@ export default function OfferDetails({ navigation, route }) {
                 locationText ? `Location: ${locationText}` : null,
                 details ? `Details: ${details}` : null,
                 absoluteImage ? `Image: ${absoluteImage}` : null,
-                `Website Link: ${websiteUrl}`,
-                `App Link: ${deepLink}`,
+                `Check out this offer on Golo: ${sharedUrl}`,
             ]
                 .filter(Boolean)
                 .join("\n");
@@ -529,7 +520,7 @@ export default function OfferDetails({ navigation, route }) {
             await Share.share({
                 title: shareTitle,
                 message: shareMessage,
-                url: websiteUrl,
+                url: sharedUrl,
             });
         } catch (error) {
             Alert.alert("Share Error", error?.message || "Unable to share this offer right now.");

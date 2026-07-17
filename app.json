@@ -27,6 +27,48 @@
       "permissions": [
         "RECORD_AUDIO",
         "android.permission.RECORD_AUDIO"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "golo.co.in",
+              "pathPrefix": "/nearby-deals/deal"
+            },
+            {
+              "scheme": "https",
+              "host": "www.golo.co.in",
+              "pathPrefix": "/nearby-deals/deal"
+            },
+            {
+              "scheme": "https",
+              "host": "golo.co.in",
+              "pathPrefix": "/ad"
+            },
+            {
+              "scheme": "https",
+              "host": "www.golo.co.in",
+              "pathPrefix": "/ad"
+            },
+            {
+              "scheme": "https",
+              "host": "golo.co.in",
+              "pathPrefix": "/product"
+            },
+            {
+              "scheme": "https",
+              "host": "www.golo.co.in",
+              "pathPrefix": "/product"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
       ]
     },
     "plugins": [
@@ -45,7 +87,8 @@
             }
           }
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "extra": {
       "eas": {

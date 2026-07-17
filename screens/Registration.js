@@ -13,20 +13,29 @@ import {
   Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Entypo } from "@expo/vector-icons";
+import { Ionicons, FontAwesome } from "@expo/vector-icons";
 import { BASE_URL } from "../config";
 
-const { width, height } = Dimensions.get("window");
+const { width } = Dimensions.get("window");
+
+const GENDER_OPTIONS = [
+  { value: "male", label: "Male" },
+  { value: "female", label: "Female" },
+  { value: "others", label: "Others" },
+  { value: "prefer_not_to_say", label: "Prefer not to say" },
+];
 
 export default function Registration({ navigation }) {
 
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [age, setAge] = useState("");
+  const [dob, setDob] = useState("");
   const [gender, setGender] = useState("");
+  const [genderMenuOpen, setGenderMenuOpen] = useState(false);
   const [password, setPassword] = useState("");
   const [visiblepass, setvisiblepass] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [registerLoading, setRegisterLoading] = useState(false);
 
   const isValidEmail = (value) => /\S+@\S+\.\S+/.test(value);
@@ -54,19 +63,43 @@ export default function Registration({ navigation }) {
     return null;
   };
 
-  const parseAge = (value) => {
-    return (value || "").replace(/\D/g, "");
+  // Accepts dd-mm-yyyy and auto-inserts dashes as the user types
+  const formatDobInput = (value) => {
+    const digits = value.replace(/\D/g, "").slice(0, 8);
+    if (digits.length <= 2) return digits;
+    if (digits.length <= 4) return `${digits.slice(0, 2)}-${digits.slice(2)}`;
+    return `${digits.slice(0, 2)}-${digits.slice(2, 4)}-${digits.slice(4)}`;
   };
 
-  const getDateOfBirthFromAge = (ageValue) => {
-    const years = Number(ageValue);
-    if (!Number.isInteger(years) || years < 1 || years > 120) {
+  // Converts dd-mm-yyyy -> yyyy-mm-dd (ISO), returns null if invalid or out of range
+  const parseDobToIso = (value) => {
+    const match = /^(\d{2})-(\d{2})-(\d{4})$/.exec(value.trim());
+    if (!match) return null;
+
+    const [, dd, mm, yyyy] = match;
+    const day = Number(dd);
+    const month = Number(mm);
+    const year = Number(yyyy);
+
+    const date = new Date(year, month - 1, day);
+    if (
+      date.getFullYear() !== year ||
+      date.getMonth() !== month - 1 ||
+      date.getDate() !== day
+    ) {
       return null;
     }
 
     const now = new Date();
-    const dob = new Date(now.getFullYear() - years, now.getMonth(), now.getDate());
-    return dob.toISOString().split("T")[0];
+    let age = now.getFullYear() - year;
+    const hasHadBirthdayThisYear =
+      now.getMonth() > month - 1 ||
+      (now.getMonth() === month - 1 && now.getDate() >= day);
+    if (!hasHadBirthdayThisYear) age -= 1;
+
+    if (age < 1 || age > 120) return null;
+
+    return `${yyyy}-${mm}-${dd}`;
   };
 
   const getErrorMessage = (message, fallback) => {
@@ -81,12 +114,21 @@ export default function Registration({ navigation }) {
     return fallback;
   };
 
+  // Static for now — will be wired up to real OAuth later
+  const handleGooglePress = () => {
+    Alert.alert("Coming soon", "Google sign-up will be available soon.");
+  };
+
+  const handleFacebookPress = () => {
+    Alert.alert("Coming soon", "Facebook sign-up will be available soon.");
+  };
+
   const handleRegister = async () => {
     if (registerLoading) {
       return;
     }
 
-    if (!username.trim() || !email.trim() || !password.trim() || !age.trim() || !gender) {
+    if (!username.trim() || !email.trim() || !password.trim() || !dob.trim() || !gender) {
       Alert.alert("Missing details", "Fill all fields.");
       return;
     }
@@ -101,9 +143,9 @@ export default function Registration({ navigation }) {
       return;
     }
 
-    const parsedAge = Number(age.trim());
-    if (!Number.isInteger(parsedAge) || parsedAge < 1 || parsedAge > 120) {
-      Alert.alert("Invalid age", "Enter a valid age between 1 and 120.");
+    const dateOfBirth = parseDobToIso(dob);
+    if (!dateOfBirth) {
+      Alert.alert("Invalid date", "Enter a valid date of birth (dd-mm-yyyy).");
       return;
     }
 
@@ -113,14 +155,13 @@ export default function Registration({ navigation }) {
       return;
     }
 
-    const dateOfBirth = getDateOfBirthFromAge(parsedAge);
-    if (!dateOfBirth) {
-      Alert.alert("Invalid age", "Enter a valid age between 1 and 120.");
+    if (!["male", "female", "others", "prefer_not_to_say"].includes(gender)) {
+      Alert.alert("Invalid gender", "Select a valid gender option.");
       return;
     }
 
-    if (!["male", "female", "others", "prefer_not_to_say"].includes(gender)) {
-      Alert.alert("Invalid gender", "Select a valid gender option.");
+    if (!agreedToTerms) {
+      Alert.alert("Terms required", "Please agree to the Terms and Privacy Policy to continue.");
       return;
     }
 
@@ -163,133 +204,191 @@ export default function Registration({ navigation }) {
     }
   };
 
-  return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <View style={{ flex: 1 }}>
-        <View style={{ flex: 1, backgroundColor: "#f5b849" }} />
-        <View style={{ flex: 1, backgroundColor: "#ffffff" }} />
-      </View>
+  const selectedGenderLabel = GENDER_OPTIONS.find((option) => option.value === gender)?.label;
 
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#ffffff" }}>
       <KeyboardAvoidingView
-        style={StyleSheet.absoluteFill}
+        style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         <ScrollView
-          contentContainerStyle={styles.scrollContainer}
+          contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.centerContainer}>
-            <Text style={styles.title}>Create Account</Text>
+          <Text style={styles.title}>Join GOLO Network Group</Text>
+          <Text style={styles.subtitle}>Grow Smarter With Every Ad. Join Free.</Text>
 
-            <View style={styles.card}>
-              <Text style={styles.label}>Name</Text>
-              <TextInput
-                style={styles.input}
-                value={username}
-                placeholder="Enter your name"
-                onChangeText={setUsername}
-              />
+          {/* Static social buttons — backend wiring comes later */}
+          <View style={styles.socialRow}>
+            <TouchableOpacity style={styles.socialButton} onPress={handleGooglePress}>
+              <FontAwesome name="google" size={18} color="#EA4335" />
+              <Text style={styles.socialText}>Google</Text>
+            </TouchableOpacity>
 
-              <Text style={styles.label}>Email</Text>
-              <TextInput
-                style={styles.input}
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                placeholder="Enter email"
-              />
+            <TouchableOpacity style={styles.socialButton} onPress={handleFacebookPress}>
+              <FontAwesome name="facebook" size={18} color="#1877F2" />
+              <Text style={styles.socialText}>Facebook</Text>
+            </TouchableOpacity>
+          </View>
 
-              <Text style={styles.label}>Phone</Text>
-              <TextInput
-                style={styles.input}
-                value={phone}
-                placeholder="Enter phone number"
-                onChangeText={setPhone}
-                keyboardType="phone-pad"
-              />
+          <View style={styles.dividerRow}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>OR SIGN UP WITH</Text>
+            <View style={styles.dividerLine} />
+          </View>
 
-              <Text style={styles.label}>Age</Text>
-              <TextInput
-                style={styles.input}
-                value={age}
-                placeholder="Enter your age"
-                onChangeText={(value) => setAge(parseAge(value))}
-                keyboardType="numeric"
-                maxLength={3}
-              />
+          <Text style={styles.label}>Name</Text>
+          <View style={styles.inputWrapper}>
+            <Ionicons name="person-outline" size={18} color="#8a8a8a" style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              value={username}
+              placeholder="Enter your full name"
+              placeholderTextColor="#a0a0a0"
+              onChangeText={setUsername}
+            />
+          </View>
 
-              <Text style={styles.label}>Gender</Text>
-              <View style={styles.genderRow}>
-                {[
-                  { value: "male", label: "Male" },
-                  { value: "female", label: "Female" },
-                  { value: "others", label: "Others" },
-                  { value: "prefer_not_to_say", label: "Prefer not to say" },
-                ].map((option) => (
-                  <TouchableOpacity
-                    key={option.value}
+          <Text style={styles.label}>Email</Text>
+          <View style={styles.inputWrapper}>
+            <Ionicons name="mail-outline" size={18} color="#8a8a8a" style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              placeholder="Enter your email"
+              placeholderTextColor="#a0a0a0"
+            />
+          </View>
+
+          <Text style={styles.label}>Number</Text>
+          <View style={styles.inputWrapper}>
+            <Ionicons name="call-outline" size={18} color="#8a8a8a" style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              value={phone}
+              placeholder="Enter your phone number"
+              placeholderTextColor="#a0a0a0"
+              onChangeText={setPhone}
+              keyboardType="phone-pad"
+              maxLength={10}
+            />
+          </View>
+
+          <Text style={styles.label}>Date of Birth</Text>
+          <View style={styles.inputWrapper}>
+            <Ionicons name="calendar-outline" size={18} color="#8a8a8a" style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              value={dob}
+              placeholder="dd-mm-yyyy"
+              placeholderTextColor="#a0a0a0"
+              onChangeText={(value) => setDob(formatDobInput(value))}
+              keyboardType="numeric"
+              maxLength={10}
+            />
+          </View>
+
+          <Text style={styles.label}>Gender</Text>
+          <TouchableOpacity
+            style={styles.inputWrapper}
+            activeOpacity={0.7}
+            onPress={() => setGenderMenuOpen((open) => !open)}
+          >
+            <Ionicons name="person-outline" size={18} color="#8a8a8a" style={styles.inputIcon} />
+            <Text style={[styles.input, !selectedGenderLabel && styles.placeholderText, { top: 4 }]}>
+              {selectedGenderLabel || "Select gender"}
+            </Text>
+            <Ionicons
+              name={genderMenuOpen ? "chevron-up" : "chevron-down"}
+              size={18}
+              color="#8a8a8a"
+            />
+          </TouchableOpacity>
+
+          {genderMenuOpen && (
+            <View style={styles.genderMenu}>
+              {GENDER_OPTIONS.map((option) => (
+                <TouchableOpacity
+                  key={option.value}
+                  style={styles.genderMenuItem}
+                  onPress={() => {
+                    setGender(option.value);
+                    setGenderMenuOpen(false);
+                  }}
+                >
+                  <Text
                     style={[
-                      styles.genderOption,
-                      gender === option.value && styles.genderOptionActive,
+                      styles.genderMenuItemText,
+                      gender === option.value && styles.genderMenuItemTextActive,
                     ]}
-                    onPress={() => setGender(option.value)}
                   >
-                    <Text
-                      style={[
-                        styles.genderText,
-                        gender === option.value && styles.genderTextActive,
-                      ]}
-                    >
-                      {option.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              <Text style={styles.label}>Password</Text>
-              <View style={styles.inputpassword}>
-                <TextInput
-                  style={styles.passwordInput}
-                  placeholder="Enter password"
-                  secureTextEntry={!visiblepass}
-                  value={password}
-                  onChangeText={setPassword}
-                />
-                {!visiblepass ? (
-                  <TouchableOpacity style={styles.eyeButton} onPress={() => setvisiblepass(true)}>
-                    <Entypo name="eye-with-line" size={20} />
-                  </TouchableOpacity>
-                ) : (
-                  <TouchableOpacity style={styles.eyeButton} onPress={() => setvisiblepass(false)}>
-                    <Entypo name="eye" size={20} />
-                  </TouchableOpacity>
-                )}
-              </View>
-
-              <TouchableOpacity
-                style={[styles.button, registerLoading && styles.buttonDisabled]}
-                onPress={handleRegister}
-                disabled={registerLoading}
-              >
-                {registerLoading ? (
-                  <View style={styles.loadingRow}>
-                    <ActivityIndicator color="white" />
-                    <Text style={styles.buttonText}>Please wait...</Text>
-                  </View>
-                ) : (
-                  <Text style={styles.buttonText}>Register</Text>
-                )}
-              </TouchableOpacity>
+                    {option.label}
+                  </Text>
+                  {gender === option.value && (
+                    <Ionicons name="checkmark" size={18} color="#157a4f" />
+                  )}
+                </TouchableOpacity>
+              ))}
             </View>
+          )}
 
-            <View style={styles.loginRow}>
-              <Text style={styles.loginPrompt}>Have An Account? </Text>
-              <TouchableOpacity onPress={() => navigation.navigate("Login")}>
-                <Text style={styles.loginLink}>Sign In</Text>
-              </TouchableOpacity>
+          <Text style={styles.label}>Create Password</Text>
+          <View style={styles.inputWrapper}>
+            <Ionicons name="lock-closed-outline" size={18} color="#8a8a8a" style={styles.inputIcon} />
+            <TextInput
+              style={[styles.input, { flex: 1 }]}
+              placeholder="Create password"
+              placeholderTextColor="#a0a0a0"
+              secureTextEntry={!visiblepass}
+              value={password}
+              onChangeText={setPassword}
+            />
+            <TouchableOpacity style={styles.eyeButton} onPress={() => setvisiblepass(!visiblepass)}>
+              <Ionicons name={visiblepass ? "eye-outline" : "eye-off-outline"} size={20} color="#8a8a8a" />
+            </TouchableOpacity>
+          </View>
+
+          <TouchableOpacity
+            style={styles.termsRow}
+            activeOpacity={0.8}
+            onPress={() => setAgreedToTerms((prev) => !prev)}
+          >
+            <View style={[styles.checkbox, agreedToTerms && styles.checkboxChecked]}>
+              {agreedToTerms && <Ionicons name="checkmark" size={14} color="#ffffff" />}
             </View>
+            <Text style={styles.termsText}>
+              By clicking on "Continue", I agree to the{" "}
+              <Text style={styles.termsLink}>Terms</Text> and{" "}
+              <Text style={styles.termsLink}>Privacy Policy</Text>. We ensure your data is
+              secure and never shared without your consent.
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.button, registerLoading && styles.buttonDisabled]}
+            onPress={handleRegister}
+            disabled={registerLoading}
+          >
+            {registerLoading ? (
+              <View style={styles.loadingRow}>
+                <ActivityIndicator color="white" />
+                <Text style={styles.buttonText}>Please wait...</Text>
+              </View>
+            ) : (
+              <Text style={styles.buttonText}>Continue</Text>
+            )}
+          </TouchableOpacity>
+
+          <View style={styles.loginRow}>
+            <Text style={styles.loginPrompt}>Already have an account? </Text>
+            <TouchableOpacity onPress={() => navigation.navigate("Login")}>
+              <Text style={styles.loginLink}>Sign In</Text>
+            </TouchableOpacity>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -298,128 +397,221 @@ export default function Registration({ navigation }) {
 }
 
 const styles = StyleSheet.create({
+  scrollContent: {
+    paddingHorizontal: width * 0.06,
+    paddingTop: 40,
+    paddingBottom: 30,
+  },
+
   title: {
-    fontSize: width * 0.056,
-    color: "#ffffff",
+    fontSize: width * 0.062,
+    fontFamily: "SemiBold",
+    color: "#111111",
+    textAlign: "center",
+    marginBottom: 6,
+    lineHeight: Math.round(width * 0.062 * 1.5)
+  },
+
+  subtitle: {
+    fontSize: 14,
     fontFamily: "Medium",
-    lineHeight: Math.round(width * 0.056 * 1.5),
+    color: "#8a8a8a",
+    textAlign: "center",
+    marginBottom: 24,
+    lineHeight: Math.round(14 * 1.5)
   },
-  card: {
-    backgroundColor: "#ffffff",
-    width: Math.min(width * 0.88, 390),
-    borderRadius: 20,
-    paddingBottom: 18,
-    paddingHorizontal: 16,
-    borderWidth: 0.5,
-    borderColor: "#000000",
-    gap: 8,
-    paddingTop: 16,
+
+  socialRow: {
+    flexDirection: "row",
+    gap: 12,
   },
-  label: {
-    marginTop: 10,
-    fontSize: 16,
-    fontFamily: "Medium",
-    lineHeight: Math.round(16 * 1.5),
-  },
-  scrollContainer: {
-    flexGrow: 1,
+
+  socialButton: {
+    flex: 1,
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: height * 0.10,
-  },
-  input: {
-    backgroundColor: "#ffffff",
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    fontSize: 14,
-    borderWidth: 1,
-    borderColor: "#000000",
-    fontFamily: "Medium",
-  },
-  genderRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
     gap: 8,
-    marginTop: 8,
-  },
-  genderOption: {
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 10,
     borderWidth: 1,
-    borderColor: "#000000",
+    borderColor: "#e0e0e0",
+    borderRadius: 12,
+    paddingVertical: 12,
     backgroundColor: "#ffffff",
   },
-  genderOptionActive: {
+
+  socialText: {
+    fontSize: 15,
+    fontFamily: "Medium",
+    color: "#333333",
+    lineHeight: Math.round(15 * 1.5)
+  },
+
+  dividerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 20,
+    gap: 10,
+  },
+
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: "#e0e0e0",
+  },
+
+  dividerText: {
+    fontSize: 12,
+    fontFamily: "Medium",
+    color: "#a0a0a0",
+    letterSpacing: 0.5,
+    lineHeight: Math.round(12 * 1.5)
+  },
+
+  label: {
+    fontSize: 14,
+    fontFamily: "Medium",
+    color: "#111111",
+    marginBottom: 6,
+  },
+
+  inputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f5f5f5",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    marginBottom: 16,
+    height: 48,
+  },
+
+  inputIcon: {
+    marginRight: 8,
+  },
+
+  input: {
+    flex: 1,
+    fontSize: 14,
+    fontFamily: "Medium",
+    color: "#111111",
+    top: 7,
+  },
+
+  placeholderText: {
+    color: "#a0a0a0",
+  },
+
+  genderMenu: {
+    backgroundColor: "#ffffff",
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+    marginTop: -10,
+    marginBottom: 16,
+    overflow: "hidden",
+  },
+
+  genderMenuItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+  },
+
+  genderMenuItemText: {
+    fontSize: 14,
+    fontFamily: "Medium",
+    color: "#333333",
+    lineHeight: Math.round(14 * 1.5)
+  },
+
+  genderMenuItemTextActive: {
+    color: "#157a4f",
+  },
+
+  eyeButton: {
+    padding: 6,
+  },
+
+  termsRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+    marginBottom: 20,
+  },
+
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 5,
+    borderWidth: 1.5,
+    borderColor: "#c0c0c0",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 2,
+  },
+
+  checkboxChecked: {
     backgroundColor: "#157a4f",
     borderColor: "#157a4f",
   },
-  genderText: {
-    fontSize: 14,
+
+  termsText: {
+    flex: 1,
+    fontSize: 12,
     fontFamily: "Medium",
-    color: "#000000",
-    lineHeight: Math.round(14 * 1.5),
+    color: "#666666",
+    lineHeight: 18,
+    lineHeight: Math.round(12 * 1.5)
   },
-  genderTextActive: {
-    color: "#ffffff",
+
+  termsLink: {
+    color: "#157a4f",
   },
+
   button: {
     backgroundColor: "#157a4f",
-    marginTop: 16,
-    borderRadius: 10,
+    borderRadius: 12,
+    paddingVertical: 15,
     alignItems: "center",
-    paddingVertical: 12,
   },
-  buttonText: {
-    color: "white",
-    fontSize: 18,
-    fontFamily: "Medium",
-    lineHeight: Math.round(18 * 1.5),
-  },
+
   buttonDisabled: {
     opacity: 0.7,
   },
-  inputpassword: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#ffffff",
-    borderRadius: 10,
-    paddingLeft: 12,
-    justifyContent: "space-between",
-    borderWidth: 1,
-    borderColor: "#000000",
-  },
-  passwordInput: {
-    fontSize: 14,
-    flex: 1,
+
+  buttonText: {
+    color: "#ffffff",
+    fontSize: 17,
     fontFamily: "Medium",
+    lineHeight: Math.round(17 * 1.5),
   },
-  eyeButton: {
-    padding: 14,
-  },
-  centerContainer: {
-    alignItems: "center",
-    width: "100%",
-  },
+
   loadingRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
   },
+
   loginRow: {
     flexDirection: "row",
-    alignItems: "center",
-    marginTop: 10,
+    justifyContent: "center",
+    marginTop: 20,
   },
+
   loginPrompt: {
-    fontSize: 16,
+    fontSize: 14,
     fontFamily: "Medium",
-    lineHeight: Math.round(16 * 1.5),
+    color: "#555555",
+    lineHeight: Math.round(14 * 1.5)
   },
+
   loginLink: {
-    fontSize: 16,
-    color: "#4caf50",
+    fontSize: 14,
     fontFamily: "Medium",
-    lineHeight: Math.round(16 * 1.5),
+    color: "#157a4f",
+    lineHeight: Math.round(14 * 1.5)
   },
 });

@@ -91,9 +91,8 @@ const styles = StyleSheet.create({
     borderColor: "#000000",
     borderRadius: 10,
     backgroundColor: "#ffffff",
-    fontSize: 20,
+    fontSize: 14,
     fontFamily: "SemiBold",
-      lineHeight: Math.round(20 * 1.5),
   },
   boxDisabled: {
     backgroundColor: "#f3f4f6",

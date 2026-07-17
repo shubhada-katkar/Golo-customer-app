@@ -34,6 +34,7 @@ import SellerProfile from "./screens/SellerProfile";
 import TransactionDetails from "./screens/TransactionDetails";
 import FilterPage from "./screens/FilterPage";
 import ReviewsPage from "./screens/ReviewsPage";
+import ResetPassword from "./screens/ResetPassword";
 import { BASE_URL } from "./config"; // adjust path as needed
 import NotificationsPage from "./screens/NotificationsPage";
 import StorePage from "./screens/StorePage";
@@ -49,13 +50,15 @@ const WEBSITE_BASE = SHARE_WEB_BASE.replace("api.", "");
 const linking = {
   prefixes: [
     "golo://",
+    "https://golo.co.in",
+    "https://www.golo.co.in",
     ...(SHARE_WEB_BASE ? [SHARE_WEB_BASE] : []),
     ...(WEBSITE_BASE ? [WEBSITE_BASE] : []),
   ],
   config: {
     screens: {
       AdDetails: "ad/:adId",
-      OfferDetails: "offer/:offerId",
+      OfferDetails: "nearby-deals/deal",
       ProductDetail: "product/:productId/:offerId?",
     },
   },
@@ -129,6 +132,7 @@ export default function App() {
           <Stack.Screen name="ReviewsPage" component={ReviewsPage} />
           <Stack.Screen name="NotificationsPage" component={NotificationsPage} />
           <Stack.Screen name="StorePage" component={StorePage} />
+          <Stack.Screen name="ResetPassword" component={ResetPassword} />
         </Stack.Navigator>
       </NavigationContainer>
     </ThemeProvider>

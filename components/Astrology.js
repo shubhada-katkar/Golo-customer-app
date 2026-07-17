@@ -3,7 +3,7 @@ import { View, Text, TextInput, StyleSheet, TouchableOpacity } from "react-nativ
 import { AntDesign } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 
-export default function Astrology({ formData, setFormData, category, onPrevious, template, selectedDays, selectedLocations, selectedDates, startDate, endDate, price }) {
+export default function Astrology({ formData, setFormData, category, onPrevious, template, selectedDays, selectedLocations, selectedDates, startDate, endDate, price, isEditMode }) {
     if (category?.id !== "astrology") return null;
     const navigation = useNavigation();
 
@@ -207,9 +207,11 @@ export default function Astrology({ formData, setFormData, category, onPrevious,
 
             </View>
 
-            <TouchableOpacity style={styles.nextBtn} onPress={() => { navigation.navigate("CalendarScreen", { category, template, formData, price }); }}>
-                <Text style={styles.nextText}>See Preview</Text>
-            </TouchableOpacity>
+            {!isEditMode && (
+                <TouchableOpacity style={styles.nextBtn} onPress={() => { navigation.navigate("CalendarScreen", { category, template, formData, price }); }}>
+                    <Text style={styles.nextText}>See Preview</Text>
+                </TouchableOpacity>
+            )}
         </View>
     );
 }

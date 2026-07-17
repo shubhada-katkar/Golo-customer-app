@@ -26,9 +26,9 @@ export default function GoloBottom() {
         <View style={[styles.top, { backgroundColor: colors.bottombar }]}>
 
             <TouchableOpacity style={[styles.bar]} onPress={() => navigation.navigate("GoloHome")}>
-                <MaterialCommunityIcons name="view-dashboard-outline" size={24}
+                <MaterialCommunityIcons name="home-outline" size={26}
                     color={currentRoute === "GoloHome" ? "#f5b849" : "black"} />
-                <Text style={{ textAlign: "auto", fontSize: 11, color: currentRoute === "GoloHome" ? "#f5b849" : "black", fontFamily: "Medium" }}>Dashboard</Text>
+                <Text style={{ textAlign: "auto", fontSize: 11, color: currentRoute === "GoloHome" ? "#f5b849" : "black", fontFamily: "Medium" }}>Home</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.bar} onPress={() => navigation.navigate("GoloFav")}>

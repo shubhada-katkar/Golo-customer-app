@@ -1,13 +1,13 @@
 import React, { useState } from "react";
-import { View, TouchableOpacity, Text, TextInput, StyleSheet, Alert } from "react-native";
+import { View, TouchableOpacity, Text, TextInput, StyleSheet, Alert, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Dimensions } from "react-native";
-import { Entypo } from "@expo/vector-icons";
+import { Ionicons, FontAwesome } from "@expo/vector-icons";
 import { BASE_URL } from "../config";
 import { saveAuthData, clearAuthStorage } from "../services/authService";
 import { startCustomerNotificationPolling } from "../services/notificationService";
 
-const { width, height } = Dimensions.get("window");
+const { width } = Dimensions.get("window");
 
 export default function Login({ navigation, route }) {
 
@@ -34,6 +34,15 @@ export default function Login({ navigation, route }) {
     }
 
     navigation.reset({ index: 0, routes: [{ name: "GoloHome" }] });
+  };
+
+  // Static for now — will be wired up to real OAuth later
+  const handleGooglePress = () => {
+    Alert.alert("Coming soon", "Google sign-in will be available soon.");
+  };
+
+  const handleFacebookPress = () => {
+    Alert.alert("Coming soon", "Facebook sign-in will be available soon.");
   };
 
   const handleLogin = async () => {
@@ -78,9 +87,9 @@ export default function Login({ navigation, route }) {
       }
 
       await saveAuthData({
-        accessToken:  data.data.accessToken,
+        accessToken: data.data.accessToken,
         refreshToken: data.data.refreshToken,
-        user:         data.data.user,
+        user: data.data.user,
       });
       await startCustomerNotificationPolling();
 
@@ -102,163 +111,232 @@ export default function Login({ navigation, route }) {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <View style={{ flex: 1, backgroundColor: "#f5b849" }} />
-      <View style={{ flex: 1, backgroundColor: "#ffffff" }} />
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#ffffff" }}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Text style={styles.title}>Welcome to GOLO Network Group</Text>
+        <Text style={styles.subtitle}>Grow Smarter With Every Ad. Join Free</Text>
 
-      <View style={styles.centerContainer}>
-        <Text style={{ fontSize: width * 0.07, color: "#ffffff", fontFamily: "SemiBold" }}>
-          Login To Your Account
-        </Text>
+        {/* Static social buttons — backend wiring comes later */}
+        <View style={styles.socialRow}>
+          <TouchableOpacity style={styles.socialButton} onPress={handleGooglePress}>
+            <FontAwesome name="google" size={18} color="#EA4335" />
+            <Text style={styles.socialText}>Google</Text>
+          </TouchableOpacity>
 
-        <View style={styles.card}>
-          <Text style={styles.text}>Email</Text>
+          <TouchableOpacity style={styles.socialButton} onPress={handleFacebookPress}>
+            <FontAwesome name="facebook" size={18} color="#1877F2" />
+            <Text style={styles.socialText}>Facebook</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.dividerRow}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>OR SIGN IN WITH</Text>
+          <View style={styles.dividerLine} />
+        </View>
+
+        <Text style={styles.label}>Email</Text>
+        <View style={styles.inputWrapper}>
+          <Ionicons name="mail-outline" size={18} color="#8a8a8a" style={styles.inputIcon} />
           <TextInput
             style={styles.input}
-            placeholder="Enter email"
+            placeholder="Enter your email"
+            placeholderTextColor="#a0a0a0"
+            autoCapitalize="none"
+            keyboardType="email-address"
             value={email}
             onChangeText={setEmail}
           />
+        </View>
 
-          <Text style={styles.text}>Password</Text>
-          <View style={styles.inputpassword}>
-            <TextInput
-              style={{ fontSize: 14, flex: 1, fontFamily: "Medium" }}
-              placeholder="Enter password"
-              secureTextEntry={!visiblepass}
-              value={password}
-              onChangeText={setPassword}
-            />
-            {!visiblepass ? (
-              <TouchableOpacity style={{ padding: 14 }} onPress={() => setvisiblepass(true)}>
-                <Entypo name="eye-with-line" size={20} />
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity style={{ padding: 14 }} onPress={() => setvisiblepass(false)}>
-                <Entypo name="eye" size={20} />
-              </TouchableOpacity>
-            )}
-          </View>
-
-          <TouchableOpacity
-            onPress={() => navigation.navigate("ForgotPassword")}
-            style={styles.forgotPasswordLink}
-          >
-            <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={handleLogin}
-            style={[styles.button, loading && { opacity: 0.6 }]}
-            disabled={loading}
-          >
-            <Text style={{ color: "white", fontSize: 18, fontFamily: "Medium", lineHeight: Math.round(18 * 1.8) }}>
-              {loading ? "Logging in..." : "Login"}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity onPress={handleSkip} style={styles.skipLink}>
-            <Text style={styles.skipText}>Skip for now</Text>
+        <Text style={styles.label}>Password</Text>
+        <View style={styles.inputWrapper}>
+          <Ionicons name="lock-closed-outline" size={18} color="#8a8a8a" style={styles.inputIcon} />
+          <TextInput
+            style={[styles.input, { flex: 1 }]}
+            placeholder="Enter your password"
+            placeholderTextColor="#a0a0a0"
+            secureTextEntry={!visiblepass}
+            value={password}
+            onChangeText={setPassword}
+          />
+          <TouchableOpacity style={styles.eyeButton} onPress={() => setvisiblepass(!visiblepass)}>
+            <Ionicons name={visiblepass ? "eye-outline" : "eye-off-outline"} size={20} color="#8a8a8a" />
           </TouchableOpacity>
         </View>
 
-        <View style={{ alignItems: "center", flexDirection: "row", marginTop: 10 }}>
-          <Text style={{ fontSize: 16, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) }}>Don't Have An Account?</Text>
-          <TouchableOpacity onPress={() => navigation.navigate("Registration") }>
-            <Text style={styles.link}>Sign Up</Text>
+        <TouchableOpacity
+          onPress={() => navigation.navigate("ForgotPassword")}
+          style={styles.forgotPasswordLink}
+        >
+          <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={handleLogin}
+          style={[styles.button, loading && { opacity: 0.6 }]}
+          disabled={loading}
+        >
+          <Text style={styles.buttonText}>
+            {loading ? "Logging in..." : "Continue"}
+          </Text>
+        </TouchableOpacity>
+
+        <View style={styles.signupRow}>
+          <Text style={styles.signupText}>New to GOLO Network Group? </Text>
+          <TouchableOpacity onPress={() => navigation.navigate("Registration")}>
+            <Text style={styles.signupLink}>Register Now</Text>
           </TouchableOpacity>
         </View>
-      </View>
+
+        <TouchableOpacity onPress={handleSkip} style={styles.skipLink}>
+          <Text style={styles.skipText}>Skip for now</Text>
+        </TouchableOpacity>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: "#ffffff",
-    width: width * 0.85,
-    minHeight: height * 0.35,
-    borderRadius: 20,
-    padding: 16,
-    gap: 10,
-    borderWidth: 0.5,
-    borderColor: "#000000",
+  scrollContent: {
+    paddingHorizontal: width * 0.06,
+    paddingTop: 40,
+    paddingBottom: 30,
   },
-
-  text: {
-    fontSize: width * 0.048,
+  title: {
+    fontSize: width * 0.062,
+    fontFamily: "SemiBold",
+    color: "#111111",
+    textAlign: "center",
+    marginBottom: 6,
+    lineHeight: Math.round(width * 0.062 * 1.5),
+  },
+  subtitle: {
+    fontSize: 14,
     fontFamily: "Medium",
-    lineHeight: Math.round(width * 0.048 * 1.5),
+    color: "#8a8a8a",
+    textAlign: "center",
+    marginBottom: 24,
+    lineHeight: Math.round(14 * 1.5)
   },
-
-  input: {
+  socialRow: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  socialButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+    borderRadius: 12,
+    paddingVertical: 12,
     backgroundColor: "#ffffff",
+  },
+  socialText: {
+    fontSize: 15,
+    fontFamily: "Medium",
+    color: "#333333",
+    lineHeight: Math.round(15 * 1.5)
+  },
+  dividerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 20,
+    gap: 10,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: "#e0e0e0",
+  },
+  dividerText: {
+    fontSize: 12,
+    fontFamily: "Medium",
+    color: "#a0a0a0",
+    letterSpacing: 0.5,
+  },
+  label: {
+    fontSize: 14,
+    fontFamily: "Medium",
+    color: "#111111",
+    marginBottom: 6,
+    lineHeight: Math.round(14 * 1.5)
+  },
+  inputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f5f5f5",
     borderRadius: 10,
     paddingHorizontal: 12,
+    marginBottom: 16,
+    height: 48,
+  },
+  inputIcon: {
+    marginRight: 8,
+  },
+  input: {
+    flex: 1,
     fontSize: 14,
-    borderWidth: 1,
-    borderColor: "#000000",
     fontFamily: "Medium",
+    color: "#111111",
+    top: 7
   },
-
-  button: {
-    backgroundColor: "#157a4f",
-    borderRadius: 10,
-    padding: 12,
-    alignItems: "center",
-    marginTop: 10,
+  eyeButton: {
+    padding: 6,
   },
-
-  link: {
-    fontSize: 18,
-    color: "#4caf50",
-    paddingHorizontal: 10,
-    fontFamily: "Medium",
-    lineHeight:Math.round(18 * 1.5)
-  },
-
   forgotPasswordLink: {
     alignSelf: "flex-end",
+    marginBottom: 20,
   },
-
-  skipLink: {
-    alignSelf: "center",
-    marginTop: 2,
-  },
-
-  skipText: {
-    fontSize: 14,
-    color: "#157a4f",
-    fontFamily: "Medium",
-    lineHeight: Math.round(14 * 1.5),
-  },
-
   forgotPasswordText: {
     fontSize: 14,
     color: "#157a4f",
     fontFamily: "Medium",
-    lineHeight: Math.round(14 * 1.5),
+    lineHeight: Math.round(14 * 1.5)
   },
-
-  inputpassword: {
-    flexDirection: "row",
+  button: {
+    backgroundColor: "#157a4f",
+    borderRadius: 12,
+    paddingVertical: 15,
     alignItems: "center",
-    backgroundColor: "#ffffff",
-    borderRadius: 10,
-    paddingLeft: 12,
-    justifyContent: "space-between",
-    borderWidth: 1,
-    borderColor: "#000000",
+  },
+  buttonText: {
+    color: "#ffffff",
+    fontSize: 17,
     fontFamily: "Medium",
+    lineHeight: Math.round(17 * 1.5)
   },
-
-  centerContainer: {
-    position: "absolute",
-    top: 0,
-    bottom: 0,
-    left: 0,
-    right: 0,
+  signupRow: {
+    flexDirection: "row",
     justifyContent: "center",
-    alignItems: "center",
+    marginTop: 20,
+  },
+  signupText: {
+    fontSize: 14,
+    fontFamily: "Medium",
+    color: "#555555",
+    lineHeight: Math.round(14 * 1.5)
+  },
+  signupLink: {
+    fontSize: 14,
+    fontFamily: "Medium",
+    color: "#157a4f",
+    lineHeight: Math.round(14 * 1.5)
+  },
+  skipLink: {
+    alignSelf: "center",
+    marginTop: 14,
+  },
+  skipText: {
+    fontSize: 14,
+    color: "#157a4f",
+    fontFamily: "Medium",
+    lineHeight: Math.round(14 * 1.5)
   },
 });

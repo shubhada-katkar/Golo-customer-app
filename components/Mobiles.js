@@ -6,7 +6,7 @@ import {
 import { AntDesign } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 
-export default function Mobiles({ formData, setFormData, category, onPrevious, template, price, selectedDays, selectedLocations, selectedDates, startDate, endDate }) {
+export default function Mobiles({ formData, setFormData, category, onPrevious, template, price, selectedDays, selectedLocations, selectedDates, startDate, endDate, isEditMode }) {
   if (category?.id !== "mobiles") return null;
 
   const navigation = useNavigation();
@@ -133,9 +133,11 @@ export default function Mobiles({ formData, setFormData, category, onPrevious, t
 
       </View>
 
-      <TouchableOpacity style={styles.nextBtn} onPress={() => { navigation.navigate("CalendarScreen", { category, template, formData, price }); }}>
-        <Text style={styles.nextText}>See Preview</Text>
-      </TouchableOpacity>
+      {!isEditMode && (
+        <TouchableOpacity style={styles.nextBtn} onPress={() => { navigation.navigate("CalendarScreen", { category, template, formData, price }); }}>
+          <Text style={styles.nextText}>See Preview</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }

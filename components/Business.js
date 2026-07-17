@@ -3,7 +3,7 @@ import { View, Text, TextInput, StyleSheet, ScrollView, TouchableOpacity } from 
 import { AntDesign } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 
-export default function Business({ formData, setFormData, category, onPrevious, template, price, selectedDays, selectedLocations, selectedDates, startDate, endDate }) {
+export default function Business({ formData, setFormData, category, onPrevious, template, price, selectedDays, selectedLocations, selectedDates, startDate, endDate, isEditMode }) {
     const [socialMediaLinks, setSocialMediaLinks] = useState(
         formData.socialMediaLinks && Array.isArray(formData.socialMediaLinks)
             ? formData.socialMediaLinks
@@ -236,9 +236,11 @@ export default function Business({ formData, setFormData, category, onPrevious, 
                 />
             </View>
 
+            {!isEditMode && (
             <TouchableOpacity style={styles.nextBtn} onPress={() => { navigation.navigate("CalendarScreen", { category, template, formData, price }); }}>
                 <Text style={styles.nextText}>See Preview</Text>
             </TouchableOpacity>
+            )}
         </View>
     );
 }

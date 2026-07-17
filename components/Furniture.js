@@ -9,7 +9,7 @@ import {
 import { AntDesign } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 
-export default function Furniture({ formData, setFormData, category, onPrevious, template, price, selectedDays, selectedLocations, selectedDates, startDate, endDate }) {
+export default function Furniture({ formData, setFormData, category, onPrevious, template, price, selectedDays, selectedLocations, selectedDates, startDate, endDate, isEditMode }) {
     if (category?.id !== "furniture") return null;
     const navigation = useNavigation();
 
@@ -138,9 +138,11 @@ export default function Furniture({ formData, setFormData, category, onPrevious,
 
             </View>
 
+            {!isEditMode && (
             <TouchableOpacity style={styles.nextBtn} onPress={() => { navigation.navigate("CalendarScreen", { category, template, formData, price }); }}>
                 <Text style={styles.nextText}>See Preview</Text>
             </TouchableOpacity>
+            )}
         </View>
     );
 }

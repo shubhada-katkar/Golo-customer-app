@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityInd
 import { SafeAreaView } from "react-native-safe-area-context";
 import OtpInput from "../components/OtpInput";
 import { ThemeContext } from "../theme/ThemeContext";
-import {AntDesign} from "@expo/vector-icons";
+import { AntDesign } from "@expo/vector-icons";
 import { BASE_URL } from "../config";
 
 const { width } = Dimensions.get("window");
@@ -133,29 +133,28 @@ export default function ForgotPassword({ navigation }) {
         <Text style={[styles.subtitle, { color: colors.text }]}>Enter your email, verify the OTP, then set a new password.</Text>
 
         <Text style={[styles.label, { color: colors.text }]}>Email</Text>
-        <View style={styles.emailRow}>
-          <TextInput
-            value={email}
-            onChangeText={setEmail}
-            placeholder="Enter your email"
-            autoCapitalize="none"
-            keyboardType="email-address"
-            style={[styles.input, styles.emailInput]}
-          />
+        <TextInput
+          value={email}
+          onChangeText={setEmail}
+          placeholder="Enter your email"
+          autoCapitalize="none"
+          keyboardType="email-address"
+          style={styles.input}
+        />
+
+        {!otpSent && (
           <TouchableOpacity
-            style={[styles.sendButton, (sendLoading || resendCooldown > 0) && styles.buttonDisabled]}
+            style={[styles.sendButton, sendLoading && styles.buttonDisabled]}
             onPress={handleSendOtp}
-            disabled={sendLoading || resendCooldown > 0}
+            disabled={sendLoading}
           >
             {sendLoading ? (
-              <Text style={styles.sendButtonText}>Sending...</Text>
-            ) : resendCooldown > 0 ? (
-              <Text style={styles.sendButtonText}>Resend OTP ({formatTime(resendCooldown)})</Text>
+              <ActivityIndicator color="#ffffff" />
             ) : (
-              <Text style={styles.sendButtonText}>{otpSent ? "Resend OTP" : "Send OTP"}</Text>
+              <Text style={styles.sendButtonText}>Send OTP</Text>
             )}
           </TouchableOpacity>
-        </View>
+        )}
 
         {otpSent ? (
           <>
@@ -165,6 +164,7 @@ export default function ForgotPassword({ navigation }) {
 
             <Text style={[styles.label, { color: colors.text }]}>OTP</Text>
             <OtpInput value={otp} onChangeOtp={setOtp} />
+
             <TouchableOpacity
               style={[styles.verifyButton, verifyLoading && styles.buttonDisabled]}
               onPress={handleVerifyOtp}
@@ -172,12 +172,24 @@ export default function ForgotPassword({ navigation }) {
             >
               {verifyLoading ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.verifyButtonText}>Verify OTP</Text>}
             </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.resendButton, (sendLoading || resendCooldown > 0) && styles.buttonDisabled]}
+              onPress={handleSendOtp}
+              disabled={sendLoading || resendCooldown > 0}
+            >
+              {sendLoading ? (
+                <Text style={styles.resendButtonText}>Sending...</Text>
+              ) : resendCooldown > 0 ? (
+                <Text style={styles.resendButtonText}>Resend OTP ({formatTime(resendCooldown)})</Text>
+              ) : (
+                <Text style={styles.resendButtonText}>Resend OTP</Text>
+              )}
+            </TouchableOpacity>
           </>
         ) : null}
 
-        <TouchableOpacity onPress={() => navigation.goBack()}
-          style={{ flexDirection: "row", gap: 4, alignSelf: "center", marginTop: 24 }}>
-          <AntDesign name="arrow-left" size={16} color={"#157a4f"} />
+        <TouchableOpacity onPress={() => navigation.goBack()}>
           <Text style={styles.backText}>Back to login</Text>
         </TouchableOpacity>
       </View>
@@ -211,14 +223,6 @@ const styles = StyleSheet.create({
     fontFamily: "Medium",
     lineHeight: Math.round(16 * 1.5),
   },
-  emailRow: {
-    flexDirection: "row",
-    gap: 8,
-    alignItems: "center",
-  },
-  emailInput: {
-    flex: 1,
-  },
   input: {
     backgroundColor: "#ffffff",
     borderRadius: 10,
@@ -229,19 +233,18 @@ const styles = StyleSheet.create({
     fontFamily: "Medium",
   },
   sendButton: {
+    marginTop: 16,
     height: 48,
-    minWidth: 98,
     borderRadius: 12,
     backgroundColor: "#157a4f",
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 12,
   },
   sendButtonText: {
     color: "#ffffff",
     fontFamily: "Medium",
-    fontSize: 14,
-    lineHeight: Math.round(14 * 1.5),
+    fontSize: 16,
+    lineHeight: Math.round(16 * 1.5),
   },
   otpInfoRow: {
     marginTop: 16,
@@ -269,6 +272,22 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: Math.round(16 * 1.5),
   },
+  resendButton: {
+    marginTop: 12,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: "#157a4f",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  resendButtonText: {
+    color: "#157a4f",
+    fontFamily: "Medium",
+    fontSize: 14,
+    lineHeight: Math.round(14 * 1.5),
+  },
   buttonDisabled: {
     opacity: 0.7,
   },
@@ -276,6 +295,8 @@ const styles = StyleSheet.create({
     color: "#157a4f",
     fontSize: 15,
     fontFamily: "Medium",
-    lineHeight: Math.round(15 * 1),
+    lineHeight: Math.round(15 * 1.5),
+    alignSelf: "center",
+    top: 20,
   },
 });

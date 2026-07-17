@@ -21,6 +21,7 @@ export default function LostandFound({
     selectedDates,
     startDate,
     endDate,
+    isEditMode,
 }) {
     if (category?.id !== "lostandfound") return null;
     const navigation = useNavigation();
@@ -139,6 +140,7 @@ export default function LostandFound({
 
             </View>
 
+            {!isEditMode && (
             <TouchableOpacity
                 style={styles.nextBtn}
                 onPress={() =>
@@ -152,6 +154,7 @@ export default function LostandFound({
             >
                 <Text style={styles.nextText}>See Preview</Text>
             </TouchableOpacity>
+            )}
         </View>
     );
 }

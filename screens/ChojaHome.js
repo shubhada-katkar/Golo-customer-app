@@ -553,7 +553,7 @@ export default function ChojaHome() {
                 </View>
 
                 {/* Categories */}
-                <View style={{ paddingVertical: 12, position: "relative", zIndex: 10, paddingHorizontal: 10 }}>
+                <View style={{ paddingTop: 12, position: "relative", zIndex: 10, paddingHorizontal: 10 }}>
                     <View style={styles.categoryStripRow}>
                         {displayedCategories.map((item, index) => {
                             const isActive = selectedCategory === item.label;
@@ -787,7 +787,6 @@ const styles = StyleSheet.create({
         borderColor: "#cacaca",
         marginVertical: 4,
         paddingHorizontal: 8,
-        height: 44,
     },
     searchInput: {
         flex: 1,
@@ -811,8 +810,8 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10,
         justifyContent: "center",
         alignItems: "center",
-        height: 44,
-        width: 44,
+        height: 52,
+        width: 52,
     },
     sortDropdown: {
         position: "absolute",
@@ -880,7 +879,7 @@ const styles = StyleSheet.create({
     },
     // Category Strip Styling
     categorySection: {
-        marginTop: 6,
+        marginTop: 5,
         marginBottom: 4,
         paddingHorizontal: 10,
     },
