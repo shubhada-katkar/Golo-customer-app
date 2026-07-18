@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 import { Dimensions } from "react-native";
+import { textPresets } from "../theme/typography";
 const { width, height } = Dimensions.get("window");
 
 export default function Template({ navigation, route }) {
@@ -21,18 +22,16 @@ export default function Template({ navigation, route }) {
                             name="arrow-back-ios"
                             size={26} style={{ paddingHorizontal: 10 }} />
                     </TouchableOpacity>
-                    <Text style={{ fontSize: 22, fontFamily: "Medium", lineHeight: Math.round(22 * 1.5) }}>
-                        Smart Jahirati
-                    </Text>
+                    <Text style={textPresets.title}>Smart Jahirati</Text>
                 </View>
 
-                <Text style={{ fontSize: 16, marginLeft: 48, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5), marginBottom: 10 }}>
+                <Text style={{ ...textPresets.subtitle, marginLeft: 48, marginBottom: 10 }}>
                     Post Your Ads Instantly Online
                 </Text>
 
                 <ScrollView contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
 
-                    <Text style={{ paddingVertical: 14, fontSize: 16, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) }}>
+                    <Text style={{ paddingVertical: 14, ...textPresets.subtitle }}>
                         Choose from these 3 sample templates
                     </Text>
 
@@ -113,7 +112,7 @@ export default function Template({ navigation, route }) {
 
                             <View>
                                 <Text style={styles.cardTitle}
-                                numberOfLines={1} ellipsizeMode="tail">
+                                    numberOfLines={1} ellipsizeMode="tail">
                                     Your Ad Title Will Appear Here
                                 </Text>
                                 <Text style={styles.cardDesc}>Description</Text>
@@ -181,7 +180,7 @@ export default function Template({ navigation, route }) {
 
                         {/* Title */}
                         <Text style={styles.cardTitle}
-                        numberOfLines={1} ellipsizeMode="tail">
+                            numberOfLines={1} ellipsizeMode="tail">
                             Your Ad Title Will Appear Here
                         </Text>
 
@@ -298,24 +297,19 @@ const styles = StyleSheet.create({
         alignSelf: "flex-end"
     },
     timeText: {
-        fontSize: 12,
         color: "#777",
         marginTop: 6,
-        fontFamily: "Medium",
-        lineHeight: Math.round(12 * 1.5)
+        ...textPresets.label
     },
     cardTitle: {
-        fontSize: 16,
-        fontFamily: "Medium",
-        lineHeight: Math.round(16 * 1.5),
-        width:"70%"
+        width: "70%",
+        ...textPresets.body,
+        lineHeight: Math.round(14 * 1.5)
     },
     cardDesc: {
-        fontSize: 13,
         color: "#666",
         marginTop: 4,
-        fontFamily: "Medium",
-        lineHeight: Math.round(13 * 1.5)
+        ...textPresets.label
     },
     metaRow: {
         flexDirection: "row",
@@ -329,10 +323,8 @@ const styles = StyleSheet.create({
         gap: 4,
     },
     metaText: {
-        fontSize: 12,
         color: "#444",
-        fontFamily: "Medium",
-        lineHeight: Math.round(12 * 1.5)
+        ...textPresets.label
     },
     actionRow: {
         flexDirection: "row",
@@ -357,9 +349,7 @@ const styles = StyleSheet.create({
     },
     btnText: {
         color: "#fff",
-        fontSize: 14,
-        fontWeight: "600",
-        fontFamily: "Medium",
+        ...textPresets.body,
         lineHeight: Math.round(14 * 1.5)
     },
     priceStrip: {
@@ -371,9 +361,8 @@ const styles = StyleSheet.create({
     },
     priceText: {
         color: "#fff",
-        fontSize: 16,
-        fontFamily: "Medium",
-        lineHeight: Math.round(16 * 1.5)
+        ...textPresets.body,
+        lineHeight: Math.round(14 * 1.5)
     },
     selectStrip: {
         borderColor: "#6e6d6d",
@@ -385,8 +374,7 @@ const styles = StyleSheet.create({
     },
     stripText: {
         color: "#157a4f",
-        fontSize: 14,
-        fontFamily: "Medium",
+        ...textPresets.body,
         lineHeight: Math.round(14 * 1.5)
     }
 })

@@ -158,7 +158,8 @@ export default function OfferDetails({ navigation, route }) {
     const routeOfferData = route?.params?.offerData || {};
     const offerData = remoteOfferData || routeOfferData;
 
-    const routeOfferId = getOfferIdFromData(routeOfferData) || route?.params?.offerId;
+    const offerIdFromRouteParams = route?.params?.offerId || route?.params?.id || "";
+    const routeOfferId = getOfferIdFromData(routeOfferData) || offerIdFromRouteParams;
     const remoteOfferId = getOfferIdFromData(remoteOfferData);
     const offerId = remoteOfferId || routeOfferId;
     const canClaimVoucher = Boolean(offerId);
@@ -488,12 +489,13 @@ export default function OfferDetails({ navigation, route }) {
     const handleShareOffer = async () => {
         try {
             const shareTitle = title || "Shared Offer";
-            const resolvedOfferId = offerId || "";
-            const sharedUrl = `https://golo.co.in/nearby-deals/deal?offerId=${encodeURIComponent(resolvedOfferId)}`;
 
             const getAbsoluteImageUrl = (url) => {
                 if (!url) return null;
-                if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:")) {
+                if (url.startsWith("data:")) {
+                    return null;
+                }
+                if (url.startsWith("http://") || url.startsWith("https://")) {
                     return url;
                 }
                 const baseUrlClean = BASE_URL.replace(/\/+$/, "");
@@ -501,18 +503,20 @@ export default function OfferDetails({ navigation, route }) {
                 return `${baseUrlClean}${urlClean}`;
             };
 
+            const resolvedOfferId = offerId || "";
+            const websiteUrl = `https://golo-frontend-inky.vercel.app/nearby-deals/deal?offerId=${encodeURIComponent(resolvedOfferId)}`;
+
             const absoluteImage = getAbsoluteImageUrl(offerImage);
 
             const shareMessage = [
-                `Offer: ${title}`,
+                `${title}`,
                 `By: ${merchant}`,
-                offerType ? `Type: ${offerType}` : null,
-                discountedPrice ? `Price: ${discountedPrice}` : null,
-                validTill ? `Valid Till: ${new Date(validTill).toDateString()}` : null,
-                locationText ? `Location: ${locationText}` : null,
-                details ? `Details: ${details}` : null,
-                absoluteImage ? `Image: ${absoluteImage}` : null,
-                `Check out this offer on Golo: ${sharedUrl}`,
+                // offerType ? `Type: ${offerType}` : null,
+                //discountedPrice ? `Price: ${discountedPrice}` : null,
+                // validTill ? `Valid Till: ${new Date(validTill).toDateString()}` : null,
+                // locationText ? `Location: ${locationText}` : null,
+                // details ? `Details: ${details}` : null,
+                `${websiteUrl}`,
             ]
                 .filter(Boolean)
                 .join("\n");
@@ -520,7 +524,7 @@ export default function OfferDetails({ navigation, route }) {
             await Share.share({
                 title: shareTitle,
                 message: shareMessage,
-                url: sharedUrl,
+                url: websiteUrl,
             });
         } catch (error) {
             Alert.alert("Share Error", error?.message || "Unable to share this offer right now.");
@@ -709,7 +713,6 @@ export default function OfferDetails({ navigation, route }) {
                 >
                     <ScrollView
                         ref={scrollViewRef}
-                        contentContainerStyle={{ paddingBottom: 40 }}
                         keyboardShouldPersistTaps="handled"
                     >
                         <View style={styles.imageContainer}>
@@ -836,20 +839,20 @@ export default function OfferDetails({ navigation, route }) {
 
                             {/* How to Redeem Section */}
                             <View style={[styles.card, styles.redeemCard]}>
-                                <Text style={styles.cardTitle}>How to Redeem</Text>
+                                <Text style={{ fontFamily: "Bold" }}>How to Redeem</Text>
                                 <View style={styles.redeemRow}>
                                     <View style={styles.redeemStep}>
-                                        <Ionicons name="ticket-outline" size={28} color="#157a4f" />
+                                        <Ionicons name="ticket-outline" size={33} color="#157a4f" />
                                         <Text style={styles.redeemStepLabel}>Claim Offer</Text>
                                         <Text style={styles.redeemStepDesc}>Click the claim button to secure your unique voucher code</Text>
                                     </View>
                                     <View style={styles.redeemStep}>
-                                        <Ionicons name="phone-portrait-outline" size={28} color="#2563eb" />
+                                        <Ionicons name="phone-portrait-outline" size={33} color="#2563eb" />
                                         <Text style={styles.redeemStepLabel}>Show Code</Text>
                                         <Text style={styles.redeemStepDesc}>Present the digital QR code at the merchant location during visit</Text>
                                     </View>
                                     <View style={styles.redeemStep}>
-                                        <Ionicons name="happy-outline" size={28} color="#eab308" />
+                                        <Ionicons name="happy-outline" size={33} color="#eab308" />
                                         <Text style={styles.redeemStepLabel}>Enjoy!</Text>
                                         <Text style={styles.redeemStepDesc}>Redeem your discount and enjoy your premium wellness experience</Text>
                                     </View>
@@ -857,7 +860,7 @@ export default function OfferDetails({ navigation, route }) {
                             </View>
 
                             {/* Frequently Asked Questions Section */}
-                            <View style={[styles.card, styles.faqSectionCard]}>
+                            <View style={styles.card}>
                                 <Text style={styles.cardTitle}>Frequently Asked Questions</Text>
                                 {faqData.map((faq, index) => {
                                     const isExpanded = expandedFaqIndex === index;
@@ -998,15 +1001,17 @@ const styles = StyleSheet.create({
         marginRight: 12,
     },
     imageContainer: {
-        backgroundColor: "#eee",
         height: 260,
         justifyContent: "center",
         alignItems: "center",
+        padding: 10,
+        borderRadius: 20,
     },
     offerImage: {
         width: "100%",
         height: "100%",
         resizeMode: "cover",
+        borderRadius: 20
     },
     fakeImage: {
         width: 160,
@@ -1018,7 +1023,7 @@ const styles = StyleSheet.create({
     },
     content: {
         padding: 16,
-        paddingBottom: 120,
+        paddingBottom: 86,
     },
     title: {
         fontSize: 20,
@@ -1217,23 +1222,24 @@ const styles = StyleSheet.create({
     },
     productCard: {
         width: "48%",
-        backgroundColor: "#f9fafb",
         borderRadius: 10,
         padding: 10,
         alignItems: "center",
         borderWidth: 1,
         borderColor: "#e5e7eb",
+        backgroundColor: "rgba(204, 204, 204, 0)",
+        borderRadius: 8,
     },
     productImage: {
-        width: 80,
-        height: 80,
+        width: 140,
+        height: 140,
         borderRadius: 8,
         marginBottom: 8,
         resizeMode: "cover",
     },
     productImagePlaceholder: {
-        width: 80,
-        height: 80,
+        width: 140,
+        height: 140,
         borderRadius: 8,
         marginBottom: 8,
         backgroundColor: "#e5e7eb",
@@ -1245,7 +1251,7 @@ const styles = StyleSheet.create({
         fontFamily: "Medium",
         textAlign: "center",
         color: "#333",
-        lineHeight: 16,
+        lineHeight: Math.round(12 * 1.5),
     },
     reviewContainer: {
         marginTop: 20,
@@ -1306,42 +1312,40 @@ const styles = StyleSheet.create({
         marginTop: 16,
     },
     redeemRow: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        marginTop: 8,
+        // flexDirection: "row",
     },
     redeemStep: {
         flex: 1,
         alignItems: "center",
         paddingHorizontal: 4,
+        marginTop: 16
     },
     redeemStepLabel: {
-        fontSize: 11,
+        fontSize: 14,
         fontFamily: "Bold",
         color: "#111",
         marginTop: 8,
         textAlign: "center",
-        lineHeight: 14,
+        lineHeight: Math.round(14 * 1.5),
     },
     redeemStepDesc: {
-        fontSize: 9,
+        fontSize: 12,
         fontFamily: "Medium",
         color: "#666",
         marginTop: 4,
         textAlign: "center",
-        lineHeight: 12,
+        lineHeight: Math.round(12 * 1.5),
     },
     faqSectionCard: {
         marginTop: 16,
-        paddingBottom: 8,
     },
     faqCard: {
-        backgroundColor: "#f9fafb",
         borderWidth: 1,
-        borderColor: "#e5e7eb",
-        borderRadius: 8,
         padding: 12,
-        marginBottom: 8,
+        marginTop: 16,
+        borderRadius: 12,
+        borderColor: "#eee",
+        backgroundColor: "#fff",
     },
     faqHeader: {
         flexDirection: "row",

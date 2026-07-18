@@ -15,6 +15,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BASE_URL } from '../config';
 import Topbar from '../components/Topbar';
 import GoloBottom from '../components/GoloBottom';
+import { textPresets } from '../theme/typography';
 
 const REVIEW_TRUNCATE_LENGTH = 100;
 const PAGE_SIZE = 10;
@@ -315,9 +316,7 @@ const styles = StyleSheet.create({
         paddingVertical: 6,
     },
     headerTitle: {
-        fontSize: 20,
-        fontFamily: 'SemiBold',
-        lineHeight: Math.round(20 * 1.5),
+        ...textPresets.title
     },
     scrollContent: {
         paddingHorizontal: 16,
@@ -344,17 +343,14 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     shopName: {
-        fontSize: 18,
-        fontFamily: 'SemiBold',
+        ...textPresets.subtitle,
         color: '#111',
-        lineHeight: Math.round(18 * 1.5),
     },
     shopSub: {
-        fontSize: 14,
+        ...textPresets.body,
         color: '#888',
-        fontFamily: 'Medium',
-        lineHeight: Math.round(14 * 1.5),
         paddingVertical: 10,
+        lineHeight: Math.round(14 * 1.5),
     },
 
     // ── stats card ─────────────────────────────────────────────────────────
@@ -377,18 +373,14 @@ const styles = StyleSheet.create({
         alignSelf: 'center'
     },
     avgNumber: {
-        fontSize: 30,
-        fontFamily: 'Bold',
         color: '#111',
-        lineHeight: Math.round(30 * 1.5),
+        ...textPresets.title
     },
     totalText: {
-        fontSize: 11,
         color: '#888',
-        fontFamily: 'Medium',
         marginTop: 4,
         textAlign: 'center',
-        lineHeight: Math.round(11 * 1.5),
+        ...textPresets.label
     },
     statsRight: {
         flex: 1,
@@ -402,12 +394,10 @@ const styles = StyleSheet.create({
         gap: 18,
     },
     barLabel: {
-        fontSize: 11,
         color: '#555',
-        fontFamily: 'Medium',
         width: 18,
         textAlign: 'right',
-        lineHeight: Math.round(11 * 1.5),
+        ...textPresets.label
     },
     barTrack: {
         flex: 1,
@@ -422,12 +412,10 @@ const styles = StyleSheet.create({
         borderRadius: 4,
     },
     barCount: {
-        fontSize: 11,
         color: '#888',
-        fontFamily: 'Medium',
         width: 20,
         textAlign: 'right',
-        lineHeight: Math.round(11 * 1.8),
+        ...textPresets.label
     },
 
     // ── review card ────────────────────────────────────────────────────────
@@ -456,32 +444,27 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     avatarText: {
-        fontSize: 14,
-        fontFamily: 'SemiBold',
+        ...textPresets.body,
         color: '#2e7d32',
-        lineHeight: Math.round(14 * 1.5),
+        lineHeight: Math.round(14 * 1.5)
     },
     reviewerName: {
-        fontSize: 14,
-        fontFamily: 'SemiBold',
-        color: '#111',
+        ...textPresets.body,
         lineHeight: Math.round(14 * 1.5),
+        color: '#111',
     },
     reviewDate: {
-        fontSize: 11,
         color: '#aaa',
-        fontFamily: 'Medium',
-        lineHeight: Math.round(11 * 1.5),
+        ...textPresets.label
     },
     reviewComment: {
-        fontSize: 13,
         color: '#444',
-        lineHeight: Math.round(13 * 1.8),
-        fontFamily: 'Medium',
+        ...textPresets.label
     },
     readMore: {
         color: '#f8a812',
-        fontFamily: 'SemiBold',
+        ...textPresets.label
+
     },
 
     // ── states ─────────────────────────────────────────────────────────────
@@ -491,18 +474,16 @@ const styles = StyleSheet.create({
         gap: 12,
     },
     loadingText: {
-        fontSize: 14,
         color: '#888',
-        fontFamily: 'Medium',
-        lineHeight: Math.round(14 * 1.5),
+        ...textPresets.body,
+        lineHeight: Math.round(14 * 1.5)
     },
     errorText: {
-        fontSize: 14,
         color: '#e74c3c',
-        fontFamily: 'Medium',
         textAlign: 'center',
         paddingHorizontal: 24,
-        lineHeight: Math.round(14 * 1.5),
+        ...textPresets.body,
+        lineHeight: Math.round(14 * 1.5)
     },
     retryBtn: {
         marginTop: 4,
@@ -513,8 +494,7 @@ const styles = StyleSheet.create({
     },
     retryText: {
         color: '#fff',
-        fontFamily: 'SemiBold',
-        fontSize: 14,
+        ...textPresets.body,
         lineHeight: Math.round(14 * 1.5)
     },
     emptyBox: {
@@ -523,18 +503,14 @@ const styles = StyleSheet.create({
         gap: 10,
     },
     emptyTitle: {
-        fontSize: 16,
-        fontFamily: 'SemiBold',
+        ...textPresets.body,
+        lineHeight: Math.round(14 * 1.5),
         color: '#555',
-        lineHeight: Math.round(16 * 1.5),
     },
     emptySubtitle: {
-        fontSize: 13,
-        color: '#aaa',
-        fontFamily: 'Medium',
+        ...textPresets.caption,
         textAlign: 'center',
         paddingHorizontal: 32,
-        lineHeight: Math.round(13 * 1.6),
     },
 
     // ── load more ──────────────────────────────────────────────────────────
@@ -547,9 +523,8 @@ const styles = StyleSheet.create({
         borderColor: '#f8a812',
     },
     loadMoreText: {
-        fontSize: 14,
-        color: '#f8a812',
-        fontFamily: 'SemiBold',
+        ...textPresets.body,
         lineHeight: Math.round(14 * 1.5),
+        color: '#f8a812',
     },
 });

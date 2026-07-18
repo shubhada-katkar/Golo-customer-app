@@ -25,10 +25,10 @@ export default function GoloBottom() {
     return (
         <View style={[styles.top, { backgroundColor: colors.bottombar }]}>
 
-            <TouchableOpacity style={[styles.bar]} onPress={() => navigation.navigate("GoloHome")}>
+            <TouchableOpacity style={[styles.bar]} onPress={() => navigation.navigate("GoloDeals")}>
                 <MaterialCommunityIcons name="home-outline" size={26}
-                    color={currentRoute === "GoloHome" ? "#f5b849" : "black"} />
-                <Text style={{ textAlign: "auto", fontSize: 11, color: currentRoute === "GoloHome" ? "#f5b849" : "black", fontFamily: "Medium" }}>Home</Text>
+                    color={currentRoute === "GoloDeals" ? "#f5b849" : "black"} />
+                <Text style={{ textAlign: "auto", fontSize: 11, color: currentRoute === "GoloDeals" ? "#f5b849" : "black", fontFamily: "Medium" }}>Home</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.bar} onPress={() => navigation.navigate("GoloFav")}>

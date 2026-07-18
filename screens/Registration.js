@@ -15,6 +15,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons, FontAwesome } from "@expo/vector-icons";
 import { BASE_URL } from "../config";
+import DateTimePicker from "@react-native-community/datetimepicker";
 
 const { width } = Dimensions.get("window");
 
@@ -37,6 +38,9 @@ export default function Registration({ navigation }) {
   const [visiblepass, setvisiblepass] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [registerLoading, setRegisterLoading] = useState(false);
+  const [dobDate, setDobDate] = useState(null); // actual Date object backing the picker
+  const [showDobPicker, setShowDobPicker] = useState(false);
+
 
   const isValidEmail = (value) => /\S+@\S+\.\S+/.test(value);
 
@@ -143,9 +147,8 @@ export default function Registration({ navigation }) {
       return;
     }
 
-    const dateOfBirth = parseDobToIso(dob);
-    if (!dateOfBirth) {
-      Alert.alert("Invalid date", "Enter a valid date of birth (dd-mm-yyyy).");
+    if (!dobDate) {
+      Alert.alert("Missing details", "Please select your date of birth.");
       return;
     }
 
@@ -205,6 +208,34 @@ export default function Registration({ navigation }) {
   };
 
   const selectedGenderLabel = GENDER_OPTIONS.find((option) => option.value === gender)?.label;
+
+  const pad2 = (n) => String(n).padStart(2, "0");
+
+  const onDobChange = (event, selectedDate) => {
+    // On Android the picker closes itself after a pick/dismiss; on iOS it stays open (usually in a modal/spinner)
+    if (Platform.OS === "android") {
+      setShowDobPicker(false);
+    }
+
+    if (event.type === "dismissed" || !selectedDate) {
+      return;
+    }
+
+    const now = new Date();
+    let age = now.getFullYear() - selectedDate.getFullYear();
+    const hasHadBirthdayThisYear =
+      now.getMonth() > selectedDate.getMonth() ||
+      (now.getMonth() === selectedDate.getMonth() && now.getDate() >= selectedDate.getDate());
+    if (!hasHadBirthdayThisYear) age -= 1;
+
+    if (age < 1 || age > 120) {
+      Alert.alert("Invalid date", "Please select a valid date of birth.");
+      return;
+    }
+
+    setDobDate(selectedDate);
+    setDob(`${pad2(selectedDate.getDate())}-${pad2(selectedDate.getMonth() + 1)}-${selectedDate.getFullYear()}`);
+  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#ffffff" }}>
@@ -280,18 +311,36 @@ export default function Registration({ navigation }) {
           </View>
 
           <Text style={styles.label}>Date of Birth</Text>
-          <View style={styles.inputWrapper}>
+          <TouchableOpacity
+            style={styles.inputWrapper}
+            activeOpacity={0.7}
+            onPress={() => setShowDobPicker(true)}
+          >
             <Ionicons name="calendar-outline" size={18} color="#8a8a8a" style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              value={dob}
-              placeholder="dd-mm-yyyy"
-              placeholderTextColor="#a0a0a0"
-              onChangeText={(value) => setDob(formatDobInput(value))}
-              keyboardType="numeric"
-              maxLength={10}
+            <Text style={[styles.input, !dob && styles.placeholderText, { top: 4 }]}>
+              {dob || "Select date of birth"}
+            </Text>
+          </TouchableOpacity>
+
+          {showDobPicker && (
+            <DateTimePicker
+              value={dobDate || new Date(2000, 0, 1)}
+              mode="date"
+              display={Platform.OS === "ios" ? "spinner" : "calendar"}
+              maximumDate={new Date()}
+              minimumDate={new Date(1900, 0, 1)}
+              onChange={onDobChange}
             />
-          </View>
+          )}
+
+          {Platform.OS === "ios" && showDobPicker && (
+            <TouchableOpacity
+              style={styles.iosDobDoneButton}
+              onPress={() => setShowDobPicker(false)}
+            >
+              <Text style={styles.iosDobDoneText}>Done</Text>
+            </TouchableOpacity>
+          )}
 
           <Text style={styles.label}>Gender</Text>
           <TouchableOpacity

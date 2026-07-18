@@ -22,6 +22,7 @@ import {
   fetchPublicMerchantProfile,
   toggleFollowMerchant,
 } from '../services/offersService';
+import { textPresets } from '../theme/typography';
 
 const resolveImageUrl = (value) => {
   if (!value || typeof value !== 'string') return null;
@@ -508,7 +509,7 @@ export default function StorePage({ route, navigation }) {
               <Text
                 style={[
                   styles.distanceMetaText,
-                  { color: isOutOfStock ? "#e74c3c" : "#27ae60", fontFamily: "Bold" }
+                  { color: isOutOfStock ? "#e74c3c" : "#27ae60" }
                 ]}
                 numberOfLines={1}
               >
@@ -715,9 +716,7 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   headerTitle: {
-    fontSize: 20,
-    fontFamily: 'SemiBold',
-    lineHeight: Math.round(20 * 1.5),
+    ...textPresets.title,
   },
   divider: {
     backgroundColor: '#000000',
@@ -736,11 +735,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   emptyText: {
-    fontSize: 13,
     color: '#6b7280',
     textAlign: 'center',
     marginTop: 8,
-    lineHeight: Math.round(13 * 1.5),
+    ...textPresets.body,
+    lineHeight: Math.round(14 * 1.5),
   },
   coverCard: {
     backgroundColor: '#fff',
@@ -801,12 +800,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginTop: 8,
   },
-  followerCount: {
-    fontSize: 12,
-    color: '#6b7280',
-    lineHeight: Math.round(12 * 1.5),
-    fontFamily: 'Medium',
-  },
   followButton: {
     backgroundColor: '#f8a812',
     paddingHorizontal: 14,
@@ -824,25 +817,20 @@ const styles = StyleSheet.create({
   },
   followButtonText: {
     color: '#fff',
-    fontSize: 12,
-    fontFamily: 'SemiBold',
-    lineHeight: Math.round(12 * 1.5),
+    ...textPresets.label,
   },
   followButtonTextActive: {
     color: '#f8a812',
   },
   merchantName: {
-    fontSize: 18,
-    fontFamily: 'SemiBold',
+    ...textPresets.body,
     color: '#111827',
-    lineHeight: Math.round(18 * 1.5),
     paddingTop: 16,
+    lineHeight: Math.round(14 * 1.5)
   },
   storeName: {
-    fontSize: 14,
     color: '#6b7280',
-    lineHeight: Math.round(14 * 1.5),
-    fontFamily: 'Medium',
+    ...textPresets.label
   },
   infoCard: {
     backgroundColor: '#fff',
@@ -855,11 +843,10 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontFamily: 'SemiBold',
+    ...textPresets.body,
     marginBottom: 12,
     color: '#111827',
-    lineHeight: Math.round(16 * 1.5),
+    lineHeight: Math.round(14 * 1.5)
   },
   infoRow: {
     flexDirection: 'row',
@@ -867,20 +854,16 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   infoLabel: {
-    fontSize: 13,
     color: '#6b7280',
     marginLeft: 8,
     width: 96,
-    fontFamily: 'Medium',
-    lineHeight: Math.round(13 * 1.5),
+    ...textPresets.label,
   },
   infoValue: {
     flex: 1,
-    fontSize: 13,
     color: '#111827',
     marginLeft: 6,
-    lineHeight: Math.round(13 * 1.5),
-    fontFamily: 'Medium',
+    ...textPresets.label
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -903,10 +886,9 @@ const styles = StyleSheet.create({
     borderColor: '#f3f4f6',
   },
   noDealsText: {
-    fontSize: 13,
     color: '#6b7280',
-    fontFamily: 'Medium',
     textAlign: 'center',
+    ...textPresets.label,
   },
   statsRow: {
     flexDirection: 'row',
@@ -919,20 +901,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   ratingText: {
-    fontSize: 12,
     color: '#111827',
-    fontFamily: 'SemiBold',
     marginLeft: 4,
-    lineHeight: Math.round(12 * 1.5),
+    ...textPresets.label
   },
   bulletSeparator: {
     marginHorizontal: 8,
     color: '#9ca3af',
   },
   followersText: {
-    fontSize: 12,
     color: '#6b7280',
-    fontFamily: 'Medium',
+    ...textPresets.label,
   },
   card: {
     width: 170,
@@ -965,41 +944,33 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   title: {
-    fontSize: 14,
-    fontFamily: "Bold",
-    lineHeight: 18,
     color: '#111827',
     marginTop: 4,
+    ...textPresets.body,
+    lineHeight: Math.round(14 * 1.5)
   },
   subtitle: {
+    ...textPresets.label,
     marginTop: 2,
     color: "#6b7280",
-    fontFamily: "Medium",
-    fontSize: 11,
-    lineHeight: 15,
   },
   metaText: {
     marginTop: 2,
-    fontFamily: "Medium",
-    fontSize: 11,
-    lineHeight: 15,
     color: "#6b7280",
+    ...textPresets.label
   },
   validText: {
-    fontSize: 9,
+    ...textPresets.caption,
     marginTop: 4,
     color: "#9ca3af",
-    fontFamily: "Medium",
-    lineHeight: 12,
   },
   discountPrice: {
     color: "green",
-    fontFamily: "Bold",
-    fontSize: 13,
+    ...textPresets.label,
+    lineHeight: Math.round(14 * 1.5)
   },
   distanceMetaText: {
-    fontSize: 11,
-    fontFamily: "Medium",
+    ...textPresets.label,
     color: '#6b7280',
   },
   mapCard: {

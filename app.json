@@ -35,32 +35,17 @@
           "data": [
             {
               "scheme": "https",
-              "host": "golo.co.in",
+              "host": "golo-frontend-inky.vercel.app",
+              "pathPrefix": "/nearby-deals/product"
+            },
+            {
+              "scheme": "https",
+              "host": "golo-frontend-inky.vercel.app",
               "pathPrefix": "/nearby-deals/deal"
             },
             {
               "scheme": "https",
-              "host": "www.golo.co.in",
-              "pathPrefix": "/nearby-deals/deal"
-            },
-            {
-              "scheme": "https",
-              "host": "golo.co.in",
-              "pathPrefix": "/ad"
-            },
-            {
-              "scheme": "https",
-              "host": "www.golo.co.in",
-              "pathPrefix": "/ad"
-            },
-            {
-              "scheme": "https",
-              "host": "golo.co.in",
-              "pathPrefix": "/product"
-            },
-            {
-              "scheme": "https",
-              "host": "www.golo.co.in",
+              "host": "golo-frontend-inky.vercel.app",
               "pathPrefix": "/product"
             }
           ],

@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import * as SplashScreen from "expo-splash-screen";
-import { NavigationContainer } from "@react-navigation/native";
+import { NavigationContainer, getStateFromPath } from "@react-navigation/native";
 import { createStackNavigator, CardStyleInterpolators } from "@react-navigation/stack";
 import { ThemeProvider } from "./theme/ThemeContext";
 import Login from './screens/Login';
@@ -13,7 +13,6 @@ import ChatPage from './screens/ChatPage';
 import Fav from './screens/Fav';
 import ProfilePage from './screens/ProfilePage';
 import ChojaHome from './screens/ChojaHome';
-import { useFonts } from "expo-font";
 import AuthLoading from './screens/AuthLoading';
 import FormPage from './screens/FormPage';
 import Preview from './screens/Preview';
@@ -38,6 +37,14 @@ import ResetPassword from "./screens/ResetPassword";
 import { BASE_URL } from "./config"; // adjust path as needed
 import NotificationsPage from "./screens/NotificationsPage";
 import StorePage from "./screens/StorePage";
+import {
+  Poppins_400Regular,
+  Poppins_500Medium,
+  Poppins_600SemiBold,
+  Poppins_700Bold,
+  useFonts,
+} from "@expo-google-fonts/poppins";
+
 import { startCustomerNotificationPolling, stopCustomerNotificationPolling } from "./services/notificationService";
 
 SplashScreen.preventAutoHideAsync();
@@ -50,27 +57,69 @@ const WEBSITE_BASE = SHARE_WEB_BASE.replace("api.", "");
 const linking = {
   prefixes: [
     "golo://",
-    "https://golo.co.in",
-    "https://www.golo.co.in",
+    "https://golo-frontend-inky.vercel.app",
+    "http://golo-frontend-inky.vercel.app",
     ...(SHARE_WEB_BASE ? [SHARE_WEB_BASE] : []),
     ...(WEBSITE_BASE ? [WEBSITE_BASE] : []),
   ],
   config: {
     screens: {
       AdDetails: "ad/:adId",
-      OfferDetails: "nearby-deals/deal",
+      OfferDetails: "offer/:offerId",
       ProductDetail: "product/:productId/:offerId?",
     },
+  },
+  getStateFromPath(path, options) {
+    const cleanPath = path.replace(/^\/+/, "");
+    if (cleanPath.includes("nearby-deals/product")) {
+      const urlParts = cleanPath.split("?");
+      const queryString = urlParts[1] || "";
+      const params = {};
+      queryString.split("&").forEach((param) => {
+        const [key, val] = param.split("=");
+        if (key) {
+          params[key] = decodeURIComponent(val || "");
+        }
+      });
+      const productId = params.id || params.productId;
+      const offerId = params.offerId;
+      if (productId) {
+        const newPath = offerId ? `product/${productId}/${offerId}` : `product/${productId}`;
+        return getStateFromPath(newPath, options);
+      }
+    }
+    if (cleanPath.includes("nearby-deals/deal")) {
+      const urlParts = cleanPath.split("?");
+      const queryString = urlParts[1] || "";
+      const params = {};
+      queryString.split("&").forEach((param) => {
+        const [key, val] = param.split("=");
+        if (key) {
+          params[key] = decodeURIComponent(val || "");
+        }
+      });
+      const offerId = params.offerId;
+      if (offerId) {
+        return getStateFromPath(`offer/${offerId}`, options);
+      }
+    }
+    if (cleanPath.startsWith("product/") && !cleanPath.includes("nearby-deals/product")) {
+      const remainingPath = cleanPath.substring("product/".length);
+      if (remainingPath) {
+        return getStateFromPath(`ad/${remainingPath}`, options);
+      }
+    }
+    return getStateFromPath(path, options);
   },
 };
 
 export default function App() {
-  // 🔑 Move useFonts inside the component
+
   const [fontsLoaded] = useFonts({
-    "Italic": require("./assets/fonts/GoogleSans-Italic.ttf"),
-    "Bold": require("./assets/fonts/GoogleSans-Bold.ttf"),
-    "SemiBold": require("./assets/fonts/GoogleSans-SemiBold.ttf"),
-    "Medium": require("./assets/fonts/GoogleSans-Medium.ttf"),
+    Poppins_400Regular,
+    Poppins_500Medium,
+    Poppins_600SemiBold,
+    Poppins_700Bold,
   });
 
   useEffect(() => {

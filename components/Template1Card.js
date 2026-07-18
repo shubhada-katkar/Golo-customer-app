@@ -132,13 +132,20 @@ export default function Template1Card({ ad, navigation }) {
       const adIdentifier = ad?.adId || ad?._id;
       if (!adIdentifier) return;
 
-      const shareUrl = `${BASE_URL}/ads/share/${encodeURIComponent(adIdentifier)}`;
-      const deepLink = `golo://ad/${encodeURIComponent(adIdentifier)}`;
+      const websiteUrl = `https://golo-frontend-inky.vercel.app/product/${encodeURIComponent(adIdentifier)}`;
+
+      const messageLines = [
+        `${ad?.title || 'Ad'}`,
+        ad?.description ? `Details: ${ad.description}` : null,
+        `${websiteUrl}`,
+      ].filter(Boolean);
+
+      const message = messageLines.join('\n');
 
       await Share.share({
+        message,
+        url: websiteUrl,
         title: ad?.title || "Shared Ad",
-        message: `Check this ad on GOLO: ${ad?.title || "Ad"}\n${shareUrl}\nApp link: ${deepLink}`,
-        url: shareUrl,
       });
     } catch (error) {
       Alert.alert("Share Error", error?.message || "Unable to share this ad right now");

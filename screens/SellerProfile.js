@@ -21,6 +21,7 @@ import { BASE_URL } from '../config';
 import Topbar from '../components/Topbar';
 import { ThemeContext } from '../theme/ThemeContext';
 import { ensureAuthenticated } from '../services/authService';
+import { textPresets } from '../theme/typography';
 
 // Fixed-size ad card that deliberately avoids FlatList/VirtualizedList internally
 // so it is safe to render inside a plain ScrollView without the nested-list warning.
@@ -91,8 +92,7 @@ const sellerAdStyles = StyleSheet.create({
     justifyContent: 'center',
   },
   noImageText: {
-    fontSize: 12,
-    fontFamily: 'Medium',
+    ...textPresets.label,
     color: '#555',
     textAlign: 'center',
   },
@@ -101,24 +101,20 @@ const sellerAdStyles = StyleSheet.create({
     padding: 10,
   },
   title: {
-    fontSize: 14,
-    fontFamily: 'SemiBold',
+    ...textPresets.body,
     color: '#222',
     lineHeight: Math.round(14 * 1.4),
     marginBottom: 4,
   },
   description: {
-    fontSize: 12,
-    fontFamily: 'Medium',
     color: '#555',
-    lineHeight: Math.round(12 * 1.4),
     marginBottom: 4,
+    ...textPresets.label,
   },
   price: {
-    fontSize: 12,
-    fontFamily: 'SemiBold',
+    ...textPresets.body,
     color: '#157a4f',
-    lineHeight: Math.round(12 * 1.4),
+    lineHeight: Math.round(14 * 1.4),
     marginBottom: 4,
     alignSelf: "flex-end"
   },
@@ -129,11 +125,9 @@ const sellerAdStyles = StyleSheet.create({
     marginBottom: 4,
   },
   locationText: {
-    fontSize: 12,
-    fontFamily: 'Medium',
     color: '#555',
     flex: 1,
-    lineHeight: Math.round(12 * 1.4),
+    ...textPresets.label,
   },
 });
 
@@ -400,7 +394,7 @@ export default function SellerProfile({ route, navigation }) {
                   onPress={() => setSelectedReason(reason.value)}
                 >
                   <Text style={{
-                    fontSize: 14, fontFamily: "Medium",
+                    ...textPresets.body,
                     lineHeight: Math.round(14 * 1.5)
                   }}>{reason.label}</Text>
                   <View style={[
@@ -411,7 +405,7 @@ export default function SellerProfile({ route, navigation }) {
               ))}
 
               <Text style={{
-                fontSize: 14, fontFamily: "SemiBold", marginTop: 20, marginBottom: 10,
+                ...textPresets.body, marginTop: 20, marginBottom: 10,
                 lineHeight: Math.round(14 * 1.5)
               }}>Additional Details</Text>
               <TextInput
@@ -450,9 +444,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   headerTitle: {
-    fontSize: 20,
-    fontFamily: 'SemiBold',
-    lineHeight: Math.round(20 * 1.5)
+    ...textPresets.title
   },
   scrollContent: {
     paddingBottom: 40,
@@ -491,12 +483,10 @@ const styles = StyleSheet.create({
     margin: -10,
   },
   sellerName: {
-    fontSize: 24,
-    fontFamily: 'SemiBold',
     color: '#333',
     marginBottom: 6,
     textAlign: 'center',
-    lineHeight: Math.round(24 * 1.5)
+    ...textPresets.title
   },
   memberSinceContainer: {
     flexDirection: 'row',
@@ -504,10 +494,9 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   memberSinceText: {
-    fontSize: 13,
     color: '#666',
-    fontFamily: 'Medium',
-    lineHeight: Math.round(13 * 1.5)
+    lineHeight: Math.round(14 * 1.5),
+    ...textPresets.body
   },
   bioContainer: {
     backgroundColor: '#f9f9f9',
@@ -517,12 +506,9 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   bioText: {
-    fontSize: 14,
-    fontFamily: 'Italic',
     color: '#555',
     textAlign: 'center',
-    fontStyle: 'italic',
-    lineHeight: Math.round(14 * 1.5)
+    ...textPresets.body
   },
   infoRow: {
     flexDirection: 'row',
@@ -530,10 +516,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   infoText: {
-    fontSize: 16,
-    fontFamily: 'Medium',
     color: '#444',
-    lineHeight: Math.round(16 * 1.5)
+    ...textPresets.subtitle
   },
   actionsCard: {
     backgroundColor: '#fff',
@@ -548,11 +532,9 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontFamily: 'SemiBold',
     color: '#333',
     marginBottom: 16,
-    lineHeight: Math.round(16 * 1.5)
+    ...textPresets.subtitle
   },
   chatButtonLarge: {
     backgroundColor: '#157a4f',
@@ -566,9 +548,8 @@ const styles = StyleSheet.create({
   },
   chatButtonText: {
     color: '#fff',
-    fontSize: 14,
-    fontFamily: 'SemiBold',
-    lineHeight: Math.round(14 * 1.5)
+    lineHeight: Math.round(14 * 1.5),
+    ...textPresets.body
   },
   callButtonLarge: {
     backgroundColor: '#f9a641',
@@ -581,9 +562,8 @@ const styles = StyleSheet.create({
   },
   callButtonText: {
     color: '#fff',
-    fontSize: 14,
-    fontFamily: 'SemiBold',
-    lineHeight: Math.round(14 * 1.5)
+    lineHeight: Math.round(14 * 1.5),
+    ...textPresets.body
   },
   modalOverlay: {
     flex: 1,
@@ -604,16 +584,12 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   modalTitle: {
-    fontSize: 20,
-    fontFamily: "SemiBold",
-    lineHeight: Math.round(20 * 1.5)
+    ...textPresets.subtitle
   },
   modalSubtitle: {
-    fontSize: 12,
-    fontFamily: "Medium",
     color: "#666",
     marginBottom: 20,
-    lineHeight: Math.round(12 * 1.5)
+    ...textPresets.label
   },
   option: {
     flexDirection: 'row',
@@ -640,10 +616,9 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 12,
     height: 100,
-    fontFamily: "Medium",
     marginBottom: 20,
     lineHeight: Math.round(14 * 1.5),
-    fontSize: 14,
+    ...textPresets.body
   },
   buttonRow: {
     flexDirection: 'row',
@@ -664,31 +639,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   btnTextConfig: {
-    fontFamily: "SemiBold",
-    fontSize: 16,
-    lineHeight: Math.round(16 * 1.5)
+    ...textPresets.subtitle,
+
   },
   otherAdsSection: {
     marginTop: 16,
     paddingBottom: 20,
   },
   otherAdsTitle: {
-    fontSize: 16,
-    fontFamily: 'SemiBold',
     color: '#333',
     marginBottom: 12,
     marginLeft: 16,
-    lineHeight: Math.round(16 * 1.5),
+    ...textPresets.subtitle
   },
   horizontalAdsList: {
     paddingHorizontal: 16,
     paddingBottom: 10,
   },
   noAdsText: {
-    fontSize: 14,
     color: '#666',
-    fontFamily: 'Medium',
     textAlign: 'center',
     marginTop: 10,
+    ...textPresets.body,
+    lineHeight: Math.round(14 * 1.5),
   },
 });

@@ -11,6 +11,7 @@ import { ThemeContext } from "../theme/ThemeContext";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import Topbar from "../components/Topbar";
 import { LinearGradient } from "expo-linear-gradient";
+import { textPresets } from "../theme/typography";
 
 export default function TransactionDetails() {
   const { colors } = useContext(ThemeContext);
@@ -66,7 +67,7 @@ export default function TransactionDetails() {
 
       {/* Hero Amount Card */}
       <View style={styles.heroCard}>
-        <Text style={[styles.cardTitle, { alignSelf:"flex-start"}]}>Transaction Amount</Text>
+        <Text style={[styles.cardTitle, { alignSelf: "flex-start" }]}>Transaction Amount</Text>
         <Text style={styles.heroLabel}>Total Amount</Text>
         <Text style={styles.heroAmount}>{transaction.amount}</Text>
 
@@ -142,13 +143,11 @@ const styles = StyleSheet.create({
   },
 
   backButton: {
-    padding:10
+    padding: 10
   },
 
   heading: {
-    fontSize: 20,
-    fontFamily: "SemiBold",
-    lineHeight: Math.round(20 * 1.5),
+    ...textPresets.title
   },
 
   heroCard: {
@@ -168,19 +167,16 @@ const styles = StyleSheet.create({
   },
 
   heroLabel: {
-    fontSize: 13,
-    fontFamily: "Medium",
     color: "#999999",
     marginBottom: 6,
-    lineHeight: Math.round(13 * 1.5),
+    lineHeight: Math.round(14 * 1.5),
+    ...textPresets.body
   },
 
   heroAmount: {
-    fontSize: 34,
-    fontFamily: "SemiBold",
     color: "#157a4f",
     marginBottom: 14,
-    lineHeight: Math.round(34 * 1.2),
+    ...textPresets.title
   },
 
   statusBadge: {
@@ -199,10 +195,9 @@ const styles = StyleSheet.create({
   },
 
   statusText: {
-    fontSize: 13,
-    fontFamily: "SemiBold",
     textTransform: "capitalize",
-    lineHeight: Math.round(13 * 1.5),
+    ...textPresets.body,
+    lineHeight: Math.round(14 * 1.5),
   },
 
   card: {
@@ -214,10 +209,9 @@ const styles = StyleSheet.create({
   },
 
   cardTitle: {
-    fontSize: 15,
-    fontFamily: "SemiBold",
     marginBottom: 14,
-    lineHeight: Math.round(15 * 1.5),
+    ...textPresets.body,
+    lineHeight: Math.round(14 * 1.5),
   },
 
   row: {
@@ -248,15 +242,13 @@ const styles = StyleSheet.create({
   },
 
   label: {
-    fontSize: 14,
-    fontFamily: "SemiBold",
+    ...textPresets.body,
     lineHeight: Math.round(14 * 1.5),
   },
 
   value: {
-    fontSize: 15,
-    fontFamily: "Medium",
-    lineHeight: Math.round(15 * 1.5),
+    lineHeight: Math.round(14 * 1.5),
     marginLeft: 10,
+    ...textPresets.body,
   },
 });

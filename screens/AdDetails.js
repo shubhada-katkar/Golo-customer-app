@@ -347,16 +347,12 @@ export default function AdDetails({ route, navigation }) {
         return;
       }
 
-      const getWebsiteBaseUrl = () => {
-        if (BASE_URL.includes("api.")) {
-          return BASE_URL.replace("api.", "").replace(/\/+$/, "");
-        }
-        return "https://golo.co.in";
-      };
-
       const getAbsoluteImageUrl = (url) => {
         if (!url) return null;
-        if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:")) {
+        if (url.startsWith("data:")) {
+          return null;
+        }
+        if (url.startsWith("http://") || url.startsWith("https://")) {
           return url;
         }
         const baseUrlClean = BASE_URL.replace(/\/+$/, "");
@@ -364,18 +360,15 @@ export default function AdDetails({ route, navigation }) {
         return `${baseUrlClean}${urlClean}`;
       };
 
-      const websiteUrl = `${getWebsiteBaseUrl()}/ad/${encodeURIComponent(resolvedShareAdId)}`;
-      const deepLink = `golo://ad/${encodeURIComponent(resolvedShareAdId)}`;
+      const websiteUrl = `https://golo-frontend-inky.vercel.app/product/${encodeURIComponent(resolvedShareAdId)}`;
 
       const firstImage = ad?.images?.[0] || null;
       const absoluteImage = getAbsoluteImageUrl(firstImage);
 
       const messageLines = [
-        `Check this ad on GOLO: ${ad?.title || 'Ad'}`,
+        `${ad?.title || 'Ad'}`,
         ad?.description ? `Details: ${ad.description}` : null,
-        absoluteImage ? `Image: ${absoluteImage}` : null,
-        `Website Link: ${websiteUrl}`,
-        `App Link: ${deepLink}`,
+        `${websiteUrl}`,
       ].filter(Boolean);
 
       const message = messageLines.join('\n');

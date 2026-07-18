@@ -415,16 +415,12 @@ export default function ProductDetail({ route, navigation }) {
       const price = getProductPrice(product);
       const description = getProductDescription(product);
 
-      const getWebsiteBaseUrl = () => {
-        if (BASE_URL.includes("api.")) {
-          return BASE_URL.replace("api.", "").replace(/\/+$/, "");
-        }
-        return "https://golo.co.in";
-      };
-
       const getAbsoluteImageUrl = (url) => {
         if (!url) return null;
-        if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:")) {
+        if (url.startsWith("data:")) {
+          return null;
+        }
+        if (url.startsWith("http://") || url.startsWith("https://")) {
           return url;
         }
         const baseUrlClean = BASE_URL.replace(/\/+$/, "");
@@ -432,26 +428,20 @@ export default function ProductDetail({ route, navigation }) {
         return `${baseUrlClean}${urlClean}`;
       };
 
-      // Since product details can be shared with or without an offer context
-      const websiteUrl = offerId 
-        ? `${getWebsiteBaseUrl()}/product/${encodeURIComponent(resolvedProductId)}/${encodeURIComponent(offerId)}`
-        : `${getWebsiteBaseUrl()}/product/${encodeURIComponent(resolvedProductId)}`;
-
-      const deepLink = offerId
-        ? `golo://product/${encodeURIComponent(resolvedProductId)}/${encodeURIComponent(offerId)}`
-        : `golo://product/${encodeURIComponent(resolvedProductId)}`;
+      // Construct the Vercel Universal Link for the product
+      const websiteUrl = offerId
+        ? `https://golo-frontend-inky.vercel.app/nearby-deals/product?id=${encodeURIComponent(resolvedProductId)}&offerId=${encodeURIComponent(offerId)}`
+        : `https://golo-frontend-inky.vercel.app/nearby-deals/product?id=${encodeURIComponent(resolvedProductId)}`;
 
       const pImage = getProductImage(product);
       const absoluteImage = getAbsoluteImageUrl(pImage);
 
       const shareMessage = [
-        `Product: ${name}`,
+        `${name}`,
         price ? `Price: ${price}` : null,
-        product?.category ? `Category: ${product.category}` : null,
-        description ? `Details: ${description}` : null,
-        absoluteImage ? `Image: ${absoluteImage}` : null,
-        `Website Link: ${websiteUrl}`,
-        `App Link: ${deepLink}`,
+        // product?.category ? `Category: ${product.category}` : null,
+        // description ? `Details: ${description}` : null,
+        `${websiteUrl}`,
       ]
         .filter(Boolean)
         .join("\n");
