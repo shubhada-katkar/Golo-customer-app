@@ -447,7 +447,7 @@ const styles = StyleSheet.create({
     ...textPresets.title
   },
   scrollContent: {
-    paddingBottom: 40,
+    paddingBottom: 10,
   },
   profileCard: {
     backgroundColor: '#fff',

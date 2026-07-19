@@ -3,6 +3,7 @@ import { Image, View, Text, TouchableOpacity } from "react-native";
 import { useContext } from "react";
 import { ThemeContext } from "../theme/ThemeContext";
 import { useNavigation } from "@react-navigation/native";
+import { textPresets } from "../theme/typography";
 
 
 export default function Topbar() {
@@ -14,7 +15,7 @@ export default function Topbar() {
                 style={{ height: 48, width: 48, resizeMode: "contain" }} />
 
             <View style={{ flexDirection: "column", paddingHorizontal: 12 }}>
-                <Text style={{ fontSize: 20, color: "#000000", fontFamily: "SemiBold", lineHeight: Math.round(20 * 1.5) }}>GOLO</Text>
+                <Text style={{ ...textPresets.subtitle, color: "#000000" }}>GOLO</Text>
             </View>
         </View>
     );

@@ -9,6 +9,7 @@ import { getAdId, isFavoriteAdId, toggleFavoriteAd } from "../services/favorites
 import { trackAdCardClick, trackContactClick } from "../services/analyticsService";
 import { BASE_URL } from "../config";
 import { ensureAuthenticated } from "../services/authService";
+import { textPresets } from "../theme/typography";
 
 const { width, height } = Dimensions.get("window");
 

@@ -5,6 +5,7 @@ import { ThemeContext } from "../theme/ThemeContext";
 import { useNavigation } from "@react-navigation/native";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRoute } from "@react-navigation/native";
+import { textPresets } from "../theme/typography";
 
 export default function Topbar2() {
     const navigation = useNavigation();
@@ -18,7 +19,7 @@ export default function Topbar2() {
                 <Feather name="shopping-bag" size={16}
                     color={currentRoute === "GoloHome" || currentRoute === "GoloDeals" ? "#157a4f" : "black"} />
                 <Text style={{
-                    fontSize: 18, fontFamily: "SemiBold", lineHeight: Math.round(20 * 1.5),
+                    ...textPresets.subtitle,
                     color: currentRoute === "GoloHome" || currentRoute === "GoloDeals" ? "#157a4f" : "black"
                 }}>GOLO</Text>
             </TouchableOpacity>
@@ -26,7 +27,7 @@ export default function Topbar2() {
                 onPress={() => navigation.navigate("ChojaHome")}>
                 <MaterialCommunityIcons name="ticket-outline" size={16} color={currentRoute === "ChojaHome" ? "#157a4f" : "black"} />
                 <Text style={{
-                    fontSize: 18, fontFamily: "SemiBold", lineHeight: Math.round(20 * 1.5),
+                    ...textPresets.subtitle,
                     color: currentRoute === "ChojaHome" ? "#157a4f" : "black"
                 }}>CHOJA</Text>
             </TouchableOpacity>

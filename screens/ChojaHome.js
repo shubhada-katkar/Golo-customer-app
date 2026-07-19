@@ -11,6 +11,7 @@ import Topbar2 from "../components/Topbar2";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Location from "expo-location";
 import { matchesCategorySubFilter } from "../utils/categorySubFilters";
+import { textPresets } from "../theme/typography";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -571,7 +572,7 @@ export default function ChojaHome() {
                                     <View style={[styles.stripIconCircle, { backgroundColor: isActive ? dark : bg }]}>
                                         <Ionicons name={item.icon} size={18} color={isActive ? "#fff" : dark} />
                                     </View>
-                                    <Text style={[styles.stripText, { color: dark, fontFamily: isActive ? "Bold" : "SemiBold" }]} numberOfLines={2}>
+                                    <Text style={[styles.stripText, { color: dark, ...textPresets.caption }]} numberOfLines={2}>
                                         {item.label}
                                     </Text>
                                 </TouchableOpacity>
@@ -791,9 +792,8 @@ const styles = StyleSheet.create({
     searchInput: {
         flex: 1,
         marginHorizontal: 5,
-        fontFamily: "Medium",
-        fontSize: 13,
-        top: 4
+        ...textPresets.body,
+        top: 3
     },
     voiceButton: {
         paddingHorizontal: 6,
@@ -810,8 +810,8 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10,
         justifyContent: "center",
         alignItems: "center",
-        height: 52,
-        width: 52,
+        height: 48,
+        width: 48,
     },
     sortDropdown: {
         position: "absolute",
@@ -843,13 +843,12 @@ const styles = StyleSheet.create({
         backgroundColor: "#f0faf5",
     },
     sortDropdownText: {
-        fontSize: 12,
-        fontFamily: "Medium",
+        ...textPresets.label,
         color: "#333",
     },
     sortDropdownTextActive: {
         color: "#157a4f",
-        fontFamily: "SemiBold",
+        ...textPresets.label
     },
     row2: {
         flexDirection: "row",
@@ -868,14 +867,15 @@ const styles = StyleSheet.create({
     },
     text: {
         color: "#ffffff",
-        fontSize: 14,
-        fontFamily: "Medium",
-        lineHeight: Math.round(14 * 2.4)
+        ...textPresets.body,
+        lineHeight: Math.round(14 * 1.5),
+        paddingVertical: 6
     },
     activeText: {
         color: "#000000",
-        fontFamily: "Medium",
-        lineHeight: Math.round(14 * 2.4),
+        ...textPresets.body,
+        lineHeight: Math.round(14 * 1.5),
+        paddingVertical: 6
     },
     // Category Strip Styling
     categorySection: {
@@ -907,11 +907,10 @@ const styles = StyleSheet.create({
         elevation: 1,
     },
     stripText: {
-        fontSize: 10,
-        fontFamily: "SemiBold",
         textAlign: "center",
         minHeight: 32,
         lineHeight: 14,
+        ...textPresets.caption
     },
     // Modal Styling
     modalHeaderGradient: {
@@ -927,10 +926,8 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     modalTitle: {
-        fontSize: 20,
-        fontFamily: "Bold",
         color: "#111",
-        lineHeight: 30,
+        ...textPresets.subtitle
     },
     modalCloseBtn: {
         flexDirection: "row",
@@ -948,10 +945,8 @@ const styles = StyleSheet.create({
         elevation: 2,
     },
     modalCloseText: {
-        fontSize: 13,
-        fontFamily: "SemiBold",
         color: "#333",
-        lineHeight: 20,
+        ...textPresets.label
     },
     modalSearchContainer: {
         flexDirection: "row",
@@ -970,10 +965,9 @@ const styles = StyleSheet.create({
     },
     modalSearchInput: {
         flex: 1,
-        fontSize: 14,
-        fontFamily: "Medium",
+        ...textPresets.body,
         color: "#222",
-        paddingVertical: 0,
+        paddingVertical: 4,
         top: 3
     },
     modalGridContent: {
@@ -1015,11 +1009,9 @@ const styles = StyleSheet.create({
         elevation: 1,
     },
     modalCardText: {
-        fontSize: 12,
-        fontFamily: "Bold",
         textAlign: "center",
         color: "#111",
-        lineHeight: 16,
+        ...textPresets.label
     },
     subFilterDropdown: {
         position: "absolute",
@@ -1050,14 +1042,12 @@ const styles = StyleSheet.create({
         backgroundColor: "#f0faf5",
     },
     subFilterDropdownText: {
-        fontSize: 12,
-        fontFamily: "Medium",
+        ...textPresets.label,
         color: "#000",
-        lineHeight: Math.round(12 * 1.5),
     },
     subFilterDropdownTextActive: {
         color: "#157a4f",
-        fontFamily: "SemiBold",
+        ...textPresets.label
     },
     locationSection: {
         backgroundColor: "#ffffffe5",
@@ -1091,15 +1081,12 @@ const styles = StyleSheet.create({
         marginRight: 8,
     },
     locationText: {
-        fontSize: 12,
-        fontFamily: "Medium",
-        lineHeight: Math.round(12 * 1.5),
+        ...textPresets.label,
         flexShrink: 1,
     },
     locationInput: {
         flex: 1,
-        fontSize: 12,
-        fontFamily: "Medium",
+        ...textPresets.label,
         color: "#222",
         paddingVertical: 0,
         paddingHorizontal: 4,
@@ -1140,10 +1127,9 @@ const styles = StyleSheet.create({
     },
     suggestionText: {
         flex: 1,
-        fontSize: 13,
-        fontFamily: "Medium",
+        ...textPresets.body,
         color: "#333",
-        lineHeight: Math.round(13 * 1.5),
+        lineHeight: Math.round(14 * 1.5),
     },
     suggestionLoading: {
         flexDirection: "row",
@@ -1152,9 +1138,8 @@ const styles = StyleSheet.create({
         padding: 12,
     },
     suggestionLoadingText: {
-        fontSize: 13,
-        fontFamily: "Medium",
+        ...textPresets.body,
         color: "#888",
-        lineHeight: Math.round(13 * 1.5),
+        lineHeight: Math.round(14 * 1.5),
     },
 })

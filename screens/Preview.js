@@ -8,6 +8,7 @@ import {
 import { Dimensions } from "react-native";
 const { width, height } = Dimensions.get("window");
 import { useRef, useEffect } from "react";
+import { textPresets } from "../theme/typography";
 
 export default function Preview({ navigation, route }) {
     const { category, template, formData, selectedDays, selectedLocations, selectedDates, startDate, endDate, price } = route.params || {};
@@ -58,18 +59,18 @@ export default function Preview({ navigation, route }) {
                     <TouchableOpacity onPress={() => navigation.goBack()}>
                         <MaterialIcons
                             name="arrow-back-ios"
-                            size={26} style={{ paddingHorizontal: 10 }} />
+                            size={22} style={{ paddingHorizontal: 10 }} />
                     </TouchableOpacity>
-                    <Text style={{ fontSize: 22, fontFamily: "Medium", lineHeight: Math.round(22 * 1.4) }}>
+                    <Text style={{ ...textPresets.title }}>
                         Smart Jahirati
                     </Text>
                 </View>
 
-                <Text style={{ fontSize: 16, marginLeft: 56, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) }}>
+                <Text style={{ marginLeft: 56, ...textPresets.body }}>
                     Post Your Ads Instantly Online
                 </Text>
 
-                <Text style={{ marginTop: 20, marginLeft: 20, fontSize: 18, fontFamily: "Medium" }}>
+                <Text style={{ marginTop: 20, marginLeft: 20, ...textPresets.subtitle }}>
                     Preview</Text>
 
 
@@ -181,7 +182,7 @@ export default function Preview({ navigation, route }) {
                                 </View>
 
                                 <Text style={styles.cardDesc} numberOfLines={1} ellipsizeMode="tail">
-                                   Description: {formData?.body || "Your description will appear here"}
+                                    Description: {formData?.body || "Your description will appear here"}
                                 </Text>
 
                                 <View style={{ flexDirection: "row", alignItems: "center", gap: 26 }}>
@@ -237,7 +238,7 @@ export default function Preview({ navigation, route }) {
                                 ) : (
                                     <View style={[styles.image2, { justifyContent: "center", alignItems: "center" }]}>
                                         <Ionicons name="image-outline" size={22} color="#999" />
-                                        <Text style={{ fontSize: 10, color: "#999" }}>No image</Text>
+                                        <Text style={{ color: "#999", ...textPresets.label }}>No image</Text>
                                     </View>
                                 )}
 
@@ -253,21 +254,21 @@ export default function Preview({ navigation, route }) {
                             </View>
 
 
-                                <View style={styles.metaRow}>
-                                    <View style={styles.metaItem}>
-                                        <Ionicons name="location-outline" size={16} />
-                                        <Text style={styles.metaText} numberOfLines={1} ellipsizeMode="tail">
-                                            {formData?.location || "Location"}
-                                        </Text>
-                                    </View>
-
-                                    <View style={styles.metaItem}>
-                                        <Ionicons name="person" size={16} />
-                                        <Text numberOfLines={1} ellipsizeMode="tail" style={styles.metaText}>
-                                            Seller
-                                        </Text>
-                                    </View>
+                            <View style={styles.metaRow}>
+                                <View style={styles.metaItem}>
+                                    <Ionicons name="location-outline" size={16} />
+                                    <Text style={styles.metaText} numberOfLines={1} ellipsizeMode="tail">
+                                        {formData?.location || "Location"}
+                                    </Text>
                                 </View>
+
+                                <View style={styles.metaItem}>
+                                    <Ionicons name="person" size={16} />
+                                    <Text numberOfLines={1} ellipsizeMode="tail" style={styles.metaText}>
+                                        Seller
+                                    </Text>
+                                </View>
+                            </View>
 
                             <View
                                 style={{
@@ -304,7 +305,7 @@ export default function Preview({ navigation, route }) {
                             <Text style={styles.timeText}>Date and Time</Text>
 
                             {/* Title */}
-                            <Text style={styles.cardTitle} numberOfLines={1} ellipsizeMode="tail"> 
+                            <Text style={styles.cardTitle} numberOfLines={1} ellipsizeMode="tail">
                                 {formData?.heading || "Your heading will appear here"}
                             </Text>
 
@@ -359,7 +360,7 @@ export default function Preview({ navigation, route }) {
                         });
                     }}
                 >
-                    <Text style={{ color: "#ffffff", fontSize: 16, fontFamily: "Medium", lineHeight: Math.round(16 * 1.2) }}>
+                    <Text style={{ color: "#ffffff", ...textPresets.body, lineHeight: Math.round(14 * 1.5) }}>
                         Proceed to Payment
                     </Text>
                 </TouchableOpacity>
@@ -457,20 +458,20 @@ const styles = StyleSheet.create({
     },
     tagText: {
         fontSize: 12,
-        fontFamily: "Medium",
+
         lineHeight: Math.round(12 * 1.5)
     },
     timeText: {
         fontSize: 12,
         color: "#777",
         marginTop: 6,
-        fontFamily: "Medium",
+
         lineHeight: Math.round(12 * 1.5)
     },
     cardTitle: {
         fontSize: 16,
         marginTop: 10,
-        fontFamily: "Medium",
+
         lineHeight: Math.round(16 * 1.5),
         width: "80%",
     },
@@ -478,26 +479,26 @@ const styles = StyleSheet.create({
         fontSize: 13,
         color: "#666",
         marginTop: 4,
-        fontFamily: "Medium",
+
         lineHeight: Math.round(13 * 1.5),
         width: "90%",
     },
-metaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 10,
-},
-metaItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    flex: 1,
-    flexShrink: 1,
-},
+    metaRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginTop: 10,
+    },
+    metaItem: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 4,
+        flex: 1,
+        flexShrink: 1,
+    },
     metaText: {
         fontSize: 12,
         color: "#444",
-        fontFamily: "Medium",
+
         lineHeight: Math.round(12 * 1.5),
         width: "70%"
     },
@@ -526,7 +527,7 @@ metaItem: {
         color: "#fff",
         fontSize: 14,
         fontWeight: "600",
-        fontFamily: "Medium",
+
         lineHeight: Math.round(14 * 1.5)
     },
 })

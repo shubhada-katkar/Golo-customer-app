@@ -12,6 +12,7 @@ import { clearAuthStorage, getValidToken } from "../services/authService";
 import * as ImagePicker from "expo-image-picker";
 import { BASE_URL } from "../config";
 import { LinearGradient } from "expo-linear-gradient";
+import { textPresets } from "../theme/typography";
 
 const ORANGE = "#f5b849";
 const GREEN = "#157a4f";
@@ -261,7 +262,7 @@ export default function ProfilePage({ navigation }) {
                         flex: 1, flexDirection: "row", justifyContent: "space-between",
                         alignItems: "center", marginRight: 14
                     }}>
-                        <Text style={{ fontSize: 20, fontFamily: "SemiBold", lineHeight: Math.round(20 * 1.5) }}>
+                        <Text style={{ ...textPresets.title }}>
                             Profile
                         </Text>
                         <TouchableOpacity
@@ -272,7 +273,7 @@ export default function ProfilePage({ navigation }) {
                     </View>
                 </View>
 
-          <View style={{ backgroundColor: "#000000", height: 1, marginVertical:6}} />
+                <View style={{ backgroundColor: "#000000", height: 1, marginVertical: 6 }} />
 
                 <ScrollView
                     contentContainerStyle={{ paddingBottom: 30 }}
@@ -471,10 +472,8 @@ const styles = StyleSheet.create({
         color: "#8a8a8a",
     },
     text: {
-        fontSize: 13,
-        fontFamily: "Medium",
-        lineHeight: Math.round(13 * 1.5),
         opacity: 0.7,
+        ...textPresets.label,
     },
     input: {
         flex: 1,
@@ -484,10 +483,9 @@ const styles = StyleSheet.create({
         paddingRight: 40,
         borderWidth: 1,
         borderColor: "#ececec",
-        fontSize: 14,
         backgroundColor: "#fafafa",
-        fontFamily: "Medium",
-        lineHeight: Math.round(16 * 1.5),      
+        lineHeight: Math.round(14 * 1.5),
+        ...textPresets.body
     },
     inputActive: {
         borderColor: GREEN,
@@ -506,9 +504,8 @@ const styles = StyleSheet.create({
     },
     saveButtonText: {
         color: "#ffffff",
-        fontFamily: "SemiBold",
-        fontSize: 14,
         lineHeight: Math.round(14 * 1.5),
+        ...textPresets.body
     },
     cameraIcon: {
         position: "absolute",
@@ -540,10 +537,8 @@ const styles = StyleSheet.create({
         position: "relative",
     },
     nameText: {
-        fontSize: 17,
-        fontFamily: "SemiBold",
-        marginTop: 12,
-        lineHeight: Math.round(17 * 1.5),
+        ...textPresets.subtitle,
+        top: 8
     },
     inputWrapper: {
         position: "relative",
@@ -584,16 +579,13 @@ const styles = StyleSheet.create({
         marginRight: 12,
     },
     cardTitle: {
-        fontSize: 15,
-        fontFamily: "SemiBold",
-        lineHeight: Math.round(15 * 1.5),
+        ...textPresets.body,
+        lineHeight: Math.round(14 * 1.5),
     },
     cardSubtitle: {
-        fontSize: 12,
-        fontFamily: "Medium",
+        ...textPresets.label,
         opacity: 0.55,
         marginTop: 1,
-        lineHeight: Math.round(12 * 1.5),
     },
     pointsPill: {
         flexDirection: "row",
@@ -605,17 +597,14 @@ const styles = StyleSheet.create({
         gap: 3,
     },
     cardValue: {
-        fontSize: 15,
-        fontFamily: "SemiBold",
+        ...textPresets.body,
         color: GREEN,
-        lineHeight: Math.round(15 * 1.5),
+        lineHeight: Math.round(14 * 1.5),
     },
     pointsLabel: {
-        fontSize: 11,
-        fontFamily: "Medium",
+        ...textPresets.label,
         color: GREEN,
         opacity: 0.8,
-        lineHeight: Math.round(11 * 1.5),
     },
     settingsCard: {
         backgroundColor: "#ffffff",
@@ -631,12 +620,10 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
     },
     sectionHeader: {
-        fontSize: 11,
-        fontFamily: "Medium",
         letterSpacing: 0.8,
         opacity: 0.5,
         marginBottom: 8,
-        lineHeight: Math.round(11 * 1.5)
+        ...textPresets.label
     },
     menuItem: {
         flexDirection: "row",
@@ -664,16 +651,13 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     menuTitle: {
-        fontSize: 15,
-        fontFamily: "Medium",
-        lineHeight: Math.round(15 * 1.5)
+        ...textPresets.body,
+        lineHeight: Math.round(14 * 1.5)
     },
     menuSub: {
-        fontSize: 12,
         marginTop: 1,
-        fontFamily: "Medium",
         opacity: 0.7,
-        lineHeight: Math.round(12 * 1.5)
+        ...textPresets.label
     },
     divider: {
         height: 1,

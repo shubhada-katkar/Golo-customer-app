@@ -24,6 +24,7 @@ import GoloBottom from "../components/GoloBottom";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { BASE_URL } from "../config";
+import { textPresets } from "../theme/typography";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const BANNER_HEIGHT = 170;
@@ -908,18 +909,16 @@ const styles = StyleSheet.create({
         marginRight: 8,
     },
     locationText: {
-        fontSize: 12,
-        fontFamily: "Medium",
-        lineHeight: Math.round(12 * 1.5),
+        ...textPresets.label,
         flexShrink: 1,
     },
     locationInput: {
         flex: 1,
-        fontSize: 13,
-        fontFamily: "Medium",
+        ...textPresets.body,
         color: "#222",
         paddingVertical: 0,
         paddingHorizontal: 4,
+        lineHeight: Math.round(14 * 1.5)
     },
     locationCancelBtn: {
         paddingLeft: 4,
@@ -956,10 +955,9 @@ const styles = StyleSheet.create({
     },
     suggestionText: {
         flex: 1,
-        fontSize: 13,
-        fontFamily: "Medium",
+        ...textPresets.body,
         color: "#333",
-        lineHeight: 18,
+        lineHeight: Math.round(14 * 1.5),
     },
     suggestionLoading: {
         flexDirection: "row",
@@ -968,9 +966,9 @@ const styles = StyleSheet.create({
         padding: 12,
     },
     suggestionLoadingText: {
-        fontSize: 13,
-        fontFamily: "Medium",
+        ...textPresets.body,
         color: "#888",
+        lineHeight: Math.round(14 * 1.5),
     },
     searchContainer: {
         flexDirection: "row",
@@ -986,9 +984,8 @@ const styles = StyleSheet.create({
     searchInput: {
         flex: 1,
         paddingLeft: 5,
-        paddingVertical: 6,
-        fontFamily: "Medium",
-        fontSize: 14,
+        paddingVertical: 10,
+        ...textPresets.body,
         top: 3,
     },
 
@@ -1020,11 +1017,9 @@ const styles = StyleSheet.create({
         elevation: 1,
     },
     stripText: {
-        fontSize: 10,
-        fontFamily: "SemiBold",
         textAlign: "center",
         minHeight: 32,
-        lineHeight: Math.round(10 * 1.5)
+        ...textPresets.caption,
     },
     // ─── Banner Carousel ─────────────────────────────────────
     bannerSection: {
@@ -1032,11 +1027,9 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     bannerSectionTitle: {
-        fontSize: 17,
-        fontFamily: "Bold",
-        lineHeight: Math.round(17 * 1.5),
         color: "#1a1a1a",
         marginBottom: 10,
+        ...textPresets.subtitle,
     },
     bannerSlide: {
         width: SCREEN_WIDTH - 32,
@@ -1077,8 +1070,8 @@ const styles = StyleSheet.create({
     bannerLoaderText: {
         color: "#888",
         marginTop: 8,
-        fontFamily: "Medium",
-        fontSize: 13,
+        ...textPresets.body,
+        lineHeight: Math.round(14 * 1.5),
     },
     bannerEmptyBox: {
         alignItems: "center",
@@ -1093,8 +1086,8 @@ const styles = StyleSheet.create({
     bannerEmptyText: {
         color: "#999",
         marginTop: 8,
-        fontFamily: "Medium",
-        fontSize: 13,
+        ...textPresets.body,
+        lineHeight: Math.round(14 * 1.5),
     },
     // ─── Deal Sections ───────────────────────────────────────
     sectionContainer: {
@@ -1108,19 +1101,16 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     sectionTitle: {
-        fontSize: 17,
-        fontFamily: "Bold",
         color: "#1a1a1a",
+        ...textPresets.subtitle
     },
     viewAllBtn: {
         flexDirection: "row",
         alignItems: "center",
     },
     viewAllText: {
-        fontSize: 12,
+        ...textPresets.label,
         color: "#666",
-        fontFamily: "SemiBold",
-        lineHeight: Math.round(12 * 1.5),
     },
     dealCardsRow: {
         flexDirection: "row",
@@ -1140,25 +1130,9 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10,
         paddingVertical: 10,
     },
-    dealCardTitle: {
-        fontSize: 14,
-        fontFamily: "Bold",
-        color: "#111",
-        marginBottom: 3,
-    },
-    dealCardDescription: {
-        fontSize: 11,
-        fontFamily: "Medium",
-        color: "#666",
-        lineHeight: 15,
-        height: 30,
-        marginBottom: 8,
-    },
     viewDealButtonText: {
         color: "#ffffff",
-        fontSize: 12,
-        fontFamily: "Bold",
-        lineHeight: Math.round(12 * 1.5),
+        ...textPresets.label,
     },
     card: {
         width: "48%",
@@ -1190,43 +1164,32 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
     },
     discountPrice: {
-        fontSize: 12,
-        fontFamily: "Medium",
+        ...textPresets.label,
         color: "green",
-        lineHeight: Math.round(12 * 1.5),
     },
     distanceMetaText: {
-        fontSize: 12,
-        fontFamily: "Medium",
-        lineHeight: Math.round(12 * 1.5),
+        ...textPresets.label,
     },
     title: {
-        fontSize: 14,
-        fontFamily: "Bold",
+        ...textPresets.body,
         color: "#111",
         marginTop: 4,
         lineHeight: Math.round(14 * 1.5),
     },
     subtitle: {
-        fontSize: 12,
-        fontFamily: "Medium",
+        ...textPresets.label,
         color: "#666",
         marginTop: 5,
-        lineHeight: Math.round(12 * 1.5),
     },
     metaText: {
-        fontSize: 12,
-        fontFamily: "Medium",
+        ...textPresets.label,
         color: "#777",
         marginTop: 5,
-        lineHeight: Math.round(12 * 1.5),
     },
     validText: {
-        fontSize: 10,
-        fontFamily: "Medium",
-        marginTop: 6,
-        lineHeight: Math.round(10 * 1.5),
-        color: "#666"
+        ...textPresets.caption,
+        color: "#666",
+        marginTop: 6
     },
     // ─── Modal styling ───────────────────────────────────────
     modalHeaderGradient: {
@@ -1242,10 +1205,8 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     modalTitle: {
-        fontSize: 20,
-        fontFamily: "Bold",
+        ...textPresets.subtitle,
         color: "#111",
-        lineHeight: Math.round(20 * 1.5),
     },
     modalCloseBtn: {
         flexDirection: "row",
@@ -1263,10 +1224,9 @@ const styles = StyleSheet.create({
         elevation: 2,
     },
     modalCloseText: {
-        fontSize: 13,
-        fontFamily: "SemiBold",
+        ...textPresets.body,
         color: "#333",
-        lineHeight: Math.round(13 * 1.5),
+        lineHeight: Math.round(14 * 1.5),
     },
     modalSearchContainer: {
         flexDirection: "row",
@@ -1284,11 +1244,10 @@ const styles = StyleSheet.create({
         elevation: 1
     },
     modalSearchInput: {
-        fontSize: 14,
-        fontFamily: "Medium",
+        ...textPresets.body,
         color: "#222",
-        paddingVertical: 0,
-        top: 3
+        paddingVertical: 4,
+        top: 3,
     },
     modalGridContent: {
         paddingHorizontal: 16,
@@ -1329,10 +1288,8 @@ const styles = StyleSheet.create({
         elevation: 1,
     },
     modalCardText: {
-        fontSize: 12,
-        fontFamily: "Bold",
+        ...textPresets.label,
         textAlign: "center",
         color: "#111",
-        lineHeight: 16,
     },
 });

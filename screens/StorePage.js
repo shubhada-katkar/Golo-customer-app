@@ -578,35 +578,37 @@ export default function StorePage({ route, navigation }) {
                   <MaterialIcons name="person" size={26} color="#fff" />
                 </View>
               )}
-              <View style={styles.profileTextBox}>
-                <Text style={styles.merchantName}>{merchantName}</Text>
-                <Text style={styles.storeName}>{storeName}</Text>
-
-                <View style={styles.statsRow}>
-                  <View style={styles.ratingRow}>
-                    <MaterialIcons name="star" size={16} color="#f8a812" />
-                    <Text style={styles.ratingText}>
-                      {ratingStats.averageRating > 0 ? ratingStats.averageRating.toFixed(1) : '0.0'}
-                      {` (${ratingStats.totalReviews})`}
-                    </Text>
-                  </View>
-                </View>
-
-                <TouchableOpacity
-                  style={[styles.followButton, isFollowing && styles.followButtonActive]}
-                  onPress={handleFollowToggle}
-                  disabled={followLoading}
-                >
-                  {followLoading ? (
-                    <ActivityIndicator size="small" color={isFollowing ? '#f8a812' : '#fff'} />
-                  ) : (
-                    <Text style={[styles.followButtonText, isFollowing && styles.followButtonTextActive]}>
-                      {isFollowing ? 'Following' : 'Follow'}
-                    </Text>
-                  )}
-                </TouchableOpacity>
-              </View>
             </View>
+
+            <View style={styles.nameRatingFollowRow}>
+              <View style={styles.nameBlock}>
+                <Text style={styles.merchantName} numberOfLines={1}>{merchantName}</Text>
+                <Text style={styles.storeName} numberOfLines={1}>{storeName}</Text>
+              </View>
+
+              <View style={styles.ratingRow}>
+                <MaterialIcons name="star" size={16} color="#f8a812" />
+                <Text style={styles.ratingText}>
+                  {ratingStats.averageRating > 0 ? ratingStats.averageRating.toFixed(1) : '0.0'}
+                  {` (${ratingStats.totalReviews})`}
+                </Text>
+              </View>
+
+              <TouchableOpacity
+                style={[styles.followButton, isFollowing && styles.followButtonActive]}
+                onPress={handleFollowToggle}
+                disabled={followLoading}
+              >
+                {followLoading ? (
+                  <ActivityIndicator size="small" color={isFollowing ? '#f8a812' : '#fff'} />
+                ) : (
+                  <Text style={[styles.followButtonText, isFollowing && styles.followButtonTextActive]}>
+                    {isFollowing ? 'Following' : 'Follow'}
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
+
           </View>
 
           <View style={styles.infoCard}>
@@ -768,15 +770,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 16,
-    marginTop: -24,
+    marginTop: -40,
+  },
+  nameRatingFollowRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    marginTop: 8,
+    marginBottom: 16,
+  },
+  nameBlock: {
+    flexShrink: 1,
+    marginRight: 8,
   },
   profileImage: {
-    width: 70,
-    height: 70,
+    width: 80,
+    height: 80,
     borderRadius: 40,
-    borderWidth: 3,
+    borderWidth: 2,
     borderColor: '#fff',
     backgroundColor: '#f3f4f6',
   },
@@ -784,7 +796,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    borderWidth: 3,
+    borderWidth: 2,
     borderColor: '#fff',
     backgroundColor: '#f8a812',
     alignItems: 'center',
@@ -792,13 +804,11 @@ const styles = StyleSheet.create({
   },
   profileTextBox: {
     flex: 1,
-    marginLeft: 12,
   },
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: 8,
   },
   followButton: {
     backgroundColor: '#f8a812',
@@ -814,6 +824,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff4d8',
     borderWidth: 1,
     borderColor: '#f8a812',
+
   },
   followButtonText: {
     color: '#fff',
@@ -825,12 +836,11 @@ const styles = StyleSheet.create({
   merchantName: {
     ...textPresets.body,
     color: '#111827',
-    paddingTop: 16,
-    lineHeight: Math.round(14 * 1.5)
+    lineHeight: Math.round(14 * 1.5),
   },
   storeName: {
     color: '#6b7280',
-    ...textPresets.label
+    ...textPresets.label,
   },
   infoCard: {
     backgroundColor: '#fff',
@@ -862,7 +872,7 @@ const styles = StyleSheet.create({
   infoValue: {
     flex: 1,
     color: '#111827',
-    marginLeft: 6,
+    marginLeft: 14,
     ...textPresets.label
   },
   sectionHeader: {

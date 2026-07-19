@@ -321,7 +321,7 @@ const styles = StyleSheet.create({
     scrollContent: {
         paddingHorizontal: 16,
         paddingTop: 8,
-        paddingBottom: 100,
+        paddingBottom: 50,
     },
 
     // ── shop card ──────────────────────────────────────────────────────────
@@ -385,7 +385,7 @@ const styles = StyleSheet.create({
     statsRight: {
         flex: 1,
         justifyContent: 'center',
-        gap: 4,
+        gap: 5,
         marginTop: 6
     },
     barRow: {
@@ -397,7 +397,7 @@ const styles = StyleSheet.create({
         color: '#555',
         width: 18,
         textAlign: 'right',
-        ...textPresets.label
+        ...textPresets.caption
     },
     barTrack: {
         flex: 1,

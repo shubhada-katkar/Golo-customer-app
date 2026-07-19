@@ -22,6 +22,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Video, ResizeMode } from "expo-av";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
+import { textPresets } from "../theme/typography";
 
 const { width } = Dimensions.get("window");
 const CONTAINER_WIDTH = width - 32;
@@ -679,10 +680,8 @@ const styles = StyleSheet.create({
     padding: 10
   },
   headerTitle: {
-    fontSize: 20,
-    fontFamily: "SemiBold",
-    lineHeight: Math.round(20 * 1.5),
     flex: 1,
+    ...textPresets.title
   },
   headerRight: {
     flexDirection: "row",
@@ -733,11 +732,9 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   productName: {
-    fontSize: 20,
-    fontFamily: "Bold",
-    lineHeight: Math.round(20 * 1.5),
     flex: 1,
     marginRight: 10,
+    ...textPresets.subtitle
   },
   priceBadge: {
     backgroundColor: "#157a4f",
@@ -746,10 +743,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   priceText: {
-    fontSize: 14,
-    fontFamily: "Medium",
     color: "#ffffff",
-    lineHeight: Math.round(14 * 1.3),
+    lineHeight: Math.round(14 * 1.5),
+    ...textPresets.body
   },
   chipsWrap: {
     flexDirection: "row",
@@ -773,16 +769,12 @@ const styles = StyleSheet.create({
     marginRight: 6,
   },
   chipLabel: {
-    fontSize: 12,
-    fontFamily: "SemiBold",
     color: "#222",
-    lineHeight: Math.round(12 * 1.5)
+    ...textPresets.label
   },
   chipValue: {
-    fontSize: 12,
-    fontFamily: "Medium",
     color: "#157a4f",
-    lineHeight: Math.round(12 * 1.5)
+    ...textPresets.label
   },
   card: {
     borderRadius: 16,
@@ -795,15 +787,12 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontFamily: "SemiBold",
-    lineHeight: Math.round(16 * 1.5),
     marginLeft: 6,
+    ...textPresets.body,
+    lineHeight: Math.round(14 * 1.5)
   },
   description: {
-    fontSize: 13,
-    lineHeight: Math.round(13 * 1.6),
-    fontFamily: "Medium",
+    ...textPresets.label
   },
   carouselContainer: {
     width: CONTAINER_WIDTH,

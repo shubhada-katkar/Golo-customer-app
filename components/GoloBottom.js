@@ -6,6 +6,7 @@ import { useRoute } from "@react-navigation/native";
 import { useContext } from "react";
 import { ThemeContext } from "../theme/ThemeContext";
 import { ensureAuthenticated } from "../services/authService";
+import { textPresets } from "../theme/typography";
 
 export default function GoloBottom() {
     const navigation = useNavigation();
@@ -28,25 +29,25 @@ export default function GoloBottom() {
             <TouchableOpacity style={[styles.bar]} onPress={() => navigation.navigate("GoloDeals")}>
                 <MaterialCommunityIcons name="home-outline" size={26}
                     color={currentRoute === "GoloDeals" ? "#f5b849" : "black"} />
-                <Text style={{ textAlign: "auto", fontSize: 11, color: currentRoute === "GoloDeals" ? "#f5b849" : "black", fontFamily: "Medium" }}>Home</Text>
+                <Text style={{ textAlign: "auto", ...textPresets.caption, color: currentRoute === "GoloDeals" ? "#f5b849" : "black" }}>Home</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.bar} onPress={() => navigation.navigate("GoloFav")}>
                 <FontAwesome name="heart-o" size={24}
                     color={currentRoute === "GoloFav" ? "#f5b849" : "black"} />
-                <Text style={{ textAlign: "auto", fontSize: 11, color: currentRoute === "GoloFav" ? "#f5b849" : "black", fontFamily: "Medium" }}>Wishlist</Text>
+                <Text style={{ textAlign: "auto", ...textPresets.caption, color: currentRoute === "GoloFav" ? "#f5b849" : "black" }}>Wishlist</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.bar} onPress={() => navigation.navigate("Claimed")}>
                 <MaterialCommunityIcons name="sticker-check-outline" size={24}
                     color={currentRoute === "Claimed" ? "#f5b849" : "black"} />
-                <Text style={{ textAlign: "auto", fontSize: 11, color: currentRoute === "Claimed" ? "#f5b849" : "black", fontFamily: "Medium" }}>Claimed</Text>
+                <Text style={{ textAlign: "auto", ...textPresets.caption, color: currentRoute === "Claimed" ? "#f5b849" : "black" }}>Claimed</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.bar} onPress={() => handleProtectedNavigate("ProfilePage")}>
                 <MaterialCommunityIcons name="account-circle-outline" size={24}
                     color={currentRoute === "ProfilePage" ? "#f5b849" : "black"} />
-                <Text style={{ textAlign: "auto", fontSize: 11, color: currentRoute === "ProfilePage" ? "#f5b849" : "black", fontFamily: "Medium" }}>Profile</Text>
+                <Text style={{ textAlign: "auto", ...textPresets.caption, color: currentRoute === "ProfilePage" ? "#f5b849" : "black" }}>Profile</Text>
             </TouchableOpacity>
 
         </View>

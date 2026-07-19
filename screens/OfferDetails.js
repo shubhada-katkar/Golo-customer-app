@@ -38,6 +38,7 @@ import {
 import { isFavoriteOfferId, toggleFavoriteOffer } from "../services/offerFavoritesService";
 import { LinearGradient } from "expo-linear-gradient";
 import { BASE_URL } from "../config";
+import { textPresets } from "../theme/typography";
 
 const getOfferImage = (item) =>
     item?.imageUrl ||
@@ -839,7 +840,7 @@ export default function OfferDetails({ navigation, route }) {
 
                             {/* How to Redeem Section */}
                             <View style={[styles.card, styles.redeemCard]}>
-                                <Text style={{ fontFamily: "Bold" }}>How to Redeem</Text>
+                                <Text style={{ ...textPresets.subtitle }}>How to Redeem</Text>
                                 <View style={styles.redeemRow}>
                                     <View style={styles.redeemStep}>
                                         <Ionicons name="ticket-outline" size={33} color="#157a4f" />
@@ -1026,16 +1027,13 @@ const styles = StyleSheet.create({
         paddingBottom: 86,
     },
     title: {
-        fontSize: 20,
-        fontFamily: "Bold",
+        ...textPresets.title,
         marginBottom: 8,
-        lineHeight: Math.round(20 * 1.4),
     },
     by: {
         marginTop: 4,
-        fontFamily: "Medium",
         lineHeight: Math.round(14 * 1.5),
-        fontSize: 14,
+        ...textPresets.body
     },
     card: {
         marginTop: 16,
@@ -1046,20 +1044,18 @@ const styles = StyleSheet.create({
         backgroundColor: "#fff",
     },
     cardTitle: {
-        fontFamily: "Bold",
         marginBottom: 8,
+        ...textPresets.subtitle
     },
     label: {
         marginTop: 8,
-        fontFamily: "SemiBold",
-        fontSize: 14,
         lineHeight: Math.round(14 * 1.5),
+        ...textPresets.body
     },
     value: {
         color: "#444",
         marginTop: 2,
-        fontFamily: "Medium",
-        fontSize: 14,
+        ...textPresets.label
     },
     actionRow: {
         flexDirection: "row",
@@ -1077,9 +1073,8 @@ const styles = StyleSheet.create({
     },
     secondaryButtonText: {
         color: "#f8a812",
-        fontFamily: "SemiBold",
-        fontSize: 14,
         lineHeight: Math.round(14 * 1.5),
+        ...textPresets.body
     },
     buyBtn: {
         marginTop: 20,
@@ -1089,10 +1084,9 @@ const styles = StyleSheet.create({
         alignItems: "center",
     },
     buyText: {
-        fontFamily: "Bold",
         color: "#fff",
-        fontSize: 14,
         lineHeight: Math.round(14 * 1.5),
+        ...textPresets.body
     },
     claimedBtn: {
         backgroundColor: "#157a4f",
@@ -1131,9 +1125,8 @@ const styles = StyleSheet.create({
     },
     bottomText: {
         color: "#fff",
-        fontFamily: "SemiBold",
         lineHeight: Math.round(14 * 1.5),
-        fontSize: 14,
+        ...textPresets.body
     },
     modalContainer: {
         flex: 1,
@@ -1149,13 +1142,10 @@ const styles = StyleSheet.create({
         alignItems: "center",
     },
     qrTitle: {
-        fontSize: 18,
-        fontFamily: "Medium",
-        lineHeight: Math.round(18 * 1.5),
+        ...textPresets.subtitle
     },
     tokenText: {
-        fontFamily: "Medium",
-        lineHeight: Math.round(12 * 1.5),
+        ...textPresets.label
     },
     verificationCodeContainer: {
         marginTop: 16,
@@ -1168,27 +1158,21 @@ const styles = StyleSheet.create({
         width: "100%",
     },
     verificationCodeLabel: {
-        fontSize: 12,
-        fontFamily: "Medium",
         color: "#059669",
         marginBottom: 8,
         textAlign: "center",
-        lineHeight: Math.round(12 * 1.5),
+        ...textPresets.label
     },
     verificationCode: {
-        fontSize: 16,
-        fontFamily: "SemiBold",
         color: "#047857",
         letterSpacing: 2,
         marginBottom: 6,
-        lineHeight: Math.round(16 * 1.5),
+        ...textPresets.subtitle
     },
     verificationCodeHint: {
-        fontSize: 11,
-        fontFamily: "Regular",
+        ...textPresets.label,
         color: "#6b7280",
         textAlign: "center",
-        lineHeight: Math.round(11 * 1.5),
     },
     downloadBtn: {
         marginTop: 15,
@@ -1197,17 +1181,15 @@ const styles = StyleSheet.create({
         borderRadius: 8,
     },
     downloadText: {
-        fontSize: 14,
+        ...textPresets.body,
         color: "#fff",
-        fontFamily: "Medium",
         lineHeight: Math.round(14 * 1.5),
     },
     closeText: {
         marginTop: 10,
-        fontSize: 14,
         color: "#f94741",
-        fontFamily: "Medium",
         lineHeight: Math.round(14 * 1.5),
+        ...textPresets.body
     },
     qrImage: {
         width: 220,
@@ -1247,11 +1229,9 @@ const styles = StyleSheet.create({
         alignItems: "center",
     },
     productName: {
-        fontSize: 12,
-        fontFamily: "Medium",
+        ...textPresets.label,
         textAlign: "center",
         color: "#333",
-        lineHeight: Math.round(12 * 1.5),
     },
     reviewContainer: {
         marginTop: 20,
@@ -1262,18 +1242,15 @@ const styles = StyleSheet.create({
         borderColor: "#e5e7eb",
     },
     reviewLabel: {
-        fontFamily: "Medium",
+        ...textPresets.subtitle,
         marginBottom: 10,
         color: "#111827",
-        fontSize: 16,
-        lineHeight: Math.round(16 * 1.5),
     },
     ratingLabel: {
-        fontFamily: "Medium",
+        ...textPresets.body,
         marginBottom: 8,
         color: "#111827",
         lineHeight: Math.round(14 * 1.5),
-        fontSize: 14,
     },
     ratingRow: {
         flexDirection: "row",
@@ -1291,8 +1268,7 @@ const styles = StyleSheet.create({
         padding: 12,
         color: "#111827",
         textAlignVertical: "top",
-        fontFamily: "Medium",
-        fontSize: 14,
+        ...textPresets.body,
         lineHeight: Math.round(14 * 1.5),
     },
     reviewButton: {
@@ -1303,9 +1279,8 @@ const styles = StyleSheet.create({
         alignItems: "center",
     },
     reviewButtonText: {
-        fontFamily: "Bold",
         color: "#fff",
-        fontSize: 14,
+        ...textPresets.body,
         lineHeight: Math.round(14 * 1.5),
     },
     redeemCard: {
@@ -1321,20 +1296,17 @@ const styles = StyleSheet.create({
         marginTop: 16
     },
     redeemStepLabel: {
-        fontSize: 14,
-        fontFamily: "Bold",
         color: "#111",
         marginTop: 8,
         textAlign: "center",
+        ...textPresets.body,
         lineHeight: Math.round(14 * 1.5),
     },
     redeemStepDesc: {
-        fontSize: 12,
-        fontFamily: "Medium",
+        ...textPresets.label,
         color: "#666",
         marginTop: 4,
         textAlign: "center",
-        lineHeight: Math.round(12 * 1.5),
     },
     faqSectionCard: {
         marginTop: 16,
@@ -1353,18 +1325,14 @@ const styles = StyleSheet.create({
         alignItems: "center",
     },
     faqQuestion: {
-        fontSize: 13,
-        fontFamily: "SemiBold",
         color: "#333",
         flex: 1,
         marginRight: 8,
-        lineHeight: 16,
+        ...textPresets.label,
     },
     faqAnswer: {
-        fontSize: 12,
-        fontFamily: "Medium",
         color: "#555",
         marginTop: 8,
-        lineHeight: 16,
+        ...textPresets.label,
     },
 });
