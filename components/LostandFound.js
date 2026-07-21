@@ -8,6 +8,7 @@ import {
 } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import { textPresets } from "../theme/typography";
 
 export default function LostandFound({
     formData,
@@ -38,8 +39,7 @@ export default function LostandFound({
                 style={[
                     styles.segmentText,
                     formData.condition === value && styles.segmentTextSelected,
-                ]}
-            >
+                ]} >
                 {label}
             </Text>
         </TouchableOpacity>
@@ -141,26 +141,25 @@ export default function LostandFound({
             </View>
 
             {!isEditMode && (
-            <TouchableOpacity
-                style={styles.nextBtn}
-                onPress={() =>
-                    navigation.navigate("CalendarScreen", {
-                        category,
-                        template,
-                        formData,
-                        price,
-                    })
-                }
-            >
-                <Text style={styles.nextText}>See Preview</Text>
-            </TouchableOpacity>
+                <TouchableOpacity
+                    style={styles.nextBtn}
+                    onPress={() =>
+                        navigation.navigate("CalendarScreen", {
+                            category,
+                            template,
+                            formData,
+                            price,
+                        })
+                    }
+                >
+                    <Text style={styles.nextText}>Next</Text>
+                </TouchableOpacity>
             )}
         </View>
     );
 }
 
 const styles = StyleSheet.create({
-
     header: {
         flexDirection: "row",
         justifyContent: "space-between",
@@ -168,12 +167,9 @@ const styles = StyleSheet.create({
         paddingHorizontal: 5,
         paddingBottom: 10,
     },
-
     composeTitle: {
-        fontSize: 18,
-        fontFamily: "Medium",
+        ...textPresets.subtitle
     },
-
     prevBtn: {
         flexDirection: "row",
         alignItems: "center",
@@ -182,37 +178,31 @@ const styles = StyleSheet.create({
         backgroundColor: "#108136",
         borderRadius: 10,
     },
-
     prevText: {
-        fontFamily: "Medium",
-        fontSize: 16,
+        ...textPresets.body,
         marginLeft: 6,
         color: "#fff",
+        lineHeight: Math.round(14 * 1.5)
     },
-
     formCard: {
         backgroundColor: "#fff",
         paddingHorizontal: 16,
         borderRadius: 10,
         paddingBottom: 18,
     },
-
     label: {
-        fontSize: 16,
-        marginTop: 16,
-        fontFamily: "Medium",
+        ...textPresets.body,
+        lineHeight: Math.round(14 * 1.5),
+        marginTop: 16
     },
-
     input: {
         borderWidth: 1,
         borderColor: "#ddd",
         borderRadius: 8,
         padding: 10,
         marginTop: 6,
-        fontSize: 14,
-        fontFamily: "Medium"
+        ...textPresets.body
     },
-
     descriptionInput: {
         borderWidth: 1,
         borderColor: "#ccc",
@@ -220,16 +210,13 @@ const styles = StyleSheet.create({
         padding: 12,
         minHeight: 100,      // Increased height
         maxHeight: 100,      // Keeps the box fixed after this height
-        fontSize: 14,
         textAlignVertical: "top",
-        fontFamily: "Medium"
+        ...textPresets.body,
     },
-
     segmentRow: {
         flexDirection: "row",
         marginTop: 6,
     },
-
     segmentBtn: {
         flex: 1,
         borderWidth: 1,
@@ -237,22 +224,18 @@ const styles = StyleSheet.create({
         paddingVertical: 8,
         alignItems: "center",
     },
-
     segmentBtnSelected: {
         backgroundColor: "#f5b849",
         borderColor: "#bd8e38",
     },
-
     segmentText: {
-        fontSize: 15,
-        fontFamily: "Medium",
+        ...textPresets.body,
+        lineHeight: Math.round(14 * 1.5),
         color: "#444",
     },
-
     segmentTextSelected: {
         color: "#fff",
     },
-
     nextBtn: {
         flexDirection: "row",
         backgroundColor: "#157a4f",
@@ -262,11 +245,9 @@ const styles = StyleSheet.create({
         marginVertical: 20,
         justifyContent: "center",
     },
-
     nextText: {
         color: "#fff",
-        fontSize: 16,
-        fontFamily: "Medium",
-        lineHeight: Math.round(16 * 1.5),
+        lineHeight: Math.round(14 * 1.5),
+        ...textPresets.body
     },
 });

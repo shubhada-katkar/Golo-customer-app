@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { View, ActivityIndicator, Text, StyleSheet } from "react-native";
+import { textPresets } from "../theme/typography";
 
 /**
  * AuthLoading – shown on every cold start.
@@ -32,8 +33,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   title: {
-    marginTop: 16,
-    fontSize: 18,
-    fontFamily: "Medium",
+    ...textPresets.subtitle
   },
 });

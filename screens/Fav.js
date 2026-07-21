@@ -8,6 +8,7 @@ import ChojaBottom from "../components/ChojaBottom";
 import { MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { getFavoriteAds, toggleFavoriteAd } from "../services/favoritesService";
 import { LinearGradient } from "expo-linear-gradient";
+import { textPresets } from "../theme/typography";
 
 export default function Fav({ navigation }) {
     const { colors } = useContext(ThemeContext);
@@ -63,14 +64,14 @@ export default function Fav({ navigation }) {
                     <View style={{ justifyContent: 'center' }}>
                         <MaterialIcons
                             name="arrow-back-ios"
-                            size={26}
+                            size={22}
                             color={colors.text}
                             style={{ padding: 10 }}
                         />
                     </View>
 
                 </TouchableOpacity>
-                <Text style={{ fontSize: 22, color: colors.text, fontFamily: "SemiBold", lineHeight: Math.round(24 * 1.2) }}>Saved Ads</Text>
+                <Text style={{ ...textPresets.title }}>Saved Ads</Text>
             </View>
 
             <View style={{ flexDirection: "row", backgroundColor: colors.divider, height: 1, color: colors.divider, marginTop: 10 }} />
@@ -84,13 +85,13 @@ export default function Fav({ navigation }) {
                 {loading ? (
                     <View style={{ padding: 24, alignItems: "center" }}>
                         <ActivityIndicator size="small" color={colors.primary} />
-                        <Text style={{ color: colors.text, fontFamily: "Medium", marginTop: 10 }}>
+                        <Text style={{ color: colors.text, marginTop: 10 }}>
                             Loading saved ads...
                         </Text>
                     </View>
                 ) : favorites.length === 0 ? (
                     <View style={{ padding: 24, alignItems: "center" }}>
-                        <Text style={{ color: colors.text, fontFamily: "Medium" }}>No favorite ads yet</Text>
+                        <Text style={{ color: colors.text, }}>No favorite ads yet</Text>
                     </View>
                 ) : favorites.map((item) => {
                     const imageUri = getAdImageUri(item);
@@ -108,21 +109,19 @@ export default function Fav({ navigation }) {
 
                             <View style={{ flex: 1, marginLeft: imageUri ? 12 : 0 }}>
                                 <Text style={{
-                                    fontSize: 14, fontFamily: "SemiBold", color: "#000000",
+                                    ...textPresets.body,
                                     lineHeight: Math.round(14 * 1.5)
                                 }} numberOfLines={1}>
                                     {item.title || "Ad"}
                                 </Text>
                                 <Text style={{
-                                    fontSize: 12, color: "#000000", lineHeight: Math.round(12 * 1.5),
-                                    fontFamily: "Medium"
+                                    ...textPresets.caption, color: "#000000",
                                 }} numberOfLines={1}>
                                     {item.location || "No location"}
                                 </Text>
                                 {description ? (
                                     <Text style={{
-                                        fontSize: 12, color: "#666666", lineHeight: Math.round(12 * 1.5),
-                                        fontFamily: "Medium", marginTop: 2
+                                        ...textPresets.caption, color: "#666666", marginTop: 2
                                     }} numberOfLines={1}>
                                         {description}
                                     </Text>

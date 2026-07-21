@@ -14,6 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BASE_URL } from '../config';
 import Topbar from '../components/Topbar';
 import { getValidToken } from '../services/authService';
+import { textPresets } from '../theme/typography';
 
 const POLL_INTERVAL_MS = 10000;
 
@@ -206,20 +207,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 20,
-    fontFamily: 'SemiBold',
-    lineHeight: Math.round(20 * 1.5),
+    ...textPresets.title
   },
   headerBadge: {
-    fontSize: 12,
-    fontFamily: 'Medium',
+    ...textPresets.label,
     color: '#8a5a00',
     backgroundColor: '#fff3d6',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 999,
     overflow: 'hidden',
-    lineHeight: Math.round(12 * 1.5),
   },
   listContent: {
     padding: 16,
@@ -255,24 +252,19 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   cardTitle: {
-    fontSize: 15,
-    fontFamily: 'SemiBold',
+    ...textPresets.body,
     color: '#111827',
     marginBottom: 4,
-    lineHeight: Math.round(15 * 1.5),
+    lineHeight: Math.round(14 * 1.5),
   },
   cardMessage: {
-    fontSize: 13,
+    ...textPresets.label,
     color: '#6b7280',
-    lineHeight: Math.round(13 * 1.5),
-    fontFamily: 'Medium',
   },
   cardMeta: {
-    fontSize: 12,
+    ...textPresets.caption,
     color: '#9ca3af',
     marginTop: 6,
-    lineHeight: Math.round(12 * 1.5),
-    fontFamily: 'Medium',
   },
   unreadDot: {
     width: 10,
@@ -289,18 +281,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   emptyTitle: {
-    fontSize: 16,
-    fontFamily: 'SemiBold',
+    ...textPresets.body,
     marginTop: 10,
     color: '#111827',
-    lineHeight: Math.round(16 * 1.5),
+    lineHeight: Math.round(14 * 1.5),
   },
   emptyText: {
-    fontSize: 13,
+    ...textPresets.body,
     color: '#6b7280',
     textAlign: 'center',
     marginTop: 6,
-    lineHeight: Math.round(13 * 1.5),
-    fontFamily: 'Medium',
+    lineHeight: Math.round(14 * 1.5),
   },
 });

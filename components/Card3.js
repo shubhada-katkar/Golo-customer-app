@@ -4,6 +4,7 @@ import {
   TextInput, ActivityIndicator, Keyboard, TouchableWithoutFeedback
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
+import { textPresets } from "../theme/typography";
 
 export default function Card3({ category, onNext, formData, setFormData }) {
 
@@ -199,11 +200,11 @@ export default function Card3({ category, onNext, formData, setFormData }) {
 }
 
 const styles = StyleSheet.create({
-  composeTitle: { fontSize: 18, fontFamily: "Medium", marginBottom: 10 },
+  composeTitle: { ...textPresets.subtitle, marginBottom: 10 },
   formCard: { backgroundColor: "#fff", padding: 16, borderRadius: 10 },
-  label: { fontSize: 16, marginTop: 10, fontFamily: "Medium" },
-  value: { fontSize: 16, color: "#555", fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
-  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10, marginTop: 6, fontFamily: "Medium", fontSize: 14 },
+  label: { ...textPresets.body, marginTop: 10, lineHeight: Math.round(14 * 1.5) },
+  value: { ...textPresets.body, color: "#555", lineHeight: Math.round(14 * 1.5) },
+  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10, marginTop: 6, ...textPresets.body },
   descriptionInput: {
     borderWidth: 1,
     borderColor: "#ccc",
@@ -211,9 +212,8 @@ const styles = StyleSheet.create({
     padding: 12,
     minHeight: 100,      // Increased height
     maxHeight: 100,      // Keeps the box fixed after this height
-    fontSize: 14,
     textAlignVertical: "top",
-    fontFamily: "Medium"
+    ...textPresets.body
   },
   locationInputWrapper: {
     flexDirection: "row",
@@ -226,8 +226,7 @@ const styles = StyleSheet.create({
   locationInput: {
     flex: 1,
     padding: 10,
-    fontSize: 14,
-    fontFamily: "Medium",
+    ...textPresets.body
   },
   suggestionsContainer: {
     position: "absolute",
@@ -257,11 +256,9 @@ const styles = StyleSheet.create({
   },
   suggestionText: {
     flex: 1,
-    fontSize: 13,
-    fontFamily: "Medium",
     color: "#333",
-    lineHeight: 18,
+    ...textPresets.label
   },
   nextBtn: { backgroundColor: "#157a4f", padding: 12, borderRadius: 10, alignItems: "center", marginVertical: 20 },
-  nextText: { color: "#fff", fontSize: 16, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
+  nextText: { color: "#fff", ...textPresets.body, lineHeight: Math.round(14 * 1.5) },
 });

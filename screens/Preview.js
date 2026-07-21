@@ -66,7 +66,7 @@ export default function Preview({ navigation, route }) {
                     </Text>
                 </View>
 
-                <Text style={{ marginLeft: 56, ...textPresets.body }}>
+                <Text style={{ marginLeft: 56, ...textPresets.body, lineHeight: Math.round(14 * 1.5) }}>
                     Post Your Ads Instantly Online
                 </Text>
 
@@ -457,30 +457,22 @@ const styles = StyleSheet.create({
         borderRadius: 8,
     },
     tagText: {
-        fontSize: 12,
-
-        lineHeight: Math.round(12 * 1.5)
+        ...textPresets.label,
     },
     timeText: {
-        fontSize: 12,
+        ...textPresets.label,
         color: "#777",
         marginTop: 6,
-
-        lineHeight: Math.round(12 * 1.5)
     },
     cardTitle: {
-        fontSize: 16,
         marginTop: 10,
-
-        lineHeight: Math.round(16 * 1.5),
         width: "80%",
+        ...textPresets.subtitle
     },
     cardDesc: {
-        fontSize: 13,
+        ...textPresets.label,
         color: "#666",
         marginTop: 4,
-
-        lineHeight: Math.round(13 * 1.5),
         width: "90%",
     },
     metaRow: {
@@ -496,10 +488,8 @@ const styles = StyleSheet.create({
         flexShrink: 1,
     },
     metaText: {
-        fontSize: 12,
+        ...textPresets.label,
         color: "#444",
-
-        lineHeight: Math.round(12 * 1.5),
         width: "70%"
     },
     actionRow: {
@@ -525,9 +515,7 @@ const styles = StyleSheet.create({
     },
     btnText: {
         color: "#fff",
-        fontSize: 14,
-        fontWeight: "600",
-
-        lineHeight: Math.round(14 * 1.5)
+        lineHeight: Math.round(14 * 1.5),
+        ...textPresets.body
     },
 })

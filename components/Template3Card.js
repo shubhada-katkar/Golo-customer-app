@@ -9,6 +9,7 @@ import { getAdId, isFavoriteAdId, toggleFavoriteAd } from "../services/favorites
 import { trackAdCardClick, trackContactClick } from "../services/analyticsService";
 import { BASE_URL } from "../config";
 import { ensureAuthenticated } from "../services/authService";
+import { textPresets } from "../theme/typography";
 
 const GENERIC_SELLER_NAMES = new Set(["seller", "user", "anonymous", "unknown"]);
 
@@ -245,24 +246,18 @@ const styles = StyleSheet.create({
         gap: 10,
     },
     timeText: {
-        fontSize: 12,
+        ...textPresets.label,
         color: "#777",
         marginTop: 6,
-        fontFamily: "Medium",
-        lineHeight: Math.round(12 * 1.5)
     },
     title: {
-        fontSize: 16,
+        ...textPresets.subtitle,
         marginTop: 8,
-        fontFamily: "Medium",
-        lineHeight: Math.round(16 * 1.5)
     },
     desc: {
-        fontSize: 13,
+        ...textPresets.label,
         color: "#666",
         marginTop: 4,
-        fontFamily: "Medium",
-        lineHeight: Math.round(13 * 1.5)
     },
     metaRow: {
         flexDirection: "row",
@@ -274,16 +269,12 @@ const styles = StyleSheet.create({
         gap: 5,
     },
     metaText: {
-        fontSize: 12,
         color: "#444",
-        fontFamily: "Medium",
-        lineHeight: Math.round(12 * 1.5)
+        ...textPresets.label,
     },
     priceText: {
         color: "#157a4f",
-        fontSize: 12,
-        fontFamily: "Medium",
-        lineHeight: Math.round(12 * 1.5),
+        ...textPresets.label,
         marginVertical: 4
     },
     chatBtn: {
@@ -304,9 +295,7 @@ const styles = StyleSheet.create({
     },
     btnText: {
         color: "#fff",
-        fontSize: 14,
-        fontWeight: "600",
-        fontFamily: "Medium",
+        ...textPresets.body,
         lineHeight: Math.round(14 * 1.5)
     },
 });

@@ -2,6 +2,7 @@ import React, { useContext } from "react";
 import { View, Text, TextInput, StyleSheet, TouchableOpacity } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import { textPresets } from "../theme/typography";
 
 export default function Astrology({ formData, setFormData, category, onPrevious, template, selectedDays, selectedLocations, selectedDates, startDate, endDate, price, isEditMode }) {
     if (category?.id !== "astrology") return null;
@@ -65,11 +66,10 @@ export default function Astrology({ formData, setFormData, category, onPrevious,
                     <AntDesign name="arrow-left" size={18} color="#ffffff" />
                     <Text
                         style={{
-                            fontFamily: "Medium",
-                            fontSize: 16,
+                            ...textPresets.body,
                             marginLeft: 6,
                             color: "#ffffff",
-                            lineHeight: Math.round(16 * 1.5),
+                            lineHeight: Math.round(14 * 1.5),
                         }}
                     >
                         Previous
@@ -81,8 +81,8 @@ export default function Astrology({ formData, setFormData, category, onPrevious,
 
                 <Text style={styles.label}>Service Type</Text>
                 <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-                    <View style={{ flexDirection: "row", alignItems: "center", marginTop: 20, gap: 53 }}>
-                        <Text style={[styles.label, { marginTop: 0, fontSize: 14 }]}>Horoscope</Text>
+                    <View style={{ flexDirection: "row", alignItems: "center", marginTop: 20, gap: 45 }}>
+                        <Text style={[styles.label, { marginTop: 0 }]}>Horoscope</Text>
                         <TouchableOpacity
                             style={styles.checkbox}
                             onPress={() =>
@@ -94,7 +94,7 @@ export default function Astrology({ formData, setFormData, category, onPrevious,
                     </View>
 
                     <View style={{ flexDirection: "row", alignItems: "center", marginTop: 20, gap: 40 }}>
-                        <Text style={[styles.label, { marginTop: 0, fontSize: 14 }]}>Kundli</Text>
+                        <Text style={[styles.label, { marginTop: 0 }]}>Kundli</Text>
                         <TouchableOpacity
                             style={styles.checkbox}
                             onPress={() =>
@@ -107,8 +107,8 @@ export default function Astrology({ formData, setFormData, category, onPrevious,
                 </View>
 
                 <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-                    <View style={{ flexDirection: "row", alignItems: "center", marginTop: 20, gap: 80 }}>
-                        <Text style={[styles.label, { marginTop: 0, fontSize: 14 }]}>Vaastu</Text>
+                    <View style={{ flexDirection: "row", alignItems: "center", marginTop: 20, gap: 70 }}>
+                        <Text style={[styles.label, { marginTop: 0 }]}>Vaastu</Text>
                         <TouchableOpacity
                             style={styles.checkbox}
                             onPress={() =>
@@ -120,7 +120,7 @@ export default function Astrology({ formData, setFormData, category, onPrevious,
                     </View>
 
                     <View style={{ flexDirection: "row", alignItems: "center", marginTop: 20, gap: 40 }}>
-                        <Text style={[styles.label, { marginTop: 0, fontSize: 14 }]}>Palm Reading</Text>
+                        <Text style={[styles.label, { marginTop: 0 }]}>Palm Reading</Text>
                         <TouchableOpacity
                             style={styles.checkbox}
                             onPress={() =>
@@ -132,8 +132,8 @@ export default function Astrology({ formData, setFormData, category, onPrevious,
                     </View>
                 </View>
 
-                <View style={{ flexDirection: "row", alignItems: "center", marginTop: 20, gap: 85 }}>
-                    <Text style={[styles.label, { marginTop: 0, fontSize: 14 }]}>Other</Text>
+                <View style={{ flexDirection: "row", alignItems: "center", marginTop: 20, gap: 80 }}>
+                    <Text style={[styles.label, { marginTop: 0 }]}>Other</Text>
                     <TouchableOpacity
                         style={styles.checkbox}
                         onPress={() =>
@@ -209,7 +209,7 @@ export default function Astrology({ formData, setFormData, category, onPrevious,
 
             {!isEditMode && (
                 <TouchableOpacity style={styles.nextBtn} onPress={() => { navigation.navigate("CalendarScreen", { category, template, formData, price }); }}>
-                    <Text style={styles.nextText}>See Preview</Text>
+                    <Text style={styles.nextText}>Next</Text>
                 </TouchableOpacity>
             )}
         </View>
@@ -218,28 +218,13 @@ export default function Astrology({ formData, setFormData, category, onPrevious,
 
 const styles = StyleSheet.create({
 
-    composeTitle: { fontSize: 18, fontFamily: "Medium", lineHeight: Math.round(18 * 1.5) },
+    composeTitle: { ...textPresets.subtitle },
     formCard: { backgroundColor: "#fff", paddingHorizontal: 16, borderRadius: 10, paddingBottom: 18 },
-    label: { fontSize: 16, marginTop: 16, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
-    value: { fontSize: 16, color: "#555", fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
-    input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10, marginTop: 6, fontSize: 14, fontFamily: "Medium" },
+    label: { ...textPresets.body, marginTop: 16, lineHeight: Math.round(14 * 1.5) },
+    value: { ...textPresets.body, color: "#555", lineHeight: Math.round(14 * 1.5) },
+    input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10, marginTop: 6, ...textPresets.body },
     textArea: { height: 80, textAlignVertical: "top" },
     switchRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 12 },
-
-    uploadBox: {
-        borderWidth: 1,
-        borderStyle: "dashed",
-        borderColor: "#aaa",
-        borderRadius: 10,
-        padding: 16,
-        alignItems: "center",
-        marginTop: 8,
-    },
-    uploadText: { marginTop: 6, color: "#555", fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
-    orText: { marginVertical: 6, color: "#999", fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
-    cameraBtn: { backgroundColor: "#157a4f", paddingVertical: 8, paddingHorizontal: 18, borderRadius: 8 },
-    cameraText: { color: "#fff", fontFamily: "Medium", lineHeight: Math.round(14 * 1.5) },
-
     nextBtn: {
         flexDirection: "row",
         backgroundColor: "#157a4f",
@@ -249,7 +234,7 @@ const styles = StyleSheet.create({
         marginVertical: 20,
         justifyContent: "center"
     },
-    nextText: { color: "#fff", fontSize: 16, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
+    nextText: { color: "#fff", ...textPresets.body, lineHeight: Math.round(14 * 1.5) },
 
     segmentRow: {
         flexDirection: "row",
@@ -267,15 +252,13 @@ const styles = StyleSheet.create({
         borderColor: "#bd8e38",
     },
     segmentText: {
-        fontSize: 15,
-        fontFamily: "Medium",
+        ...textPresets.body,
         color: "#444",
-        lineHeight: Math.round(15 * 1.5),
+        lineHeight: Math.round(14 * 1.5),
     },
     segmentTextSelected: {
         color: "#fff",
     },
-
     checkbox: {
         width: 24,
         height: 24,
@@ -290,7 +273,6 @@ const styles = StyleSheet.create({
         borderRadius: 4,
         backgroundColor: "#f5b849",
     },
-
     radioRow: { flexDirection: "row", alignItems: "center", marginRight: 16 },
     radioOuter: {
         width: 18,
@@ -308,6 +290,6 @@ const styles = StyleSheet.create({
         borderRadius: 5,
         backgroundColor: "#157a4f",
     },
-    radioLabel: { fontSize: 15, fontFamily: "Medium", lineHeight: Math.round(15 * 1.5) },
+    radioLabel: { ...textPresets.body, lineHeight: Math.round(14 * 1.5) },
 });
 

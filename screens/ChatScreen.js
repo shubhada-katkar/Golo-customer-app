@@ -1,6 +1,8 @@
 import React, { useCallback, useContext, useEffect, useRef, useState } from "react";
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator, Alert,
-FlatList,  Image, KeyboardAvoidingView, Platform, Modal, Keyboard } from "react-native";
+import {
+    View, Text, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator, Alert,
+    FlatList, Image, KeyboardAvoidingView, Platform, Modal, Keyboard
+} from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -16,6 +18,7 @@ import {
     clearChat,
 } from "../services/chatService";
 import { LinearGradient } from "expo-linear-gradient";
+import { textPresets } from "../theme/typography";
 
 export default function ChatScreen({ navigation, route }) {
     const { colors } = useContext(ThemeContext);
@@ -506,24 +509,25 @@ export default function ChatScreen({ navigation, route }) {
     };
 
     useEffect(() => {
-    const showSubscription = Keyboard.addListener("keyboardDidShow", () => { setKeyboardVisible(true);
-   // scroll to latest message when keyboard opens
-        setTimeout(() => {
-            scrollRef.current?.scrollToOffset({
-                offset: 0,
-                animated: true,
-            });
-        }, 100);
-    });
-    const hideSubscription = Keyboard.addListener("keyboardDidHide", () => {
-        setKeyboardVisible(false);
-    });
+        const showSubscription = Keyboard.addListener("keyboardDidShow", () => {
+            setKeyboardVisible(true);
+            // scroll to latest message when keyboard opens
+            setTimeout(() => {
+                scrollRef.current?.scrollToOffset({
+                    offset: 0,
+                    animated: true,
+                });
+            }, 100);
+        });
+        const hideSubscription = Keyboard.addListener("keyboardDidHide", () => {
+            setKeyboardVisible(false);
+        });
 
-    return () => {
-        showSubscription.remove();
-        hideSubscription.remove();
-    };
-}, []);
+        return () => {
+            showSubscription.remove();
+            hideSubscription.remove();
+        };
+    }, []);
 
     if (loading) {
         return (
@@ -542,12 +546,12 @@ export default function ChatScreen({ navigation, route }) {
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
                 keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
             >
-                 <LinearGradient
-                             colors={["#f8a812", "#fad081",  "#f8f6f265"]}
-                             start={{ x: 0, y: 0 }}
-                             end={{ x: 0, y: 1 }}
-                             style={{height: 220, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0}}
-                        />
+                <LinearGradient
+                    colors={["#f8a812", "#fad081", "#f8f6f265"]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 0, y: 1 }}
+                    style={{ height: 220, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0 }}
+                />
                 <View style={styles.header}>
                     <TouchableOpacity onPress={() => navigation.goBack()}>
                         <Ionicons name="arrow-back" size={26} style={{ padding: 5, color: colors.text }} />
@@ -603,10 +607,10 @@ export default function ChatScreen({ navigation, route }) {
                     keyboardShouldPersistTaps="handled"
                     keyboardDismissMode="interactive"
                     onContentSizeChange={() => {
-                     scrollRef.current?.scrollToOffset({
-                     offset: 0,
-                     animated: false,
-                      });
+                        scrollRef.current?.scrollToOffset({
+                            offset: 0,
+                            animated: false,
+                        });
                     }}
                     renderItem={({ item: message }) => {
                         const isMine = String(message.senderId) === String(currentUserId);
@@ -641,8 +645,8 @@ export default function ChatScreen({ navigation, route }) {
                                 ) : (
                                     <>
                                         <Text style={{
-                                            color: isMine ? "#ffffff" : "#111111", fontFamily: "Medium",
-                                            fontSize: 12, lineHeight: Math.round(12 * 1.5)
+                                            color: isMine ? "#ffffff" : "#111111",
+                                            ...textPresets.label,
                                         }}>
                                             {message.text || "Attachment"}
                                         </Text>
@@ -718,26 +722,19 @@ const styles = StyleSheet.create({
         gap: 10,
     },
     headerTitle: {
-        fontSize: 20,
-        fontFamily: "SemiBold",
-        lineHeight: Math.round(20 * 1.5),
+        ...textPresets.title
     },
-
     presenceText: {
         color: "#4d4d4d",
-        fontSize: 12,
+        ...textPresets.label,
         marginTop: 2,
-        fontFamily: "Medium",
-        lineHeight: Math.round(12 * 1.5),
     },
-
     menuOverlay: {
         flex: 1,
     },
-
     menuDropdown: {
         position: "absolute",
-        top: 42,
+        top: 55,
         right: 0,
         backgroundColor: "#fff",
         paddingVertical: 6,
@@ -748,7 +745,6 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.2,
         shadowRadius: 6,
     },
-
     menuItem: {
         flexDirection: "row",
         alignItems: "center",
@@ -758,18 +754,14 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: "#f0f0f0",
     },
-
     menuItemLast: {
         borderBottomWidth: 0,
     },
-
     menuItemText: {
-        fontSize: 14,
-        fontFamily: "Medium",
         lineHeight: Math.round(14 * 1.5),
         color: "#333",
+        ...textPresets.body
     },
-
     systemMsg: {
         backgroundColor: "#ddd",
         padding: 8,
@@ -777,7 +769,6 @@ const styles = StyleSheet.create({
         alignSelf: "center",
         marginBottom: 12
     },
-
     leftBubble: {
         backgroundColor: "#f5b849",
         padding: 10,
@@ -786,7 +777,6 @@ const styles = StyleSheet.create({
         marginVertical: 4,
         maxWidth: "80%",
     },
-
     rightBubble: {
         backgroundColor: "#0c6b4f",
         padding: 10,
@@ -795,26 +785,20 @@ const styles = StyleSheet.create({
         marginTop: 8,
         maxWidth: "80%",
     },
-
     msgTime: {
         marginTop: 4,
-        fontSize: 11,
         textAlign: "right",
-        fontFamily: "Medium",
-        lineHeight: Math.round(11 * 1.5),
+        ...textPresets.caption
     },
-
     attachmentsWrap: {
         marginTop: 8,
     },
-
     attachmentImage: {
         width: 180,
         height: 180,
         borderRadius: 10,
         backgroundColor: "#cfcfcf",
     },
-
     sharedAdCard: {
         marginTop: 8,
         borderWidth: 1,
@@ -822,7 +806,6 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         padding: 8,
     },
-
     sharedAdImage: {
         width: 160,
         height: 110,
@@ -830,13 +813,9 @@ const styles = StyleSheet.create({
         marginBottom: 6,
         backgroundColor: "#d4d4d4",
     },
-
     sharedAdTitle: {
-        fontSize: 13,
-        fontFamily: "Medium",
-        lineHeight: Math.round(13 * 1.5),
+        ...textPresets.label
     },
-
     adRefCard: {
         borderWidth: 1,
         borderColor: "rgba(255,255,255,0.25)",
@@ -844,7 +823,6 @@ const styles = StyleSheet.create({
         padding: 6,
         backgroundColor: "rgba(0,0,0,0.06)",
     },
-
     adRefImage: {
         width: "100%",
         height: 120,
@@ -852,20 +830,14 @@ const styles = StyleSheet.create({
         marginBottom: 6,
         backgroundColor: "#d4d4d4",
     },
-
     adRefTitle: {
-        fontSize: 14,
-        fontFamily: "SemiBold",
         lineHeight: Math.round(14 * 1.5),
+        ...textPresets.body
     },
-
     adRefHint: {
-        fontSize: 11,
         marginTop: 4,
-        fontFamily: "Medium",
-        lineHeight: Math.round(11 * 1.5),
+        ...textPresets.label
     },
-
     inputRow: {
         flexDirection: "row",
         alignItems: "center",

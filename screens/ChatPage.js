@@ -18,6 +18,7 @@ import ChojaBottom from "../components/ChojaBottom";
 import { MaterialIcons, Ionicons, Entypo } from "@expo/vector-icons";
 import { connectChatSocket, listConversations, getAuthContext } from "../services/chatService";
 import { LinearGradient } from "expo-linear-gradient";
+import { textPresets } from "../theme/typography";
 
 export default function ChatPage({ navigation, route }) {
     const { colors } = useContext(ThemeContext);
@@ -43,7 +44,7 @@ export default function ChatPage({ navigation, route }) {
             const auth = await getAuthContext();
             const userId = auth?.userId || "";
             if (userId) setCurrentUserId(userId);
-            
+
             const talkedUsersOnly = conversationList;
 
             // Sort pinned conversations to the top
@@ -114,16 +115,16 @@ export default function ChatPage({ navigation, route }) {
         }, [loadConversations]),
     );
 
-const AVATAR_COLORS = ["#157a4f", "#e8b923", "#e8743b", "#c0392b", "#2c6fbb", "#7c4dbd", "#16a0a0"];
+    const AVATAR_COLORS = ["#157a4f", "#e8b923", "#e8743b", "#c0392b", "#2c6fbb", "#7c4dbd", "#16a0a0"];
 
-const getAvatarColor = (seed) => {
-    const str = String(seed || "?");
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-        hash = str.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
-};
+    const getAvatarColor = (seed) => {
+        const str = String(seed || "?");
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            hash = str.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+    };
 
     const openConversation = (conversation) => {
         const pendingShare = shareAd;
@@ -225,13 +226,13 @@ const getAvatarColor = (seed) => {
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-              <LinearGradient
-                    colors={["#f8a812", "#fad081", "#f8f6f265"]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 0, y: 1 }}
-                    style={{height: 220, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0}}
-                />
-                                <Topbar />
+            <LinearGradient
+                colors={["#f8a812", "#fad081", "#f8f6f265"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 1 }}
+                style={{ height: 220, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0 }}
+            />
+            <Topbar />
 
             <View style={styles.row1}>
                 <TouchableOpacity onPress={() => navigation.navigate("ChojaHome")}>
@@ -245,7 +246,7 @@ const getAvatarColor = (seed) => {
                     </View>
 
                 </TouchableOpacity>
-                <Text style={{ fontSize: 20, color: colors.text, fontFamily: "SemiBold", lineHeight: Math.round(20 * 1.2) }}>Chats</Text>
+                <Text style={{ ...textPresets.title }}>Chats</Text>
             </View>
 
             {shareAd && (
@@ -256,7 +257,7 @@ const getAvatarColor = (seed) => {
                 </View>
             )}
 
-            <View style={{ flexDirection: "row", backgroundColor: colors.divider, height: 1, marginVertical:6 }} />
+            <View style={{ flexDirection: "row", backgroundColor: colors.divider, height: 1, marginVertical: 6 }} />
 
             {renderConversationList()}
 
@@ -283,15 +284,12 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
     },
     emptyText: {
-        fontSize: 18,
-        fontFamily: "SemiBold",
-        lineHeight: Math.round(18 * 1.5),
+        ...textPresets.body
     },
     emptySubText: {
         marginTop: 4,
-        fontSize: 14,
         opacity: 0.8,
-        fontFamily: "Medium",
+        ...textPresets.body,
         lineHeight: Math.round(14 * 1.5),
     },
     chatCard: {
@@ -311,9 +309,7 @@ const styles = StyleSheet.create({
     },
     shareHintText: {
         color: "#1e1e1e",
-        fontFamily: "Medium",
-        fontSize: 13,
-        lineHeight: Math.round(13 * 1.5),
+        ...textPresets.label,
     },
     avatar: {
         width: 50,
@@ -327,27 +323,19 @@ const styles = StyleSheet.create({
     },
     avatarInitial: {
         color: "#fff",
-        fontSize: 20,
-        fontFamily: "Medium",
-        lineHeight:Math.round(20*1.5)
+        ...textPresets.subtitle
     },
     name: {
-        fontSize: 16,
-        fontFamily: "SemiBold",
-        color: "#111",
-        lineHeight: Math.round(16 * 1.2)
+        ...textPresets.body,
+        lineHeight: Math.round(14 * 1.5)
     },
     message: {
-        fontSize: 13,
+        ...textPresets.label,
         color: "#777",
-        lineHeight: Math.round(13 * 1.5),
         marginTop: 2,
-        fontFamily: "Medium",
     },
     time: {
-        fontSize: 12,
         color: "#999",
-        lineHeight: Math.round(12 * 1.5),
-        fontFamily: "Medium",
+        ...textPresets.label
     },
 })

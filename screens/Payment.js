@@ -6,6 +6,7 @@ import { MaterialCommunityIcons, MaterialIcons, Feather } from "@expo/vector-ico
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { BASE_URL } from "../config";
+import { textPresets } from "../theme/typography";
 
 const CATEGORY_DTO_FIELD_BY_LABEL = {
     Vehicle: "vehicleData",
@@ -311,6 +312,64 @@ export default function Payment({ navigation, route }) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [flaggedModalVisible, setFlaggedModalVisible] = useState(false);
 
+    const [restrictionModalVisible, setRestrictionModalVisible] = useState(false);
+    const [restrictionUntil, setRestrictionUntil] = useState(null);
+    const [countdownText, setCountdownText] = useState("");
+
+    useEffect(() => {
+        const checkRestrictionStatus = async () => {
+            try {
+                const customerId = await AsyncStorage.getItem("customerId") || "default";
+                const restrictionKey = `golo_restricted_until:${customerId}`;
+                const flaggedKey = `golo_images_flagged:${customerId}`;
+                const untilStr = await AsyncStorage.getItem(restrictionKey);
+                if (untilStr) {
+                    const untilDate = new Date(untilStr);
+                    if (untilDate > new Date()) {
+                        setRestrictionUntil(untilDate);
+                        setRestrictionModalVisible(true);
+                    } else {
+                        await AsyncStorage.removeItem(restrictionKey);
+                        await AsyncStorage.removeItem(flaggedKey);
+                        setRestrictionUntil(null);
+                    }
+                }
+            } catch (e) {
+                console.warn(e);
+            }
+        };
+        checkRestrictionStatus();
+    }, []);
+
+    useEffect(() => {
+        if (!restrictionUntil) {
+            setCountdownText("");
+            return;
+        }
+        const updateTimer = async () => {
+            const now = new Date();
+            const diffMs = restrictionUntil - now;
+            if (diffMs <= 0) {
+                setRestrictionUntil(null);
+                setCountdownText("");
+                setRestrictionModalVisible(false);
+                try {
+                    const customerId = await AsyncStorage.getItem("customerId") || "default";
+                    await AsyncStorage.removeItem(`golo_restricted_until:${customerId}`);
+                    await AsyncStorage.removeItem(`golo_images_flagged:${customerId}`);
+                } catch (e) { }
+                return;
+            }
+            const hrs = String(Math.floor(diffMs / 3600000)).padStart(2, "0");
+            const mins = String(Math.floor((diffMs % 3600000) / 60000)).padStart(2, "0");
+            const secs = String(Math.floor((diffMs % 60000) / 1000)).padStart(2, "0");
+            setCountdownText(`${hrs}:${mins}:${secs}`);
+        };
+        updateTimer();
+        const interval = setInterval(updateTimer, 1000);
+        return () => clearInterval(interval);
+    }, [restrictionUntil]);
+
     const normalizeDateInput = (value) => {
         if (!value) return null;
         const parsed = new Date(value);
@@ -377,8 +436,13 @@ export default function Payment({ navigation, route }) {
     const total = subtotal + gst;
 
     const handlePaymentAndSubmit = async () => {
+        const userId = await AsyncStorage.getItem("customerId") || "default";
+        if (restrictionUntil && restrictionUntil > new Date()) {
+            setRestrictionModalVisible(true);
+            return;
+        }
         try {
-            const storedFlag = await AsyncStorage.getItem("golo_images_flagged");
+            const storedFlag = await AsyncStorage.getItem(`golo_images_flagged:${userId}`);
             if (storedFlag === "true") {
                 setFlaggedModalVisible(true);
                 return;
@@ -386,7 +450,6 @@ export default function Payment({ navigation, route }) {
 
             setIsSubmitting(true);
             const token = await AsyncStorage.getItem("customerToken");
-            const userId = await AsyncStorage.getItem("customerId");
 
             if (!token) {
                 Alert.alert("Error", "You must be logged in to post an ad.");
@@ -479,6 +542,21 @@ export default function Payment({ navigation, route }) {
             }
 
             const responseMessage = getErrorMessageFromResponse(data) || rawResponseText.trim();
+
+            const isRestricted = response.status === 403
+                || data?.code === "CONTENT_UPLOAD_RESTRICTED"
+                || responseMessage.toLowerCase().includes("temporarily restricted")
+                || responseMessage.toLowerCase().includes("upload restriction");
+            if (isRestricted) {
+                const until = data?.restrictedUntil || new Date(Date.now() + 2 * 3600000).toISOString();
+                try {
+                    await AsyncStorage.setItem(`golo_restricted_until:${userId}`, until);
+                } catch (error) { }
+                setRestrictionUntil(new Date(until));
+                setRestrictionModalVisible(true);
+                return;
+            }
+
             const moderationDetected = isModerationFailureResponse(data)
                 || isModerationFailureResponse(responseMessage)
                 || (response.status === 400 && responseMessage.toLowerCase().includes("image"))
@@ -488,7 +566,7 @@ export default function Payment({ navigation, route }) {
 
             if (moderationDetected) {
                 try {
-                    await AsyncStorage.setItem("golo_images_flagged", "true");
+                    await AsyncStorage.setItem(`golo_images_flagged:${userId}`, "true");
                 } catch (storageError) {
                     // Ignore storage issues for the moderation flow.
                 }
@@ -503,7 +581,7 @@ export default function Payment({ navigation, route }) {
 
             if (data.success) {
                 try {
-                    await AsyncStorage.removeItem("golo_images_flagged");
+                    await AsyncStorage.removeItem(`golo_images_flagged:${userId}`);
                 } catch (storageError) {
                     // Ignore storage issues for the moderation flow.
                 }
@@ -524,7 +602,7 @@ export default function Payment({ navigation, route }) {
 
             if (moderationDetected) {
                 try {
-                    await AsyncStorage.setItem("golo_images_flagged", "true");
+                    await AsyncStorage.setItem(`golo_images_flagged:${userId}`, "true");
                 } catch (storageError) {
                     // Ignore storage issues for the moderation flow.
                 }
@@ -551,18 +629,18 @@ export default function Payment({ navigation, route }) {
                         <TouchableOpacity onPress={() => navigation.goBack()}>
                             <MaterialIcons
                                 name="arrow-back-ios"
-                                size={26} style={{ paddingHorizontal: 10 }} />
+                                size={22} style={{ paddingHorizontal: 10 }} />
                         </TouchableOpacity>
-                        <Text style={{ fontSize: 22, fontFamily: "Medium", lineHeight: Math.round(22 * 1.4) }}>
+                        <Text style={{ ...textPresets.title }}>
                             Smart Jahirati
                         </Text>
                     </View>
 
-                    <Text style={{ fontSize: 16, marginLeft: 48, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) }}>
+                    <Text style={{ ...textPresets.body, lineHeight: Math.round(14 * 1.5), marginLeft: 56 }}>
                         Post Your Ads Instantly Online
                     </Text>
 
-                    <Text style={{ marginTop: 20, marginLeft: 20, fontSize: 20, fontFamily: "Medium", lineHeight: Math.round(20 * 1.5) }}>
+                    <Text style={{ marginTop: 20, marginLeft: 20, ...textPresets.subtitle }}>
                         Payment</Text>
 
                     <View style={{ paddingHorizontal: 16, backgroundColor: "#f1efef", marginHorizontal: 20, borderRadius: 12, paddingVertical: 12, marginTop: 10 }}>
@@ -582,7 +660,7 @@ export default function Payment({ navigation, route }) {
                                             marginBottom: 6,
                                         }}
                                     >
-                                        <Text style={{ fontSize: 15, color: "#ffffff", fontSize: 12, fontFamily: "Medium" }}>{loc}</Text>
+                                        <Text style={{ color: "#ffffff", ...textPresets.label }}>{loc}</Text>
                                     </View>
                                 ))
                             ) : (
@@ -608,7 +686,7 @@ export default function Payment({ navigation, route }) {
 
                             <View style={{ flexDirection: "row", alignItems: "center" }}>
                                 <MaterialCommunityIcons name="lightning-bolt" size={24} color="#219227" />
-                                <Text style={[styles.label, { marginTop: 0, fontSize: 15, width: "100%" }]}>Featured Ad</Text>
+                                <Text style={[styles.label, { marginTop: 0, width: "100%", ...textPresets.body, lineHeight: Math.round(14 * 1.5) }]}>Featured Ad</Text>
                             </View>
 
                             <TouchableOpacity
@@ -629,7 +707,7 @@ export default function Payment({ navigation, route }) {
                         <View style={styles.card}>
 
                             <View>
-                                <Text style={[styles.label, { fontSize: 20 }]}>Bill</Text>
+                                <Text style={styles.label}>Bill</Text>
                             </View>
 
                             {/* 1. Standard Listing Fee */}
@@ -675,8 +753,8 @@ export default function Payment({ navigation, route }) {
                             </View>
 
                             <View style={[styles.totalRow, { marginTop: 8 }]}>
-                                <Text style={[styles.totalText, { fontSize: 20, marginTop: 16 }]}>Total:</Text>
-                                <Text style={[styles.totalText, { fontSize: 20, marginTop: 16 }]}>
+                                <Text style={[styles.totalText, { ...textPresets.subtitle, marginTop: 16 }]}>Total:</Text>
+                                <Text style={[styles.totalText, { ...textPresets.subtitle, marginTop: 16 }]}>
                                     ₹{total.toFixed(0)}
                                 </Text>
                             </View>
@@ -697,6 +775,82 @@ export default function Payment({ navigation, route }) {
                     </View>
 
                 </ScrollView>
+
+                {/* Moderation restriction countdown modal */}
+                <Modal
+                    visible={restrictionModalVisible}
+                    transparent
+                    animationType="fade"
+                    onRequestClose={() => { }}
+                    statusBarTranslucent
+                >
+                    <View style={styles.flaggedOverlay}>
+                        <View style={styles.flaggedCard}>
+                            {/* Header row: warning icon + title + close */}
+                            <View style={styles.flaggedHeaderRow}>
+                                <View style={styles.flaggedHeaderTextWrap}>
+                                    <View style={styles.flaggedHeaderIconCircle}>
+                                        <Feather name="clock" size={14} color="#d92d20" />
+                                    </View>
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={styles.flaggedHeaderTitle}>Uploading Restricted</Text>
+                                        <Text style={styles.flaggedHeaderSubtitle}>
+                                            Temporary block due to multiple policy violations.
+                                        </Text>
+                                    </View>
+                                </View>
+                                <TouchableOpacity
+                                    onPress={() => setRestrictionModalVisible(false)}
+                                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                >
+                                    <Feather name="x" size={20} color="#8a8a8a" />
+                                </TouchableOpacity>
+                            </View>
+
+                            {/* Centered big clock icon */}
+                            <View style={styles.flaggedIconWrap}>
+                                <View style={styles.flaggedIconCircle}>
+                                    <Feather name="lock" size={30} color="#d92d20" />
+                                </View>
+                            </View>
+
+                            <Text style={styles.flaggedTitle}>Upload Limit Exceeded</Text>
+                            <Text style={styles.flaggedDescription}>
+                                You have been temporarily restricted from uploading content due to multiple inappropriate image submissions. Please wait for the timer to expire.
+                            </Text>
+
+                            {/* Live Countdown Timer UI */}
+                            <View style={{
+                                backgroundColor: "#fef3f2",
+                                borderColor: "#fda29b",
+                                borderWidth: 1,
+                                paddingVertical: 14,
+                                paddingHorizontal: 24,
+                                borderRadius: 12,
+                                alignItems: "center",
+                                justifyContent: "center",
+                                marginVertical: 16,
+                            }}>
+                                <Text style={{
+                                    letterSpacing: 2,
+                                    color: "#d92d20",
+                                    ...textPresets.body,
+                                    lineHeight: Math.round(14 * 1.5)
+                                }}>
+                                    {countdownText || "00:00:00"}
+                                </Text>
+                            </View>
+
+                            <TouchableOpacity
+                                style={[styles.flaggedButton, { backgroundColor: "#d92d20" }]}
+                                onPress={() => setRestrictionModalVisible(false)}
+                                activeOpacity={0.85}
+                            >
+                                <Text style={styles.flaggedButtonText}>I Understand, Go Back</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </Modal>
 
                 <Modal
                     visible={flaggedModalVisible}
@@ -784,17 +938,15 @@ const styles = StyleSheet.create({
         justifyContent: "space-between",
     },
     value: {
-        fontSize: 16,
-        fontFamily: "Medium",
-        lineHeight: Math.round(16 * 1.5),
+        ...textPresets.body,
+        lineHeight: Math.round(14 * 1.5),
         flex: 1,                    // ⬅️ allow wrapping
         textAlign: "right",         // optional: keep it neat
         marginLeft: 10,
     },
     label: {
-        fontSize: 16,
-        fontFamily: "Medium",
-        lineHeight: Math.round(16 * 1.5),
+        ...textPresets.body,
+        lineHeight: Math.round(14 * 1.5),
         maxWidth: "50%",            // ⬅️ prevents label from stealing space
     },
     divider: {
@@ -808,8 +960,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
     },
     totalText: {
-        fontSize: 14,
-        fontFamily: "Medium",
+        ...textPresets.body,
         lineHeight: Math.round(14 * 1.5),
     },
     payButton: {
@@ -824,10 +975,8 @@ const styles = StyleSheet.create({
     },
     payText: {
         color: "#fff",
-        fontSize: 17.2,
-        fontFamily: "Medium",
-        lineHeight: Math.round(17.2 * 1.2),
         marginRight: 6,
+        ...textPresets.subtitle
     },
     checkbox: {
         width: 24,
@@ -886,13 +1035,12 @@ const styles = StyleSheet.create({
         marginTop: 1,
     },
     flaggedHeaderTitle: {
-        fontSize: 18,
-        fontFamily: "Bold",
         color: "#1a1a1a",
+        ...textPresets.body,
+        lineHeight: Math.round(14 * 1.5)
     },
     flaggedHeaderSubtitle: {
-        fontSize: 12,
-        fontFamily: "Medium",
+        ...textPresets.caption,
         color: "#8a8a8a",
         marginTop: 3,
     },
@@ -910,15 +1058,13 @@ const styles = StyleSheet.create({
         justifyContent: "center",
     },
     flaggedTitle: {
-        fontSize: 20,
-        fontFamily: "Bold",
         color: "#1a1a1a",
         textAlign: "center",
         marginBottom: 8,
+        ...textPresets.subtitle
     },
     flaggedDescription: {
-        fontSize: 14,
-        fontFamily: "Medium",
+        ...textPresets.label,
         color: "#6b6b6b",
         textAlign: "center",
         marginBottom: 20,
@@ -931,8 +1077,7 @@ const styles = StyleSheet.create({
     },
     flaggedButtonText: {
         color: "#fff",
-        fontSize: 15,
-        fontFamily: "Medium",
-        lineHeight: Math.round(15 * 1.4),
+        lineHeight: Math.round(14 * 1.4),
+        ...textPresets.body,
     },
 });

@@ -2,6 +2,7 @@ import React, { useContext } from "react";
 import { View, Text, TextInput, StyleSheet, ConditionButton, TouchableOpacity } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import { textPresets } from "../theme/typography";
 
 export default function Pets({ formData, setFormData, category, onPrevious, template, price, selectedDays, selectedLocations, selectedDates, startDate, endDate, isEditMode }) {
     if (category?.id !== "pets") return null;
@@ -53,11 +54,10 @@ export default function Pets({ formData, setFormData, category, onPrevious, temp
                     <AntDesign name="arrow-left" size={18} color="#ffffff" />
                     <Text
                         style={{
-                            fontFamily: "Medium",
-                            fontSize: 16,
+                            ...textPresets.body,
                             marginLeft: 6,
                             color: "#ffffff",
-                            lineHeight: Math.round(16 * 1.5),
+                            lineHeight: Math.round(14 * 1.5),
                         }}
                     >
                         Previous
@@ -116,7 +116,7 @@ export default function Pets({ formData, setFormData, category, onPrevious, temp
                 <Text style={styles.label}>Temperament (multiple)</Text>
                 <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
                     <View style={{ flexDirection: "row", alignItems: "center", marginTop: 20, gap: 67 }}>
-                        <Text style={[styles.label, { marginTop: 0, fontSize: 14 }]}>Friendly</Text>
+                        <Text style={[styles.label, { marginTop: 0 }]}>Friendly</Text>
                         <TouchableOpacity
                             style={styles.checkbox}
                             onPress={() =>
@@ -128,7 +128,7 @@ export default function Pets({ formData, setFormData, category, onPrevious, temp
                     </View>
 
                     <View style={{ flexDirection: "row", alignItems: "center", marginTop: 20, gap: 40 }}>
-                        <Text style={[styles.label, { marginTop: 0, fontSize: 14 }]}>Quiet</Text>
+                        <Text style={[styles.label, { marginTop: 0 }]}>Quiet</Text>
                         <TouchableOpacity
                             style={styles.checkbox}
                             onPress={() =>
@@ -142,7 +142,7 @@ export default function Pets({ formData, setFormData, category, onPrevious, temp
 
                 <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
                     <View style={{ flexDirection: "row", alignItems: "center", marginTop: 20, gap: 78 }}>
-                        <Text style={[styles.label, { marginTop: 0, fontSize: 14 }]}>Active</Text>
+                        <Text style={[styles.label, { marginTop: 0 }]}>Active</Text>
                         <TouchableOpacity
                             style={styles.checkbox}
                             onPress={() =>
@@ -154,7 +154,7 @@ export default function Pets({ formData, setFormData, category, onPrevious, temp
                     </View>
 
                     <View style={{ flexDirection: "row", alignItems: "center", marginTop: 20, gap: 40 }}>
-                        <Text style={[styles.label, { marginTop: 0, fontSize: 14 }]}>Protective</Text>
+                        <Text style={[styles.label, { marginTop: 0 }]}>Protective</Text>
                         <TouchableOpacity
                             style={styles.checkbox}
                             onPress={() =>
@@ -166,8 +166,8 @@ export default function Pets({ formData, setFormData, category, onPrevious, temp
                     </View>
                 </View>
 
-                <View style={{ flexDirection: "row", alignItems: "center", marginTop: 20, gap: 40 }}>
-                    <Text style={[styles.label, { marginTop: 0, fontSize: 14 }]}>Kid-Friendly</Text>
+                <View style={{ flexDirection: "row", alignItems: "center", marginTop: 20, gap: 35 }}>
+                    <Text style={[styles.label, { marginTop: 0 }]}>Kid-Friendly</Text>
                     <TouchableOpacity
                         style={styles.checkbox}
                         onPress={() =>
@@ -197,7 +197,7 @@ export default function Pets({ formData, setFormData, category, onPrevious, temp
 
             {!isEditMode && (
                 <TouchableOpacity style={styles.nextBtn} onPress={() => { navigation.navigate("CalendarScreen", { category, template, formData, price }); }}>
-                    <Text style={styles.nextText}>See Preview</Text>
+                    <Text style={styles.nextText}>Next</Text>
                 </TouchableOpacity>
             )}
         </View>
@@ -206,27 +206,14 @@ export default function Pets({ formData, setFormData, category, onPrevious, temp
 
 const styles = StyleSheet.create({
 
-    composeTitle: { fontSize: 18, fontFamily: "Medium", lineHeight: Math.round(18 * 1.5) },
+    composeTitle: { ...textPresets.subtitle },
     formCard: { backgroundColor: "#fff", paddingHorizontal: 16, borderRadius: 10, paddingBottom: 18 },
-    label: { fontSize: 16, marginTop: 16, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
-    value: { fontSize: 16, color: "#555", fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
-    input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10, marginTop: 6, fontSize: 14, fontFamily: "Medium" },
+    label: { ...textPresets.body, marginTop: 16, lineHeight: Math.round(14 * 1.5) },
+    value: { ...textPresets.body, color: "#555", lineHeight: Math.round(14 * 1.5) },
+    input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10, marginTop: 6, ...textPresets.body },
     textArea: { height: 80, textAlignVertical: "top" },
     switchRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 12 },
 
-    uploadBox: {
-        borderWidth: 1,
-        borderStyle: "dashed",
-        borderColor: "#aaa",
-        borderRadius: 10,
-        padding: 16,
-        alignItems: "center",
-        marginTop: 8,
-    },
-    uploadText: { marginTop: 6, color: "#555", fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
-    orText: { marginVertical: 6, color: "#999", fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
-    cameraBtn: { backgroundColor: "#157a4f", paddingVertical: 8, paddingHorizontal: 18, borderRadius: 8 },
-    cameraText: { color: "#fff", fontFamily: "Medium", lineHeight: Math.round(14 * 1.5) },
     descriptionInput: {
         borderWidth: 1,
         borderColor: "#ccc",
@@ -234,9 +221,8 @@ const styles = StyleSheet.create({
         padding: 12,
         minHeight: 100,      // Increased height
         maxHeight: 100,      // Keeps the box fixed after this height
-        fontSize: 14,
         textAlignVertical: "top",
-        fontFamily: "Medium"
+        ...textPresets.body
     },
     nextBtn: {
         flexDirection: "row",
@@ -247,7 +233,7 @@ const styles = StyleSheet.create({
         marginVertical: 20,
         justifyContent: "center"
     },
-    nextText: { color: "#fff", fontSize: 16, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
+    nextText: { color: "#fff", ...textPresets.body, lineHeight: Math.round(14 * 1.5) },
 
     segmentRow: {
         flexDirection: "row",
@@ -265,10 +251,9 @@ const styles = StyleSheet.create({
         borderColor: "#bd8e38",
     },
     segmentText: {
-        fontSize: 15,
-        fontFamily: "Medium",
+        ...textPresets.body,
         color: "#444",
-        lineHeight: Math.round(15 * 1.5),
+        lineHeight: Math.round(14 * 1.5),
     },
     segmentTextSelected: {
         color: "#fff",

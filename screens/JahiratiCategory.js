@@ -9,7 +9,7 @@ import {
 } from "@expo/vector-icons";
 import { Dimensions } from "react-native";
 const { width, height } = Dimensions.get("window");
-import ChojaBottom from "../components/ChojaBottom";
+import { textPresets } from "../theme/typography";
 
 export default function JahiratiCategory({ navigation }) {
     const [selectedCategory, setSelectedCategory] = useState(null);
@@ -28,18 +28,18 @@ export default function JahiratiCategory({ navigation }) {
                     <TouchableOpacity onPress={() => navigation.goBack()}>
                         <MaterialIcons
                             name="arrow-back-ios"
-                            size={26} style={{ paddingHorizontal: 10 }} />
+                            size={22} style={{ paddingHorizontal: 10 }} />
                     </TouchableOpacity>
-                    <Text style={{ fontSize: 22, fontFamily: "Medium", lineHeight: Math.round(22 * 1.5) }}>
+                    <Text style={{ ...textPresets.title }}>
                         Smart Jahirati
                     </Text>
                 </View>
 
-                <Text style={{ fontSize: width * 0.04, marginLeft: 48, fontFamily: "Medium", lineHeight: Math.round(width * 0.04 * 1.5) }}>
+                <Text style={{ marginLeft: 56, ...textPresets.body, lineHeight: Math.round(14 * 1.5) }}>
                     Post Your Ads Instantly Online
                 </Text>
 
-                <Text style={{ marginTop: 10, marginLeft: 10, fontSize: width * 0.04, fontFamily: "Italic", lineHeight: Math.round(width * 0.04 * 1.5) }}>
+                <Text style={{ marginTop: 10, marginLeft: 10, ...textPresets.body }}>
                     Select Ad Categories</Text>
 
                 {/*Row : 1*/}
@@ -218,13 +218,13 @@ export default function JahiratiCategory({ navigation }) {
                         navigation.navigate("Template", { category: selectedCategory });
                     }}
                 >
-                    <Text style={{ color: "#ffffff", fontSize: 18, fontFamily: "Medium", lineHeight: Math.round(18 * 1.2) }}>
+                    <Text style={{ color: "#ffffff", ...textPresets.subtitle }}>
                         Next
                     </Text>
                 </TouchableOpacity>
 
             </LinearGradient>
-        </SafeAreaView>
+        </SafeAreaView >
     );
 }
 
@@ -249,9 +249,7 @@ const styles = StyleSheet.create({
         justifyContent: "center"
     },
     text: {
-        fontSize: 11,
-        fontFamily: "Medium",
-        lineHeight: Math.round(11 * 1.5),
+        ...textPresets.caption,
     },
     selectedComponent: {
         borderWidth: 1.5,

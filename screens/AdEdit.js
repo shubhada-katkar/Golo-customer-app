@@ -20,6 +20,7 @@ import { ThemeContext } from "../theme/ThemeContext";
 import Topbar from "../components/Topbar";
 import ChojaBottom from "../components/ChojaBottom";
 import { BASE_URL } from "../config";
+import { textPresets } from "../theme/typography";
 
 // Category-specific form components
 import AstrologyForm from "../components/Astrology";
@@ -170,6 +171,10 @@ export default function AdEdit({ route, navigation }) {
   const [formData, setFormData] = useState({});
   const [flaggedModalVisible, setFlaggedModalVisible] = useState(false);
 
+  const [restrictionModalVisible, setRestrictionModalVisible] = useState(false);
+  const [restrictionUntil, setRestrictionUntil] = useState(null);
+  const [countdownText, setCountdownText] = useState("");
+
   const colors = useContext(ThemeContext);
 
   const templateNumber = useMemo(() => {
@@ -186,6 +191,60 @@ export default function AdEdit({ route, navigation }) {
     const id = CATEGORY_ID_MAP[label] || label.toLowerCase();
     return { id, label };
   }, [ad?.category]);
+
+  useEffect(() => {
+    const checkRestrictionStatus = async () => {
+      try {
+        const customerId = await AsyncStorage.getItem("customerId") || "default";
+        const restrictionKey = `golo_restricted_until:${customerId}`;
+        const flaggedKey = `golo_images_flagged:${customerId}`;
+        const untilStr = await AsyncStorage.getItem(restrictionKey);
+        if (untilStr) {
+          const untilDate = new Date(untilStr);
+          if (untilDate > new Date()) {
+            setRestrictionUntil(untilDate);
+            setRestrictionModalVisible(true);
+          } else {
+            await AsyncStorage.removeItem(restrictionKey);
+            await AsyncStorage.removeItem(flaggedKey);
+            setRestrictionUntil(null);
+          }
+        }
+      } catch (e) {
+        console.warn(e);
+      }
+    };
+    checkRestrictionStatus();
+  }, []);
+
+  useEffect(() => {
+    if (!restrictionUntil) {
+      setCountdownText("");
+      return;
+    }
+    const updateTimer = async () => {
+      const now = new Date();
+      const diffMs = restrictionUntil - now;
+      if (diffMs <= 0) {
+        setRestrictionUntil(null);
+        setCountdownText("");
+        setRestrictionModalVisible(false);
+        try {
+          const customerId = await AsyncStorage.getItem("customerId") || "default";
+          await AsyncStorage.removeItem(`golo_restricted_until:${customerId}`);
+          await AsyncStorage.removeItem(`golo_images_flagged:${customerId}`);
+        } catch (e) { }
+        return;
+      }
+      const hrs = String(Math.floor(diffMs / 3600000)).padStart(2, "0");
+      const mins = String(Math.floor((diffMs % 3600000) / 60000)).padStart(2, "0");
+      const secs = String(Math.floor((diffMs % 60000) / 1000)).padStart(2, "0");
+      setCountdownText(`${hrs}:${mins}:${secs}`);
+    };
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, [restrictionUntil]);
 
   useEffect(() => {
     const fetchAd = async () => {
@@ -244,6 +303,10 @@ export default function AdEdit({ route, navigation }) {
   }, [adId]);
 
   const pickImages = async () => {
+    if (restrictionUntil && restrictionUntil > new Date()) {
+      setRestrictionModalVisible(true);
+      return;
+    }
     const permission =
       await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
@@ -299,6 +362,11 @@ export default function AdEdit({ route, navigation }) {
   };
 
   const handleSubmit = async () => {
+    const customerId = await AsyncStorage.getItem("customerId") || "default";
+    if (restrictionUntil && restrictionUntil > new Date()) {
+      setRestrictionModalVisible(true);
+      return;
+    }
     try {
       if (!formData.heading?.trim()) {
         Alert.alert("Validation", "Title is required");
@@ -330,7 +398,7 @@ export default function AdEdit({ route, navigation }) {
           } catch (uploadError) {
             const msg = uploadError?.message || "";
             if (isModerationFailureResponse(msg) || msg.toLowerCase().includes("image")) {
-              await AsyncStorage.setItem("golo_images_flagged", "true").catch(() => { });
+              await AsyncStorage.setItem(`golo_images_flagged:${customerId}`, "true").catch(() => { });
               setFlaggedModalVisible(true);
               setSaving(false);
               return;
@@ -398,13 +466,28 @@ export default function AdEdit({ route, navigation }) {
       try { data = JSON.parse(rawText); } catch { data = { message: rawText }; }
 
       const responseMsg = getErrorMessageFromResponse(data) || rawText.trim();
+
+      const isRestricted = response.status === 403
+        || data?.code === "CONTENT_UPLOAD_RESTRICTED"
+        || responseMsg.toLowerCase().includes("temporarily restricted")
+        || responseMsg.toLowerCase().includes("upload restriction");
+      if (isRestricted) {
+        const until = data?.restrictedUntil || new Date(Date.now() + 2 * 3600000).toISOString();
+        try {
+          await AsyncStorage.setItem(`golo_restricted_until:${customerId}`, until);
+        } catch (error) { }
+        setRestrictionUntil(new Date(until));
+        setRestrictionModalVisible(true);
+        return;
+      }
+
       const moderationDetected =
         isModerationFailureResponse(data) ||
         isModerationFailureResponse(responseMsg) ||
         (response.status === 400 && responseMsg.toLowerCase().includes("image"));
 
       if (moderationDetected) {
-        await AsyncStorage.setItem("golo_images_flagged", "true").catch(() => { });
+        await AsyncStorage.setItem(`golo_images_flagged:${customerId}`, "true").catch(() => { });
         setFlaggedModalVisible(true);
         return;
       }
@@ -414,7 +497,7 @@ export default function AdEdit({ route, navigation }) {
         return;
       }
 
-      await AsyncStorage.removeItem("golo_images_flagged").catch(() => { });
+      await AsyncStorage.removeItem(`golo_images_flagged:${customerId}`).catch(() => { });
       Alert.alert("Success", "Ad updated successfully", [
         { text: "OK", onPress: () => navigation.goBack() },
       ]);
@@ -563,6 +646,82 @@ export default function AdEdit({ route, navigation }) {
         </View>
       </ScrollView>
 
+      {/* Moderation restriction countdown modal */}
+      <Modal
+        visible={restrictionModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => { }}
+        statusBarTranslucent
+      >
+        <View style={styles.flaggedOverlay}>
+          <View style={styles.flaggedCard}>
+            {/* Header row: warning icon + title + close */}
+            <View style={styles.flaggedHeaderRow}>
+              <View style={styles.flaggedHeaderTextWrap}>
+                <View style={styles.flaggedHeaderIconCircle}>
+                  <Feather name="clock" size={14} color="#d92d20" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.flaggedHeaderTitle}>Uploading Restricted</Text>
+                  <Text style={styles.flaggedHeaderSubtitle}>
+                    Temporary block due to multiple policy violations.
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                onPress={() => setRestrictionModalVisible(false)}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Feather name="x" size={20} color="#8a8a8a" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Centered big clock icon */}
+            <View style={styles.flaggedIconWrap}>
+              <View style={styles.flaggedIconCircle}>
+                <Feather name="lock" size={30} color="#d92d20" />
+              </View>
+            </View>
+
+            <Text style={styles.flaggedTitle}>Upload Limit Exceeded</Text>
+            <Text style={styles.flaggedDescription}>
+              You have been temporarily restricted from uploading content due to multiple inappropriate image submissions. Please wait for the timer to expire.
+            </Text>
+
+            {/* Live Countdown Timer UI */}
+            <View style={{
+              backgroundColor: "#fef3f2",
+              borderColor: "#fda29b",
+              borderWidth: 1,
+              paddingVertical: 14,
+              paddingHorizontal: 24,
+              borderRadius: 12,
+              alignItems: "center",
+              justifyContent: "center",
+              marginVertical: 16,
+            }}>
+              <Text style={{
+                letterSpacing: 2,
+                color: "#d92d20",
+                lineHeight: Math.round(14 * 1.5),
+                ...textPresets.body
+              }}>
+                {countdownText || "00:00:00"}
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              style={[styles.flaggedButton, { backgroundColor: "#d92d20" }]}
+              onPress={() => setRestrictionModalVisible(false)}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.flaggedButtonText}>I Understand, Go Back</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
       {/* ── Image Moderation Modal (from Payment.js) ── */}
       <Modal
         visible={flaggedModalVisible}
@@ -637,21 +796,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
   },
   headerTitle: {
-    fontSize: 20,
-    fontFamily: "Medium",
-    lineHeight: Math.round(22 * 1.0),
     flex: 1,
-    textAlign: "center",
+    ...textPresets.title
   },
-  content: { paddingHorizontal: 14, paddingBottom: 110 },
-
+  content: { paddingHorizontal: 14, paddingBottom: 100 },
   // Image section
   imageSection: { marginTop: 10, marginBottom: 8 },
   sectionTitle: {
-    fontSize: 16,
     color: "#111",
     marginBottom: 10,
-    fontFamily: "Medium",
+    ...textPresets.subtitle
   },
   imageList: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
   imageTileWrap: { position: "relative" },
@@ -683,8 +837,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: "#fafafa",
   },
-  addImageText: { fontSize: 11, color: "#888", fontFamily: "Medium", marginTop: 2 },
-  helperText: { fontSize: 12, color: "#888", fontFamily: "Medium", marginTop: 6 },
+  addImageText: { ...textPresets.caption, color: "#888", marginTop: 2 },
+  helperText: { ...textPresets.label, color: "#888", marginTop: 6 },
 
   // Form wrapper
   formWrapper: { marginTop: 4 },
@@ -699,12 +853,10 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   submitText: {
+    ...textPresets.body,
+    lineHeight: Math.round(14 * 1.5),
     color: "#fff",
-    fontSize: 16,
-    fontFamily: "Medium",
-    lineHeight: Math.round(16 * 1.5),
   },
-
   // Notice box
   noticeBox: {
     flexDirection: "row",
@@ -719,9 +871,7 @@ const styles = StyleSheet.create({
   noticeText: {
     flex: 1,
     color: "#7a5b00",
-    fontSize: 13,
-    fontFamily: "Medium",
-    lineHeight: Math.round(13 * 1.5),
+    ...textPresets.label
   },
 
   // Moderation modal (mirrored from Payment.js)
@@ -760,17 +910,14 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   flaggedHeaderTitle: {
-    fontSize: 14,
-    fontFamily: "Medium",
+    ...textPresets.body,
     color: "#111",
     lineHeight: Math.round(14 * 1.4),
   },
   flaggedHeaderSubtitle: {
-    fontSize: 12,
+    ...textPresets.caption,
     color: "#666",
-    fontFamily: "Medium",
-    lineHeight: Math.round(12 * 1.4),
-    marginTop: 2,
+    marginTop: 3,
   },
   flaggedIconWrap: { alignItems: "center", marginBottom: 12 },
   flaggedIconCircle: {
@@ -782,18 +929,15 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   flaggedTitle: {
-    fontSize: 18,
-    fontFamily: "Medium",
+    ...textPresets.subtitle,
     color: "#111",
     textAlign: "center",
     marginBottom: 8,
   },
   flaggedDescription: {
-    fontSize: 13,
+    ...textPresets.label,
     color: "#555",
-    fontFamily: "Medium",
     textAlign: "center",
-    lineHeight: Math.round(13 * 1.5),
     marginBottom: 20,
   },
   flaggedButton: {
@@ -804,8 +948,7 @@ const styles = StyleSheet.create({
   },
   flaggedButtonText: {
     color: "#fff",
-    fontSize: 15,
-    fontFamily: "Medium",
-    lineHeight: Math.round(15 * 1.5),
+    ...textPresets.body,
+    lineHeight: Math.round(14 * 1.5)
   },
 });

@@ -6,6 +6,7 @@ import { Ionicons, FontAwesome } from "@expo/vector-icons";
 import { BASE_URL } from "../config";
 import { saveAuthData, clearAuthStorage } from "../services/authService";
 import { startCustomerNotificationPolling } from "../services/notificationService";
+import { textPresets } from "../theme/typography"
 
 const { width } = Dimensions.get("window");
 
@@ -207,16 +208,13 @@ const styles = StyleSheet.create({
     paddingBottom: 30,
   },
   title: {
-    fontSize: width * 0.062,
-    fontFamily: "SemiBold",
     color: "#111111",
     textAlign: "center",
     marginBottom: 6,
-    lineHeight: Math.round(width * 0.062 * 1.5),
+    ...textPresets.title
   },
   subtitle: {
-    fontSize: 14,
-    fontFamily: "Medium",
+    ...textPresets.body,
     color: "#8a8a8a",
     textAlign: "center",
     marginBottom: 24,
@@ -239,10 +237,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffffff",
   },
   socialText: {
-    fontSize: 15,
-    fontFamily: "Medium",
+    ...textPresets.body,
     color: "#333333",
-    lineHeight: Math.round(15 * 1.5)
+    lineHeight: Math.round(14 * 1.5)
   },
   dividerRow: {
     flexDirection: "row",
@@ -256,14 +253,12 @@ const styles = StyleSheet.create({
     backgroundColor: "#e0e0e0",
   },
   dividerText: {
-    fontSize: 12,
-    fontFamily: "Medium",
+    ...textPresets.label,
     color: "#a0a0a0",
     letterSpacing: 0.5,
   },
   label: {
-    fontSize: 14,
-    fontFamily: "Medium",
+    ...textPresets.body,
     color: "#111111",
     marginBottom: 6,
     lineHeight: Math.round(14 * 1.5)
@@ -282,10 +277,9 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    fontSize: 14,
-    fontFamily: "Medium",
+    ...textPresets.body,
     color: "#111111",
-    top: 7
+    top: 4
   },
   eyeButton: {
     padding: 6,
@@ -295,9 +289,8 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   forgotPasswordText: {
-    fontSize: 14,
+    ...textPresets.body,
     color: "#157a4f",
-    fontFamily: "Medium",
     lineHeight: Math.round(14 * 1.5)
   },
   button: {
@@ -308,9 +301,8 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: "#ffffff",
-    fontSize: 17,
-    fontFamily: "Medium",
-    lineHeight: Math.round(17 * 1.5)
+    ...textPresets.body,
+    lineHeight: Math.round(14 * 1.5)
   },
   signupRow: {
     flexDirection: "row",
@@ -318,14 +310,12 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   signupText: {
-    fontSize: 14,
-    fontFamily: "Medium",
+    ...textPresets.body,
     color: "#555555",
     lineHeight: Math.round(14 * 1.5)
   },
   signupLink: {
-    fontSize: 14,
-    fontFamily: "Medium",
+    ...textPresets.body,
     color: "#157a4f",
     lineHeight: Math.round(14 * 1.5)
   },
@@ -334,9 +324,8 @@ const styles = StyleSheet.create({
     marginTop: 14,
   },
   skipText: {
-    fontSize: 14,
+    ...textPresets.body,
     color: "#157a4f",
-    fontFamily: "Medium",
     lineHeight: Math.round(14 * 1.5)
   },
 });

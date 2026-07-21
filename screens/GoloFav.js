@@ -8,6 +8,7 @@ import GoloBottom from "../components/GoloBottom";
 import { MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { getFavoriteOffers, toggleFavoriteOffer } from "../services/offerFavoritesService";
 import { LinearGradient } from "expo-linear-gradient";
+import { textPresets } from "../theme/typography";
 
 export default function GoloFav({ navigation }) {
     const { colors } = useContext(ThemeContext);
@@ -57,7 +58,7 @@ export default function GoloFav({ navigation }) {
                     </View>
 
                 </TouchableOpacity>
-                <Text style={{ fontSize: 20, color: colors.text, fontFamily: "SemiBold", lineHeight: Math.round(20 * 1.5) }}>Saved Offers</Text>
+                <Text style={{ ...textPresets.title }}>Saved Offers</Text>
             </View>
 
             <View style={{ backgroundColor: colors.divider, height: 1, marginVertical: 6 }} />
@@ -71,13 +72,13 @@ export default function GoloFav({ navigation }) {
                 {loading ? (
                     <View style={{ padding: 24, alignItems: "center" }}>
                         <ActivityIndicator size="small" color={colors.primary} />
-                        <Text style={{ color: colors.text, fontFamily: "Medium", marginTop: 10 }}>
+                        <Text style={{ ...textPresets.body, marginTop: 10 }}>
                             Loading saved offers...
                         </Text>
                     </View>
                 ) : favorites.length === 0 ? (
                     <View style={{ padding: 24, alignItems: "center" }}>
-                        <Text style={{ color: colors.text, fontFamily: "Medium" }}>No saved offers yet</Text>
+                        <Text style={{ ...textPresets.body }}>No saved offers yet</Text>
                     </View>
                 ) : favorites.map((item, index) => (
                     <TouchableOpacity
@@ -92,11 +93,11 @@ export default function GoloFav({ navigation }) {
                         )}
 
                         <View style={{ flex: 1, marginLeft: 12 }}>
-                            <Text style={{ fontSize: 16, fontFamily: "SemiBold", color: colors.text, lineHeight: Math.round(16 * 1.5) }}
+                            <Text style={{ ...textPresets.body, lineHeight: Math.round(14 * 1.5) }}
                                 numberOfLines={1}>
                                 {item.bannerTitle || item.title || "Offer"}
                             </Text>
-                            <Text style={{ fontSize: 13, color: colors.text, fontFamily: "Medium", lineHeight: Math.round(13 * 1.5) }}
+                            <Text style={{ ...textPresets.label }}
                                 numberOfLines={1}>
                                 By {item.shopName || item.merchantName || item.merchant?.name || "Nearby merchant"}
                             </Text>

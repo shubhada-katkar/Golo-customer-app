@@ -1,5 +1,6 @@
 import React, { useRef } from "react";
 import { View, TextInput, StyleSheet } from "react-native";
+import { textPresets } from "../theme/typography";
 
 export default function OtpInput({ value, onChangeOtp, length = 6, editable = true }) {
   const inputRefs = useRef([]);
@@ -91,8 +92,7 @@ const styles = StyleSheet.create({
     borderColor: "#000000",
     borderRadius: 10,
     backgroundColor: "#ffffff",
-    fontSize: 14,
-    fontFamily: "SemiBold",
+    ...textPresets.body
   },
   boxDisabled: {
     backgroundColor: "#f3f4f6",

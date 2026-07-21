@@ -8,6 +8,7 @@ import { ThemeContext } from "../theme/ThemeContext";
 import { MaterialIcons } from "@expo/vector-icons";
 import { deleteAd, getAdAnalytics } from "../services/analyticsService";
 import { LinearGradient } from "expo-linear-gradient";
+import { textPresets } from "../theme/typography";
 
 const StatCard = ({ title, value, subtitle }) => (
     <View style={styles.card}>
@@ -69,9 +70,9 @@ export default function AdAnalytics({ navigation, route }) {
     }, [fetchAnalytics]);
 
     useFocusEffect(
-      useCallback(() => {
-        fetchAnalytics();
-      }, [fetchAnalytics]),
+        useCallback(() => {
+            fetchAnalytics();
+        }, [fetchAnalytics]),
     );
 
     const data = useMemo(() => {
@@ -131,12 +132,12 @@ export default function AdAnalytics({ navigation, route }) {
 
     return (
         <SafeAreaView style={{ flex: 1 }}>
-             <LinearGradient
-                         colors={["#f8a812", "#fad081", "#f8f6f265"]}
-                         start={{ x: 0, y: 0 }}
-                         end={{ x: 0, y: 1 }}
-                         style={{height: 220, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0}}
-                    />
+            <LinearGradient
+                colors={["#f8a812", "#fad081", "#f8f6f265"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 1 }}
+                style={{ height: 220, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0 }}
+            />
             <Topbar />
 
 
@@ -152,7 +153,7 @@ export default function AdAnalytics({ navigation, route }) {
                     </View>
 
                 </TouchableOpacity>
-                <Text style={{ fontSize: 20, color: colors.text, fontFamily: "SemiBold", lineHeight: Math.round(20 * 1.5), flex: 1 }}>Ad Analytics</Text>
+                <Text style={{ flex: 1, ...textPresets.title }}>Ad Analytics</Text>
                 <TouchableOpacity onPress={handleDeleteAd} disabled={isDeleting} style={styles.deleteBtn}>
                     {isDeleting ? (
                         <ActivityIndicator size="small" color="#d14343" />
@@ -162,7 +163,7 @@ export default function AdAnalytics({ navigation, route }) {
                 </TouchableOpacity>
             </View>
 
-            <View style={{ flexDirection: "row", backgroundColor: colors.divider, height: 1, marginVertical:6 }} />
+            <View style={{ flexDirection: "row", backgroundColor: colors.divider, height: 1, marginVertical: 6 }} />
 
 
             <ScrollView style={styles.container}
@@ -177,15 +178,14 @@ export default function AdAnalytics({ navigation, route }) {
                     <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 10 }}>
                         <ActivityIndicator size="small" color="#157a4f" />
                         <Text style={{
-                            marginLeft: 8, color: "#666", fontFamily: "Medium",
-                            fontSize: 14, lineHeight: Math.round(14 * 1.5)
+                            marginLeft: 8, color: "#666",
+                            ...textPresets.body, lineHeight: Math.round(14 * 1.5)
                         }}>Refreshing live data...</Text>
                     </View>
                 )}
 
                 {!!error && <Text style={{
-                    color: "#d14343", marginBottom: 8, fontSize: 12,
-                    fontFamily: "Medium", lineHeight: Math.round(12 * 1.5)
+                    color: "#d14343", marginBottom: 8, ...textPresets.label
                 }}>{error}</Text>}
 
                 {/* STATS */}
@@ -259,54 +259,38 @@ const styles = StyleSheet.create({
         flex: 1,
         padding: 12,
     },
-
     header: {
         marginBottom: 16,
     },
-
     headerTitle: {
-        fontSize: 16,
-        fontFamily: "SemiBold",
-        lineHeight: Math.round(16 * 1.2),
+        ...textPresets.subtitle,
     },
-
     row: {
         flexDirection: "row",
         justifyContent: "space-between",
     },
-
     card: {
         flex: 1,
         backgroundColor: "#fff",
         padding: 12,
         borderRadius: 12,
         margin: 6,
-        alignItems:"center",
-        borderWidth:1,
-        borderColor:"#afafaf",
+        alignItems: "center",
+        borderWidth: 1,
+        borderColor: "#afafaf",
     },
-
     value: {
-        fontSize: 22,
-        fontFamily: "Bold",
-        lineHeight: Math.round(22 * 1.5),
+        ...textPresets.body
     },
-
     title: {
         marginTop: 6,
-        fontSize: 13,
+        ...textPresets.label,
         color: "#555",
-        fontFamily: "Medium",
-        lineHeight: Math.round(13 * 1.5),
     },
-
     sub: {
-        fontSize: 11,
         color: "#999",
-        fontFamily: "Medium",
-        lineHeight: Math.round(11 * 1.5),
+        ...textPresets.label,
     },
-
     section: {
         backgroundColor: "#fff",
         padding: 16,
@@ -318,32 +302,24 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.2,
         shadowRadius: 6,
     },
-
     sectionTitle: {
-        fontSize: 16,
-        fontFamily: "SemiBold",
-        lineHeight: Math.round(16 * 1.5),
         marginBottom: 10,
+        ...textPresets.subtitle
     },
-
     funnelRow: {
         flexDirection: "row",
         justifyContent: "space-between",
         paddingVertical: 6,
     },
-
     funnelText: {
         color: "#444",
-        fontSize: 14,
-        fontFamily: "Medium",
+        ...textPresets.body,
         lineHeight: Math.round(14 * 1.5),
     },
-
     rateBox: {
         alignItems: "center",
         flex: 1,
     },
-
     circle: {
         width: 70,
         height: 70,
@@ -353,45 +329,31 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
     },
-
     rateText: {
-        fontFamily: "Bold",
         lineHeight: Math.round(14 * 1.5),
-        fontSize: 14,
+        ...textPresets.body,
     },
-
     rateLabel: {
         marginTop: 6,
-        fontSize: 12,
-        fontFamily: "Medium",
-        lineHeight: Math.round(12 * 1.5),
+        ...textPresets.label,
     },
-
     insightCard: {
         borderWidth: 1,
         padding: 12,
         borderRadius: 10,
         marginTop: 10,
     },
-
     insightValue: {
-        fontSize: 18,
-        fontFamily: "Bold",
-        lineHeight: Math.round(18 * 1.5),
+        ...textPresets.subtitle
     },
-
     insightTitle: {
-        fontSize: 14,
-        fontFamily: "SemiBold",
+        ...textPresets.body,
         lineHeight: Math.round(14 * 1.5),
         marginTop: 4,
     },
-
     insightTip: {
-        fontSize: 12,
+        ...textPresets.label,
         color: "#777",
-        fontFamily: "Medium",
-        lineHeight: Math.round(12 * 1.5),
         marginTop: 4,
     },
 });

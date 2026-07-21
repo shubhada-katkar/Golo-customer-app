@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Entypo } from "@expo/vector-icons";
 import { BASE_URL } from "../config";
 import { ThemeContext } from "../theme/ThemeContext";
+import { textPresets } from "../theme/typography";
 
 const { width } = Dimensions.get("window");
 
@@ -131,24 +132,21 @@ const styles = StyleSheet.create({
     paddingTop: 48,
   },
   title: {
-    fontSize: width * 0.08,
-    fontFamily: "SemiBold",
-    color: "#1f2937",
+    ...textPresets.title,
+    textAlign: "center",
   },
   subtitle: {
-    marginTop: 10,
-    fontSize: 14,
-    lineHeight: 22,
-    color: "#4b5563",
-    fontFamily: "Medium",
-
+    marginTop: 5,
+    ...textPresets.label,
+    textAlign: "center",
+    color: "#4b5563"
   },
   label: {
     marginTop: 24,
     marginBottom: 8,
-    fontSize: 16,
-    fontFamily: "Medium",
     color: "#111827",
+    ...textPresets.body,
+    lineHeight: Math.round(14 * 1.5),
   },
   inputRow: {
     flexDirection: "row",
@@ -161,7 +159,7 @@ const styles = StyleSheet.create({
   },
   passwordInput: {
     flex: 1,
-    fontFamily: "Medium",
+    ...textPresets.body
   },
   eyeButton: {
     paddingHorizontal: 14,
@@ -177,8 +175,8 @@ const styles = StyleSheet.create({
   },
   submitButtonText: {
     color: "#ffffff",
-    fontFamily: "Medium",
-    fontSize: 16,
+    ...textPresets.body,
+    lineHeight: Math.round(14 * 1.5),
   },
   buttonDisabled: {
     opacity: 0.7,

@@ -98,6 +98,106 @@ const staticBanners = [
     { id: "static-4", imageUrl: require("../assets/banner4.png"), isStatic: true },
 ];
 
+const resolveImageUrl = (value) => {
+    if (!value || typeof value !== 'string') return null;
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith('data:')) return trimmed;
+    if (trimmed.startsWith('/')) return `${BASE_URL}${trimmed}`;
+    return `${BASE_URL}/${trimmed}`;
+};
+
+const getOfferImage = (item) =>
+    item?.imageUrl ||
+    item?.selectedProducts?.[0]?.imageUrl ||
+    item?.products?.[0]?.images?.[0] ||
+    item?.products?.[0]?.image?.url ||
+    "";
+
+const getOfferTitle = (item) => item?.bannerTitle || item?.title || "Untitled Offer";
+
+const getOfferSubtitle = (item) =>
+    item?.shopName ||
+    item?.merchantName ||
+    item?.businessName ||
+    item?.sellerName ||
+    item?.storeName ||
+    item?.merchant?.name ||
+    item?.merchant?.storeName ||
+    item?.selectedProducts?.[0]?.productName ||
+    item?.selectedProducts?.[0]?.name ||
+    "Nearby merchant";
+
+const formatPrice = (value) => {
+    if (value === undefined || value === null || value === "") {
+        return null;
+    }
+    const numericValue = Number(value);
+    return Number.isFinite(numericValue) ? `Rs ${numericValue}` : String(value);
+};
+
+const getOfferDisplayPrice = (item) => {
+    const directPrice = formatPrice(
+        item?.displayPrice ||
+        item?.discountedPrice ||
+        item?.offerPrice ||
+        item?.salePrice ||
+        item?.finalPrice ||
+        item?.price
+    );
+    if (directPrice) {
+        return directPrice;
+    }
+    const selectedProducts = Array.isArray(item?.selectedProducts)
+        ? item.selectedProducts
+        : [];
+    const lowestProductPrice = selectedProducts
+        .map((product) =>
+            formatPrice(
+                product?.offerPrice ||
+                product?.discountedPrice ||
+                product?.salePrice ||
+                product?.finalPrice ||
+                product?.displayPrice ||
+                product?.price
+            )
+        )
+        .filter(Boolean)
+        .map((value) => Number(String(value).replace(/[^0-9.-]/g, "")))
+        .filter((value) => Number.isFinite(value) && value > 0)
+        .sort((a, b) => a - b)[0];
+    return lowestProductPrice !== undefined ? formatPrice(lowestProductPrice) : null;
+};
+
+const getDistance = (lat1, lon1, lat2, lon2) => {
+    if (!lat1 || !lon1 || !lat2 || !lon2) return null;
+    const R = 6371; // Radius of the earth in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const d = R * c; // Distance in km
+    return d;
+};
+
+const getDistanceText = (item, userCoords) => {
+    if (item?.distanceKm !== undefined && item?.distanceKm !== null) {
+        const dist = Number(item.distanceKm);
+        return dist < 1 ? `${Math.round(dist * 1000)} m` : `${dist.toFixed(1)} km`;
+    }
+    const coords = item?.locationCoordinates?.coordinates; // [longitude, latitude]
+    if (Array.isArray(coords) && coords.length === 2 && userCoords?.lat && userCoords?.lng) {
+        const dist = getDistance(userCoords.lat, userCoords.lng, coords[1], coords[0]);
+        if (dist !== null) {
+            return dist < 1 ? `${Math.round(dist * 1000)} m` : `${dist.toFixed(1)} km`;
+        }
+    }
+    return null;
+};
+
 export default function GoloDeals() {
     const navigation = useNavigation();
     const { colors } = useContext(ThemeContext);
@@ -126,6 +226,10 @@ export default function GoloDeals() {
     const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
     const bannerFlatListRef = useRef(null);
     const autoScrollTimer = useRef(null);
+
+    // ─── Sections state ──────────────────────────────────────
+    const [sections, setSections] = useState([]);
+    const [sectionsLoading, setSectionsLoading] = useState(true);
 
     // ─── Category Modal state ────────────────────────────────
     const [allCategoriesModalOpen, setAllCategoriesModalOpen] = useState(false);
@@ -388,61 +492,131 @@ export default function GoloDeals() {
         }
     }, [locationPlaceName, customerCity]);
 
+    // ─── Fetch sections from backend ─────────────────────────
+    const fetchSections = useCallback(async () => {
+        if (!BASE_URL) {
+            setSectionsLoading(false);
+            return;
+        }
+
+        try {
+            setSectionsLoading(true);
+            const token = await AsyncStorage.getItem("customerToken");
+            const customerId = await AsyncStorage.getItem("customerId");
+
+            const params = new URLSearchParams();
+            if (userCoordinates?.lat) params.append("lat", String(userCoordinates.lat));
+            if (userCoordinates?.lng) params.append("lng", String(userCoordinates.lng));
+            if (customerCity) params.append("city", customerCity);
+            if (locationPlaceName) params.append("location", locationPlaceName);
+            if (customerId) params.append("userId", customerId);
+
+            const url = `${BASE_URL}/recommendations/homepage?${params.toString()}`;
+            const headers = {
+                "Content-Type": "application/json",
+            };
+            if (token) {
+                headers["Authorization"] = `Bearer ${token}`;
+            }
+
+            const response = await fetch(url, { headers });
+            const data = await response.json();
+            if (response.ok && Array.isArray(data)) {
+                setSections(data);
+            } else {
+                setSections([]);
+            }
+        } catch (err) {
+            console.error("Failed to fetch sections:", err);
+            setSections([]);
+        } finally {
+            setSectionsLoading(false);
+        }
+    }, [userCoordinates, customerCity, locationPlaceName]);
+
     useFocusEffect(
         useCallback(() => {
             fetchBanners();
-        }, [fetchBanners])
+            fetchSections();
+        }, [fetchBanners, fetchSections])
     );
 
     useEffect(() => {
         fetchBanners();
-    }, [locationPlaceName, customerCity, fetchBanners]);
+        fetchSections();
+    }, [locationPlaceName, customerCity, fetchBanners, fetchSections]);
 
     // ─── Auto-scroll banners ─────────────────────────────────
-    useEffect(() => {
+    const startAutoScroll = useCallback(() => {
         if (banners.length <= 1) return;
-
         autoScrollTimer.current = setInterval(() => {
             setCurrentBannerIndex((prev) => {
-                const nextIndex = (prev + 1) % banners.length;
+                const nextBannerIndex = (prev + 1) % banners.length;
+                const targetFlatListIndex = prev === banners.length - 1 ? banners.length + 1 : nextBannerIndex + 1;
                 bannerFlatListRef.current?.scrollToIndex({
-                    index: nextIndex,
+                    index: targetFlatListIndex,
                     animated: true,
                 });
-                return nextIndex;
+                return nextBannerIndex;
             });
         }, AUTO_SCROLL_INTERVAL);
+    }, [banners.length]);
 
+    useEffect(() => {
+        if (banners.length > 1) {
+            setTimeout(() => {
+                bannerFlatListRef.current?.scrollToIndex({
+                    index: 1,
+                    animated: false,
+                });
+            }, 100);
+            setCurrentBannerIndex(0);
+        } else {
+            setCurrentBannerIndex(0);
+        }
+    }, [banners]);
+
+    useEffect(() => {
+        startAutoScroll();
         return () => {
             if (autoScrollTimer.current) clearInterval(autoScrollTimer.current);
         };
-    }, [banners.length]);
+    }, [startAutoScroll]);
 
     const onBannerScroll = useCallback((event) => {
+        if (banners.length <= 1) return;
         const contentOffsetX = event.nativeEvent.contentOffset.x;
-        const index = Math.round(contentOffsetX / (SCREEN_WIDTH - 32));
-        setCurrentBannerIndex(index);
-    }, []);
+        const itemWidth = SLIDE_WIDTH + BANNER_GAP;
+        const index = Math.round(contentOffsetX / itemWidth);
+
+        if (index === 0 && contentOffsetX < 10) {
+            bannerFlatListRef.current?.scrollToOffset({
+                offset: itemWidth * banners.length,
+                animated: false,
+            });
+            setCurrentBannerIndex(banners.length - 1);
+        } else if (index === banners.length + 1) {
+            bannerFlatListRef.current?.scrollToOffset({
+                offset: itemWidth,
+                animated: false,
+            });
+            setCurrentBannerIndex(0);
+        } else {
+            setCurrentBannerIndex(index - 1);
+        }
+    }, [banners.length, SLIDE_WIDTH]);
 
     const onBannerScrollBeginDrag = useCallback(() => {
-        // Pause auto-scroll when user swipes
         if (autoScrollTimer.current) clearInterval(autoScrollTimer.current);
     }, []);
 
     const onBannerScrollEndDrag = useCallback(() => {
-        // Resume auto-scroll after user stops swiping
-        if (banners.length <= 1) return;
-        autoScrollTimer.current = setInterval(() => {
-            setCurrentBannerIndex((prev) => {
-                const nextIndex = (prev + 1) % banners.length;
-                bannerFlatListRef.current?.scrollToIndex({
-                    index: nextIndex,
-                    animated: true,
-                });
-                return nextIndex;
-            });
-        }, AUTO_SCROLL_INTERVAL);
-    }, [banners.length]);
+        startAutoScroll();
+    }, [startAutoScroll]);
+
+    const loopingBanners = banners.length > 1
+        ? [banners[banners.length - 1], ...banners, banners[0]]
+        : banners;
 
     const locationLabel =
         locationStatus === "granted"
@@ -456,17 +630,25 @@ export default function GoloDeals() {
     // ─── Render banner item ──────────────────────────────────
     const BANNER_GAP = 12;
     const renderBannerItem = useCallback(({ item }) => {
-        const imageSource = item.isStatic ? item.imageUrl : { uri: item.imageUrl };
+        const imageSource = item.isStatic ? item.imageUrl : { uri: resolveImageUrl(item.imageUrl) };
         return (
-            <View style={[styles.bannerSlide, { marginRight: BANNER_GAP }]}>
+            <TouchableOpacity
+                activeOpacity={0.9}
+                style={[styles.bannerSlide, { marginRight: BANNER_GAP }]}
+                onPress={() => {
+                    if (!item.isStatic && item.merchantId) {
+                        navigation.navigate("StorePage", { merchantId: item.merchantId });
+                    }
+                }}
+            >
                 <Image
                     source={imageSource}
                     style={styles.bannerImage}
                     resizeMode="cover"
                 />
-            </View>
+            </TouchableOpacity>
         );
-    }, []);
+    }, [navigation]);
 
     const SLIDE_WIDTH = SCREEN_WIDTH - 32;
     const getItemLayout = useCallback((data, index) => ({
@@ -475,35 +657,27 @@ export default function GoloDeals() {
         index,
     }), []);
 
-    // ─── Render static deals sections ─────────────────────────
-    // ─── Render static deals sections ─────────────────────────
-    const renderDealSection = (title) => {
+    // ─── Render deals sections dynamically ────────────────────
+    const renderDealSection = (section) => {
+        const { title, products = [], key } = section;
 
-        const mockCards = [
-            {
-                id: `card-${title}-1`,
-                title: "20% Off on All Products",
-                subtitle: "Golo Superstore",
-                offerType: "Flat Discount",
-                price: "Rs 499",
-                distance: "1.2 km",
-                endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-                image: "https://images.unsplash.com/photo-1542838132-92c53300491e?w=500&auto=format&fit=crop&q=60",
-            },
-            {
-                id: `card-${title}-2`,
-                title: "Buy 1 Get 1 Free",
-                subtitle: "Fresh Mart",
-                offerType: "Combo Offer",
-                price: "Rs 299",
-                distance: "2.8 km",
-                endDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
-                image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=500&auto=format&fit=crop&q=60",
-            },
-        ];
+        const filteredProducts = products.filter(item => {
+            const query = String(searchQuery || "").trim().toLowerCase();
+            if (!query) return true;
+
+            const itemTitle = getOfferTitle(item).toLowerCase();
+            const subtitle = getOfferSubtitle(item).toLowerCase();
+            const offerType = String(item?.bannerCategory || item?.offerType || item?.category || "").toLowerCase();
+
+            return itemTitle.includes(query) || subtitle.includes(query) || offerType.includes(query);
+        });
+
+        if (filteredProducts.length === 0) {
+            return null;
+        }
 
         return (
-            <View style={styles.sectionContainer} key={title}>
+            <View style={styles.sectionContainer} key={key || title}>
                 <View style={styles.sectionHeaderRow}>
                     <Text style={styles.sectionTitle}>{title}</Text>
                     <TouchableOpacity onPress={() => navigation.navigate("GoloHome")} style={styles.viewAllBtn}>
@@ -512,56 +686,70 @@ export default function GoloDeals() {
                     </TouchableOpacity>
                 </View>
 
-                <View style={styles.dealCardsRow}>
-                    {mockCards.map((item) => (
-                        <TouchableOpacity
-                            key={item.id}
-                            activeOpacity={0.9}
-                            style={styles.card}
-                            onPress={() => navigation.navigate("GoloHome")}
-                        >
-                            <View style={styles.cardInner}>
-                                {item.image ? (
-                                    <Image source={{ uri: item.image }} style={styles.image} />
-                                ) : (
-                                    <View style={[styles.image, styles.imageFallback]}>
-                                        <Ionicons name="image-outline" size={28} color="#8a8a8a" />
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={{ paddingBottom: 4 }}
+                >
+                    {filteredProducts.map((item, index) => {
+                        const directPrice = getOfferDisplayPrice(item);
+                        const offerType = item?.bannerCategory || item?.offerType || item?.category || "-";
+                        const itemTitle = getOfferTitle(item);
+                        const subtitle = getOfferSubtitle(item);
+                        const image = getOfferImage(item);
+                        const distanceText = getDistanceText(item, userCoordinates);
+                        const imageSource = image ? { uri: resolveImageUrl(image) } : null;
+
+                        return (
+                            <TouchableOpacity
+                                key={item._id || item.id || `card-${key}-${index}`}
+                                activeOpacity={0.9}
+                                style={[styles.card, { width: 170, marginRight: 12, marginBottom: 8 }]}
+                                onPress={() => navigation.navigate("OfferDetails", { offerData: item })}
+                            >
+                                <View style={styles.cardInner}>
+                                    {imageSource ? (
+                                        <Image source={imageSource} style={styles.image} />
+                                    ) : (
+                                        <View style={[styles.image, styles.imageFallback]}>
+                                            <Ionicons name="image-outline" size={28} color="#8a8a8a" />
+                                        </View>
+                                    )}
+
+                                    <View style={styles.cardContent}>
+                                        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                                            {directPrice ? (
+                                                <Text style={styles.discountPrice} numberOfLines={1}>
+                                                    {directPrice}
+                                                </Text>
+                                            ) : null}
+
+                                            {distanceText ? (
+                                                <Text style={styles.distanceMetaText}>{distanceText}</Text>
+                                            ) : null}
+                                        </View>
+
+                                        <Text style={styles.title} numberOfLines={1}>
+                                            {itemTitle}
+                                        </Text>
+
+                                        <Text style={styles.subtitle} numberOfLines={1}>
+                                            By {subtitle}
+                                        </Text>
+
+                                        <Text style={styles.metaText} numberOfLines={1}>
+                                            Offer Type: {offerType}
+                                        </Text>
+
+                                        <Text style={styles.validText} numberOfLines={1}>
+                                            Expires on: {item.endDate ? new Date(item.endDate).toDateString() : "-"}
+                                        </Text>
                                     </View>
-                                )}
-
-                                <View style={styles.cardContent}>
-                                    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-                                        {item.price ? (
-                                            <Text style={styles.discountPrice} numberOfLines={1}>
-                                                {item.price}
-                                            </Text>
-                                        ) : null}
-
-                                        {item.distance ? (
-                                            <Text style={styles.distanceMetaText}>{item.distance}</Text>
-                                        ) : null}
-                                    </View>
-
-                                    <Text style={styles.title} numberOfLines={1}>
-                                        {item.title}
-                                    </Text>
-
-                                    <Text style={styles.subtitle} numberOfLines={1}>
-                                        By {item.subtitle}
-                                    </Text>
-
-                                    <Text style={styles.metaText} numberOfLines={1}>
-                                        Offer Type: {item.offerType}
-                                    </Text>
-
-                                    <Text style={styles.validText} numberOfLines={1}>
-                                        Expires on: {item.endDate ? new Date(item.endDate).toDateString() : "-"}
-                                    </Text>
                                 </View>
-                            </View>
-                        </TouchableOpacity>
-                    ))}
-                </View>
+                            </TouchableOpacity>
+                        );
+                    })}
+                </ScrollView>
             </View>
         );
     };
@@ -676,7 +864,13 @@ export default function GoloDeals() {
             <ScrollView
                 contentContainerStyle={styles.container}
                 refreshControl={
-                    <RefreshControl refreshing={bannersLoading} onRefresh={fetchBanners} />
+                    <RefreshControl
+                        refreshing={bannersLoading || sectionsLoading}
+                        onRefresh={() => {
+                            fetchBanners();
+                            fetchSections();
+                        }}
+                    />
                 }
                 showsVerticalScrollIndicator={false}
             >
@@ -734,8 +928,8 @@ export default function GoloDeals() {
                         <>
                             <FlatList
                                 ref={bannerFlatListRef}
-                                data={banners}
-                                keyExtractor={(item) => item.requestId || item._id || item.id || String(Math.random())}
+                                data={loopingBanners}
+                                keyExtractor={(item, index) => `${item.requestId || item._id || item.id || 'static'}-${index}`}
                                 renderItem={renderBannerItem}
                                 horizontal
                                 pagingEnabled
@@ -770,12 +964,15 @@ export default function GoloDeals() {
                     )}
                 </View>
 
-                {/* ---- Five Deals Sections ---- */}
-                {renderDealSection("Flash Deals")}
-                {renderDealSection("Nearby Deals")}
-                {renderDealSection("Recommended Deals")}
-                {renderDealSection("Bestseller")}
-                {renderDealSection("Trending Deals")}
+                {/* ---- Dynamic Deals Sections ---- */}
+                {sectionsLoading && sections.length === 0 ? (
+                    <View style={{ marginVertical: 32, alignItems: "center" }}>
+                        <ActivityIndicator size="small" color="#f8a812" />
+                        <Text style={{ marginTop: 8, fontSize: 13, color: "#666" }}>Loading deals...</Text>
+                    </View>
+                ) : (
+                    sections.map((section) => renderDealSection(section))
+                )}
 
                 {/* Small padding space before footer */}
                 <View style={{ height: 20 }} />
@@ -876,7 +1073,7 @@ const styles = StyleSheet.create({
     container: {
         paddingHorizontal: 14,
         paddingVertical: 10,
-        paddingBottom: 100,
+        paddingBottom: 60,
     },
 
     // ─── Location (exact copy from GoloHome) ─────────────────
@@ -1146,6 +1343,7 @@ const styles = StyleSheet.create({
         shadowRadius: 5,
         shadowOffset: { width: 0, height: 2 },
         elevation: 3,
+        marginBottom: 12,
     },
     cardInner: {
         width: "100%",

@@ -883,7 +883,7 @@ export default function GoloHome({ route }) {
                             {error || "No offers found"}
                         </Text>
                         <Text style={styles.helperText}>
-                            Pull down to refresh and check for new nearby deals.
+                            Pull down to refresh
                         </Text>
                     </View>
                 )}
@@ -1226,7 +1226,7 @@ const styles = StyleSheet.create({
         height: 2,
         backgroundColor: "#000000",
     },
-    // ─── Modal styling ───────────────────────────────────────
+    // ─── Modal styling ───────────────────────────────
     modalHeaderGradient: {
         paddingTop: 16,
         paddingBottom: 20,
@@ -1324,7 +1324,7 @@ const styles = StyleSheet.create({
         elevation: 1,
     },
     modalCardText: {
-        ...textPresets.subtitle,
+        ...textPresets.label,
         textAlign: "center",
         color: "#111",
     },
@@ -1411,8 +1411,7 @@ const styles = StyleSheet.create({
         textAlign: "center",
         marginTop: 8,
         color: "#666",
-        ...textPresets.body,
-        lineHeight: Math.round(14 * 1.5),
+        ...textPresets.label,
     },
     searchContainer: {
         flexDirection: "row",

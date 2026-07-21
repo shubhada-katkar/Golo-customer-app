@@ -29,6 +29,7 @@ import Others from "../components/Others";
 import Greetings from "../components/Greetings";
 import Property from "../components/Property";
 import Vehicles from "../components/Vehicles";
+import { textPresets } from "../theme/typography";
 
 export default function FormPage({ route, navigation }) {
     const { category, template, price } = route.params || {};
@@ -81,15 +82,15 @@ export default function FormPage({ route, navigation }) {
                         <View style={{ padding: 16 }}>
                             <View style={styles.row1}>
                                 <TouchableOpacity onPress={() => navigation.goBack()}>
-                                    <MaterialIcons name="arrow-back-ios" size={26} style={{ paddingHorizontal: 10 }} />
+                                    <MaterialIcons name="arrow-back-ios" size={22} style={{ paddingHorizontal: 10 }} />
                                 </TouchableOpacity>
 
-                                <Text style={{ fontSize: 22, fontFamily: "Medium", lineHeight: Math.round(22 * 1.5) }}>
+                                <Text style={{ ...textPresets.title }}>
                                     Smart Jahirati
                                 </Text>
                             </View>
 
-                            <Text style={{ fontSize: 16, marginLeft: 48, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) }}>
+                            <Text style={{ ...textPresets.body, marginLeft: 56, lineHeight: Math.round(14 * 1.5) }}>
                                 Post Your Ads Instantly Online
                             </Text>
                         </View>

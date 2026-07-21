@@ -344,11 +344,9 @@ const styles = StyleSheet.create({
     marginTop: 7
   },
   timeText: {
-    fontSize: 12,
+    ...textPresets.label,
     color: "#777",
     marginTop: 6,
-    fontFamily: "Medium",
-    lineHeight: Math.round(12 * 1.5),
   },
   imageContainer: {
     marginTop: 10,
@@ -356,7 +354,6 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     position: "relative",
   },
-
   leftArrow: {
     position: "absolute",
     left: 4,
@@ -366,7 +363,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 5,
   },
-
   rightArrow: {
     position: "absolute",
     right: 4,
@@ -376,7 +372,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 5,
   },
-
   image: {
     height: height * 0.23,
     width: width - 64,
@@ -391,25 +386,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   title: {
-    fontSize: 16,
-    fontFamily: "Medium",
-    lineHeight: Math.round(16 * 1.5),
+    ...textPresets.subtitle,
     width: "70%"
   },
   price: {
-    fontSize: 14,
-    fontFamily: "Medium",
+    ...textPresets.body,
     lineHeight: Math.round(14 * 1.5),
     flexShrink: 0,
     marginRight: 5,
     color: "#157a4f"
   },
   desc: {
-    fontSize: 13,
+    ...textPresets.label,
     color: "#666",
     marginTop: 4,
-    fontFamily: "Medium",
-    lineHeight: Math.round(13 * 1.5)
   },
   metaRow: {
     flexDirection: "row",
@@ -422,10 +412,8 @@ const styles = StyleSheet.create({
     gap: 5,
   },
   metaText: {
-    fontSize: 12,
+    ...textPresets.label,
     color: "#444",
-    fontFamily: "Medium",
-    lineHeight: Math.round(12 * 1.5),
   },
   buttonRow: {
     flexDirection: "row",
@@ -448,9 +436,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   btnText: {
-    fontSize: 14,
+    ...textPresets.body,
     color: "#fff",
-    fontFamily: "Medium",
     lineHeight: Math.round(14 * 1.5)
   },
 });

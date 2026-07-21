@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   TouchableOpacity,
@@ -16,6 +16,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons, FontAwesome } from "@expo/vector-icons";
 import { BASE_URL } from "../config";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { textPresets } from "../theme/typography";
 
 const { width } = Dimensions.get("window");
 
@@ -40,6 +41,25 @@ export default function Registration({ navigation }) {
   const [registerLoading, setRegisterLoading] = useState(false);
   const [dobDate, setDobDate] = useState(null); // actual Date object backing the picker
   const [showDobPicker, setShowDobPicker] = useState(false);
+
+  const [otp, setOtp] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
+  const [timer, setTimer] = useState(0);
+
+  useEffect(() => {
+    let interval = null;
+    if (timer > 0) {
+      interval = setInterval(() => {
+        setTimer((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [timer]);
 
 
   const isValidEmail = (value) => /\S+@\S+\.\S+/.test(value);
@@ -127,6 +147,92 @@ export default function Registration({ navigation }) {
     Alert.alert("Coming soon", "Facebook sign-up will be available soon.");
   };
 
+  const handleSendOtp = async () => {
+    if (timer > 0) {
+      Alert.alert("Please wait", `You can request a new OTP in ${Math.floor(timer / 60)}:${String(timer % 60).padStart(2, '0')}.`);
+      return;
+    }
+
+    if (!email.trim() || !isValidEmail(email.trim())) {
+      Alert.alert("Invalid email", "Enter a valid email address first.");
+      return;
+    }
+
+    try {
+      setOtpLoading(true);
+      const response = await fetch(`${BASE_URL}/users/email-otp/send`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: email.trim().toLowerCase(),
+          type: "register",
+          accountType: "user"
+        }),
+      });
+
+      const data = await response.json();
+      setOtpLoading(false);
+
+      if (!response.ok) {
+        Alert.alert(
+          "Verification failed",
+          getErrorMessage(data?.message, "Unable to send verification code.")
+        );
+        return;
+      }
+
+      setOtpSent(true);
+      setTimer(300); // 5 minutes timer
+      Alert.alert("Verification Code Sent", "Please check your email for the OTP.");
+    } catch (error) {
+      setOtpLoading(false);
+      Alert.alert("Server error", "Unable to send verification code.");
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (timer === 0) {
+      Alert.alert("Expired", "OTP has expired. Please resend the code.");
+      return;
+    }
+
+    if (!otp.trim()) {
+      Alert.alert("Code required", "Enter the OTP code sent to your email.");
+      return;
+    }
+
+    try {
+      setVerifyingOtp(true);
+      const response = await fetch(`${BASE_URL}/users/email-otp/verify`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: email.trim().toLowerCase(),
+          otp: otp.trim(),
+        }),
+      });
+
+      const data = await response.json();
+      setVerifyingOtp(false);
+
+      if (!response.ok) {
+        Alert.alert(
+          "Verification failed",
+          getErrorMessage(data?.message, "Invalid or expired OTP.")
+        );
+        return;
+      }
+
+      setEmailVerified(true);
+      setOtpSent(false);
+      setTimer(0);
+      Alert.alert("Verified", "Your email address has been verified successfully!");
+    } catch (error) {
+      setVerifyingOtp(false);
+      Alert.alert("Server error", "Unable to verify the code.");
+    }
+  };
+
   const handleRegister = async () => {
     if (registerLoading) {
       return;
@@ -139,6 +245,11 @@ export default function Registration({ navigation }) {
 
     if (!isValidEmail(email.trim())) {
       Alert.alert("Invalid email", "Enter a valid email address.");
+      return;
+    }
+
+    if (!emailVerified) {
+      Alert.alert("Email verification required", "Please verify your email address first.");
       return;
     }
 
@@ -180,7 +291,7 @@ export default function Registration({ navigation }) {
           password,
           accountType: "user",
           gender,
-          dateOfBirth,
+          dateOfBirth: dobDate ? dobDate.toISOString() : undefined,
         }),
       });
 
@@ -288,13 +399,83 @@ export default function Registration({ navigation }) {
             <TextInput
               style={styles.input}
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(text) => {
+                setEmail(text);
+                setEmailVerified(false);
+                setOtpSent(false);
+                setOtp("");
+              }}
               keyboardType="email-address"
               autoCapitalize="none"
               placeholder="Enter your email"
               placeholderTextColor="#a0a0a0"
+              editable={!emailVerified}
             />
+            {emailVerified && (
+              <Ionicons name="checkmark-circle" size={20} color="#157a4f" style={{ marginLeft: 8 }} />
+            )}
           </View>
+
+          {/* OTP Send Button */}
+          {isValidEmail(email) && !emailVerified && !otpSent && (
+            <TouchableOpacity
+              style={[styles.otpBtn, otpLoading && { opacity: 0.7 }]}
+              onPress={handleSendOtp}
+              disabled={otpLoading}
+            >
+              {otpLoading ? (
+                <ActivityIndicator size="small" color="#157a4f" />
+              ) : (
+                <Text style={styles.otpBtnText}>Send Verification Code</Text>
+              )}
+            </TouchableOpacity>
+          )}
+
+          {/* OTP Input and Verify Button */}
+          {otpSent && !emailVerified && (
+            <View style={{ marginBottom: 16 }}>
+              <Text style={styles.label}>Enter verification code sent to your email</Text>
+              <View style={styles.inputWrapper}>
+                <Ionicons name="key-outline" size={18} color="#8a8a8a" style={styles.inputIcon} />
+                <TextInput
+                  style={[styles.input, { flex: 1 }]}
+                  value={otp}
+                  onChangeText={setOtp}
+                  keyboardType="number-pad"
+                  placeholder="6-digit code"
+                  placeholderTextColor="#a0a0a0"
+                  maxLength={6}
+                />
+                <TouchableOpacity
+                  style={[styles.verifyOtpBtn, verifyingOtp && { opacity: 0.7 }]}
+                  onPress={handleVerifyOtp}
+                  disabled={verifyingOtp}
+                >
+                  {verifyingOtp ? (
+                    <ActivityIndicator size="small" color="#ffffff" />
+                  ) : (
+                    <Text style={styles.verifyOtpBtnText}>Verify</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+              <TouchableOpacity
+                onPress={handleSendOtp}
+                disabled={otpLoading || timer > 0}
+                style={{ alignSelf: "flex-end", marginTop: -6 }}
+              >
+                <Text style={{ color: (otpLoading || timer > 0) ? "#a0a0a0" : "#157a4f", ...textPresets.label, fontWeight: "600" }}>
+                  {timer > 0 ? `Resend Code in ${Math.floor(timer / 60)}:${String(timer % 60).padStart(2, '0')}` : "Resend Code"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {emailVerified && (
+            <View style={{ marginBottom: 16, flexDirection: "row", alignItems: "center", gap: 6 }}>
+              <Ionicons name="checkmark-circle-outline" size={18} color="#157a4f" />
+              <Text style={{ color: "#157a4f", ...textPresets.label, fontWeight: "600" }}>Email verified successfully!</Text>
+            </View>
+          )}
 
           <Text style={styles.label}>Number</Text>
           <View style={styles.inputWrapper}>
@@ -317,7 +498,7 @@ export default function Registration({ navigation }) {
             onPress={() => setShowDobPicker(true)}
           >
             <Ionicons name="calendar-outline" size={18} color="#8a8a8a" style={styles.inputIcon} />
-            <Text style={[styles.input, !dob && styles.placeholderText, { top: 4 }]}>
+            <Text style={[styles.input, !dob && styles.placeholderText, { top: 2 }]}>
               {dob || "Select date of birth"}
             </Text>
           </TouchableOpacity>
@@ -349,7 +530,7 @@ export default function Registration({ navigation }) {
             onPress={() => setGenderMenuOpen((open) => !open)}
           >
             <Ionicons name="person-outline" size={18} color="#8a8a8a" style={styles.inputIcon} />
-            <Text style={[styles.input, !selectedGenderLabel && styles.placeholderText, { top: 4 }]}>
+            <Text style={[styles.input, !selectedGenderLabel && styles.placeholderText, { top: 2 }]}>
               {selectedGenderLabel || "Select gender"}
             </Text>
             <Ionicons
@@ -451,30 +632,23 @@ const styles = StyleSheet.create({
     paddingTop: 40,
     paddingBottom: 30,
   },
-
   title: {
-    fontSize: width * 0.062,
-    fontFamily: "SemiBold",
     color: "#111111",
     textAlign: "center",
     marginBottom: 6,
-    lineHeight: Math.round(width * 0.062 * 1.5)
+    ...textPresets.title
   },
-
   subtitle: {
-    fontSize: 14,
-    fontFamily: "Medium",
+    ...textPresets.body,
     color: "#8a8a8a",
     textAlign: "center",
     marginBottom: 24,
     lineHeight: Math.round(14 * 1.5)
   },
-
   socialRow: {
     flexDirection: "row",
     gap: 12,
   },
-
   socialButton: {
     flex: 1,
     flexDirection: "row",
@@ -487,42 +661,33 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     backgroundColor: "#ffffff",
   },
-
   socialText: {
-    fontSize: 15,
-    fontFamily: "Medium",
+    ...textPresets.body,
     color: "#333333",
-    lineHeight: Math.round(15 * 1.5)
+    lineHeight: Math.round(14 * 1.5)
   },
-
   dividerRow: {
     flexDirection: "row",
     alignItems: "center",
     marginVertical: 20,
     gap: 10,
   },
-
   dividerLine: {
     flex: 1,
     height: 1,
     backgroundColor: "#e0e0e0",
   },
-
   dividerText: {
-    fontSize: 12,
-    fontFamily: "Medium",
+    ...textPresets.label,
     color: "#a0a0a0",
     letterSpacing: 0.5,
-    lineHeight: Math.round(12 * 1.5)
   },
-
   label: {
-    fontSize: 14,
-    fontFamily: "Medium",
+    ...textPresets.body,
     color: "#111111",
     marginBottom: 6,
+    lineHeight: Math.round(14 * 1.5)
   },
-
   inputWrapper: {
     flexDirection: "row",
     alignItems: "center",
@@ -532,23 +697,18 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     height: 48,
   },
-
   inputIcon: {
     marginRight: 8,
   },
-
   input: {
     flex: 1,
-    fontSize: 14,
-    fontFamily: "Medium",
+    ...textPresets.body,
     color: "#111111",
-    top: 7,
+    top: 3,
   },
-
   placeholderText: {
     color: "#a0a0a0",
   },
-
   genderMenu: {
     backgroundColor: "#ffffff",
     borderRadius: 10,
@@ -558,7 +718,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     overflow: "hidden",
   },
-
   genderMenuItem: {
     flexDirection: "row",
     alignItems: "center",
@@ -568,29 +727,23 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#f0f0f0",
   },
-
   genderMenuItemText: {
-    fontSize: 14,
-    fontFamily: "Medium",
+    ...textPresets.body,
     color: "#333333",
     lineHeight: Math.round(14 * 1.5)
   },
-
   genderMenuItemTextActive: {
     color: "#157a4f",
   },
-
   eyeButton: {
     padding: 6,
   },
-
   termsRow: {
     flexDirection: "row",
     alignItems: "flex-start",
     gap: 10,
     marginBottom: 20,
   },
-
   checkbox: {
     width: 20,
     height: 20,
@@ -609,11 +762,8 @@ const styles = StyleSheet.create({
 
   termsText: {
     flex: 1,
-    fontSize: 12,
-    fontFamily: "Medium",
+    ...textPresets.label,
     color: "#666666",
-    lineHeight: 18,
-    lineHeight: Math.round(12 * 1.5)
   },
 
   termsLink: {
@@ -626,41 +776,63 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     alignItems: "center",
   },
-
   buttonDisabled: {
     opacity: 0.7,
   },
 
   buttonText: {
     color: "#ffffff",
-    fontSize: 17,
-    fontFamily: "Medium",
-    lineHeight: Math.round(17 * 1.5),
+    ...textPresets.body,
+    lineHeight: Math.round(14 * 1.5),
   },
-
   loadingRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
   },
-
   loginRow: {
     flexDirection: "row",
     justifyContent: "center",
     marginTop: 20,
   },
-
   loginPrompt: {
-    fontSize: 14,
-    fontFamily: "Medium",
+    ...textPresets.body,
     color: "#555555",
     lineHeight: Math.round(14 * 1.5)
   },
-
   loginLink: {
-    fontSize: 14,
-    fontFamily: "Medium",
+    ...textPresets.body,
     color: "#157a4f",
+    lineHeight: Math.round(14 * 1.5)
+  },
+  otpBtn: {
+    alignSelf: "stretch",
+    marginBottom: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#157a4f",
+    backgroundColor: "#ffffff",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  otpBtnText: {
+    color: "#157a4f",
+    ...textPresets.body,
+    lineHeight: Math.round(14 * 1.5)
+  },
+  verifyOtpBtn: {
+    backgroundColor: "#157a4f",
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  verifyOtpBtnText: {
+    color: "#ffffff",
+    ...textPresets.body,
     lineHeight: Math.round(14 * 1.5)
   },
 });

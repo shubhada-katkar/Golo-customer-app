@@ -5,6 +5,7 @@ import OtpInput from "../components/OtpInput";
 import { ThemeContext } from "../theme/ThemeContext";
 import { AntDesign } from "@expo/vector-icons";
 import { BASE_URL } from "../config";
+import { textPresets } from "../theme/typography";
 
 const { width } = Dimensions.get("window");
 
@@ -207,30 +208,27 @@ const styles = StyleSheet.create({
     paddingTop: 48,
   },
   title: {
-    fontSize: width * 0.07,
-    fontFamily: "SemiBold",
-    lineHeight: Math.round(width * 0.07 * 1.5),
+    ...textPresets.title,
+    textAlign: "center",
   },
   subtitle: {
-    fontSize: 12,
-    lineHeight: Math.round(12 * 1.5),
-    fontFamily: "Medium",
+    ...textPresets.label,
+    textAlign: "center",
+    marginTop: 4
   },
   label: {
     marginTop: 24,
     marginBottom: 8,
-    fontSize: 16,
-    fontFamily: "Medium",
-    lineHeight: Math.round(16 * 1.5),
+    ...textPresets.body,
+    lineHeight: Math.round(14 * 1.5)
   },
   input: {
     backgroundColor: "#ffffff",
     borderRadius: 10,
     paddingHorizontal: 12,
-    fontSize: 14,
     borderWidth: 1,
     borderColor: "#000000",
-    fontFamily: "Medium",
+    ...textPresets.body
   },
   sendButton: {
     marginTop: 16,
@@ -242,9 +240,8 @@ const styles = StyleSheet.create({
   },
   sendButtonText: {
     color: "#ffffff",
-    fontFamily: "Medium",
-    fontSize: 16,
-    lineHeight: Math.round(16 * 1.5),
+    lineHeight: Math.round(14 * 1.5),
+    ...textPresets.body
   },
   otpInfoRow: {
     marginTop: 16,
@@ -254,9 +251,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   otpInfoText: {
-    fontSize: 14,
-    fontFamily: "Medium",
-    lineHeight: Math.round(14 * 1.5),
+    ...textPresets.label
   },
   verifyButton: {
     marginTop: 18,
@@ -268,9 +263,8 @@ const styles = StyleSheet.create({
   },
   verifyButtonText: {
     color: "#ffffff",
-    fontFamily: "Medium",
-    fontSize: 16,
-    lineHeight: Math.round(16 * 1.5),
+    ...textPresets.body,
+    lineHeight: Math.round(14 * 1.5),
   },
   resendButton: {
     marginTop: 12,
@@ -284,8 +278,7 @@ const styles = StyleSheet.create({
   },
   resendButtonText: {
     color: "#157a4f",
-    fontFamily: "Medium",
-    fontSize: 14,
+    ...textPresets.body,
     lineHeight: Math.round(14 * 1.5),
   },
   buttonDisabled: {
@@ -293,9 +286,8 @@ const styles = StyleSheet.create({
   },
   backText: {
     color: "#157a4f",
-    fontSize: 15,
-    fontFamily: "Medium",
-    lineHeight: Math.round(15 * 1.5),
+    ...textPresets.body,
+    lineHeight: Math.round(14 * 1.5),
     alignSelf: "center",
     top: 20,
   },

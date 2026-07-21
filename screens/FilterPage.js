@@ -11,6 +11,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import Slider from "@react-native-community/slider";
 import GoloBottom from "../components/GoloBottom";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { textPresets } from "../theme/typography";
 
 export default function FilterPage({ navigation }) {
     const { colors } = useContext(ThemeContext);
@@ -88,7 +89,12 @@ export default function FilterPage({ navigation }) {
         { key: "Weekend Offer", label: "Weekend Offer", icon: "weekend" },
         { key: "Member Exclusive", label: "Member Exclusive", icon: "verified" },
         { key: "Loyalty Reward", label: "Loyalty Reward", icon: "loyalty" },
-        { key: "Custom Offer", label: "Custom Offer", icon: "tune" },
+        { label: "Seasonal Offer", value: "Seasonal Offer" },
+        { label: "Happy Hour Deal", value: "Happy Hour Deal" },
+        { label: "First Purchase Offer", value: "First Purchase Offer" },
+        { label: "Referral Offer", value: "Referral Offer" },
+        { label: "Clear Stock Sale", value: "Clear Stock Sale" },
+        { label: "Free Gift Offer", value: "Free Gift Offer" },
     ];
 
     return (
@@ -114,7 +120,7 @@ export default function FilterPage({ navigation }) {
                     flex: 1, flexDirection: "row", justifyContent: "space-between",
                     alignItems: "center", marginRight: 14
                 }}>
-                    <Text style={{ fontSize: 20, color: colors.text, fontFamily: "Medium", lineHeight: Math.round(20 * 1.5) }}>
+                    <Text style={{ ...textPresets.title }}>
                         Go Back
                     </Text>
                 </View>
@@ -240,7 +246,7 @@ export default function FilterPage({ navigation }) {
                                         style={[
                                             styles.chipLabel,
                                             { color: isSelected ? (colors.primary || "#157a4f") : colors.text },
-                                            isSelected && { fontFamily: "Medium" },
+                                            isSelected && { ...textPresets.label },
                                         ]}
                                     >
                                         {item.label}
@@ -286,9 +292,7 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     filtersEyebrow: {
-        fontSize: 18,
-        fontFamily: "Medium",
-        lineHeight: Math.round(18 * 1.5)
+        ...textPresets.subtitle,
     },
     clearAllButton: {
         flexDirection: "row",
@@ -296,8 +300,7 @@ const styles = StyleSheet.create({
         gap: 4,
     },
     clearAllText: {
-        fontSize: 14,
-        fontFamily: "Medium",
+        ...textPresets.body,
         lineHeight: Math.round(14 * 1.5)
     },
     card: {
@@ -327,16 +330,13 @@ const styles = StyleSheet.create({
         justifyContent: "center",
     },
     cardTitle: {
-        fontSize: 16,
-        fontFamily: "Medium",
-        lineHeight: Math.round(16 * 1.5)
+        ...textPresets.body,
+        lineHeight: Math.round(14 * 1.5)
     },
     cardSubtitle: {
-        fontSize: 12,
-        fontFamily: "Medium",
+        ...textPresets.label,
         marginTop: 6,
         marginBottom: 14,
-        lineHeight: Math.round(12 * 1.5)
     },
     radiusPill: {
         alignSelf: "flex-start",
@@ -349,14 +349,10 @@ const styles = StyleSheet.create({
         marginBottom: 18,
     },
     radiusPillValue: {
-        fontSize: 18,
-        fontFamily: "Bold",
-        lineHeight: Math.round(18 * 1.5)
+        ...textPresets.subtitle,
     },
     radiusPillLabel: {
-        fontSize: 12,
-        fontFamily: "Medium",
-        lineHeight: Math.round(12 * 1.5)
+        ...textPresets.label,
     },
     sliderTrackWrap: {
         height: 40,
@@ -386,9 +382,7 @@ const styles = StyleSheet.create({
         marginTop: 2,
     },
     sliderLabel: {
-        fontSize: 12,
-        fontFamily: "Medium",
-        lineHeight: Math.round(12 * 1.5)
+        ...textPresets.label,
     },
     chipGrid: {
         flexDirection: "row",
@@ -413,10 +407,8 @@ const styles = StyleSheet.create({
         justifyContent: "center",
     },
     chipLabel: {
-        fontSize: 13,
-        fontFamily: "Medium",
         flexShrink: 1,
-        lineHeight: Math.round(13 * 1.5)
+        ...textPresets.label
     },
     applyButton: {
         height: 50,
@@ -434,7 +426,7 @@ const styles = StyleSheet.create({
     },
     applyButtonText: {
         color: "#ffffff",
-        fontSize: 16,
-        fontFamily: "Bold",
+        ...textPresets.body,
+        lineHeight: Math.round(14 * 1.5)
     },
 });

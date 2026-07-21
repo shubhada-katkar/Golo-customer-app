@@ -17,6 +17,7 @@ import GoloBottom from "../components/GoloBottom";
 import { MaterialIcons } from "@expo/vector-icons";
 import { fetchMyClaimedOffers } from "../services/voucherService";
 import { LinearGradient } from "expo-linear-gradient";
+import { textPresets } from "../theme/typography";
 
 export default function Claimed({ navigation }) {
     const { colors } = useContext(ThemeContext);
@@ -160,7 +161,7 @@ export default function Claimed({ navigation }) {
 
                 </TouchableOpacity>
                 <View style={{ flexDirection: "column" }}>
-                    <Text style={{ fontSize: 20, color: colors.text, fontFamily: "SemiBold", lineHeight: Math.round(20 * 1.5) }}>Claimed Offers</Text>
+                    <Text style={{ ...textPresets.title }}>Claimed Offers</Text>
                 </View>
             </View>
 
@@ -172,7 +173,7 @@ export default function Claimed({ navigation }) {
                 </View>
             ) : (
                 <ScrollView
-                    contentContainerStyle={{ paddingBottom: 120 }}
+                    contentContainerStyle={{ paddingBottom: 90 }}
                     refreshControl={
                         <RefreshControl
                             refreshing={refreshing}
@@ -299,7 +300,7 @@ export default function Claimed({ navigation }) {
 
                                 <View style={{ flex: 1, marginLeft: 12 }}>
                                     <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-                                        <Text style={{ fontSize: 16, fontFamily: "SemiBold", color: colors.text, flex: 1, marginRight: 8, lineHeight: Math.round(16 * 1.5) }} numberOfLines={1}>
+                                        <Text style={{ flex: 1, marginRight: 8, ...textPresets.body, lineHeight: Math.round(14 * 1.5) }} numberOfLines={1}>
                                             {offerTitle}
                                         </Text>
                                         {isRedeemed ? (
@@ -317,7 +318,7 @@ export default function Claimed({ navigation }) {
                                         )}
                                     </View>
 
-                                    <Text style={{ fontSize: 12, color: colors.text, lineHeight: Math.round(12 * 1.5), fontFamily: "Medium", marginTop: 2 }} numberOfLines={1}>
+                                    <Text style={{ ...textPresets.caption, color: colors.text, marginTop: 2 }} numberOfLines={1}>
                                         Deal by {merchantName}
                                     </Text>
                                 </View>
@@ -381,13 +382,11 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     metricCount: {
-        fontSize: 14,
-        fontFamily: "SemiBold",
+        ...textPresets.body,
         color: "#111827",
     },
     metricLabel: {
-        fontSize: 10,
-        fontFamily: "Medium",
+        ...textPresets.caption,
         color: "#6b7280",
         marginTop: 1,
     },
@@ -397,8 +396,7 @@ const styles = StyleSheet.create({
         borderRadius: 4,
     },
     badgeText: {
-        fontSize: 8,
-        fontFamily: "Bold",
+        ...textPresets.caption,
     },
     card: {
         flexDirection: "row",
@@ -434,7 +432,7 @@ const styles = StyleSheet.create({
     infoText: {
         marginTop: 24,
         textAlign: "center",
-        fontFamily: "Medium",
+        ...textPresets.caption,
         paddingHorizontal: 20,
     },
 });

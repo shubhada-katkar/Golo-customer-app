@@ -13,6 +13,7 @@ import { submitReport } from '../services/reportService';
 import { BASE_URL } from '../config';
 import Topbar from '../components/Topbar';
 import { ThemeContext } from '../theme/ThemeContext';
+import { textPresets } from '../theme/typography';
 
 const { width, height } = Dimensions.get('window');
 
@@ -424,9 +425,9 @@ export default function AdDetails({ route, navigation }) {
   if (!ad) {
     return (
       <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <Text>Ad not found</Text>
+        <Text style={{ ...textPresets.label }}>Ad not found</Text>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeBtn}>
-          <Text style={{ color: '#fff' }}>Go Back</Text>
+          <Text style={{ color: '#fff', ...textPresets.label }}>Go Back</Text>
         </TouchableOpacity>
       </SafeAreaView>
     );
@@ -594,8 +595,7 @@ export default function AdDetails({ route, navigation }) {
                       style={styles.callBtn}
                     >
                       <Text style={{
-                        color: "#ffffff",
-                        fontFamily: "Medium", lineHeight: Math.round(12 * 1.5), fontSize: 12
+                        color: "#ffffff", ...textPresets.label
                       }}>{sellerPhone || ad.contactInfo?.phone}</Text>
                     </TouchableOpacity>
                   )}
@@ -636,7 +636,7 @@ export default function AdDetails({ route, navigation }) {
 
               <Text style={styles.modalTitle}>Report This Ad</Text>
               <Text style={styles.modalSubtitle}>Help us review suspicious listings.</Text>
-              <Text style={{ fontSize: 16, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) }}>Why are you reporting this ad?</Text>
+              <Text style={{ ...textPresets.body, lineHeight: Math.round(14 * 1.5) }}>Why are you reporting this ad?</Text>
 
               {REPORT_REASONS.map((reason, index) => (
                 <TouchableOpacity
@@ -644,7 +644,7 @@ export default function AdDetails({ route, navigation }) {
                   style={styles.option}
                   onPress={() => setSelectedReason(reason.value)}
                 >
-                  <Text style={{ fontSize: 13, lineHeight: Math.round(13 * 1.5), fontFamily: "Medium" }}>{reason.label}</Text>
+                  <Text style={{ ...textPresets.label }}>{reason.label}</Text>
                   <View style={[
                     styles.radio,
                     selectedReason === reason.value && styles.radioSelected
@@ -652,7 +652,7 @@ export default function AdDetails({ route, navigation }) {
                 </TouchableOpacity>
               ))}
 
-              <Text style={{ fontSize: 16, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5), marginTop: 20 }}>Additional Details (Optional)</Text>
+              <Text style={{ marginTop: 20, ...textPresets.body, lineHeight: Math.round(14 * 1.5) }}>Additional Details (Optional)</Text>
 
               <TextInput
                 placeholder="Please provide more details..."
@@ -669,8 +669,7 @@ export default function AdDetails({ route, navigation }) {
                   onPress={() => setShowReportModal(false)}
                 >
                   <Text style={{
-                    fontFamily: "SemiBold",
-                    lineHeight: Math.round(14 * 1.2), fontSize: 14
+                    lineHeight: Math.round(14 * 1.2), ...textPresets.body
                   }}>Cancel</Text>
                 </TouchableOpacity>
 
@@ -680,8 +679,7 @@ export default function AdDetails({ route, navigation }) {
                   disabled={!selectedReason}
                 >
                   <Text style={{
-                    fontFamily: "SemiBold",
-                    lineHeight: Math.round(14 * 1.2), fontSize: 14
+                    lineHeight: Math.round(14 * 1.2), ...textPresets.body
                   }}>Submit Report</Text>
                 </TouchableOpacity>
               </View>
@@ -704,9 +702,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   headerTitle: {
-    fontSize: 20,
-    fontFamily: 'SemiBold',
-    lineHeight: Math.round(20 * 1.5)
+    ...textPresets.title
   },
   scrollContent: {
     paddingBottom: 20,
@@ -729,9 +725,7 @@ const styles = StyleSheet.create({
   },
   imageCounterText: {
     color: '#fff',
-    fontSize: 12,
-    fontFamily: "Medium",
-    lineHeight: Math.round(12 * 1.5)
+    ...textPresets.label,
   },
   contentCard: {
     backgroundColor: '#fff',
@@ -745,15 +739,11 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   title: {
-    fontSize: 20,
     marginBottom: 8,
-    fontFamily: "Medium",
-    lineHeight: Math.round(20 * 1.5)
+    ...textPresets.subtitle
   },
   price: {
-    fontSize: 14,
-    fontFamily: "Medium",
-    lineHeight: Math.round(14 * 1.5),
+    ...textPresets.label,
     color: '#157a4f',
   },
   categoryRow: {
@@ -769,10 +759,8 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   badgeText: {
-    fontSize: 12,
+    ...textPresets.label,
     color: '#fff',
-    fontFamily: "Medium",
-    lineHeight: Math.round(12 * 1.5)
   },
   metaItem: {
     flexDirection: 'row',
@@ -780,9 +768,7 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   metaText: {
-    fontSize: 14,
-    fontFamily: "Medium",
-    lineHeight: Math.round(14 * 1.5),
+    ...textPresets.label,
   },
   section: {
     marginTop: 16,
@@ -791,15 +777,13 @@ const styles = StyleSheet.create({
     borderTopColor: '#eee',
   },
   sectionTitle: {
-    fontSize: 16,
     marginBottom: 10,
-    fontFamily: "Medium",
-    lineHeight: Math.round(16 * 1.5)
+    lineHeight: Math.round(14 * 1.5),
+    ...textPresets.body
   },
   description: {
-    fontSize: 14,
+    ...textPresets.body,
     color: '#555',
-    fontFamily: "Medium",
     lineHeight: Math.round(14 * 1.5)
   },
   sellerInfo: {
@@ -824,9 +808,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   sellerName: {
-    fontSize: 14,
+    ...textPresets.body,
     marginBottom: 6,
-    fontFamily: "Medium",
     lineHeight: Math.round(14 * 1.5)
   },
   callBtn: {
@@ -838,9 +821,7 @@ const styles = StyleSheet.create({
   },
   callBtnText: {
     color: '#fff',
-    fontSize: 12,
-    fontFamily: "Medium",
-    lineHeight: Math.round(12 * 1.5)
+    ...textPresets.label,
   },
   detailRow: {
     flexDirection: 'column',
@@ -850,17 +831,15 @@ const styles = StyleSheet.create({
     borderTopColor: '#f0f0f0',
   },
   detailLabel: {
-    fontSize: 14,
+    ...textPresets.body,
     color: '#808080',
-    fontFamily: "Medium",
     lineHeight: Math.round(14 * 1.5),
     textAlign: 'left',
     marginBottom: 4,
   },
   detailValue: {
-    fontSize: 14,
+    ...textPresets.body,
     color: '#333',
-    fontFamily: "Medium",
     lineHeight: Math.round(14 * 1.5),
     textAlign: 'left',
   },
@@ -879,8 +858,7 @@ const styles = StyleSheet.create({
   },
   chatButtonText: {
     color: '#fff',
-    fontSize: 14,
-    fontFamily: "Medium",
+    ...textPresets.body,
     lineHeight: Math.round(14 * 1.5)
   },
   callButtonLarge: {
@@ -892,8 +870,7 @@ const styles = StyleSheet.create({
   },
   callButtonText: {
     color: '#fff',
-    fontSize: 14,
-    fontFamily: "Medium",
+    ...textPresets.body,
     lineHeight: Math.round(14 * 1.5)
   },
   closeBtn: {
@@ -913,7 +890,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: 20,
   },
-
   modalContainer: {
     backgroundColor: "#f0f0f0",
     borderRadius: 16,
@@ -921,17 +897,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   modalTitle: {
-    fontSize: 18,
-    fontFamily: "SemiBold",
-    lineHeight: Math.round(18 * 1.2),
+    ...textPresets.subtitle
   },
-
   modalSubtitle: {
     color: "#666",
     marginBottom: 10,
-    fontFamily: "Medium",
-    fontSize: 13,
-    lineHeight: Math.round(13 * 1.5)
+    ...textPresets.label
   },
   option: {
     flexDirection: "row",
@@ -942,7 +913,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginTop: 8,
   },
-
   radio: {
     width: 18,
     height: 18,
@@ -961,9 +931,7 @@ const styles = StyleSheet.create({
     padding: 10,
     height: 80,
     marginTop: 8,
-    fontFamily: "Medium",
-    lineHeight: Math.round(13 * 1.5),
-    fontSize: 13,
+    ...textPresets.label
   },
   cancelBtn: {
     flex: 1,
@@ -995,9 +963,8 @@ const styles = StyleSheet.create({
   },
   reportButtonText: {
     color: "#ffffff",
-    fontSize: 14,
+    ...textPresets.body,
     lineHeight: Math.round(14 * 1.5),
-    fontFamily: "Medium",
     marginLeft: 6,
   }
 });

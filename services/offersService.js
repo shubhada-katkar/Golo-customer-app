@@ -27,10 +27,10 @@ const isOfferLikeObject = (value) => {
 
   return Boolean(
     value.offerId ||
-      value.requestId ||
-      value._id ||
-      value.title ||
-      value.bannerTitle
+    value.requestId ||
+    value._id ||
+    value.title ||
+    value.bannerTitle
   );
 };
 
@@ -496,7 +496,7 @@ export const toggleFollowMerchant = async (merchantId) => {
   return {
     success: Boolean(data?.success !== false),
     isFollowing: Boolean(data?.isFollowing),
-    message: data?.message || "", 
+    message: data?.message || "",
   };
 };
 

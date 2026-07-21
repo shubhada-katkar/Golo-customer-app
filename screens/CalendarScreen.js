@@ -8,6 +8,7 @@ import { ScrollView } from "react-native-gesture-handler";
 import { Modal } from "react-native";
 import { TouchableWithoutFeedback, Keyboard } from "react-native";
 import { Alert } from "react-native";
+import { textPresets } from "../theme/typography";
 
 export default function CalendarScreen({ navigation, route }) {
   const { category, template, formData, price } = route.params || {};
@@ -259,7 +260,7 @@ export default function CalendarScreen({ navigation, route }) {
                   placeholder="Type a city or area..."
                   placeholderTextColor="#9a9a9a"
                   value={locationInput}
-                  style={{ flex: 1, fontSize: 14, fontFamily: "Medium", paddingVertical: 14, top: 3 }}
+                  style={{ flex: 1, paddingVertical: 14, top: 2, ...textPresets.body }}
                   onChangeText={handleLocationInputChange}
                   onSubmitEditing={() => {
                     const text = locationInput || "";
@@ -311,7 +312,7 @@ export default function CalendarScreen({ navigation, route }) {
                 <View style={styles.suggestionsContainer}>
                   <ScrollView
                     keyboardShouldPersistTaps="handled"
-                    style={{ maxHeight: 240, marginTop:4 }}
+                    style={{ maxHeight: 240, marginTop: 4 }}
                   >
                     {locationSuggestions.map((s) => (
                       <TouchableOpacity
@@ -342,7 +343,7 @@ export default function CalendarScreen({ navigation, route }) {
                 activeOpacity={0.8}
               >
                 <MaterialIcons name="calendar-today" size={18} color="#9a9a9a" style={{ marginRight: 8 }} />
-                <Text style={{ flex: 1, fontSize: 15, fontFamily: "Medium", top: 3 }}>
+                <Text style={{ flex: 1, top: 2, ...textPresets.body }}>
                   {datesArray.length === 0
                     ? "Select Dates"
                     : datesArray.length === 1
@@ -429,7 +430,7 @@ export default function CalendarScreen({ navigation, route }) {
                       onPress={() => setShowCalendar(false)}
                       activeOpacity={0.85}
                     >
-                      <Text style={{ color: "#fff", fontFamily: "Medium", fontSize: 15, lineHeight: Math.round(15 * 1.5) }}>
+                      <Text style={{ color: "#fff", lineHeight: Math.round(14 * 1.5), ...textPresets.body }}>
                         Done</Text>
                     </TouchableOpacity>
                   </View>
@@ -496,7 +497,7 @@ export default function CalendarScreen({ navigation, route }) {
                       onPress={() => setShowLocationsModal(false)}
                       activeOpacity={0.85}
                     >
-                      <Text style={{ color: "#fff", fontFamily: "Medium", fontSize: 15, lineHeight: Math.round(15 * 1.5) }}>
+                      <Text style={{ color: "#fff", lineHeight: Math.round(14 * 1.5), ...textPresets.body }}>
                         Done</Text>
                     </TouchableOpacity>
                   </View>
@@ -565,7 +566,7 @@ export default function CalendarScreen({ navigation, route }) {
                       onPress={() => setShowDatesModal(false)}
                       activeOpacity={0.85}
                     >
-                      <Text style={{ color: "#fff", fontFamily: "Medium", fontSize: 15, lineHeight: Math.round(15 * 1.5) }}>
+                      <Text style={{ color: "#fff", lineHeight: Math.round(14 * 1.5), ...textPresets.body }}>
                         Done</Text>
                     </TouchableOpacity>
                   </View>
@@ -573,17 +574,16 @@ export default function CalendarScreen({ navigation, route }) {
               </View>
             </Modal>
 
-          {/* Next Button */}
-          <TouchableOpacity
-            style={styles.button}
-            onPress={handleNext}
-            activeOpacity={0.85}
-          >
-            <Text style={{ color: "#ffffff", fontSize: 16, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) }}>
-              Next
-            </Text>
-            <MaterialIcons name="arrow-forward" size={20} color="#fff" style={{ marginLeft: 8 }} />
-          </TouchableOpacity>
+            {/* Next Button */}
+            <TouchableOpacity
+              style={styles.button}
+              onPress={handleNext}
+              activeOpacity={0.85}
+            >
+              <Text style={{ color: "#ffffff", lineHeight: Math.round(14 * 1.5), ...textPresets.body }}>
+                Next
+              </Text>
+            </TouchableOpacity>
           </ScrollView>
 
         </LinearGradient>
@@ -602,16 +602,11 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   title: {
-    fontSize: 21,
-    fontFamily: "SemiBold",
-    color: "#1c1c1c",
-    lineHeight: Math.round(21 * 1.3),
+    ...textPresets.title
   },
   subtitle: {
-    fontSize: 13,
-    fontFamily: "Medium",
-    color: "#4a4a4a",
-    lineHeight: Math.round(13 * 1.2),
+    lineHeight: Math.round(14 * 1.2),
+    ...textPresets.body
   },
   sectionHeaderRow: {
     flexDirection: "row",
@@ -621,10 +616,8 @@ const styles = StyleSheet.create({
   },
   label: {
     marginLeft: 6,
-    fontSize: 15,
-    fontFamily: "SemiBold",
-    color: "#1c1c1c",
-    lineHeight: Math.round(15 * 1.2),
+    lineHeight: Math.round(14 * 1.2),
+    ...textPresets.body
   },
 
   /* Keeping these as-is per request: white input boxes */
@@ -676,23 +669,20 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   summaryBoxText: {
-    fontSize: 14,
-    fontFamily: "SemiBold",
-    color: "#0d4d31",
     lineHeight: Math.round(14 * 1.4),
+    ...textPresets.body,
+    color: "#157a4f"
   },
   summaryBoxRight: {
     flexDirection: "row",
     alignItems: "center",
   },
   summaryBoxLink: {
-    fontSize: 13,
-    fontFamily: "SemiBold",
     color: "#157a4f",
     marginRight: 2,
-    lineHeight:Math.round(13 * 1.5)
+    lineHeight: Math.round(14 * 1.5),
+    ...textPresets.body
   },
-
   suggestionsContainer: {
     position: "absolute",
     top: 70,
@@ -721,10 +711,8 @@ const styles = StyleSheet.create({
   },
   suggestionText: {
     flex: 1,
-    fontSize: 13,
-    fontFamily: "Medium",
     color: "#333",
-    lineHeight: 18,
+    ...textPresets.label
   },
   button: {
     flexDirection: "row",
@@ -735,7 +723,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 12,
-    marginTop:50
+    marginTop: 50
   },
   dateRowLeft: {
     flexDirection: "row",
@@ -753,12 +741,10 @@ const styles = StyleSheet.create({
   },
   dateRowText: {
     flex: 1,
-    fontSize: 14,
-    fontFamily: "Medium",
     color: "#1c1c1c",
     lineHeight: Math.round(14 * 1.5),
+    ...textPresets.label
   },
-
   modalOverlay: {
     flex: 1,
     justifyContent: "center",
@@ -802,12 +788,10 @@ const styles = StyleSheet.create({
   },
   emptyModalText: {
     textAlign: "center",
-    fontSize: 13,
-    fontFamily: "Medium",
     color: "#9a9a9a",
     paddingVertical: 24,
+    ...textPresets.body
   },
-
   calendarHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -818,10 +802,8 @@ const styles = StyleSheet.create({
     borderBottomColor: "#e8e8e8",
   },
   calendarHeaderText: {
-    fontSize: 16,
-    fontFamily: "SemiBold",
     color: "#1c1c1c",
-    lineHeight:Math.round(16 * 1.5)
+    ...textPresets.subtitle,
   },
   calendarInner: {
     borderRadius: 10,
@@ -836,10 +818,9 @@ const styles = StyleSheet.create({
     borderTopColor: "#e8e8e8",
   },
   calendarFooterText: {
-    fontSize: 13,
-    fontFamily: "Medium",
     color: "#6b6b6b",
-    lineHeight: Math.round(13 * 1.4),
+    ...textPresets.body,
+    lineHeight: Math.round(14 * 1.4),
   },
   calendarDoneButton: {
     paddingHorizontal: 24,

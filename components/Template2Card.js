@@ -9,6 +9,7 @@ import { getAdId, isFavoriteAdId, toggleFavoriteAd } from "../services/favorites
 import { trackAdCardClick, trackContactClick } from "../services/analyticsService";
 import { BASE_URL } from "../config";
 import { ensureAuthenticated } from "../services/authService";
+import { textPresets } from "../theme/typography";
 
 const GENERIC_SELLER_NAMES = new Set(["seller", "user", "anonymous", "unknown"]);
 
@@ -198,7 +199,7 @@ export default function Template2Card({ ad, navigation }) {
                 <View style={{ flex: 1 }}>
                     <Text style={styles.title} numberOfLines={2} ellipsizeMode="tail">
                         {ad.title}</Text>
-                    <Text numberOfLines={1} ellipsizeMode="tail"
+                    <Text numberOfLines={2} ellipsizeMode="tail"
                         style={styles.desc}>
                         {ad.description}
                     </Text>
@@ -255,10 +256,8 @@ const styles = StyleSheet.create({
         gap: 10,
     },
     timeText: {
-        fontSize: 12,
+        ...textPresets.label,
         color: "#777",
-        fontFamily: "Medium",
-        lineHeight: Math.round(12 * 1.5),
         alignSelf: "flex-start",
     },
     row: {
@@ -273,16 +272,12 @@ const styles = StyleSheet.create({
         backgroundColor: "#ddd",
     },
     title: {
-        fontSize: 16,
-        fontFamily: "Medium",
-        lineHeight: Math.round(16 * 1.5)
+        ...textPresets.subtitle
     },
     desc: {
-        fontSize: 13,
+        ...textPresets.label,
         color: "#666",
         marginTop: 5,
-        fontFamily: "Medium",
-        lineHeight: Math.round(13 * 1.5)
     },
     metaRow: {
         flexDirection: "row",
@@ -296,17 +291,14 @@ const styles = StyleSheet.create({
         gap: 5,
     },
     metaText: {
-        fontSize: 12,
+        ...textPresets.label,
         color: "#444",
-        fontFamily: "Medium",
-        lineHeight: Math.round(12 * 1.5),
     },
     price: {
-        fontSize: 12,
-        fontFamily: "Medium",
-        lineHeight: Math.round(12 * 1.5),
+        lineHeight: Math.round(14 * 1.5),
         marginTop: 5,
-        color: "#157a4f"
+        color: "#157a4f",
+        ...textPresets.body
     },
     chatBtn: {
         backgroundColor: "#f5b849",
@@ -326,9 +318,7 @@ const styles = StyleSheet.create({
     },
     btnText: {
         color: "#fff",
-        fontSize: 14,
-        fontWeight: "600",
-        fontFamily: "Medium",
+        ...textPresets.body,
         lineHeight: Math.round(14 * 1.5)
     },
 });

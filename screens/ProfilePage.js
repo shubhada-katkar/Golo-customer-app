@@ -33,9 +33,31 @@ export default function ProfilePage({ navigation }) {
 
     const [editName, setEditName] = useState(false);
     const [editPhone, setEditPhone] = useState(false);
+    const [editEmail, setEditEmail] = useState(false);
+    const [originalEmail, setOriginalEmail] = useState("");
 
     const nameRef = useRef(null);
     const phoneRef = useRef(null);
+    const emailRef = useRef(null);
+
+    const [otp, setOtp] = useState("");
+    const [otpSent, setOtpSent] = useState(false);
+    const [emailVerified, setEmailVerified] = useState(true);
+    const [otpLoading, setOtpLoading] = useState(false);
+    const [verifyingOtp, setVerifyingOtp] = useState(false);
+    const [timer, setTimer] = useState(0);
+
+    useEffect(() => {
+        let interval = null;
+        if (timer > 0) {
+            interval = setInterval(() => {
+                setTimer((prev) => prev - 1);
+            }, 1000);
+        }
+        return () => {
+            if (interval) clearInterval(interval);
+        };
+    }, [timer]);
 
     // ================= FETCH PROFILE =================
     const fetchProfile = async () => {
@@ -87,6 +109,7 @@ export default function ProfilePage({ navigation }) {
             setUsername(profile.name || "");
             setPhone(profile.profile?.phone || "");
             setEmail(profile.email || "");
+            setOriginalEmail(profile.email || "");
             setLoyaltyPoints(totalLoyaltyPoints);
             setLoyaltyTier(derivedLoyaltyTier);
             // image url/base64 may not exist
@@ -131,8 +154,104 @@ export default function ProfilePage({ navigation }) {
         }
     };
 
+    // ================= EMAIL OTP FLOW =================
+    const handleSendEmailOtp = async () => {
+        if (timer > 0) {
+            Alert.alert("Please wait", `You can request a new OTP in ${Math.floor(timer / 60)}:${String(timer % 60).padStart(2, '0')}.`);
+            return;
+        }
+
+        if (!email.trim() || !/\S+@\S+\.\S+/.test(email.trim())) {
+            Alert.alert("Invalid email", "Please enter a valid email address.");
+            return;
+        }
+
+        try {
+            setOtpLoading(true);
+            const token = await AsyncStorage.getItem("customerToken");
+            const response = await fetch(`${BASE_URL}/users/profile/email-otp/send`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({ email: email.trim().toLowerCase() }),
+            });
+
+            const data = await response.json();
+            setOtpLoading(false);
+
+            if (!response.ok) {
+                Alert.alert(
+                    "Verification failed",
+                    data.message || "Unable to send verification code."
+                );
+                return;
+            }
+
+            setOtpSent(true);
+            setTimer(300); // 5 minutes timer
+            Alert.alert("Verification Code Sent", "Please check your email for the OTP.");
+        } catch (error) {
+            setOtpLoading(false);
+            Alert.alert("Server error", "Unable to send verification code.");
+        }
+    };
+
+    const handleVerifyEmailOtp = async () => {
+        if (timer === 0) {
+            Alert.alert("Expired", "OTP has expired.");
+            return;
+        }
+
+        if (!otp.trim()) {
+            Alert.alert("Code required", "Enter the OTP code sent to your email.");
+            return;
+        }
+
+        try {
+            setVerifyingOtp(true);
+            const token = await AsyncStorage.getItem("customerToken");
+            const response = await fetch(`${BASE_URL}/users/profile/email-otp/verify`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    email: email.trim().toLowerCase(),
+                    otp: otp.trim(),
+                }),
+            });
+
+            const data = await response.json();
+            setVerifyingOtp(false);
+
+            if (!response.ok) {
+                Alert.alert(
+                    "Verification failed",
+                    data.message || "Invalid or expired OTP."
+                );
+                return;
+            }
+
+            setEmailVerified(true);
+            setOtpSent(false);
+            setTimer(0);
+            Alert.alert("Verified", "Your new email address has been verified successfully!");
+        } catch (error) {
+            setVerifyingOtp(false);
+            Alert.alert("Server error", "Unable to verify the code.");
+        }
+    };
+
     // ================= SAVE PROFILE =================
     const handleSave = async () => {
+        if (email !== originalEmail && !emailVerified) {
+            Alert.alert("Verification required", "Please verify your new email address via OTP first.");
+            return;
+        }
+
         try {
             setSaving(true);
 
@@ -143,6 +262,10 @@ export default function ProfilePage({ navigation }) {
                     phone: phone || ""
                 }
             };
+
+            if (email !== originalEmail) {
+                updateData.email = email.trim().toLowerCase();
+            }
 
             if (profilePhotoBase64) {
                 updateData.profilePhoto = profilePhotoBase64;
@@ -171,9 +294,11 @@ export default function ProfilePage({ navigation }) {
             setUsername(updatedProfile.name || username);
             setPhone(updatedProfile.profile?.phone || phone);
             setEmail(updatedProfile.email || email);
+            setOriginalEmail(updatedProfile.email || email);
             setProfilePhotoBase64(null);
             setEditName(false);
             setEditPhone(false);
+            setEditEmail(false);
             Alert.alert("Success", "Profile Updated");
         } catch (err) {
             setSaving(false);
@@ -364,6 +489,7 @@ export default function ProfilePage({ navigation }) {
                                     onPress={() => {
                                         setEditPhone(true);
                                         setEditName(false);
+                                        setEditEmail(false);
                                         setTimeout(() => phoneRef.current?.focus(), 100);
                                     }}  >
                                     <MaterialIcons name="edit" size={18} color={editPhone ? GREEN : "#9a9a9a"} />
@@ -374,16 +500,98 @@ export default function ProfilePage({ navigation }) {
                             <Text style={[styles.text, { color: colors.text, marginTop: 16 }]}>Email</Text>
                             <View style={styles.inputWrapper}>
                                 <TextInput
+                                    ref={emailRef}
                                     value={email}
-                                    editable={false}
+                                    onChangeText={(text) => {
+                                        setEmail(text);
+                                        setEmailVerified(text.trim().toLowerCase() === originalEmail.trim().toLowerCase());
+                                        setOtpSent(false);
+                                        setOtp("");
+                                    }}
+                                    editable={editEmail}
                                     keyboardType="email-address"
                                     autoCapitalize="none"
-                                    style={[styles.input, styles.disabledInput]}
+                                    style={[
+                                        styles.input,
+                                        editEmail && styles.inputActive,
+                                        !editEmail && styles.disabledInput,
+                                        { paddingRight: 40 }
+                                    ]}
                                 />
-                                <View style={styles.lockIcon}>
-                                    <MaterialIcons name="lock-outline" size={16} color="#b5b5b5" />
-                                </View>
+                                <TouchableOpacity
+                                    style={styles.editIcon}
+                                    onPress={() => {
+                                        setEditEmail(true);
+                                        setEditName(false);
+                                        setEditPhone(false);
+                                        setTimeout(() => emailRef.current?.focus(), 100);
+                                    }}
+                                >
+                                    <MaterialIcons name="edit" size={18} color={editEmail ? GREEN : "#9a9a9a"} />
+                                </TouchableOpacity>
                             </View>
+
+                            {/* OTP Send Button */}
+                            {email !== originalEmail && !emailVerified && !otpSent && (
+                                <TouchableOpacity
+                                    style={[styles.otpBtn, otpLoading && { opacity: 0.7 }, { marginTop: 8 }]}
+                                    onPress={handleSendEmailOtp}
+                                    disabled={otpLoading}
+                                >
+                                    {otpLoading ? (
+                                        <ActivityIndicator size="small" color={GREEN} />
+                                    ) : (
+                                        <Text style={styles.otpBtnText}>Send Verification Code</Text>
+                                    )}
+                                </TouchableOpacity>
+                            )}
+
+                            {/* OTP Input and Verify Button */}
+                            {email !== originalEmail && otpSent && !emailVerified && (
+                                <View style={{ marginTop: 8 }}>
+                                    <Text style={[styles.text, { color: colors.text, marginBottom: 4, ...textPresets.label }]}>
+                                        Enter verification code sent to your email
+                                    </Text>
+                                    <View style={styles.inputWrapper}>
+                                        <TextInput
+                                            style={[styles.input, styles.inputActive, { flex: 1 }]}
+                                            value={otp}
+                                            onChangeText={setOtp}
+                                            keyboardType="number-pad"
+                                            placeholder="6-digit code"
+                                            placeholderTextColor="#a0a0a0"
+                                            maxLength={6}
+                                        />
+                                        <TouchableOpacity
+                                            style={[styles.verifyOtpBtn, verifyingOtp && { opacity: 0.7 }]}
+                                            onPress={handleVerifyEmailOtp}
+                                            disabled={verifyingOtp}
+                                        >
+                                            {verifyingOtp ? (
+                                                <ActivityIndicator size="small" color="#ffffff" />
+                                            ) : (
+                                                <Text style={styles.verifyOtpBtnText}>Verify</Text>
+                                            )}
+                                        </TouchableOpacity>
+                                    </View>
+                                    <TouchableOpacity
+                                        onPress={handleSendEmailOtp}
+                                        disabled={otpLoading || timer > 0}
+                                        style={{ alignSelf: "flex-end", marginTop: 4 }}
+                                    >
+                                        <Text style={{ color: (otpLoading || timer > 0) ? "#a0a0a0" : GREEN, ...textPresets.label }}>
+                                            {timer > 0 ? `Resend Code in ${Math.floor(timer / 60)}:${String(timer % 60).padStart(2, '0')}` : "Resend Code"}
+                                        </Text>
+                                    </TouchableOpacity>
+                                </View>
+                            )}
+
+                            {email !== originalEmail && emailVerified && (
+                                <View style={{ marginTop: 8, flexDirection: "row", alignItems: "center", gap: 6 }}>
+                                    <MaterialIcons name="check-circle" size={18} color={GREEN} />
+                                    <Text style={{ color: GREEN, ...textPresets.label }}>Email verified successfully!</Text>
+                                </View>
+                            )}
                         </View>
 
                         {/* SAVE BUTTON */}
@@ -528,9 +736,9 @@ const styles = StyleSheet.create({
         elevation: 4,
     },
     profileImage: {
-        width: 104,
-        height: 104,
-        borderRadius: 52,
+        width: 120,
+        height: 120,
+        borderRadius: 60,
     },
     avatarWrapper: {
         alignSelf: "center",
@@ -538,11 +746,11 @@ const styles = StyleSheet.create({
     },
     nameText: {
         ...textPresets.subtitle,
-        top: 8
+        top: 10
     },
     inputWrapper: {
         position: "relative",
-        marginTop: 6,
+        marginTop: 8,
         justifyContent: "center",
     },
     editIcon: {
@@ -559,9 +767,9 @@ const styles = StyleSheet.create({
         alignItems: "center",
         borderRadius: 16,
         paddingHorizontal: 16,
-        paddingVertical: 14,
+        paddingVertical: 16,
         backgroundColor: "#ffffff",
-        marginTop: 16,
+        marginTop: 18,
         alignSelf: "stretch",
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },
@@ -631,7 +839,7 @@ const styles = StyleSheet.create({
         paddingVertical: 13,
         paddingHorizontal: 14,
         borderRadius: 14,
-        marginBottom: 8,
+        marginBottom: 16,
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.05,
@@ -664,5 +872,35 @@ const styles = StyleSheet.create({
         marginVertical: 20,
         marginHorizontal: 12,
         backgroundColor: "#eeeeee",
+    },
+    otpBtn: {
+        paddingVertical: 12,
+        paddingHorizontal: 12,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: GREEN,
+        top: 3,
+        alignSelf: "stretch",
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    otpBtnText: {
+        color: GREEN,
+        ...textPresets.body,
+        lineHeight: Math.round(14 * 1.5),
+    },
+    verifyOtpBtn: {
+        backgroundColor: GREEN,
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        borderRadius: 8,
+        justifyContent: "center",
+        alignItems: "center",
+        marginTop: 10
+    },
+    verifyOtpBtnText: {
+        color: "#ffffff",
+        ...textPresets.body,
+        lineHeight: Math.round(14 * 1.5),
     },
 });

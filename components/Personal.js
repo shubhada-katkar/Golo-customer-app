@@ -3,6 +3,7 @@ import { View, Text, TextInput, StyleSheet, ScrollView, TouchableOpacity } from 
 import { AntDesign } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
 import { useNavigation } from "@react-navigation/native";
+import { textPresets } from "../theme/typography";
 
 export default function Personal({ formData, setFormData, category, onPrevious, template, price, selectedDays, selectedLocations, selectedDates, startDate, endDate, isEditMode }) {
   if (category?.id !== "personal") return null;
@@ -36,11 +37,10 @@ export default function Personal({ formData, setFormData, category, onPrevious, 
           <AntDesign name="arrow-left" size={18} color="#ffffff" />
           <Text
             style={{
-              fontFamily: "Medium",
-              fontSize: 16,
+              ...textPresets.body,
               marginLeft: 6,
               color: "#ffffff",
-              lineHeight: Math.round(16 * 1.5),
+              lineHeight: Math.round(14 * 1.5),
             }}
           >
             Previous
@@ -119,9 +119,9 @@ export default function Personal({ formData, setFormData, category, onPrevious, 
       </View>
 
       {!isEditMode && (
-      <TouchableOpacity style={styles.nextBtn} onPress={() => { navigation.navigate("CalendarScreen", { category, template, formData, price }); }}>
-        <Text style={styles.nextText}>See Preview</Text>
-      </TouchableOpacity>
+        <TouchableOpacity style={styles.nextBtn} onPress={() => { navigation.navigate("CalendarScreen", { category, template, formData, price }); }}>
+          <Text style={styles.nextText}>Next</Text>
+        </TouchableOpacity>
       )}
     </View>
   );
@@ -129,27 +129,13 @@ export default function Personal({ formData, setFormData, category, onPrevious, 
 
 const styles = StyleSheet.create({
 
-  composeTitle: { fontSize: 18, fontFamily: "Medium", lineHeight: Math.round(18 * 1.5) },
+  composeTitle: { ...textPresets.subtitle },
   formCard: { backgroundColor: "#fff", paddingHorizontal: 16, borderRadius: 10, paddingBottom: 18 },
-  label: { fontSize: 16, marginTop: 16, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
-  value: { fontSize: 16, color: "#555", fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
-  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10, marginTop: 6, fontSize: 14, fontFamily: "Medium" },
+  label: { ...textPresets.body, marginTop: 16, lineHeight: Math.round(16 * 1.5) },
+  value: { ...textPresets.body, color: "#555", lineHeight: Math.round(16 * 1.5) },
+  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10, marginTop: 6, ...textPresets.body, },
   textArea: { height: 80, textAlignVertical: "top" },
   switchRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 12 },
-
-  uploadBox: {
-    borderWidth: 1,
-    borderStyle: "dashed",
-    borderColor: "#aaa",
-    borderRadius: 10,
-    padding: 16,
-    alignItems: "center",
-    marginTop: 8,
-  },
-  uploadText: { marginTop: 6, color: "#555", fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
-  orText: { marginVertical: 6, color: "#999", fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
-  cameraBtn: { backgroundColor: "#157a4f", paddingVertical: 8, paddingHorizontal: 18, borderRadius: 8 },
-  cameraText: { color: "#fff", fontFamily: "Medium", lineHeight: Math.round(14 * 1.5) },
 
   nextBtn: {
     flexDirection: "row",
@@ -160,7 +146,7 @@ const styles = StyleSheet.create({
     marginVertical: 20,
     justifyContent: "center"
   },
-  nextText: { color: "#fff", fontSize: 16, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
+  nextText: { color: "#fff", ...textPresets.body, lineHeight: Math.round(16 * 1.5) },
   descriptionInput: {
     borderWidth: 1,
     borderColor: "#ccc",
@@ -168,9 +154,8 @@ const styles = StyleSheet.create({
     padding: 12,
     minHeight: 150,      // Increased height
     maxHeight: 150,      // Keeps the box fixed after this height
-    fontSize: 14,
+    ...textPresets.body,
     textAlignVertical: "top",
-    fontFamily: "Medium"
   },
   pickerWrap: {
     borderWidth: 1,

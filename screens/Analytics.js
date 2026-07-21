@@ -12,6 +12,7 @@ import { MaterialIcons, Entypo } from "@expo/vector-icons";
 import { BarChart, PieChart } from "react-native-chart-kit";
 import { getMyAnalytics } from "../services/analyticsService";
 import { LinearGradient } from "expo-linear-gradient";
+import { textPresets } from "../theme/typography";
 
 const screenWidth = Dimensions.get("window").width;
 const CHART_COLORS = [
@@ -240,7 +241,7 @@ export default function Analytics({ navigation }) {
             />
           </View>
         </TouchableOpacity>
-        <Text style={{ fontSize: 20, color: colors.text, fontFamily: "SemiBold", lineHeight: Math.round(20 * 1.2) }}>Analytics</Text>
+        <Text style={{ ...textPresets.title }}>Analytics</Text>
       </View>
 
       <View style={{ flexDirection: "row", backgroundColor: colors.divider, height: 1, marginVertical: 6 }} />
@@ -252,7 +253,7 @@ export default function Analytics({ navigation }) {
         {loading && (
           <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
             <ActivityIndicator size="small" color="#1f7a53" />
-            <Text style={{ marginLeft: 8, color: "#666", fontFamily: "Medium" }}>Refreshing live data...</Text>
+            <Text style={{ marginLeft: 8, color: "#666", ...textPresets.body }}>Refreshing live data...</Text>
           </View>
         )}
         {!!error && <Text style={{ color: "#d14343", marginBottom: 10 }}>{error}</Text>}
@@ -322,7 +323,7 @@ export default function Analytics({ navigation }) {
 
         {!adsList.length && (
           <View style={{ paddingVertical: 14 }}>
-            <Text style={{ color: colors.text, fontFamily: "Medium" }}>No ads posted yet.</Text>
+            <Text style={{ ...textPresets.body }}>No ads posted yet.</Text>
           </View>
         )}
 
@@ -346,8 +347,8 @@ export default function Analytics({ navigation }) {
                   styles.cell,
                   {
                     color: statusColor,
-                    fontFamily: "Medium",
-                    lineHeight: Math.round(13 * 1.5),
+
+
                   },
                 ]}
               >
@@ -405,9 +406,8 @@ const styles = StyleSheet.create({
     padding: 15,
   },
   subtitle: {
-    fontSize: 14,
+    ...textPresets.body,
     marginBottom: 15,
-    fontFamily: "Medium",
     lineHeight: Math.round(14 * 1.5),
   },
   statsContainer: {
@@ -427,24 +427,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   value: {
-    fontSize: 20,
-    fontFamily: "Medium",
-    lineHeight: Math.round(20 * 1.5),
+    ...textPresets.subtitle,
     textAlign: "center",
   },
   label: {
     color: "#666",
-    fontSize: 12,
-    fontFamily: "Medium",
-    lineHeight: Math.round(12 * 1.5),
+    ...textPresets.label,
     textAlign: "center",
   },
   sectionTitle: {
-    fontSize: 16,
+    ...textPresets.body,
     marginTop: 20,
     marginBottom: 10,
-    fontFamily: "Medium",
-    lineHeight: Math.round(16 * 1.5),
+    lineHeight: Math.round(14 * 1.5)
   },
   chart: {
     borderRadius: 10,
@@ -461,9 +456,8 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
   },
   statsCardTitle: {
-    fontSize: 16,
-    fontFamily: "Medium",
-    lineHeight: Math.round(16 * 1.5)
+    ...textPresets.body,
+    lineHeight: Math.round(14 * 1.5)
   },
   pieChartWrapper: {
     alignItems: "center",
@@ -482,11 +476,9 @@ const styles = StyleSheet.create({
     paddingRight: 6,
   },
   legendText: {
-    fontSize: 12,
-    fontFamily: "Medium",
+    ...textPresets.label,
     flexShrink: 1,
     width: "82%",
-    lineHeight: Math.round(12 * 1.5),
     paddingVertical: 2.5,
   },
   legendDot: {
@@ -504,8 +496,7 @@ const styles = StyleSheet.create({
   },
   headerText: {
     flex: 1,
-    fontSize: 14,
-    fontFamily: "Medium",
+    ...textPresets.body,
     lineHeight: Math.round(14 * 1.5),
     paddingHorizontal: 16
   },
@@ -529,20 +520,14 @@ const styles = StyleSheet.create({
   },
   cell: {
     flex: 1,
-    fontSize: 13,
-    fontFamily: "Medium",
-    lineHeight: Math.round(13 * 1.5),
+    ...textPresets.label,
   },
   adName: {
-    fontSize: 13,
-    fontFamily: "Medium",
-    lineHeight: Math.round(13 * 1.5),
+    ...textPresets.label,
     width: "82%"
   },
   category: {
-    fontSize: 12,
-    fontFamily: "Medium",
-    lineHeight: Math.round(12 * 1.5),
+    ...textPresets.label,
     color: "#777",
   },
 })

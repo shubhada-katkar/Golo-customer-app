@@ -6,6 +6,7 @@ import { AntDesign } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
 import { Picker } from "@react-native-picker/picker";
 import { useNavigation } from "@react-navigation/native";
+import { textPresets } from "../theme/typography";
 
 export default function PublicNotice({ formData, setFormData, category, onPrevious, template, price, selectedDays, selectedLocations, selectedDates, startDate, endDate }) {
   if (category?.id !== "publicnotice") return null;
@@ -63,11 +64,10 @@ export default function PublicNotice({ formData, setFormData, category, onPrevio
           <AntDesign name="arrow-left" size={18} color="#ffffff" />
           <Text
             style={{
-              fontFamily: "Medium",
-              fontSize: 16,
+              ...textPresets.body,
               marginLeft: 6,
               color: "#ffffff",
-              lineHeight: Math.round(16 * 1.5),
+              lineHeight: Math.round(14 * 1.5),
             }}
           >
             Previous
@@ -121,21 +121,21 @@ export default function PublicNotice({ formData, setFormData, category, onPrevio
         <View
           style={styles.uploadBox}
         >
-          <AntDesign name="upload" size={40} color="#157a4f" />
+          <AntDesign name="upload" size={30} color="#157a4f" />
           <Text style={styles.uploadText}>Upload a PDF</Text>
           <TouchableOpacity style={styles.cameraBtn} onPress={pickPDF}>
             <Text style={styles.cameraText}>Browse Files</Text>
           </TouchableOpacity>
         </View>
         {formData.pdf && (
-          <Text style={{ marginTop: 10, color: "#157a4f", fontFamily: "Medium" }}>
+          <Text style={{ marginTop: 10, color: "#157a4f", }}>
             Selected: {formData.pdf.name}
           </Text>
         )}
       </View>
 
       <TouchableOpacity style={styles.nextBtn} onPress={() => { navigation.navigate("CalendarScreen", { category, template, formData, price }); }}>
-        <Text style={styles.nextText}>See Preview</Text>
+        <Text style={styles.nextText}>Next</Text>
       </TouchableOpacity>
     </View>
   );
@@ -143,12 +143,12 @@ export default function PublicNotice({ formData, setFormData, category, onPrevio
 
 const styles = StyleSheet.create({
 
-  composeTitle: { fontSize: 18, fontFamily: "Medium", lineHeight: Math.round(18 * 1.5) },
+  composeTitle: { ...textPresets.subtitle },
   formCard: { backgroundColor: "#fff", paddingHorizontal: 16, borderRadius: 10, paddingBottom: 18 },
-  label: { fontSize: 16, marginTop: 16, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
-  value: { fontSize: 16, color: "#555", fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
-  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10, marginTop: 6, fontSize: 14, fontFamily: "Medium" },
-  textArea: { height: 80, textAlignVertical: "top", borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10, marginTop: 6, fontFamily: "Medium" },
+  label: { ...textPresets.body, marginTop: 16, lineHeight: Math.round(14 * 1.5) },
+  value: { ...textPresets.body, color: "#555", lineHeight: Math.round(14 * 1.5) },
+  input: { borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10, marginTop: 6, ...textPresets.body },
+  textArea: { height: 80, textAlignVertical: "top", borderWidth: 1, borderColor: "#ddd", borderRadius: 8, padding: 10, marginTop: 6, },
   switchRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 12 },
 
   uploadBox: {
@@ -160,10 +160,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 8,
   },
-  uploadText: { color: "#555", fontFamily: "Medium", lineHeight: Math.round(16 * 1.5), paddingVertical: 8 },
-  orText: { marginVertical: 6, color: "#999", fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
+  uploadText: { color: "#555", ...textPresets.body, paddingVertical: 8, lineHeight: Math.round(14 * 1.5) },
   cameraBtn: { backgroundColor: "#157a4f", paddingVertical: 8, paddingHorizontal: 18, borderRadius: 8 },
-  cameraText: { color: "#fff", fontFamily: "Medium", lineHeight: Math.round(14 * 1.5) },
+  cameraText: { color: "#fff", ...textPresets.body, lineHeight: Math.round(14 * 1.5) },
 
   nextBtn: {
     flexDirection: "row",
@@ -174,7 +173,7 @@ const styles = StyleSheet.create({
     marginVertical: 20,
     justifyContent: "center"
   },
-  nextText: { color: "#fff", fontSize: 16, fontFamily: "Medium", lineHeight: Math.round(16 * 1.5) },
+  nextText: { color: "#fff", ...textPresets.body, lineHeight: Math.round(14 * 1.5) },
 
   pickerWrap: {
     borderWidth: 1,
@@ -189,9 +188,8 @@ const styles = StyleSheet.create({
     padding: 12,
     minHeight: 150,      // Increased height
     maxHeight: 150,      // Keeps the box fixed after this height
-    fontSize: 14,
     textAlignVertical: "top",
-    fontFamily: "Medium"
+    ...textPresets.body
   },
 });
 

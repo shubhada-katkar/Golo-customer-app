@@ -6,6 +6,7 @@ import { useRoute } from "@react-navigation/native";
 import { useContext } from "react";
 import { ThemeContext } from "../theme/ThemeContext";
 import { ensureAuthenticated } from "../services/authService";
+import { textPresets } from "../theme/typography";
 
 export default function ChojaBottom() {
     const navigation = useNavigation();
@@ -29,8 +30,7 @@ export default function ChojaBottom() {
                 <MaterialCommunityIcons name="home-outline" size={26}
                     color={currentRoute === "ChojaHome" ? "#f9a641" : "black"} />
                 <Text style={{
-                    textAlign: "auto", fontSize: 11, color: currentRoute === "ChojaHome" ? "#f9a641" : "black",
-                    fontFamily: "Medium", lineHeight: Math.round(11 * 1.5)
+                    textAlign: "auto", ...textPresets.caption, color: currentRoute === "ChojaHome" ? "#f9a641" : "black",
                 }}>Home</Text>
             </TouchableOpacity>
 
@@ -38,8 +38,7 @@ export default function ChojaBottom() {
                 <Feather name="heart" size={24}
                     color={currentRoute === "Fav" ? "#f9a641" : "black"} />
                 <Text style={{
-                    textAlign: "auto", fontSize: 11, color: currentRoute === "Fav" ? "#f9a641" : "black",
-                    fontFamily: "Medium", lineHeight: Math.round(11 * 1.5)
+                    textAlign: "auto", ...textPresets.caption, color: currentRoute === "Fav" ? "#f9a641" : "black",
                 }}>Wishlist</Text>
             </TouchableOpacity>
 
@@ -57,11 +56,9 @@ export default function ChojaBottom() {
 
                 <Text
                     style={{
-                        fontSize: 11,
+                        ...textPresets.caption,
                         color: currentRoute === "JahiratiCategory" ? "#f9a641" : "black",
-                        fontFamily: "Medium",
-                    }}
-                >
+                    }} >
                     Post AD
                 </Text>
             </View>
@@ -70,8 +67,7 @@ export default function ChojaBottom() {
                 <Feather name="message-circle" size={24}
                     color={currentRoute === "ChatPage" ? "#f9a641" : "black"} />
                 <Text style={{
-                    textAlign: "auto", fontSize: 11, color: currentRoute === "ChatPage" ? "#f9a641" : "black",
-                    fontFamily: "Medium", lineHeight: Math.round(11 * 1.5)
+                    textAlign: "auto", ...textPresets.caption, color: currentRoute === "ChatPage" ? "#f9a641" : "black",
                 }}>Chats</Text>
             </TouchableOpacity>
 
@@ -79,8 +75,7 @@ export default function ChojaBottom() {
                 <MaterialCommunityIcons name="account-circle-outline" size={24}
                     color={currentRoute === "ProfilePage" ? "#f9a641" : "black"} />
                 <Text style={{
-                    textAlign: "auto", fontSize: 11, color: currentRoute === "ProfilePage" ? "#f9a641" : "black",
-                    fontFamily: "Medium", lineHeight: Math.round(11 * 1.5)
+                    textAlign: "auto", ...textPresets.caption, color: currentRoute === "ProfilePage" ? "#f9a641" : "black",
                 }}>Profile</Text>
             </TouchableOpacity>
 
@@ -110,8 +105,8 @@ const styles = StyleSheet.create({
         alignItems: "center",
     },
     addButton: {
-        width: 60,
-        height: 60,
+        width: 54,
+        height: 54,
         borderRadius: 30,
 
         justifyContent: "center",
