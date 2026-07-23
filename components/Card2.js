@@ -349,6 +349,7 @@ export default function Card2({ category, formData, setFormData, onNext }) {
           transparent={true}
           animationType="slide"
           onRequestClose={() => setRestrictionModalVisible(false)}
+          statusBarTranslucent
         >
           <View style={styles.restrictionOverlay}>
             <View style={styles.restrictionCard}>

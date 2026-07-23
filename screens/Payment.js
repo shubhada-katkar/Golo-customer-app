@@ -224,8 +224,9 @@ function isRemoteUrl(value) {
 function getFileMetaFromUri(uri) {
     const fileName = uri?.split("/")?.pop() || `ad-${Date.now()}.jpg`;
     const match = /\.([a-zA-Z0-9]+)$/.exec(fileName);
-    const ext = (match?.[1] || "jpg").toLowerCase();
-    const mimeType = ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : "image/jpeg";
+    const rawExt = (match?.[1] || "jpg").toLowerCase();
+    const ext = (!rawExt || rawExt === "tmp" || rawExt === "bin") ? "jpg" : rawExt;
+    const mimeType = ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : ext === "heic" ? "image/heic" : "image/jpeg";
 
     return { fileName, mimeType };
 }
@@ -290,6 +291,7 @@ async function uploadAdImageToCloud(uri) {
     });
     uploadBody.append("upload_preset", CLOUDINARY_UPLOAD_PRESET);
     uploadBody.append("cloud_name", CLOUDINARY_CLOUD_NAME);
+    uploadBody.append("format", "png");
 
     const response = await fetch(CLOUDINARY_UPLOAD_URL, {
         method: "POST",

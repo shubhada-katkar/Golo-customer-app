@@ -968,7 +968,7 @@ export default function GoloDeals() {
                 {sectionsLoading && sections.length === 0 ? (
                     <View style={{ marginVertical: 32, alignItems: "center" }}>
                         <ActivityIndicator size="small" color="#f8a812" />
-                        <Text style={{ marginTop: 8, fontSize: 13, color: "#666" }}>Loading deals...</Text>
+                        <Text style={{ marginTop: 8, color: "#666", ...textPresets.label }}>Loading deals...</Text>
                     </View>
                 ) : (
                     sections.map((section) => renderDealSection(section))

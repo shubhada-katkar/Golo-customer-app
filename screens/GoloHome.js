@@ -1185,7 +1185,7 @@ const styles = StyleSheet.create({
     filterbtn: {
         alignItems: "center",
         borderRadius: 10,
-        backgroundColor: "#f5b949e5",
+        backgroundColor: "#fff",
         padding: 12,
         justifyContent: "center",
     },
@@ -1422,7 +1422,7 @@ const styles = StyleSheet.create({
         borderColor: "#cacaca",
         marginVertical: 6,
         paddingHorizontal: 6,
-        width: "85%"
+        width: "86%"
     },
     searchInput: {
         flex: 1,
