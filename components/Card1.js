@@ -9,7 +9,25 @@ import { Ionicons, MaterialIcons, Feather } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { textPresets } from "../theme/typography";
 
-const { width, height } = Dimensions.get("window");
+function formatRestrictionUntil(date) {
+  if (!date) return "";
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return "";
+
+  const day = String(d.getDate()).padStart(2, "0");
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const month = monthNames[d.getMonth()];
+  const year = d.getFullYear();
+
+  let hours = d.getHours();
+  const minutes = String(d.getMinutes()).padStart(2, "0");
+  const ampm = hours >= 12 ? "PM" : "AM";
+  hours = hours % 12;
+  hours = hours ? hours : 12;
+  const formattedHours = String(hours).padStart(2, "0");
+
+  return `${day} ${month} ${year}, ${formattedHours}:${minutes} ${ampm}`;
+}
 
 export default function Card1({ category, formData, setFormData, onNext }) {
   // images is an array
@@ -374,30 +392,82 @@ export default function Card1({ category, formData, setFormData, onNext }) {
 
         <Modal
           visible={restrictionModalVisible}
-          transparent={true}
-          animationType="slide"
+          transparent
+          animationType="fade"
           onRequestClose={() => setRestrictionModalVisible(false)}
           statusBarTranslucent
         >
-          <View style={styles.restrictionOverlay}>
-            <View style={styles.restrictionCard}>
-              <View style={styles.restrictionHeader}>
-                <Feather name="alert-triangle" size={24} color="#d92d20" />
-                <Text style={styles.restrictionTitle}>Upload Restricted</Text>
+          <View style={styles.flaggedOverlay}>
+            <View style={styles.flaggedCard}>
+              {/* Header row: warning icon + title + close */}
+              <View style={styles.flaggedHeaderRow}>
+                <View style={styles.flaggedHeaderTextWrap}>
+                  <View style={styles.flaggedHeaderIconCircle}>
+                    <Feather name="clock" size={14} color="#d92d20" />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.flaggedHeaderTitle}>Uploading Restricted</Text>
+                    <Text style={styles.flaggedHeaderSubtitle}>
+                      Temporary block due to multiple policy violations.
+                    </Text>
+                  </View>
+                </View>
+                <TouchableOpacity
+                  onPress={() => setRestrictionModalVisible(false)}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Feather name="x" size={20} color="#8a8a8a" />
+                </TouchableOpacity>
               </View>
-              <Text style={styles.restrictionMessage}>
-                Your content upload limit is exceeded due to community guideline violations. Please try again after the ban expires.
+
+              {/* Centered big lock icon */}
+              <View style={styles.flaggedIconWrap}>
+                <View style={styles.flaggedIconCircle}>
+                  <Feather name="lock" size={30} color="#d92d20" />
+                </View>
+              </View>
+
+              <Text style={styles.flaggedTitle}>Upload Limit Exceeded</Text>
+              <Text style={styles.flaggedDescription}>
+                You have been temporarily restricted from uploading content due to multiple inappropriate image submissions. Your restriction will be removed at the date and time shown below.
               </Text>
-              <View style={styles.countdownContainer}>
-                <Text style={styles.countdownValue}>
-                  {countdownText || "00:00:00"}
+
+              {/* Restriction End Date & Time UI */}
+              <View style={{
+                backgroundColor: "#fef3f2",
+                borderColor: "#fda29b",
+                borderWidth: 1,
+                paddingVertical: 14,
+                paddingHorizontal: 20,
+                borderRadius: 12,
+                alignItems: "center",
+                justifyContent: "center",
+                marginVertical: 16,
+              }}>
+                <Text style={{
+                  ...textPresets.caption,
+                  color: "#b42318",
+                  letterSpacing: 1,
+                  marginBottom: 4,
+                  textTransform: "uppercase"
+                }}>
+                  Restriction End Date & Time
+                </Text>
+                <Text style={{
+                  ...textPresets.label,
+                  color: "#d92d20",
+                  textAlign: "center"
+                }}>
+                  {formatRestrictionUntil(restrictionUntil) || "N/A"}
                 </Text>
               </View>
+
               <TouchableOpacity
-                style={styles.restrictionCloseButton}
+                style={[styles.flaggedButton, { backgroundColor: "#d92d20" }]}
                 onPress={() => setRestrictionModalVisible(false)}
+                activeOpacity={0.85}
               >
-                <Text style={styles.restrictionCloseButtonText}>Close</Text>
+                <Text style={styles.flaggedButtonText}>I Understand, Go Back</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -489,14 +559,14 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 11,
   },
-  restrictionOverlay: {
+  flaggedOverlay: {
     flex: 1,
     backgroundColor: "rgba(20, 20, 20, 0.55)",
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 24,
   },
-  restrictionCard: {
+  flaggedCard: {
     width: "100%",
     maxWidth: 360,
     backgroundColor: "#fff",
@@ -510,46 +580,69 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 12,
   },
-  restrictionHeader: {
+  flaggedHeaderRow: {
     flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 10,
+    alignItems: "flex-start",
+    justifyContent: "space-between",
   },
-  restrictionTitle: {
-    marginLeft: 10,
-    color: "#1a1a1a",
-    ...textPresets.subtitle,
+  flaggedHeaderTextWrap: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    flex: 1,
+    paddingRight: 12,
   },
-  restrictionMessage: {
-    ...textPresets.label,
-    color: "#6b6b6b",
-    marginBottom: 20,
-    textAlign: "center",
-  },
-  countdownContainer: {
-    backgroundColor: "#fef3f2",
-    borderColor: "#fda29b",
-    borderWidth: 1,
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderRadius: 12,
+  flaggedHeaderIconCircle: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: "#fdecea",
     alignItems: "center",
     justifyContent: "center",
-    marginVertical: 16,
+    marginRight: 10,
+    marginTop: 1,
   },
-  countdownValue: {
+  flaggedHeaderTitle: {
+    color: "#1a1a1a",
     ...textPresets.body,
-    lineHeight: Math.round(14 * 1.4),
-    letterSpacing: 2,
-    color: "#d92d20",
+    lineHeight: Math.round(14 * 1.5),
   },
-  restrictionCloseButton: {
-    backgroundColor: "#d92d20",
+  flaggedHeaderSubtitle: {
+    ...textPresets.caption,
+    color: "#8a8a8a",
+    marginTop: 3,
+  },
+  flaggedIconWrap: {
+    alignItems: "center",
+    marginTop: 18,
+    marginBottom: 14,
+  },
+  flaggedIconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: "#fdecea",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  flaggedTitle: {
+    color: "#1a1a1a",
+    textAlign: "center",
+    marginBottom: 8,
+    ...textPresets.subtitle,
+  },
+  flaggedDescription: {
+    ...textPresets.label,
+    color: "#6b6b6b",
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  flaggedButton: {
+    backgroundColor: "#e0483e",
     borderRadius: 12,
     paddingVertical: 13,
     alignItems: "center",
   },
-  restrictionCloseButtonText: {
+  flaggedButtonText: {
     color: "#fff",
     lineHeight: Math.round(14 * 1.4),
     ...textPresets.body,
