@@ -44,6 +44,7 @@ import {
   Poppins_700Bold,
   useFonts,
 } from "@expo-google-fonts/poppins";
+import Support from "./screens/Support";
 
 import { startCustomerNotificationPolling, stopCustomerNotificationPolling } from "./services/notificationService";
 
@@ -182,6 +183,7 @@ export default function App() {
           <Stack.Screen name="NotificationsPage" component={NotificationsPage} />
           <Stack.Screen name="StorePage" component={StorePage} />
           <Stack.Screen name="ResetPassword" component={ResetPassword} />
+          <Stack.Screen name="Support" component={Support} />
         </Stack.Navigator>
       </NavigationContainer>
     </ThemeProvider>

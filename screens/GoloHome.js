@@ -21,6 +21,7 @@ import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { ThemeContext } from "../theme/ThemeContext";
 import Topbar2 from "../components/Topbar2";
 import GoloBottom from "../components/GoloBottom";
+import RatingsBox from "../components/RatingsBox";
 import { fetchAllOffers } from "../services/offersService";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -885,6 +886,16 @@ export default function GoloHome({ route }) {
                         <Text style={styles.helperText}>
                             Pull down to refresh
                         </Text>
+                        {error ? (
+                            <TouchableOpacity
+                                style={styles.retryButton}
+                                onPress={fetchOffers}
+                                activeOpacity={0.8}
+                            >
+                                <Ionicons name="refresh-outline" size={16} color="#ffffff" style={{ marginRight: 6 }} />
+                                <Text style={styles.retryButtonText}>Try Again</Text>
+                            </TouchableOpacity>
+                        ) : null}
                     </View>
                 )}
             </ScrollView>
@@ -999,6 +1010,7 @@ export default function GoloHome({ route }) {
             >
                 <GoloBottom />
             </SafeAreaView>
+            <RatingsBox />
         </SafeAreaView>
     );
 }
@@ -1411,6 +1423,21 @@ const styles = StyleSheet.create({
         textAlign: "center",
         marginTop: 8,
         color: "#666",
+        ...textPresets.label,
+    },
+    retryButton: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "#157a4f",
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 20,
+        marginTop: 14,
+    },
+    retryButtonText: {
+        color: "#ffffff",
+        fontWeight: "600",
         ...textPresets.label,
     },
     searchContainer: {

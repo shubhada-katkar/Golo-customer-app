@@ -272,21 +272,42 @@ const applyLocalFilters = (offers, { category, q }) => {
   });
 };
 
-const fetchOfferList = async (url) => {
-  const response = await fetch(url, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-    },
-  });
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-  const payload = await response.json();
+const fetchOfferList = async (url, maxRetries = 2) => {
+  let lastError = null;
 
-  if (!response.ok) {
-    throw new Error(payload?.message || `HTTP ${response.status}`);
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      const payload = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        const errorMsg = payload?.message || `HTTP ${response.status}`;
+        // If 503 (transient failure/timeout) and we have retries left, wait and retry
+        if ((response.status === 503 || response.status === 504) && attempt < maxRetries) {
+          await delay(600 * (attempt + 1));
+          continue;
+        }
+        throw new Error(errorMsg);
+      }
+
+      return extractOfferArray(payload);
+    } catch (err) {
+      lastError = err;
+      if (attempt < maxRetries) {
+        await delay(600 * (attempt + 1));
+      }
+    }
   }
 
-  return extractOfferArray(payload);
+  throw lastError || new Error("Failed to fetch offers");
 };
 
 /**
@@ -313,7 +334,7 @@ export const fetchAllOffers = async (options = {}) => {
     offerTypes = null,
   } = options;
 
-  try {
+  const buildUrl = (includeLocation = true) => {
     const nearbyParams = new URLSearchParams();
     nearbyParams.append("limit", String(limit));
     nearbyParams.append("page", String(page));
@@ -330,7 +351,16 @@ export const fetchAllOffers = async (options = {}) => {
       nearbyParams.append("offerTypes", offerTypes);
     }
 
-    if (lat && lng) {
+    const hasCoords =
+      includeLocation &&
+      lat !== null &&
+      lat !== undefined &&
+      lng !== null &&
+      lng !== undefined &&
+      !Number.isNaN(Number(lat)) &&
+      !Number.isNaN(Number(lng));
+
+    if (hasCoords) {
       nearbyParams.append("lat", String(lat));
       nearbyParams.append("lng", String(lng));
       nearbyParams.append("radiusKm", String(radiusKm));
@@ -338,9 +368,30 @@ export const fetchAllOffers = async (options = {}) => {
 
     nearbyParams.append("activeNow", "true");
 
-    const offersResult = await fetchOfferList(
-      `${BASE_URL}/offers/nearby?${nearbyParams.toString()}`
-    );
+    return `${BASE_URL}/offers/nearby?${nearbyParams.toString()}`;
+  };
+
+  try {
+    let offersResult = [];
+    try {
+      offersResult = await fetchOfferList(buildUrl(true));
+    } catch (primaryErr) {
+      // If location-constrained query fails, attempt fallback without location params
+      const hasCoords =
+        lat !== null &&
+        lat !== undefined &&
+        lng !== null &&
+        lng !== undefined &&
+        !Number.isNaN(Number(lat)) &&
+        !Number.isNaN(Number(lng));
+
+      if (hasCoords) {
+        console.warn("Primary nearby offers fetch failed, attempting fallback without location filter...", primaryErr);
+        offersResult = await fetchOfferList(buildUrl(false));
+      } else {
+        throw primaryErr;
+      }
+    }
 
     const merged = offersResult.map((offer) => normalizeOfferRecord(offer));
 

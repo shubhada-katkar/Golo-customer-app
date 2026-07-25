@@ -25,6 +25,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { BASE_URL } from "../config";
 import { textPresets } from "../theme/typography";
+import RatingsBox from "../components/RatingsBox";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const BANNER_HEIGHT = 170;
@@ -1065,7 +1066,8 @@ export default function GoloDeals() {
             >
                 <GoloBottom />
             </SafeAreaView>
-        </SafeAreaView>
+            <RatingsBox />
+        </SafeAreaView >
     );
 }
 
