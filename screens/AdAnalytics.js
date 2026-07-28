@@ -1,6 +1,6 @@
 import React, { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useFocusEffect } from '@react-navigation/native';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Topbar from "../components/Topbar";
 import ChojaBottom from "../components/ChojaBottom";
@@ -9,6 +9,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { deleteAd, getAdAnalytics } from "../services/analyticsService";
 import { LinearGradient } from "expo-linear-gradient";
 import { textPresets } from "../theme/typography";
+import CustomAlertModal from "../components/CustomeAlertModal";
 
 const StatCard = ({ title, value, subtitle }) => (
     <View style={styles.card}>
@@ -42,7 +43,44 @@ export default function AdAnalytics({ navigation, route }) {
     const [analytics, setAnalytics] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const [refreshing, setRefreshing] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [alertConfig, setAlertConfig] = useState({
+        visible: false,
+        title: "",
+        message: "",
+        type: "error",
+        showCancelButton: false,
+        cancelText: "Cancel",
+        buttonText: "OK",
+        onConfirm: null,
+        onClose: null,
+    });
+
+    const showAlert = (title, message, type = "error", extraProps = {}) => {
+        setAlertConfig({
+            visible: true,
+            title,
+            message,
+            type,
+            showCancelButton: false,
+            buttonText: "OK",
+            cancelText: "Cancel",
+            onConfirm: null,
+            onClose: null,
+            ...extraProps,
+        });
+    };
+
+    const hideAlert = () => {
+        if (alertConfig.onClose) {
+            const cb = alertConfig.onClose;
+            setAlertConfig({ visible: false, title: "", message: "", type: "error", showCancelButton: false, cancelText: "Cancel", buttonText: "OK", onConfirm: null, onClose: null });
+            cb();
+        } else {
+            setAlertConfig(prev => ({ ...prev, visible: false }));
+        }
+    };
 
     const fetchAnalytics = useCallback(async () => {
         if (!adId) {
@@ -100,33 +138,33 @@ export default function AdAnalytics({ navigation, route }) {
 
     const handleDeleteAd = useCallback(() => {
         if (!resolvedAdId) {
-            Alert.alert("Error", "Ad ID is missing");
+            showAlert("Error", "Ad ID is missing", "error");
             return;
         }
 
-        Alert.alert(
+        showAlert(
             "Delete Ad",
             `Are you sure you want to delete "${adInfo.title || routeParams.adName || "this ad"}"? This action cannot be undone.`,
-            [
-                { text: "Cancel", style: "cancel" },
-                {
-                    text: "Delete",
-                    style: "destructive",
-                    onPress: async () => {
-                        try {
-                            setIsDeleting(true);
-                            await deleteAd(resolvedAdId);
-                            Alert.alert("Success", "Ad deleted successfully", [
-                                { text: "OK", onPress: () => navigation.goBack() },
-                            ]);
-                        } catch (err) {
-                            Alert.alert("Error", err?.message || "Failed to delete ad");
-                        } finally {
-                            setIsDeleting(false);
-                        }
-                    },
+            "warning",
+            {
+                showCancelButton: true,
+                buttonText: "Delete",
+                cancelText: "Cancel",
+                onConfirm: async () => {
+                    hideAlert();
+                    try {
+                        setIsDeleting(true);
+                        await deleteAd(resolvedAdId);
+                        showAlert("Success", "Ad deleted successfully", "success", {
+                            onClose: () => navigation.goBack()
+                        });
+                    } catch (err) {
+                        showAlert("Error", err?.message || "Failed to delete ad", "error");
+                    } finally {
+                        setIsDeleting(false);
+                    }
                 },
-            ],
+            }
         );
     }, [resolvedAdId, adInfo.title, routeParams.adName, navigation]);
 
@@ -243,6 +281,18 @@ export default function AdAnalytics({ navigation, route }) {
                 style={{ position: "absolute", bottom: 0, width: "100%" }} >
                 <ChojaBottom />
             </SafeAreaView>
+            <CustomAlertModal
+                visible={alertConfig.visible}
+                type={alertConfig.type}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                buttonText={alertConfig.buttonText}
+                showCancelButton={alertConfig.showCancelButton}
+                cancelText={alertConfig.cancelText}
+                onConfirm={alertConfig.onConfirm}
+                onClose={hideAlert}
+                onCancel={hideAlert}
+            />
         </SafeAreaView>
     );
 }

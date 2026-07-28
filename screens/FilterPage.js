@@ -89,12 +89,12 @@ export default function FilterPage({ navigation }) {
         { key: "Weekend Offer", label: "Weekend Offer", icon: "weekend" },
         { key: "Member Exclusive", label: "Member Exclusive", icon: "verified" },
         { key: "Loyalty Reward", label: "Loyalty Reward", icon: "loyalty" },
-        { label: "Seasonal Offer", value: "Seasonal Offer", icon: "calendar-today" },
-        { label: "Happy Hour Deal", value: "Happy Hour Deal", icon: "alarm" },
-        { label: "First Purchase Offer", value: "First Purchase Offer", icon: "tick" },
-        { label: "Referral Offer", value: "Referral Offer", icon: "group" },
-        { label: "Clear Stock Sale", value: "Clear Stock Sale", icon: "store" },
-        { label: "Free Gift Offer", value: "Free Gift Offer", icon: "card-giftcard" },
+        { key: "Seasonal Offer", label: "Seasonal Offer", icon: "calendar-today" },
+        { key: "Happy Hour Deal", label: "Happy Hour Deal", icon: "alarm" },
+        { key: "First Purchase Offer", label: "First Purchase Offer", icon: "tick" },
+        { key: "Referral Offer", label: "Referral Offer", icon: "group" },
+        { key: "Clear Stock Sale", label: "Clear Stock Sale", icon: "store" },
+        { key: "Free Gift Offer", label: "Free Gift Offer", icon: "card-giftcard" },
     ];
 
     return (

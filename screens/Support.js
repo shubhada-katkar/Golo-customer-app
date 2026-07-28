@@ -7,7 +7,6 @@ import {
     StyleSheet,
     ActivityIndicator,
     ScrollView,
-    Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons, Feather } from '@expo/vector-icons';
@@ -16,44 +15,58 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BASE_URL } from '../config';
 import Topbar from '../components/Topbar';
 import { textPresets } from '../theme/typography';
+import CustomAlertModal from '../components/CustomeAlertModal';
+import { getValidToken } from '../services/authService';
 
 const TOPICS = [
-    'General Inquiry',
-    'Billing & Payments',
-    'Technical Issue',
-    'Report a Listing or User',
-    'Feature Request',
+    'Account Issue',
+    'Payment Problem',
+    'Deal Claim Query',
+    'Technical Support',
+    'Other',
 ];
 
 export default function Support({ navigation }) {
     const [fullName, setFullName] = useState('');
     const [email, setEmail] = useState('');
     const [topic, setTopic] = useState('');
-    const [dropdownOpen, setDropdownOpen] = useState(false);
     const [message, setMessage] = useState('');
-    const [userId, setUserId] = useState(null);
     const [submitting, setSubmitting] = useState(false);
+    const [showTopicDropdown, setShowTopicDropdown] = useState(false);
+    const [userId, setUserId] = useState(null);
+    const [alertConfig, setAlertConfig] = useState({ visible: false, title: "", message: "", type: "error" });
+
+    const showAlert = (title, message, type = "error") => {
+        setAlertConfig({ visible: true, title, message, type });
+    };
+
+    const hideAlert = () => {
+        setAlertConfig(prev => ({ ...prev, visible: false }));
+    };
 
     useEffect(() => {
         const loadUserData = async () => {
             try {
-                const storedUser = await AsyncStorage.getItem('customerData');
-                const storedId = await AsyncStorage.getItem('customerId');
-
-                if (storedId) {
-                    setUserId(storedId);
+                const storedUserId = await AsyncStorage.getItem('customerId');
+                if (storedUserId) {
+                    setUserId(storedUserId);
                 }
 
-                if (storedUser) {
-                    const parsedUser = JSON.parse(storedUser);
-                    if (parsedUser) {
-                        const name = parsedUser.name || parsedUser.fullName || parsedUser.username || '';
-                        const userEmail = parsedUser.email || '';
-                        if (name) setFullName(name);
-                        if (userEmail) setEmail(userEmail);
-                        if (parsedUser._id || parsedUser.id) {
-                            setUserId(String(parsedUser._id || parsedUser.id));
-                        }
+                // Try to pre-fill profile for logged-in users; guests fill manually
+                let token = null;
+                try {
+                    token = await getValidToken();
+                } catch {
+                    // Guest user — no token, skip profile prefill
+                }
+                if (token) {
+                    const res = await fetch(`${BASE_URL}/users/profile`, {
+                        headers: { Authorization: `Bearer ${token}` },
+                    });
+                    const json = await res.json();
+                    if (res.ok && json.data) {
+                        setFullName(json.data.name || '');
+                        setEmail(json.data.email || '');
                     }
                 }
             } catch (error) {
@@ -66,13 +79,13 @@ export default function Support({ navigation }) {
 
     const handleSubmit = async () => {
         if (!fullName.trim() || !email.trim() || !topic) {
-            Alert.alert('Missing info', 'Please fill in your name, email, and topic.');
+            showAlert('Missing info', 'Please fill in your name, email, and topic.', 'warning');
             return;
         }
 
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email.trim())) {
-            Alert.alert('Invalid Email', 'Please enter a valid email address.');
+            showAlert('Invalid Email', 'Please enter a valid email address.', 'warning');
             return;
         }
 
@@ -104,11 +117,11 @@ export default function Support({ navigation }) {
                 throw new Error(errorMsg);
             }
 
-            Alert.alert('Request submitted', 'Our support team will get back to you soon.');
+            showAlert('Request submitted', 'Our support team will get back to you soon.', 'success');
             setTopic('');
             setMessage('');
         } catch (err) {
-            Alert.alert('Error', err.message || 'Something went wrong. Please try again.');
+            showAlert('Error', err.message || 'Something went wrong. Please try again.', 'error');
         } finally {
             setSubmitting(false);
         }
@@ -120,46 +133,34 @@ export default function Support({ navigation }) {
                 colors={["#f8a812", "#fad081", "#f8f6f265"]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 0, y: 1 }}
-                style={styles.headerGradient}
+                style={{ height: 270, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0 }}
             />
             <Topbar />
 
             <View style={styles.header}>
-                <View style={styles.headerRow}>
-                    <TouchableOpacity onPress={() => navigation.goBack()}>
-                        <MaterialIcons name="arrow-back-ios" size={22} color="#000" style={{ padding: 10 }} />
-                    </TouchableOpacity>
-                    <Text style={styles.headerTitle}>Support & Help</Text>
-                </View>
+                <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 10 }}>
+                    <MaterialIcons name="arrow-back-ios" size={20} color="#1f2937" />
+                </TouchableOpacity>
+                <Text style={{ ...textPresets.title }}>Help & Support</Text>
             </View>
 
-            <ScrollView
-                contentContainerStyle={styles.scrollContent}
-                keyboardShouldPersistTaps="handled"
-            >
-                <Text style={styles.heroTitle}>How can we help you?</Text>
-                <Text style={styles.heroSubtitle}>
-                    Submit a request and our support team will get back to you as soon as possible.
-                </Text>
-
+            <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
                 <View style={styles.card}>
-                    <Text style={styles.label}>
-                        Full Name <Text style={styles.required}>*</Text>
-                    </Text>
+                    <Text style={styles.sectionTitle}>Submit a Request</Text>
+
+                    <Text style={styles.label}>Full Name</Text>
                     <TextInput
                         style={styles.input}
-                        placeholder="John Doe"
+                        placeholder="Enter your full name"
                         placeholderTextColor="#a3a3a3"
                         value={fullName}
                         onChangeText={setFullName}
                     />
 
-                    <Text style={styles.label}>
-                        Email Address <Text style={styles.required}>*</Text>
-                    </Text>
+                    <Text style={styles.label}>Email Address</Text>
                     <TextInput
                         style={styles.input}
-                        placeholder="john@example.com"
+                        placeholder="Enter your email"
                         placeholderTextColor="#a3a3a3"
                         keyboardType="email-address"
                         autoCapitalize="none"
@@ -167,35 +168,32 @@ export default function Support({ navigation }) {
                         onChangeText={setEmail}
                     />
 
-                    <Text style={styles.label}>
-                        What do you need help with? <Text style={styles.required}>*</Text>
-                    </Text>
+                    <Text style={styles.label}>Select Topic</Text>
                     <TouchableOpacity
-                        style={styles.dropdownField}
+                        style={styles.dropdownButton}
+                        onPress={() => setShowTopicDropdown(!showTopicDropdown)}
                         activeOpacity={0.8}
-                        onPress={() => setDropdownOpen((prev) => !prev)}
                     >
-                        <Text style={topic ? styles.dropdownValue : styles.dropdownPlaceholder}>
-                            {topic || 'Select a topic'}
+                        <Text style={topic ? styles.dropdownText : styles.dropdownPlaceholder}>
+                            {topic || 'Choose a category...'}
                         </Text>
-                        <Feather name={dropdownOpen ? 'chevron-up' : 'chevron-down'} size={18} color="#666" />
+                        <Feather name={showTopicDropdown ? 'chevron-up' : 'chevron-down'} size={18} color="#6b7280" />
                     </TouchableOpacity>
 
-                    {dropdownOpen && (
-                        <View style={styles.dropdownList}>
-                            {TOPICS.map((item, index) => (
+                    {showTopicDropdown && (
+                        <View style={styles.dropdownMenu}>
+                            {TOPICS.map((item) => (
                                 <TouchableOpacity
                                     key={item}
-                                    style={[
-                                        styles.dropdownItem,
-                                        index === TOPICS.length - 1 && { borderBottomWidth: 0 },
-                                    ]}
+                                    style={styles.dropdownItem}
                                     onPress={() => {
                                         setTopic(item);
-                                        setDropdownOpen(false);
+                                        setShowTopicDropdown(false);
                                     }}
                                 >
-                                    <Text style={styles.dropdownItemText}>{item}</Text>
+                                    <Text style={[styles.dropdownItemText, topic === item && styles.selectedTopic]}>
+                                        {item}
+                                    </Text>
                                 </TouchableOpacity>
                             ))}
                         </View>
@@ -229,6 +227,13 @@ export default function Support({ navigation }) {
                     </TouchableOpacity>
                 </View>
             </ScrollView>
+            <CustomAlertModal
+                visible={alertConfig.visible}
+                type={alertConfig.type}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                onClose={hideAlert}
+            />
         </SafeAreaView>
     );
 }
@@ -248,7 +253,6 @@ const styles = StyleSheet.create({
     },
     header: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
         alignItems: 'center',
         paddingHorizontal: 16,
         paddingVertical: 10,
@@ -289,13 +293,9 @@ const styles = StyleSheet.create({
     },
     card: {
         backgroundColor: '#fff',
-        borderRadius: 16,
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
         padding: 20,
-        shadowColor: '#000',
-        shadowOpacity: 0.06,
-        shadowRadius: 10,
-        shadowOffset: { width: 0, height: 4 },
-        elevation: 3,
     },
     label: {
         ...textPresets.label,
@@ -320,16 +320,12 @@ const styles = StyleSheet.create({
         minHeight: 90,
         textAlignVertical: 'top',
     },
-    dropdownField: {
+    dropdownMenu: {
         borderWidth: 1,
-        borderColor: '#f9a641',
+        borderColor: '#969696ff',
         borderRadius: 10,
-        paddingHorizontal: 14,
-        paddingVertical: 12,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        backgroundColor: '#fff',
+        marginTop: 6,
+        overflow: 'hidden',
     },
     dropdownPlaceholder: {
         color: '#a3a3a3',
@@ -339,22 +335,30 @@ const styles = StyleSheet.create({
         color: '#000',
         ...textPresets.body,
     },
-    dropdownList: {
-        borderWidth: 1,
-        borderColor: '#e2e2e2',
-        borderRadius: 10,
-        marginTop: 6,
-        overflow: 'hidden',
-    },
     dropdownItem: {
         paddingVertical: 12,
         paddingHorizontal: 14,
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
+        borderBottomWidth: 0.5,
+        borderBottomColor: '#b8b8b8ff',
     },
     dropdownItemText: {
         ...textPresets.body,
         color: '#333',
+    },
+    dropdownText: {
+        ...textPresets.body,
+        color: '#333',
+    },
+    dropdownButton: {
+        borderWidth: 1,
+        borderColor: '#969696ff',
+        borderRadius: 10,
+        paddingHorizontal: 14,
+        paddingVertical: 12,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        backgroundColor: '#fff',
     },
     submitButton: {
         flexDirection: 'row',
@@ -370,4 +374,7 @@ const styles = StyleSheet.create({
         color: '#fff',
         lineHeight: Math.round(14 * 1.5)
     },
+    sectionTitle: {
+        ...textPresets.subtitle,
+    }
 });

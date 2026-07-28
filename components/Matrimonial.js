@@ -22,23 +22,25 @@ export default function Matrimonial({ formData, setFormData, category, onPreviou
       >
         <Text style={styles.composeTitle}>Matrimonial</Text>
 
-        <TouchableOpacity
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            paddingHorizontal: 10,
-            paddingVertical: 4,
-            backgroundColor: "#108136",
-            borderRadius: 10,
-          }}
-          onPress={onPrevious}
-        >
-          <AntDesign name="arrow-left" size={18} color="#ffffff" />
-          <Text style={{
-            ...textPresets.body, marginLeft: 6,
-            color: "#ffffff", lineHeight: Math.round(14 * 1.5)
-          }}>Previous</Text>
-        </TouchableOpacity>
+        {!isEditMode && (
+          <TouchableOpacity
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              paddingHorizontal: 10,
+              paddingVertical: 4,
+              backgroundColor: "#108136",
+              borderRadius: 10,
+            }}
+            onPress={onPrevious}
+          >
+            <AntDesign name="arrow-left" size={18} color="#ffffff" />
+            <Text style={{
+              ...textPresets.body, marginLeft: 6,
+              color: "#ffffff", lineHeight: Math.round(14 * 1.5)
+            }}>Previous</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       <View style={styles.formCard}>

@@ -1,9 +1,10 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { BASE_URL } from "../config";
+import { getValidToken } from "./authService";
 
 export async function submitReport(type, targetId, reason, details) {
   try {
-    const token = await AsyncStorage.getItem("customerToken");
+    const token = await getValidToken();
     if (!token) {
       throw new Error("Please login to submit a report");
     }

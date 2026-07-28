@@ -10,9 +10,20 @@ import {
 import { Dimensions } from "react-native";
 const { width, height } = Dimensions.get("window");
 import { textPresets } from "../theme/typography";
+import CustomAlertModal from "../components/CustomeAlertModal";
 
 export default function JahiratiCategory({ navigation }) {
     const [selectedCategory, setSelectedCategory] = useState(null);
+    const [alertConfig, setAlertConfig] = useState({ visible: false, title: "", message: "", type: "error" });
+
+    const showAlert = (title, message, type = "error") => {
+        setAlertConfig({ visible: true, title, message, type });
+    };
+
+    const hideAlert = () => {
+        setAlertConfig(prev => ({ ...prev, visible: false }));
+    };
+
     const getCategoryStyle = (label) => [
         styles.component,
         selectedCategory?.label === label && styles.selectedComponent
@@ -212,7 +223,7 @@ export default function JahiratiCategory({ navigation }) {
                     style={styles.button}
                     onPress={() => {
                         if (!selectedCategory) {
-                            alert("Please select a category first");
+                            showAlert("Selection Required", "Please select a category first", "warning");
                             return;
                         }
                         navigation.navigate("Template", { category: selectedCategory });
@@ -224,6 +235,13 @@ export default function JahiratiCategory({ navigation }) {
                 </TouchableOpacity>
 
             </LinearGradient>
+            <CustomAlertModal
+                visible={alertConfig.visible}
+                type={alertConfig.type}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                onClose={hideAlert}
+            />
         </SafeAreaView >
     );
 }

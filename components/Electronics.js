@@ -47,29 +47,31 @@ export default function Electronics({ formData, setFormData, category, onPreviou
             >
                 <Text style={styles.composeTitle} numberOfLines={2} >Electronics and Home Appliances</Text>
 
-                <TouchableOpacity
-                    style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        paddingHorizontal: 10,
-                        paddingVertical: 4,
-                        backgroundColor: "#108136",
-                        borderRadius: 10,
-                    }}
-                    onPress={onPrevious}
-                >
-                    <AntDesign name="arrow-left" size={18} color="#ffffff" />
-                    <Text
+                {!isEditMode && (
+                    <TouchableOpacity
                         style={{
-                            ...textPresets.body,
-                            marginLeft: 6,
-                            color: "#ffffff",
-                            lineHeight: Math.round(14 * 1.5),
+                            flexDirection: "row",
+                            alignItems: "center",
+                            paddingHorizontal: 10,
+                            paddingVertical: 4,
+                            backgroundColor: "#108136",
+                            borderRadius: 10,
                         }}
+                        onPress={onPrevious}
                     >
-                        Previous
-                    </Text>
-                </TouchableOpacity>
+                        <AntDesign name="arrow-left" size={18} color="#ffffff" />
+                        <Text
+                            style={{
+                                ...textPresets.body,
+                                marginLeft: 6,
+                                color: "#ffffff",
+                                lineHeight: Math.round(14 * 1.5),
+                            }}
+                        >
+                            Previous
+                        </Text>
+                    </TouchableOpacity>
+                )}
             </View>
 
             <View style={styles.formCard}>

@@ -52,10 +52,12 @@ export default function LostandFound({
             <View style={styles.header}>
                 <Text style={styles.composeTitle}>Lost & Found</Text>
 
-                <TouchableOpacity style={styles.prevBtn} onPress={onPrevious}>
-                    <AntDesign name="arrow-left" size={18} color="#fff" />
-                    <Text style={styles.prevText}>Previous</Text>
-                </TouchableOpacity>
+                {!isEditMode && (
+                    <TouchableOpacity style={styles.prevBtn} onPress={onPrevious}>
+                        <AntDesign name="arrow-left" size={18} color="#fff" />
+                        <Text style={styles.prevText}>Previous</Text>
+                    </TouchableOpacity>
+                )}
             </View>
 
             <View style={styles.formCard}>

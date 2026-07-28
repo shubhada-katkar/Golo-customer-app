@@ -2,6 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
 import { BASE_URL } from "../config";
+import { getValidToken } from "./authService";
 
 let pollingTimer = null;
 let pollingInFlight = false;
@@ -56,7 +57,13 @@ async function registerPushTokenWithBackend() {
     const expoToken = (await Notifications.getExpoPushTokenAsync()).data;
     if (!expoToken) return;
 
-    const token = await AsyncStorage.getItem("customerToken");
+    let token = "";
+    try {
+      token = await getValidToken();
+    } catch {
+      // Not logged in — skip push token registration
+      return;
+    }
     const baseUrl = getBaseUrl();
     if (!token || !baseUrl) return;
 
@@ -76,7 +83,13 @@ async function registerPushTokenWithBackend() {
 }
 
 async function fetchNotifications() {
-  const token = await AsyncStorage.getItem("customerToken");
+  let token = "";
+  try {
+    token = await getValidToken();
+  } catch {
+    // Not logged in — skip fetching notifications
+    return [];
+  }
   const baseUrl = getBaseUrl();
   if (!token || !baseUrl) return [];
 

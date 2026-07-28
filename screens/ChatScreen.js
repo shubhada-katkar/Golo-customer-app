@@ -1,12 +1,13 @@
 import React, { useCallback, useContext, useEffect, useRef, useState } from "react";
 import {
-    View, Text, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator, Alert,
+    View, Text, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator,
     FlatList, Image, KeyboardAvoidingView, Platform, Modal, Keyboard
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemeContext } from "../theme/ThemeContext";
+import CustomAlertModal from "../components/CustomeAlertModal";
 import {
     connectChatSocket,
     getAuthContext,
@@ -39,6 +40,42 @@ export default function ChatScreen({ navigation, route }) {
     const [showMenu, setShowMenu] = useState(false);
 
     const [keyboardVisible, setKeyboardVisible] = useState(false);
+    const [alertConfig, setAlertConfig] = useState({
+        visible: false,
+        title: "",
+        message: "",
+        type: "error",
+        showCancelButton: false,
+        cancelText: "Cancel",
+        buttonText: "OK",
+        onConfirm: null,
+        onClose: null,
+    });
+
+    const showAlert = (title, message, type = "error", extraProps = {}) => {
+        setAlertConfig({
+            visible: true,
+            title,
+            message,
+            type,
+            showCancelButton: false,
+            buttonText: "OK",
+            cancelText: "Cancel",
+            onConfirm: null,
+            onClose: null,
+            ...extraProps,
+        });
+    };
+
+    const hideAlert = () => {
+        if (alertConfig.onClose) {
+            const cb = alertConfig.onClose;
+            setAlertConfig({ visible: false, title: "", message: "", type: "error", showCancelButton: false, cancelText: "Cancel", buttonText: "OK", onConfirm: null, onClose: null });
+            cb();
+        } else {
+            setAlertConfig(prev => ({ ...prev, visible: false }));
+        }
+    };
 
     const socketRef = useRef(null);
     const scrollRef = useRef(null);
@@ -190,8 +227,9 @@ export default function ChatScreen({ navigation, route }) {
                     console.log("chat_error", payload);
                 });
             } catch (error) {
-                Alert.alert("Chat Error", error.message || "Unable to open this chat");
-                navigation.goBack();
+                showAlert("Chat Error", error.message || "Unable to open this chat", "error", {
+                    onClose: () => { navigation.goBack(); }
+                });
             } finally {
                 if (isMounted) {
                     setLoading(false);
@@ -275,7 +313,7 @@ export default function ChatScreen({ navigation, route }) {
             setInputText("");
             socketRef.current?.emit("mark_read", { conversationId });
         } catch (error) {
-            Alert.alert("Send Failed", error.message || "Unable to send message");
+            showAlert("Send Failed", error.message || "Unable to send message", "error");
         } finally {
             setSending(false);
         }
@@ -287,7 +325,7 @@ export default function ChatScreen({ navigation, route }) {
 
             const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
             if (!permission.granted) {
-                Alert.alert("Permission Needed", "Please allow gallery access to attach images.");
+                showAlert("Permission Needed", "Please allow gallery access to attach images.", "warning");
                 return;
             }
 
@@ -330,7 +368,7 @@ export default function ChatScreen({ navigation, route }) {
             scrollToLatest(true);
             socketRef.current?.emit("mark_read", { conversationId });
         } catch (error) {
-            Alert.alert("Attachment Failed", error.message || "Could not send image");
+            showAlert("Attachment Failed", error.message || "Could not send image", "error");
         } finally {
             setUploadingImage(false);
         }
@@ -363,7 +401,7 @@ export default function ChatScreen({ navigation, route }) {
             } catch (error) {
                 sharedAdSentRef.current = false;
                 if (!cancelled) {
-                    Alert.alert("Share Failed", error.message || "Could not forward the ad");
+                    showAlert("Share Failed", error.message || "Could not forward the ad", "error");
                 }
             }
         };
@@ -410,7 +448,7 @@ export default function ChatScreen({ navigation, route }) {
             } catch (error) {
                 adRefSentRef.current = false;
                 if (!cancelled) {
-                    Alert.alert("Reference Failed", error.message || "Could not send ad reference");
+                    showAlert("Reference Failed", error.message || "Could not send ad reference", "error");
                 }
             }
         };
@@ -462,24 +500,24 @@ export default function ChatScreen({ navigation, route }) {
         setShowMenu(false);
         if (!conversationId) return;
 
-        Alert.alert(
+        showAlert(
             "Clear chat",
             "All messages in this conversation will be cleared. Continue?",
-            [
-                { text: "Cancel", style: "cancel" },
-                {
-                    text: "Clear",
-                    style: "destructive",
-                    onPress: async () => {
-                        try {
-                            await clearChat(conversationId);
-                            setMessages([]);
-                        } catch (error) {
-                            Alert.alert("Clear Failed", error.message || "Could not clear chat");
-                        }
-                    },
+            "warning",
+            {
+                showCancelButton: true,
+                buttonText: "Clear",
+                cancelText: "Cancel",
+                onConfirm: async () => {
+                    hideAlert();
+                    try {
+                        await clearChat(conversationId);
+                        setMessages([]);
+                    } catch (error) {
+                        showAlert("Clear Failed", error.message || "Could not clear chat", "error");
+                    }
                 },
-            ],
+            }
         );
     };
 
@@ -487,24 +525,24 @@ export default function ChatScreen({ navigation, route }) {
         setShowMenu(false);
         if (!conversationId) return;
 
-        Alert.alert(
+        showAlert(
             "Delete chat",
             "This conversation will be deleted for you. Continue?",
-            [
-                { text: "Cancel", style: "cancel" },
-                {
-                    text: "Delete",
-                    style: "destructive",
-                    onPress: async () => {
-                        try {
-                            await deleteConversation(conversationId);
-                            navigation.navigate("ChatPage");
-                        } catch (error) {
-                            Alert.alert("Delete Failed", error.message || "Could not delete chat");
-                        }
-                    },
+            "warning",
+            {
+                showCancelButton: true,
+                buttonText: "Delete",
+                cancelText: "Cancel",
+                onConfirm: async () => {
+                    hideAlert();
+                    try {
+                        await deleteConversation(conversationId);
+                        navigation.navigate("ChatPage");
+                    } catch (error) {
+                        showAlert("Delete Failed", error.message || "Could not delete chat", "error");
+                    }
                 },
-            ],
+            }
         );
     };
 
@@ -703,6 +741,18 @@ export default function ChatScreen({ navigation, route }) {
                     </TouchableOpacity>
                 </View>
             </KeyboardAvoidingView>
+            <CustomAlertModal
+                visible={alertConfig.visible}
+                type={alertConfig.type}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                buttonText={alertConfig.buttonText}
+                showCancelButton={alertConfig.showCancelButton}
+                cancelText={alertConfig.cancelText}
+                onConfirm={alertConfig.onConfirm}
+                onClose={hideAlert}
+                onCancel={hideAlert}
+            />
         </SafeAreaView>
     );
 }
@@ -853,5 +903,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         marginHorizontal: 8,
         minHeight: 42,
+        ...textPresets.body,
     }
 });

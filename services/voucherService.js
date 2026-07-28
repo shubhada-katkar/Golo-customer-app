@@ -1,11 +1,16 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { BASE_URL } from "../config";
+import { getValidToken } from "./authService";
 
 const normalizeBaseUrl = () => String(BASE_URL || "").replace(/\/+$/, "");
 
 const getAuthToken = async () => {
-  const token = await AsyncStorage.getItem("customerToken");
-  return token || "";
+  try {
+    const token = await getValidToken();
+    return token || "";
+  } catch {
+    return "";
+  }
 };
 
 const parseErrorMessage = (payload, fallbackMessage) => {

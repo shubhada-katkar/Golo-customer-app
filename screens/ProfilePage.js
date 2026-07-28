@@ -1,11 +1,12 @@
 import React, { useContext, useEffect, useState, useRef } from "react";
 import {
     View, StyleSheet, Text, TouchableOpacity, Image, Switch,
-    TextInput, ActivityIndicator, Alert, ScrollView, KeyboardAvoidingView, Platform
+    TextInput, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemeContext } from "../theme/ThemeContext";
 import Topbar from "../components/Topbar";
+import CustomAlertModal from "../components/CustomeAlertModal";
 import { AntDesign, MaterialIcons, Feather, FontAwesome } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { clearAuthStorage, getValidToken } from "../services/authService";
@@ -13,6 +14,7 @@ import * as ImagePicker from "expo-image-picker";
 import { BASE_URL } from "../config";
 import { LinearGradient } from "expo-linear-gradient";
 import { textPresets } from "../theme/typography";
+import RatingsBox from "../components/RatingsBox";
 
 const ORANGE = "#f5b849";
 const GREEN = "#157a4f";
@@ -23,6 +25,35 @@ export default function ProfilePage({ navigation }) {
     const [profileImage, setProfileImage] = useState(null);
     const [profilePhotoBase64, setProfilePhotoBase64] = useState(null);
     const [username, setUsername] = useState("");
+    const [visible, setVisible] = useState(false);
+    const [alertConfig, setAlertConfig] = useState({
+        visible: false,
+        title: "",
+        message: "",
+        type: "error",
+        showCancelButton: false,
+        cancelText: "Cancel",
+        buttonText: "OK",
+        onConfirm: null,
+    });
+
+    const showAlert = (title, message, type = "error", extraProps = {}) => {
+        setAlertConfig({
+            visible: true,
+            title,
+            message,
+            type,
+            showCancelButton: false,
+            buttonText: "OK",
+            cancelText: "Cancel",
+            onConfirm: null,
+            ...extraProps,
+        });
+    };
+
+    const hideAlert = () => {
+        setAlertConfig(prev => ({ ...prev, visible: false }));
+    };
     const [phone, setPhone] = useState("");
     const [email, setEmail] = useState("");
     const [loyaltyPoints, setLoyaltyPoints] = useState(0);
@@ -89,7 +120,7 @@ export default function ProfilePage({ navigation }) {
             }
 
             if (!res.ok) {
-                Alert.alert("Error", data.message || "Failed to fetch profile");
+                showAlert("Error", data.message || "Failed to fetch profile", "error");
                 return;
             }
 
@@ -119,7 +150,7 @@ export default function ProfilePage({ navigation }) {
 
         } catch (err) {
             setLoading(false);
-            Alert.alert("Error", "Failed to load profile");
+            showAlert("Error", "Failed to load profile", "error");
         }
     };
 
@@ -133,7 +164,7 @@ export default function ProfilePage({ navigation }) {
             await ImagePicker.requestMediaLibraryPermissionsAsync();
 
         if (status !== "granted") {
-            Alert.alert("Permission required");
+            showAlert("Permission required", "Media library access is needed to pick a profile photo.", "warning");
             return;
         }
 
@@ -149,7 +180,7 @@ export default function ProfilePage({ navigation }) {
             const base64Value = result.assets[0].base64 || null;
             setProfilePhotoBase64(base64Value);
             if (!base64Value) {
-                Alert.alert("Image Error", "Could not read image data for upload. Please try a different image.");
+                showAlert("Image Error", "Could not read image data for upload. Please try a different image.", "error");
             }
         }
     };
@@ -157,18 +188,18 @@ export default function ProfilePage({ navigation }) {
     // ================= EMAIL OTP FLOW =================
     const handleSendEmailOtp = async () => {
         if (timer > 0) {
-            Alert.alert("Please wait", `You can request a new OTP in ${Math.floor(timer / 60)}:${String(timer % 60).padStart(2, '0')}.`);
+            showAlert("Please wait", `You can request a new OTP in ${Math.floor(timer / 60)}:${String(timer % 60).padStart(2, '0')}.`, "info");
             return;
         }
 
         if (!email.trim() || !/\S+@\S+\.\S+/.test(email.trim())) {
-            Alert.alert("Invalid email", "Please enter a valid email address.");
+            showAlert("Invalid email", "Please enter a valid email address.", "warning");
             return;
         }
 
         try {
             setOtpLoading(true);
-            const token = await AsyncStorage.getItem("customerToken");
+            const token = await getValidToken();
             const response = await fetch(`${BASE_URL}/users/profile/email-otp/send`, {
                 method: "POST",
                 headers: {
@@ -182,36 +213,37 @@ export default function ProfilePage({ navigation }) {
             setOtpLoading(false);
 
             if (!response.ok) {
-                Alert.alert(
+                showAlert(
                     "Verification failed",
-                    data.message || "Unable to send verification code."
+                    data.message || "Unable to send verification code.",
+                    "error"
                 );
                 return;
             }
 
             setOtpSent(true);
             setTimer(300); // 5 minutes timer
-            Alert.alert("Verification Code Sent", "Please check your email for the OTP.");
+            showAlert("Verification Code Sent", "Please check your email for the OTP.", "success");
         } catch (error) {
             setOtpLoading(false);
-            Alert.alert("Server error", "Unable to send verification code.");
+            showAlert("Server error", "Unable to send verification code.", "error");
         }
     };
 
     const handleVerifyEmailOtp = async () => {
         if (timer === 0) {
-            Alert.alert("Expired", "OTP has expired.");
+            showAlert("Expired", "OTP has expired.", "error");
             return;
         }
 
         if (!otp.trim()) {
-            Alert.alert("Code required", "Enter the OTP code sent to your email.");
+            showAlert("Code required", "Enter the OTP code sent to your email.", "warning");
             return;
         }
 
         try {
             setVerifyingOtp(true);
-            const token = await AsyncStorage.getItem("customerToken");
+            const token = await getValidToken();
             const response = await fetch(`${BASE_URL}/users/profile/email-otp/verify`, {
                 method: "POST",
                 headers: {
@@ -228,9 +260,10 @@ export default function ProfilePage({ navigation }) {
             setVerifyingOtp(false);
 
             if (!response.ok) {
-                Alert.alert(
+                showAlert(
                     "Verification failed",
-                    data.message || "Invalid or expired OTP."
+                    data.message || "Invalid or expired OTP.",
+                    "error"
                 );
                 return;
             }
@@ -238,24 +271,24 @@ export default function ProfilePage({ navigation }) {
             setEmailVerified(true);
             setOtpSent(false);
             setTimer(0);
-            Alert.alert("Verified", "Your new email address has been verified successfully!");
+            showAlert("Verified", "Your new email address has been verified successfully!", "success");
         } catch (error) {
             setVerifyingOtp(false);
-            Alert.alert("Server error", "Unable to verify the code.");
+            showAlert("Server error", "Unable to verify the code.", "error");
         }
     };
 
     // ================= SAVE PROFILE =================
     const handleSave = async () => {
         if (email !== originalEmail && !emailVerified) {
-            Alert.alert("Verification required", "Please verify your new email address via OTP first.");
+            showAlert("Verification required", "Please verify your new email address via OTP first.", "warning");
             return;
         }
 
         try {
             setSaving(true);
 
-            const token = await AsyncStorage.getItem("customerToken");
+            const token = await getValidToken();
             const updateData = {
                 name: username,
                 profile: {
@@ -285,7 +318,7 @@ export default function ProfilePage({ navigation }) {
             setSaving(false);
 
             if (!res.ok) {
-                Alert.alert("Error", data.message || "Update failed");
+                showAlert("Error", data.message || "Update failed", "error");
                 return;
             }
 
@@ -299,10 +332,10 @@ export default function ProfilePage({ navigation }) {
             setEditName(false);
             setEditPhone(false);
             setEditEmail(false);
-            Alert.alert("Success", "Profile Updated");
+            showAlert("Success", "Profile Updated", "success");
         } catch (err) {
             setSaving(false);
-            Alert.alert("Error", err.message || "Update failed");
+            showAlert("Error", err.message || "Update failed", "error");
         }
     };
 
@@ -322,7 +355,7 @@ export default function ProfilePage({ navigation }) {
 
     const handleLogout = async () => {
         try {
-            const token = await AsyncStorage.getItem("customerToken");
+            const token = await getValidToken();
 
             if (!BASE_URL) {
                 console.log("❌ BASE_URL is missing");
@@ -356,11 +389,25 @@ export default function ProfilePage({ navigation }) {
 
 
     const confirmLogout = () => {
-        Alert.alert("Logout", "Are you sure you want to logout?", [
-            { text: "Cancel", style: "cancel" },
-            { text: "Logout", style: "destructive", onPress: handleLogout }
-        ]);
+        showAlert(
+            "Logout",
+            "Are you sure you want to logout?",
+            "warning",
+            {
+                showCancelButton: true,
+                cancelText: "Cancel",
+                buttonText: "Logout",
+                onConfirm: () => {
+                    hideAlert();
+                    handleLogout();
+                }
+            }
+        );
     };
+
+    const openBox = () => {
+        setVisible(true);
+    }
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: colors?.background || "#fdfdfd" }}>
@@ -652,6 +699,17 @@ export default function ProfilePage({ navigation }) {
                             <Feather name="chevron-right" size={20} color={colors.subText || "#aaa"} />
                         </TouchableOpacity>
 
+                        <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.card || "#fff" }]} onPress={() => openBox()} activeOpacity={0.7}>
+                            <View style={styles.iconCircle}>
+                                <AntDesign name="question-circle" size={18} color={GREEN} />
+                            </View>
+                            <View style={styles.menuText}>
+                                <Text style={[styles.menuTitle, { color: colors.text }]}>Ratings & Reviews</Text>
+                                <Text style={[styles.menuSub, { color: colors.subText || "#888" }]}>View ratings and reviews</Text>
+                            </View>
+                            <Feather name="chevron-right" size={20} color={colors.subText || "#aaa"} />
+                        </TouchableOpacity>
+
                         <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.card || "#fff", marginBottom: 0 }]}
                             onPress={() => { confirmLogout(); }} activeOpacity={0.7}>
                             <View style={[styles.iconCircle, { backgroundColor: "#fff0f0" }]}>
@@ -668,6 +726,24 @@ export default function ProfilePage({ navigation }) {
 
                 </ScrollView>
             </KeyboardAvoidingView>
+            <CustomAlertModal
+                visible={alertConfig.visible}
+                type={alertConfig.type}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                buttonText={alertConfig.buttonText}
+                showCancelButton={alertConfig.showCancelButton}
+                cancelText={alertConfig.cancelText}
+                onConfirm={alertConfig.onConfirm}
+                onClose={hideAlert}
+                onCancel={hideAlert}
+            />
+            {visible && (
+                <RatingsBox
+                    visible={visible}
+                    onClose={() => setVisible(false)}
+                />
+            )}
         </SafeAreaView>
     );
 }

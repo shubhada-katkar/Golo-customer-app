@@ -1,6 +1,5 @@
 import React, { useCallback, useContext, useEffect, useRef, useState } from "react";
 import {
-    Alert,
     ActivityIndicator,
     Image,
     Linking,
@@ -12,14 +11,16 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
-    View, KeyboardAvoidingView, Platform
+    View, KeyboardAvoidingView, Platform, Dimensions
 } from "react-native";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { Video, ResizeMode } from "expo-av";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
 import { ThemeContext } from "../theme/ThemeContext";
 import Topbar from "../components/Topbar";
 import GoloBottom from "../components/GoloBottom";
+import CustomAlertModal from "../components/CustomeAlertModal";
 import QRCode from "react-native-qrcode-svg";
 import ViewShot from "react-native-view-shot";
 import * as MediaLibrary from "expo-media-library";
@@ -40,6 +41,9 @@ import { LinearGradient } from "expo-linear-gradient";
 import { BASE_URL } from "../config";
 import { textPresets } from "../theme/typography";
 
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const MEDIA_CONTAINER_WIDTH = SCREEN_WIDTH - 20;
+
 const getOfferImage = (item) =>
     item?.imageUrl ||
     item?.offerImage ||
@@ -47,6 +51,28 @@ const getOfferImage = (item) =>
     item?.products?.[0]?.images?.[0] ||
     item?.products?.[0]?.image?.url ||
     "";
+
+const getOfferVideo = (item) =>
+    item?.videoUrl ||
+    item?.video ||
+    item?.offerVideo ||
+    (typeof item?.video === "object" ? item?.video?.url || item?.video?.uri : null) ||
+    item?.selectedProducts?.[0]?.videoUrl ||
+    "";
+
+const getOfferMediaList = (item) => {
+    const media = [];
+    const imageUri = getOfferImage(item);
+    const videoUri = getOfferVideo(item);
+
+    if (imageUri) {
+        media.push({ type: "image", uri: imageUri });
+    }
+    if (videoUri) {
+        media.push({ type: "video", uri: videoUri });
+    }
+    return media;
+};
 
 const formatPrice = (value) => {
     if (value === undefined || value === null || value === "") {
@@ -135,6 +161,21 @@ export default function OfferDetails({ navigation, route }) {
     const scrollViewRef = useRef(null);
     const { colors } = useContext(ThemeContext);
     const [showQR, setShowQR] = useState(false);
+    const [alertConfig, setAlertConfig] = useState({ visible: false, title: "", message: "", type: "error", onClose: null });
+
+    const showAlert = (title, message, type = "error", extraProps = {}) => {
+        setAlertConfig({ visible: true, title, message, type, onClose: null, ...extraProps });
+    };
+
+    const hideAlert = () => {
+        if (alertConfig.onClose) {
+            const cb = alertConfig.onClose;
+            setAlertConfig({ visible: false, title: "", message: "", type: "error", onClose: null });
+            cb();
+        } else {
+            setAlertConfig(prev => ({ ...prev, visible: false }));
+        }
+    };
     const [voucher, setVoucher] = useState(null);
     const [expandedFaqIndex, setExpandedFaqIndex] = useState(null);
     const [claimLoading, setClaimLoading] = useState(false);
@@ -156,8 +197,72 @@ export default function OfferDetails({ navigation, route }) {
     const [customerGender, setCustomerGender] = useState("");
     const qrRef = useRef();
 
+    const [activeIndex, setActiveIndex] = useState(0);
+    const [videoPlaying, setVideoPlaying] = useState(false);
+    const sliderRef = useRef(null);
+    const videoRef = useRef(null);
+    const autoSlideTimerRef = useRef(null);
+
     const routeOfferData = route?.params?.offerData || {};
     const offerData = remoteOfferData || routeOfferData;
+    const offerMedia = getOfferMediaList(offerData);
+
+    const scrollToNextSlide = useCallback(() => {
+        if (!offerMedia || offerMedia.length <= 1) return;
+        setActiveIndex((prevIndex) => {
+            const nextIndex = (prevIndex + 1) % offerMedia.length;
+            sliderRef.current?.scrollTo({
+                x: nextIndex * MEDIA_CONTAINER_WIDTH,
+                animated: true,
+            });
+            return nextIndex;
+        });
+    }, [offerMedia]);
+
+    const startAutoSlide = useCallback(() => {
+        if (autoSlideTimerRef.current) {
+            clearInterval(autoSlideTimerRef.current);
+        }
+        if (offerMedia.length > 1) {
+            autoSlideTimerRef.current = setInterval(() => {
+                const currentItem = offerMedia[activeIndex];
+                if (currentItem?.type !== "video" || !videoPlaying) {
+                    scrollToNextSlide();
+                }
+            }, 4000);
+        }
+    }, [offerMedia, activeIndex, videoPlaying, scrollToNextSlide]);
+
+    const stopAutoSlide = useCallback(() => {
+        if (autoSlideTimerRef.current) {
+            clearInterval(autoSlideTimerRef.current);
+            autoSlideTimerRef.current = null;
+        }
+    }, []);
+
+    useEffect(() => {
+        const currentItem = offerMedia[activeIndex];
+
+        if (currentItem?.type === "image") {
+            startAutoSlide();
+        } else if (currentItem?.type === "video") {
+            stopAutoSlide();
+            if (videoRef.current) {
+                videoRef.current.replayAsync().catch(() => { });
+            }
+        }
+
+        return () => stopAutoSlide();
+    }, [activeIndex, offerMedia.length]);
+
+    const handleVideoStatusUpdate = (status) => {
+        if (!status.isLoaded) return;
+        setVideoPlaying(status.isPlaying);
+
+        if (status.didJustFinish) {
+            scrollToNextSlide();
+        }
+    };
 
     const offerIdFromRouteParams = route?.params?.offerId || route?.params?.id || "";
     const routeOfferId = getOfferIdFromData(routeOfferData) || offerIdFromRouteParams;
@@ -252,11 +357,11 @@ export default function OfferDetails({ navigation, route }) {
 
     const handleCallMerchant = () => {
         if (!phoneNumber) {
-            Alert.alert("Not Available", "Merchant phone number is not available.");
+            showAlert("Not Available", "Merchant phone number is not available.", "error");
             return;
         }
         Linking.openURL(`tel:${phoneNumber}`).catch((err) =>
-            Alert.alert("Error", "Unable to open phone dialer.")
+            showAlert("Error", "Unable to open phone dialer.", "error")
         );
     };
 
@@ -476,12 +581,12 @@ export default function OfferDetails({ navigation, route }) {
             const result = await toggleFavoriteOffer(offerData);
             setIsFavorite(result.isFavorite);
             if (result.isFavorite) {
-                Alert.alert("Saved", "Offer added to favorites.");
+                showAlert("Saved", "Offer added to favorites.", "success");
             } else {
-                Alert.alert("Removed", "Offer removed from favorites.");
+                showAlert("Removed", "Offer removed from favorites.", "info");
             }
         } catch (error) {
-            Alert.alert("Favorite Error", error?.message || "Unable to update favorites right now.");
+            showAlert("Favorite Error", error?.message || "Unable to update favorites right now.", "error");
         } finally {
             setFavoriteLoading(false);
         }
@@ -528,13 +633,13 @@ export default function OfferDetails({ navigation, route }) {
                 url: websiteUrl,
             });
         } catch (error) {
-            Alert.alert("Share Error", error?.message || "Unable to share this offer right now.");
+            showAlert("Share Error", error?.message || "Unable to share this offer right now.", "error");
         }
     };
 
     const handleViewStore = () => {
         if (!merchantId && !routeOfferData?.merchant) {
-            Alert.alert("Store unavailable", "Merchant store details are not available right now.");
+            showAlert("Store unavailable", "Merchant store details are not available right now.", "error");
             return;
         }
 
@@ -557,9 +662,10 @@ export default function OfferDetails({ navigation, route }) {
 
     const handleClaim = async () => {
         if (!canClaimVoucher) {
-            Alert.alert(
+            showAlert(
                 "Not Available",
-                "This offer does not support voucher claim yet."
+                "This offer does not support voucher claim yet.",
+                "warning"
             );
             return;
         }
@@ -592,7 +698,7 @@ export default function OfferDetails({ navigation, route }) {
                     if (existingVoucher || hydratedVoucher) {
                         setVoucher(hydratedVoucher || existingVoucher);
                         setShowQR(true);
-                        Alert.alert("Already Claimed", "Showing your existing QR code.");
+                        showAlert("Already Claimed", "Showing your existing QR code.", "info");
                         return;
                     }
                 } catch (syncError) {
@@ -600,7 +706,7 @@ export default function OfferDetails({ navigation, route }) {
                 }
             }
 
-            Alert.alert("Claim Failed", message);
+            showAlert("Claim Failed", message, "error");
         } finally {
             setClaimLoading(false);
         }
@@ -609,21 +715,22 @@ export default function OfferDetails({ navigation, route }) {
     const submitReview = async () => {
         const content = String(reviewText || "").trim();
         if (!content) {
-            Alert.alert("Write a review", "Please enter your feedback before submitting.");
+            showAlert("Write a review", "Please enter your feedback before submitting.", "warning");
             return;
         }
 
         if (!isVoucherRedeemed(voucher)) {
-            Alert.alert(
+            showAlert(
                 "Review unavailable",
-                "Reviews can only be submitted after your voucher has been redeemed."
+                "Reviews can only be submitted after your voucher has been redeemed.",
+                "warning"
             );
             return;
         }
 
         const voucherId = resolveVoucherId(voucher);
         if (!voucherId) {
-            Alert.alert("Unable to submit", "Voucher information is not available.");
+            showAlert("Unable to submit", "Voucher information is not available.", "error");
             return;
         }
 
@@ -634,11 +741,12 @@ export default function OfferDetails({ navigation, route }) {
             setReviewRating(5);
             setReviewSubmitted(true);
             await syncOfferClaimState();
-            Alert.alert("Thank you!", "Your review has been submitted.");
+            showAlert("Thank you!", "Your review has been submitted.", "success");
         } catch (error) {
-            Alert.alert(
+            showAlert(
                 "Submit failed",
-                String(error?.message || "Unable to submit review right now.")
+                String(error?.message || "Unable to submit review right now."),
+                "error"
             );
         } finally {
             setReviewLoading(false);
@@ -647,26 +755,26 @@ export default function OfferDetails({ navigation, route }) {
 
     const downloadQR = async () => {
         if (!voucher?.qrCode && !voucher?.qrImage) {
-            Alert.alert("QR unavailable", "Please claim this offer first.");
+            showAlert("QR unavailable", "Please claim this offer first.", "warning");
             return;
         }
 
         const permission = await MediaLibrary.requestPermissionsAsync();
         if (!permission.granted) {
-            Alert.alert("Permission required", "Storage permission is needed to save QR.");
+            showAlert("Permission required", "Storage permission is needed to save QR.", "warning");
             return;
         }
 
         try {
             const uri = await qrRef.current?.capture();
             if (!uri) {
-                Alert.alert("Error", "Could not generate QR image.");
+                showAlert("Error", "Could not generate QR image.", "error");
                 return;
             }
             await MediaLibrary.saveToLibraryAsync(uri);
-            Alert.alert("Saved", "QR code saved to gallery");
+            showAlert("Saved", "QR code saved to gallery", "success");
         } catch (error) {
-            Alert.alert("Error", "Could not save QR code");
+            showAlert("Error", "Could not save QR code", "error");
         }
     };
 
@@ -717,8 +825,74 @@ export default function OfferDetails({ navigation, route }) {
                         keyboardShouldPersistTaps="handled"
                     >
                         <View style={styles.imageContainer}>
-                            {offerImage ? (
-                                <Image source={{ uri: offerImage }} style={styles.offerImage} />
+                            {offerMedia.length > 1 ? (
+                                <View style={{ width: "100%", height: 260, position: "relative" }}>
+                                    <ScrollView
+                                        ref={sliderRef}
+                                        horizontal
+                                        pagingEnabled
+                                        showsHorizontalScrollIndicator={false}
+                                        onMomentumScrollEnd={(e) => {
+                                            const index = Math.round(e.nativeEvent.contentOffset.x / MEDIA_CONTAINER_WIDTH);
+                                            setActiveIndex(index);
+                                        }}
+                                        onScrollBeginDrag={stopAutoSlide}
+                                        onScrollEndDrag={startAutoSlide}
+                                    >
+                                        {offerMedia.map((item, index) =>
+                                            item.type === "video" ? (
+                                                <View
+                                                    key={`${item.uri}-${index}`}
+                                                    style={{ width: MEDIA_CONTAINER_WIDTH, height: 260, borderRadius: 20, overflow: "hidden", backgroundColor: "#000" }}
+                                                >
+                                                    <Video
+                                                        ref={videoRef}
+                                                        source={{ uri: item.uri }}
+                                                        style={{ width: "100%", height: "100%" }}
+                                                        useNativeControls
+                                                        resizeMode={ResizeMode.COVER}
+                                                        shouldPlay={activeIndex === index}
+                                                        isLooping={false}
+                                                        onPlaybackStatusUpdate={handleVideoStatusUpdate}
+                                                    />
+                                                </View>
+                                            ) : (
+                                                <Image
+                                                    key={`${item.uri}-${index}`}
+                                                    source={{ uri: item.uri }}
+                                                    style={{ width: MEDIA_CONTAINER_WIDTH, height: 260, resizeMode: "cover", borderRadius: 20 }}
+                                                />
+                                            )
+                                        )}
+                                    </ScrollView>
+
+                                    <View style={styles.dotsContainer}>
+                                        {offerMedia.map((_, index) => (
+                                            <View
+                                                key={index}
+                                                style={[
+                                                    styles.dot,
+                                                    activeIndex === index ? styles.activeDot : styles.inactiveDot,
+                                                ]}
+                                            />
+                                        ))}
+                                    </View>
+                                </View>
+                            ) : offerMedia.length === 1 ? (
+                                offerMedia[0].type === "video" ? (
+                                    <View style={{ width: "100%", height: 260, borderRadius: 20, overflow: "hidden", backgroundColor: "#000" }}>
+                                        <Video
+                                            source={{ uri: offerMedia[0].uri }}
+                                            style={{ width: "100%", height: "100%" }}
+                                            useNativeControls
+                                            resizeMode={ResizeMode.COVER}
+                                            shouldPlay={true}
+                                            isLooping={true}
+                                        />
+                                    </View>
+                                ) : (
+                                    <Image source={{ uri: offerMedia[0].uri }} style={styles.offerImage} />
+                                )
                             ) : (
                                 <View style={styles.fakeImage}>
                                     <Ionicons name="image-outline" size={44} color="#9a9a9a" />
@@ -983,6 +1157,13 @@ export default function OfferDetails({ navigation, route }) {
                     </View>
                 </View>
             </Modal>
+            <CustomAlertModal
+                visible={alertConfig.visible}
+                type={alertConfig.type}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                onClose={hideAlert}
+            />
         </>
     );
 }
@@ -1334,5 +1515,27 @@ const styles = StyleSheet.create({
         color: "#555",
         marginTop: 8,
         ...textPresets.label,
+    },
+    dotsContainer: {
+        position: "absolute",
+        bottom: 12,
+        left: 0,
+        right: 0,
+        flexDirection: "row",
+        justifyContent: "center",
+        alignItems: "center",
+        gap: 6,
+    },
+    dot: {
+        height: 8,
+        borderRadius: 4,
+    },
+    activeDot: {
+        width: 20,
+        backgroundColor: "#f8a812",
+    },
+    inactiveDot: {
+        width: 8,
+        backgroundColor: "rgba(255, 255, 255, 0.6)",
     },
 });

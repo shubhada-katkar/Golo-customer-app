@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, Image, ActivityIndicator,
-  Dimensions, Alert, Share, Modal, TextInput
+  Dimensions, Share, Modal, TextInput
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
@@ -14,6 +14,7 @@ import { BASE_URL } from '../config';
 import Topbar from '../components/Topbar';
 import { ThemeContext } from '../theme/ThemeContext';
 import { textPresets } from '../theme/typography';
+import CustomAlertModal from '../components/CustomeAlertModal';
 
 const { width, height } = Dimensions.get('window');
 
@@ -186,7 +187,22 @@ export default function AdDetails({ route, navigation }) {
   const hasDetails = commonAdDetails.length > 0 || categoryDetails.length > 0;
   const [showReportModal, setShowReportModal] = useState(false);
   const [selectedReason, setSelectedReason] = useState(null);
-  const [details, setDetails] = useState("");
+  const [details, setDetails] = useState('');
+  const [alertConfig, setAlertConfig] = useState({ visible: false, title: "", message: "", type: "error", onClose: null });
+
+  const showAlert = (title, message, type = "error", extraProps = {}) => {
+    setAlertConfig({ visible: true, title, message, type, onClose: null, ...extraProps });
+  };
+
+  const hideAlert = () => {
+    if (alertConfig.onClose) {
+      const cb = alertConfig.onClose;
+      setAlertConfig({ visible: false, title: "", message: "", type: "error", onClose: null });
+      cb();
+    } else {
+      setAlertConfig(prev => ({ ...prev, visible: false }));
+    }
+  };
 
   const sellerName = seller?.name || ad?.contactInfo?.name || 'Seller';
   const sellerPhone = seller?.profile?.phone || ad?.contactInfo?.phone || '';
@@ -243,8 +259,7 @@ export default function AdDetails({ route, navigation }) {
     const fetchAdDetails = async () => {
       try {
         if (!resolvedAdId) {
-          Alert.alert('Error', 'Ad ID not found');
-          navigation.goBack();
+          showAlert('Error', 'Ad ID not found', 'error', { onClose: () => { navigation.goBack(); } });
           return;
         }
 
@@ -274,13 +289,11 @@ export default function AdDetails({ route, navigation }) {
           }
 
         } else {
-          Alert.alert('Error', json.message || 'Failed to load ad details');
-          navigation.goBack();
+          showAlert('Error', json.message || 'Failed to load ad details', 'error', { onClose: () => { navigation.goBack(); } });
         }
       } catch (err) {
         console.error('Error fetching ad details:', err);
-        Alert.alert('Error', 'Failed to load ad details');
-        navigation.goBack();
+        showAlert('Error', 'Failed to load ad details', 'error', { onClose: () => { navigation.goBack(); } });
       } finally {
         setLoading(false);
       }
@@ -321,7 +334,7 @@ export default function AdDetails({ route, navigation }) {
         trackWishlistSave(currentAdId);
       }
     } catch (error) {
-      Alert.alert('Favorite Error', error.message || 'Failed to update favorites');
+      showAlert('Favorite Error', error.message || 'Failed to update favorites', 'error');
     } finally {
       setFavoriteLoading(false);
     }
@@ -344,7 +357,7 @@ export default function AdDetails({ route, navigation }) {
     try {
       const resolvedShareAdId = ad?.adId || ad?._id || resolvedAdId;
       if (!resolvedShareAdId) {
-        Alert.alert('Share Error', 'Ad details are not available yet');
+        showAlert('Share Error', 'Ad details are not available yet', 'error');
         return;
       }
 
@@ -380,7 +393,7 @@ export default function AdDetails({ route, navigation }) {
         title: ad?.title || 'Shared Ad',
       });
     } catch (error) {
-      Alert.alert('Share Error', error?.message || 'Unable to share this ad right now');
+      showAlert('Share Error', error?.message || 'Unable to share this ad right now', 'error');
     }
   };
 
@@ -390,27 +403,25 @@ export default function AdDetails({ route, navigation }) {
 
   const handleSubmitReport = async () => {
     if (!selectedReason) {
-      Alert.alert('Error', 'Please select a reason before submitting.');
+      showAlert('Error', 'Please select a reason before submitting.', 'warning');
       return;
     }
     const currentAdId = ad?.adId || ad?._id || adId;
     if (!currentAdId) {
-      Alert.alert('Error', 'Ad ID is missing.');
+      showAlert('Error', 'Ad ID is missing.', 'error');
       return;
     }
     try {
       await submitReport('AD', currentAdId, selectedReason, details);
-      Alert.alert('Success', 'Ad reported successfully. Thank you for your feedback.', [
-        {
-          text: 'OK', onPress: () => {
-            setShowReportModal(false);
-            setSelectedReason(null);
-            setDetails('');
-          }
+      showAlert('Success', 'Ad reported successfully. Thank you for your feedback.', 'success', {
+        onClose: () => {
+          setShowReportModal(false);
+          setSelectedReason(null);
+          setDetails('');
         }
-      ]);
+      });
     } catch (err) {
-      Alert.alert('Error', err.message || 'Failed to submit report. Please try again.');
+      showAlert('Error', err.message || 'Failed to submit report. Please try again.', 'error');
     }
   };
 
@@ -574,7 +585,7 @@ export default function AdDetails({ route, navigation }) {
                       adImage: ad?.images?.[0] || null,
                     });
                   } else {
-                    Alert.alert('Info', 'Seller ID is missing for this ad');
+                    showAlert('Info', 'Seller ID is missing for this ad', 'info');
                   }
                 }}
               >
@@ -689,6 +700,13 @@ export default function AdDetails({ route, navigation }) {
           </View>
         </View>
       </Modal>
+      <CustomAlertModal
+        visible={alertConfig.visible}
+        type={alertConfig.type}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        onClose={hideAlert}
+      />
     </>
   );
 }

@@ -7,8 +7,8 @@ import { Calendar } from "react-native-calendars";
 import { ScrollView } from "react-native-gesture-handler";
 import { Modal } from "react-native";
 import { TouchableWithoutFeedback, Keyboard } from "react-native";
-import { Alert } from "react-native";
 import { textPresets } from "../theme/typography";
+import CustomAlertModal from "../components/CustomeAlertModal";
 
 export default function CalendarScreen({ navigation, route }) {
   const { category, template, formData, price } = route.params || {};
@@ -20,6 +20,15 @@ export default function CalendarScreen({ navigation, route }) {
   const maxBoxHeight = 275;
   const selectedDaysCount = datesArray.length;
   const [selectedLocations, setSelectedLocations] = useState([]);
+  const [alertConfig, setAlertConfig] = useState({ visible: false, title: "", message: "", type: "error" });
+
+  const showAlert = (title, message, type = "error") => {
+    setAlertConfig({ visible: true, title, message, type });
+  };
+
+  const hideAlert = () => {
+    setAlertConfig(prev => ({ ...prev, visible: false }));
+  };
 
   // --- Summary modal visibility ---
   const [showLocationsModal, setShowLocationsModal] = useState(false);
@@ -177,12 +186,12 @@ export default function CalendarScreen({ navigation, route }) {
     ];
 
     if (datesArray.length === 0) {
-      Alert.alert("Select Dates", "Please select ad dates before continuing.");
+      showAlert("Select Dates", "Please select ad dates before continuing.", "warning");
       return;
     }
 
     if (mergedLocations.length === 0) {
-      Alert.alert("Select Location", "Please add at least one location before continuing.");
+      showAlert("Select Location", "Please add at least one location before continuing.", "warning");
       return;
     }
 
@@ -588,6 +597,13 @@ export default function CalendarScreen({ navigation, route }) {
 
         </LinearGradient>
       </TouchableWithoutFeedback>
+      <CustomAlertModal
+        visible={alertConfig.visible}
+        type={alertConfig.type}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        onClose={hideAlert}
+      />
     </SafeAreaView>
   );
 }

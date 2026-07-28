@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from "react";
-import { View, StyleSheet, Text, TouchableOpacity, ActivityIndicator, Alert, Modal } from "react-native";
+import { View, StyleSheet, Text, TouchableOpacity, ActivityIndicator, Modal } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialCommunityIcons, MaterialIcons, Feather } from "@expo/vector-icons";
@@ -7,6 +7,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { BASE_URL } from "../config";
 import { textPresets } from "../theme/typography";
+import CustomAlertModal from "../components/CustomeAlertModal";
+import { getValidToken } from "../services/authService";
 
 const CATEGORY_DTO_FIELD_BY_LABEL = {
     Vehicle: "vehicleData",
@@ -352,6 +354,21 @@ export default function Payment({ navigation, route }) {
     const [restrictionModalVisible, setRestrictionModalVisible] = useState(false);
     const [restrictionUntil, setRestrictionUntil] = useState(null);
     const [countdownText, setCountdownText] = useState("");
+    const [alertConfig, setAlertConfig] = useState({ visible: false, title: "", message: "", type: "error", onClose: null });
+
+    const showAlert = (title, message, type = "error", extraProps = {}) => {
+        setAlertConfig({ visible: true, title, message, type, onClose: null, ...extraProps });
+    };
+
+    const hideAlert = () => {
+        if (alertConfig.onClose) {
+            const cb = alertConfig.onClose;
+            setAlertConfig({ visible: false, title: "", message: "", type: "error", onClose: null });
+            cb();
+        } else {
+            setAlertConfig(prev => ({ ...prev, visible: false }));
+        }
+    };
 
     useEffect(() => {
         const checkRestrictionStatus = async () => {
@@ -486,10 +503,16 @@ export default function Payment({ navigation, route }) {
             }
 
             setIsSubmitting(true);
-            const token = await AsyncStorage.getItem("customerToken");
+
+            let token = "";
+            try {
+                token = await getValidToken();
+            } catch {
+                // token is empty, let the existing check below handle it
+            }
 
             if (!token) {
-                Alert.alert("Error", "You must be logged in to post an ad.");
+                showAlert("Error", "You must be logged in to post an ad.", "error");
                 setIsSubmitting(false);
                 return;
             }
@@ -618,7 +641,7 @@ export default function Payment({ navigation, route }) {
             }
 
             if (!response.ok || data?.success === false) {
-                Alert.alert("Failed", responseMessage || "Failed to post ad.");
+                showAlert("Failed", responseMessage || "Failed to post ad.", "error");
                 return;
             }
 
@@ -628,14 +651,17 @@ export default function Payment({ navigation, route }) {
                 } catch (storageError) {
                     // Ignore storage issues for the moderation flow.
                 }
-                Alert.alert("Success", "Your ad has been posted successfully!");
-                navigation.navigate("ChojaHome");
+                showAlert("Success", "Your ad has been posted successfully!", "success", {
+                    onClose: () => {
+                        navigation.navigate("ChojaHome");
+                    }
+                });
             } else {
                 let errorMessage = "Failed to post ad.";
                 if (data.message) {
                     errorMessage = Array.isArray(data.message) ? data.message.join(" ") : data.message;
                 }
-                Alert.alert("Failed", errorMessage);
+                showAlert("Failed", errorMessage, "error");
             }
         } catch (error) {
             const errorMessage = getErrorMessageFromResponse(error);
@@ -653,7 +679,7 @@ export default function Payment({ navigation, route }) {
                 return;
             }
 
-            Alert.alert("Error", "An unexpected error occurred while posting.");
+            showAlert("Error", "An unexpected error occurred while posting.", "error");
         } finally {
             setIsSubmitting(false);
         }
@@ -1010,6 +1036,13 @@ export default function Payment({ navigation, route }) {
                     </View>
                 </Modal>
             </LinearGradient>
+            <CustomAlertModal
+                visible={alertConfig.visible}
+                type={alertConfig.type}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                onClose={hideAlert}
+            />
         </SafeAreaView>
     );
 }

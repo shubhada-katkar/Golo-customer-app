@@ -7,11 +7,12 @@ import {
   StyleSheet,
   Image,
   ActivityIndicator,
-  Alert,
   Modal,
   TextInput,
   Linking,
-  Dimensions
+  Dimensions,
+  KeyboardAvoidingView,
+  Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons, Ionicons, Entypo } from '@expo/vector-icons';
@@ -21,6 +22,7 @@ import { BASE_URL } from '../config';
 import Topbar from '../components/Topbar';
 import { ThemeContext } from '../theme/ThemeContext';
 import { ensureAuthenticated } from '../services/authService';
+import CustomAlertModal from '../components/CustomeAlertModal';
 import { textPresets } from '../theme/typography';
 
 // Fixed-size ad card that deliberately avoids FlatList/VirtualizedList internally
@@ -155,13 +157,27 @@ export default function SellerProfile({ route, navigation }) {
   const [selectedReason, setSelectedReason] = useState(null);
   const [details, setDetails] = useState("");
   const { colors } = useContext(ThemeContext);
+  const [alertConfig, setAlertConfig] = useState({ visible: false, title: "", message: "", type: "error", onClose: null });
+
+  const showAlert = (title, message, type = "error", extraProps = {}) => {
+    setAlertConfig({ visible: true, title, message, type, onClose: null, ...extraProps });
+  };
+
+  const hideAlert = () => {
+    if (alertConfig.onClose) {
+      const cb = alertConfig.onClose;
+      setAlertConfig({ visible: false, title: "", message: "", type: "error", onClose: null });
+      cb();
+    } else {
+      setAlertConfig(prev => ({ ...prev, visible: false }));
+    }
+  };
 
   useEffect(() => {
     const fetchSellerData = async () => {
       try {
         if (!sellerId) {
-          Alert.alert('Error', 'Seller ID is missing');
-          navigation.goBack();
+          showAlert('Error', 'Seller ID is missing', 'error', { onClose: () => { navigation.goBack(); } });
           return;
         }
 
@@ -171,13 +187,11 @@ export default function SellerProfile({ route, navigation }) {
         if (json.success && json.data) {
           setSeller(json.data);
         } else {
-          Alert.alert('Error', json.message || 'Failed to load seller details');
-          navigation.goBack();
+          showAlert('Error', json.message || 'Failed to load seller details', 'error', { onClose: () => { navigation.goBack(); } });
         }
       } catch (err) {
         console.error('Error fetching seller details:', err);
-        Alert.alert('Error', 'Unable to fetch seller details at this time.');
-        navigation.goBack();
+        showAlert('Error', 'Unable to fetch seller details at this time.', 'error', { onClose: () => { navigation.goBack(); } });
       } finally {
         setLoading(false);
       }
@@ -205,7 +219,7 @@ export default function SellerProfile({ route, navigation }) {
   const handleCall = async () => {
     const phone = seller?.profile?.phone;
     if (!phone) {
-      Alert.alert("Error", "No phone number available for this seller.");
+      showAlert("Error", "No phone number available for this seller.", "error");
       return;
     }
 
@@ -240,24 +254,22 @@ export default function SellerProfile({ route, navigation }) {
 
   const handleSubmitReport = async () => {
     if (!selectedReason) {
-      Alert.alert("Error", "Please select a reason");
+      showAlert("Error", "Please select a reason", "warning");
       return;
     }
 
     try {
       await submitReport('SELLER', sellerId, selectedReason, details);
 
-      Alert.alert("Thank You", "Profile has been reported and sent for review.", [
-        {
-          text: 'OK', onPress: () => {
-            setShowReportModal(false);
-            setSelectedReason(null);
-            setDetails("");
-          }
+      showAlert("Thank You", "Profile has been reported and sent for review.", "success", {
+        onClose: () => {
+          setShowReportModal(false);
+          setSelectedReason(null);
+          setDetails("");
         }
-      ]);
+      });
     } catch (err) {
-      Alert.alert("Error", err.message || "Failed to submit report. Please try again.");
+      showAlert("Error", err.message || "Failed to submit report. Please try again.", "error");
     }
   };
 
@@ -374,8 +386,12 @@ export default function SellerProfile({ route, navigation }) {
       </SafeAreaView>
 
       {/* Report Modal */}
-      <Modal visible={showReportModal} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
+      <Modal visible={showReportModal} transparent animationType="slide" statusBarTranslucent>
+        <KeyboardAvoidingView
+          style={styles.modalOverlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+        >
           <View style={styles.modalContainer}>
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
               <View style={styles.modalHeader}>
@@ -429,8 +445,15 @@ export default function SellerProfile({ route, navigation }) {
               </View>
             </ScrollView>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
+      <CustomAlertModal
+        visible={alertConfig.visible}
+        type={alertConfig.type}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        onClose={hideAlert}
+      />
     </>
   );
 }
@@ -575,7 +598,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 20,
     padding: 20,
     maxHeight: '90%',
-    borderWidth: 1
+    borderWidth: 1,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -615,7 +638,7 @@ const styles = StyleSheet.create({
     borderColor: '#9e9e9eff',
     borderRadius: 10,
     padding: 12,
-    height: 100,
+    height: 80,
     marginBottom: 20,
     lineHeight: Math.round(14 * 1.5),
     ...textPresets.body
@@ -639,8 +662,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   btnTextConfig: {
-    ...textPresets.subtitle,
-
+    ...textPresets.body,
+    lineHeight: Math.round(14 * 1.5),
   },
   otherAdsSection: {
     marginTop: 16,
@@ -660,7 +683,6 @@ const styles = StyleSheet.create({
     color: '#666',
     textAlign: 'center',
     marginTop: 10,
-    ...textPresets.body,
-    lineHeight: Math.round(14 * 1.5),
+    ...textPresets.label
   },
-});
+});     

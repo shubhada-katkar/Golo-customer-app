@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { BASE_URL } from "../config";
+import { getValidToken } from "./authService";
 
 const FAVORITES_KEY_PREFIX = "favoriteAds";
 
@@ -27,13 +28,18 @@ function toFavoritePayload(ad) {
 }
 
 async function getAuthHeaders() {
-  const token = await AsyncStorage.getItem("customerToken");
-  if (!token) return null;
-  return {
-    Authorization: `Bearer ${token}`,
-    Accept: "application/json",
-    "Content-Type": "application/json",
-  };
+  try {
+    const token = await getValidToken();
+    if (!token) return null;
+    return {
+      Authorization: `Bearer ${token}`,
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    };
+  } catch {
+    // Guest user — no token available
+    return null;
+  }
 }
 
 async function fetchWithAuth(url, options = {}) {

@@ -26,6 +26,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { BASE_URL } from "../config";
 import { textPresets } from "../theme/typography";
 import RatingsBox from "../components/RatingsBox";
+import { getValidToken } from "../services/authService";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const BANNER_HEIGHT = 170;
@@ -502,8 +503,15 @@ export default function GoloDeals() {
 
         try {
             setSectionsLoading(true);
-            const token = await AsyncStorage.getItem("customerToken");
             const customerId = await AsyncStorage.getItem("customerId");
+
+            // Attempt to get a valid token; guests (not logged in) will have no token
+            let token = null;
+            try {
+                token = await getValidToken();
+            } catch {
+                // Guest user — continue without auth
+            }
 
             const params = new URLSearchParams();
             if (userCoordinates?.lat) params.append("lat", String(userCoordinates.lat));
@@ -917,8 +925,8 @@ export default function GoloDeals() {
 
                     {bannersLoading && banners.length === 0 ? (
                         <View style={styles.bannerLoaderBox}>
-                            <ActivityIndicator size="small" color="#f8a812" />
-                            <Text style={styles.bannerLoaderText}>Loading banners...</Text>
+                            {/* <ActivityIndicator size="small" color="#f8a812" />
+                            <Text style={styles.bannerLoaderText}>Loading banners...</Text> */}
                         </View>
                     ) : banners.length === 0 ? (
                         <View style={styles.bannerEmptyBox}>
@@ -1113,11 +1121,10 @@ const styles = StyleSheet.create({
     },
     locationInput: {
         flex: 1,
-        ...textPresets.body,
+        ...textPresets.label,
         color: "#222",
         paddingVertical: 0,
         paddingHorizontal: 4,
-        lineHeight: Math.round(14 * 1.5)
     },
     locationCancelBtn: {
         paddingLeft: 4,
@@ -1154,9 +1161,8 @@ const styles = StyleSheet.create({
     },
     suggestionText: {
         flex: 1,
-        ...textPresets.body,
+        ...textPresets.label,
         color: "#333",
-        lineHeight: Math.round(14 * 1.5),
     },
     suggestionLoading: {
         flexDirection: "row",
@@ -1187,7 +1193,6 @@ const styles = StyleSheet.create({
         ...textPresets.body,
         top: 3,
     },
-
     // ─── Category Strip ──────────────────────────────────────
     categorySection: {
         marginTop: 6,

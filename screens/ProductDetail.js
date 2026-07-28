@@ -9,7 +9,6 @@ import {
   StatusBar,
   Dimensions,
   Share,
-  Alert,
   ActivityIndicator,
 } from "react-native";
 import { Feather, Ionicons, MaterialIcons } from "@expo/vector-icons";
@@ -17,12 +16,14 @@ import { ThemeContext } from "../theme/ThemeContext";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Topbar from "../components/Topbar";
 import GoloBottom from "../components/GoloBottom";
+import CustomAlertModal from "../components/CustomeAlertModal";
 import { BASE_URL } from "../config";
 import { LinearGradient } from "expo-linear-gradient";
 import { Video, ResizeMode } from "expo-av";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
 import { textPresets } from "../theme/typography";
+import { getValidToken } from "../services/authService";
 
 const { width } = Dimensions.get("window");
 const CONTAINER_WIDTH = width - 32;
@@ -253,13 +254,18 @@ const resolveOfferIdForProduct = (product, routeParams) => {
 };
 
 async function getAuthHeaders() {
-  const token = await AsyncStorage.getItem("customerToken");
-  if (!token) return null;
-  return {
-    Authorization: `Bearer ${token}`,
-    Accept: "application/json",
-    "Content-Type": "application/json",
-  };
+  try {
+    const token = await getValidToken();
+    if (!token) return null;
+    return {
+      Authorization: `Bearer ${token}`,
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    };
+  } catch {
+    // Guest user — viewing product without login is allowed
+    return null;
+  }
 }
 
 export default function ProductDetail({ route, navigation }) {
@@ -270,6 +276,21 @@ export default function ProductDetail({ route, navigation }) {
   const [product, setProduct] = useState(initialProduct);
   const [hasFetchedProduct, setHasFetchedProduct] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [alertConfig, setAlertConfig] = useState({ visible: false, title: "", message: "", type: "error", onClose: null });
+
+  const showAlert = (title, message, type = "error", extraProps = {}) => {
+    setAlertConfig({ visible: true, title, message, type, onClose: null, ...extraProps });
+  };
+
+  const hideAlert = () => {
+    if (alertConfig.onClose) {
+      const cb = alertConfig.onClose;
+      setAlertConfig({ visible: false, title: "", message: "", type: "error", onClose: null });
+      cb();
+    } else {
+      setAlertConfig(prev => ({ ...prev, visible: false }));
+    }
+  };
 
   // Like / share state
   const [isFavorite, setIsFavorite] = useState(false);
@@ -353,14 +374,14 @@ export default function ProductDetail({ route, navigation }) {
     if (favoriteLoading) return;
     const idToLike = offerId || resolvedProductId;
     if (!idToLike) {
-      Alert.alert("Cannot Like", "Product identifier is not available.");
+      showAlert("Cannot Like", "Product identifier is not available.", "error");
       return;
     }
     setFavoriteLoading(true);
     try {
       const headers = await getAuthHeaders();
       if (!headers) {
-        Alert.alert("Login Required", "Please log in to like products.");
+        showAlert("Login Required", "Please log in to like products.", "warning");
         setFavoriteLoading(false);
         return;
       }
@@ -385,7 +406,7 @@ export default function ProductDetail({ route, navigation }) {
           const json = await response.json();
           const liked = json?.data?.liked ?? true;
           setIsFavorite(liked);
-          Alert.alert(liked ? "Liked!" : "Removed", liked ? "Product liked successfully." : "Product removed from likes.");
+          showAlert(liked ? "Liked!" : "Removed", liked ? "Product liked successfully." : "Product removed from likes.", liked ? "success" : "info");
           return;
         }
       }
@@ -399,12 +420,12 @@ export default function ProductDetail({ route, navigation }) {
         const json = await response.json();
         const added = Boolean(json?.data?.added);
         setIsFavorite(added);
-        Alert.alert(added ? "Liked!" : "Removed", added ? "Added to your favorites." : "Removed from favorites.");
+        showAlert(added ? "Liked!" : "Removed", added ? "Added to your favorites." : "Removed from favorites.", added ? "success" : "info");
       } else {
-        Alert.alert("Error", "Unable to update like status.");
+        showAlert("Error", "Unable to update like status.", "error");
       }
     } catch (error) {
-      Alert.alert("Error", error?.message || "Unable to update like right now.");
+      showAlert("Error", error?.message || "Unable to update like right now.", "error");
     } finally {
       setFavoriteLoading(false);
     }
@@ -453,7 +474,7 @@ export default function ProductDetail({ route, navigation }) {
         url: websiteUrl,
       });
     } catch (error) {
-      Alert.alert("Share Error", error?.message || "Unable to share this product right now.");
+      showAlert("Share Error", error?.message || "Unable to share this product right now.", "error");
     }
   };
 
@@ -661,6 +682,13 @@ export default function ProductDetail({ route, navigation }) {
       >
         <GoloBottom />
       </SafeAreaView>
+      <CustomAlertModal
+        visible={alertConfig.visible}
+        type={alertConfig.type}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        onClose={hideAlert}
+      />
     </SafeAreaView>
   );
 }

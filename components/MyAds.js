@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { ThemeContext } from "../theme/ThemeContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getValidToken } from "../services/authService";
 
 import Template1Card from "../components/Template1Card";
 import Template2Card from "../components/Template2Card";
@@ -67,7 +68,15 @@ export default function MyAds({ selectedCategory, selectedSubFilter = null, sear
             if (pageNumber === 1) setLoading(true);
             else setLoadingMore(true);
 
-            const token = await AsyncStorage.getItem("customerToken");
+            let token = "";
+            try {
+                token = await getValidToken();
+            } catch {
+                // Session expired or not logged in — ads list will be empty
+                setLoading(false);
+                setLoadingMore(false);
+                return;
+            }
 
             const backendCategory = getBackendCategoryName(selectedCategory);
 

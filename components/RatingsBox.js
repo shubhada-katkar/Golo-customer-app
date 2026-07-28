@@ -7,12 +7,12 @@ import {
     TouchableOpacity,
     StyleSheet,
     ActivityIndicator,
-    Alert,
 } from 'react-native';
 import { MaterialIcons, Feather } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BASE_URL } from '../config';
 import { textPresets } from '../theme/typography';
+import CustomAlertModal from './CustomeAlertModal';
 
 export default function RatingsBox({
     visible: controlledVisible,
@@ -23,6 +23,21 @@ export default function RatingsBox({
     const [feedback, setFeedback] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [internalVisible, setInternalVisible] = useState(false);
+    const [alertConfig, setAlertConfig] = useState({ visible: false, title: "", message: "", type: "error", onClose: null });
+
+    const showAlert = (title, message, type = "error", extraProps = {}) => {
+        setAlertConfig({ visible: true, title, message, type, onClose: null, ...extraProps });
+    };
+
+    const hideAlert = () => {
+        if (alertConfig.onClose) {
+            const cb = alertConfig.onClose;
+            setAlertConfig({ visible: false, title: "", message: "", type: "error", onClose: null });
+            cb();
+        } else {
+            setAlertConfig(prev => ({ ...prev, visible: false }));
+        }
+    };
 
     const isVisible = controlledVisible !== undefined ? controlledVisible : internalVisible;
 
@@ -33,12 +48,12 @@ export default function RatingsBox({
 
     const handleSubmit = async () => {
         if (rating < 1) {
-            Alert.alert('Rating Required', 'Please select a star rating from 1 to 5.');
+            showAlert('Rating Required', 'Please select a star rating from 1 to 5.', 'warning');
             return;
         }
 
         if (!feedback.trim()) {
-            Alert.alert('Feedback Required', 'Please write a brief feedback message.');
+            showAlert('Feedback Required', 'Please write a brief feedback message.', 'warning');
             return;
         }
 
@@ -79,14 +94,17 @@ export default function RatingsBox({
                 throw new Error(errorMsg);
             }
 
-            Alert.alert('Thank You!', 'Your feedback has been submitted to our team.');
-            onSubmit?.({ rating, feedback, data });
-            setRating(0);
-            setFeedback('');
-            setInternalVisible(false);
-            onClose?.();
+            showAlert('Thank You!', 'Your feedback has been submitted to our team.', 'success', {
+                onClose: () => {
+                    onSubmit?.({ rating, feedback, data });
+                    setRating(0);
+                    setFeedback('');
+                    setInternalVisible(false);
+                    onClose?.();
+                }
+            });
         } catch (err) {
-            Alert.alert('Error', err.message || 'Failed to submit feedback. Please try again.');
+            showAlert('Error', err.message || 'Failed to submit feedback. Please try again.', 'error');
         } finally {
             setSubmitting(false);
         }
@@ -150,6 +168,13 @@ export default function RatingsBox({
                     </TouchableOpacity>
                 </View>
             </View>
+            <CustomAlertModal
+                visible={alertConfig.visible}
+                type={alertConfig.type}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                onClose={hideAlert}
+            />
         </Modal>
     );
 }

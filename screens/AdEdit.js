@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState, useContext } from "react";
 import {
   View,
   Text,
+  TextInput,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
@@ -21,6 +22,7 @@ import Topbar from "../components/Topbar";
 import ChojaBottom from "../components/ChojaBottom";
 import { BASE_URL } from "../config";
 import { textPresets } from "../theme/typography";
+import { getValidToken } from "../services/authService";
 
 // Category-specific form components
 import AstrologyForm from "../components/Astrology";
@@ -385,7 +387,12 @@ export default function AdEdit({ route, navigation }) {
 
       setSaving(true);
 
-      const token = await AsyncStorage.getItem("customerToken");
+      let token = "";
+      try {
+        token = await getValidToken();
+      } catch {
+        // session expired
+      }
       if (!token) throw new Error("Please login again to update ad");
 
       // Upload images and check moderation
@@ -597,6 +604,61 @@ export default function AdEdit({ route, navigation }) {
             )}
           </View>
         )}
+
+        {/* ── Basic Details ── */}
+        <View style={styles.basicSection}>
+          <Text style={styles.sectionTitle}>Basic Details</Text>
+          <View style={styles.basicCard}>
+            <Text style={styles.fieldLabel}>Title</Text>
+            <TextInput
+              style={styles.fieldInput}
+              value={formData.heading || ""}
+              onChangeText={(text) => setFormData((prev) => ({ ...prev, heading: text }))}
+              placeholder="Ad title"
+              placeholderTextColor="#aaa"
+            />
+
+            <Text style={styles.fieldLabel}>Description</Text>
+            <TextInput
+              style={[styles.fieldInput, styles.fieldTextArea]}
+              value={formData.body || ""}
+              onChangeText={(text) => setFormData((prev) => ({ ...prev, body: text }))}
+              placeholder="Describe your ad"
+              placeholderTextColor="#aaa"
+              multiline
+              textAlignVertical="top"
+            />
+
+            <Text style={styles.fieldLabel}>Price</Text>
+            <TextInput
+              style={styles.fieldInput}
+              value={formData.price || ""}
+              onChangeText={(text) => setFormData((prev) => ({ ...prev, price: text }))}
+              placeholder="Enter price"
+              placeholderTextColor="#aaa"
+              keyboardType="numeric"
+            />
+
+            <Text style={styles.fieldLabel}>Location</Text>
+            <TextInput
+              style={styles.fieldInput}
+              value={formData.location || ""}
+              onChangeText={(text) => setFormData((prev) => ({ ...prev, location: text }))}
+              placeholder="Enter location"
+              placeholderTextColor="#aaa"
+            />
+
+            <Text style={styles.fieldLabel}>Contact Phone</Text>
+            <TextInput
+              style={styles.fieldInput}
+              value={formData.contact || ""}
+              onChangeText={(text) => setFormData((prev) => ({ ...prev, contact: text }))}
+              placeholder="Enter phone number"
+              placeholderTextColor="#aaa"
+              keyboardType="phone-pad"
+            />
+          </View>
+        </View>
 
         {/* ── Category-Specific Form ── */}
         <View style={styles.formWrapper}>
@@ -839,6 +901,35 @@ const styles = StyleSheet.create({
   },
   addImageText: { ...textPresets.caption, color: "#888", marginTop: 2 },
   helperText: { ...textPresets.label, color: "#888", marginTop: 6 },
+
+  // Basic details section
+  basicSection: { marginTop: 12, marginBottom: 4 },
+  basicCard: {
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    paddingBottom: 18,
+  },
+  fieldLabel: {
+    ...textPresets.body,
+    marginTop: 16,
+    lineHeight: Math.round(14 * 1.5),
+    color: "#333",
+  },
+  fieldInput: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 8,
+    padding: 10,
+    marginTop: 6,
+    ...textPresets.body,
+    color: "#111",
+  },
+  fieldTextArea: {
+    minHeight: 100,
+    maxHeight: 150,
+    textAlignVertical: "top",
+  },
 
   // Form wrapper
   formWrapper: { marginTop: 4 },

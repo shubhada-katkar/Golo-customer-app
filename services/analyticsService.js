@@ -1,13 +1,19 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { BASE_URL } from "../config";
+import { getValidToken } from "./authService";
 
 function normalizeBaseUrl() {
   return (BASE_URL || "").replace(/\/+$/, "");
 }
 
 async function getToken() {
-  const token = await AsyncStorage.getItem("customerToken");
-  return token || "";
+  try {
+    const token = await getValidToken();
+    return token || "";
+  } catch {
+    // Guest user or network error — return empty string
+    return "";
+  }
 }
 
 async function authorizedFetch(path, options = {}) {
@@ -53,15 +59,15 @@ async function publicPost(path) {
     const token = await getToken();
     const fullUrl = `${baseUrl}${path}`;
     console.log(`[Analytics] Tracking: POST ${fullUrl}`);
-    
-    const response = await fetch(fullUrl, { 
+
+    const response = await fetch(fullUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       }
     });
-    
+
     if (!response.ok) {
       console.warn(`[Analytics] Tracking failed: ${response.status} ${response.statusText}`);
       const text = await response.text();
@@ -87,10 +93,10 @@ async function getAdAnalytics(adId) {
   const analytics = await authorizedFetch("/ads/analytics/my", { method: "GET" });
   const ad = Array.isArray(analytics?.ads)
     ? analytics.ads.find((item) =>
-        String(item.adId) === String(adId) ||
-        String(item.id) === String(adId) ||
-        String(item._id) === String(adId)
-      )
+      String(item.adId) === String(adId) ||
+      String(item.id) === String(adId) ||
+      String(item._id) === String(adId)
+    )
     : null;
 
   if (!ad) {
