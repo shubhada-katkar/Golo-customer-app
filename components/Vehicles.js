@@ -180,7 +180,13 @@ export default function Vehicles({ formData, setFormData, category, onPrevious, 
             <Text style={styles.label}>Year</Text>
             <TextInput
               style={styles.input}
-              value={formData.year || ""}
+              value={
+                formData.year != null
+                  ? String(formData.year)
+                  : formData.yearOfRegistration != null
+                    ? String(formData.yearOfRegistration)
+                    : ""
+              }
               onChangeText={(text) =>
                 setFormData({ ...formData, year: text })
               }
@@ -190,7 +196,17 @@ export default function Vehicles({ formData, setFormData, category, onPrevious, 
             <Text style={styles.label}>KM Driven</Text>
             <TextInput
               style={styles.input}
-              value={formData.kilometersDriven || ""}
+              value={
+                formData.kilometersDriven != null
+                  ? String(formData.kilometersDriven)
+                  : formData.kmDriven != null
+                    ? String(formData.kmDriven)
+                    : formData.kmsDriven != null
+                      ? String(formData.kmsDriven)
+                      : formData.km_driven != null
+                        ? String(formData.km_driven)
+                        : ""
+              }
               onChangeText={(text) =>
                 setFormData({ ...formData, kilometersDriven: text })
               }
@@ -299,7 +315,13 @@ export default function Vehicles({ formData, setFormData, category, onPrevious, 
             <Text style={styles.label}>Per Day Rent Amount</Text>
             <TextInput
               style={styles.input}
-              value={formData.perDayRentAmount || ""}
+              value={
+                formData.perDayRentAmount != null
+                  ? String(formData.perDayRentAmount)
+                  : formData.rentAmount != null
+                    ? String(formData.rentAmount)
+                    : ""
+              }
               onChangeText={(text) =>
                 setFormData({ ...formData, perDayRentAmount: text })
               }
@@ -309,7 +331,11 @@ export default function Vehicles({ formData, setFormData, category, onPrevious, 
             <Text style={styles.label}>Security Deposit</Text>
             <TextInput
               style={styles.input}
-              value={formData.securityDeposit || ""}
+              value={
+                formData.securityDeposit != null
+                  ? String(formData.securityDeposit)
+                  : ""
+              }
               onChangeText={(text) =>
                 setFormData({ ...formData, securityDeposit: text })
               }
@@ -326,7 +352,11 @@ export default function Vehicles({ formData, setFormData, category, onPrevious, 
             <Text style={styles.label}>Min Rental Duration (Days)</Text>
             <TextInput
               style={styles.input}
-              value={formData.minRentalDuration || ""}
+              value={
+                formData.minRentalDuration != null
+                  ? String(formData.minRentalDuration)
+                  : ""
+              }
               onChangeText={(text) =>
                 setFormData({ ...formData, minRentalDuration: text })
               }

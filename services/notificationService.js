@@ -121,8 +121,17 @@ async function showNewAlerts(notifications) {
   if (!permissionGranted) return;
 
   for (const item of newNotifications.slice(0, 5)) {
-    const title = item?.adTitle || item?.title || "New update";
-    const body = item?.message || "You have a new notification";
+    const isAdmin =
+      item?.isAdmin ||
+      item?.isBroadcast ||
+      ["admin_warning", "promotional", "alert", "emergency", "system_update", "admin", "broadcast"].includes(item?.type) ||
+      (item?.senderName && String(item.senderName).toLowerCase().includes("admin")) ||
+      (item?.title && (!item?.adTitle || item?.adTitle === "-"));
+
+    const title = (isAdmin && item?.title && item.title !== "-")
+      ? item.title
+      : (item?.adTitle && item.adTitle !== "-" ? item.adTitle : (item?.title && item.title !== "-" ? item.title : "New update"));
+    const body = item?.description || item?.message || item?.body || "You have a new notification";
     await Notifications.scheduleNotificationAsync({
       content: {
         title,

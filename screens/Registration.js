@@ -463,7 +463,7 @@ export default function Registration({ navigation }) {
                 disabled={otpLoading || timer > 0}
                 style={{ alignSelf: "flex-end", marginTop: -6 }}
               >
-                <Text style={{ color: (otpLoading || timer > 0) ? "#a0a0a0" : "#157a4f", ...textPresets.label, fontWeight: "600" }}>
+                <Text style={{ color: (otpLoading || timer > 0) ? "#a0a0a0" : "#157a4f", ...textPresets.label }}>
                   {timer > 0 ? `Resend Code in ${Math.floor(timer / 60)}:${String(timer % 60).padStart(2, '0')}` : "Resend Code"}
                 </Text>
               </TouchableOpacity>
@@ -473,7 +473,7 @@ export default function Registration({ navigation }) {
           {emailVerified && (
             <View style={{ marginBottom: 16, flexDirection: "row", alignItems: "center", gap: 6 }}>
               <Ionicons name="checkmark-circle-outline" size={18} color="#157a4f" />
-              <Text style={{ color: "#157a4f", ...textPresets.label, fontWeight: "600" }}>Email verified successfully!</Text>
+              <Text style={{ color: "#157a4f", ...textPresets.label }}>Email verified successfully!</Text>
             </View>
           )}
 

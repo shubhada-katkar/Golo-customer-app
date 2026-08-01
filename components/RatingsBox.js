@@ -247,6 +247,5 @@ const styles = StyleSheet.create({
     submitButtonText: {
         ...textPresets.label,
         color: '#fff',
-        fontWeight: '600',
     },
 });

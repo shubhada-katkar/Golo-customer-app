@@ -266,10 +266,35 @@ export default function AdEdit({ route, navigation }) {
         const fetchedAd = data.data;
         const categoryDtoField =
           CATEGORY_DTO_FIELD_BY_LABEL[fetchedAd?.category] || null;
-        const categorySource =
-          fetchedAd?.categorySpecificData ||
-          (categoryDtoField ? fetchedAd?.[categoryDtoField] : null) ||
-          {};
+
+        const rawCategorySource = {
+          ...(categoryDtoField ? (fetchedAd?.[categoryDtoField] || {}) : {}),
+          ...(fetchedAd?.categorySpecificData || {}),
+        };
+
+        const categorySource = {};
+        Object.entries(rawCategorySource).forEach(([key, val]) => {
+          if (val != null) {
+            categorySource[key] = typeof val === "number" ? String(val) : val;
+          }
+        });
+
+        // Vehicle field alias & string conversion normalization
+        if (fetchedAd?.category === "Vehicle") {
+          const kmVal =
+            categorySource.kilometersDriven ??
+            categorySource.kmDriven ??
+            categorySource.kmsDriven ??
+            categorySource.km_driven;
+          if (kmVal != null) {
+            categorySource.kilometersDriven = String(kmVal);
+          }
+          const yearVal =
+            categorySource.year ?? categorySource.yearOfRegistration;
+          if (yearVal != null) {
+            categorySource.year = String(yearVal);
+          }
+        }
 
         const fetchedImages = Array.isArray(fetchedAd?.images)
           ? fetchedAd.images
@@ -440,13 +465,20 @@ export default function AdEdit({ route, navigation }) {
         "heading", "body", "price", "location", "contact", "contactPerson",
         "image", "images",
       ]);
+      const NUMERIC_CATEGORY_FIELDS = new Set([
+        "year", "kilometersDriven", "perDayRentAmount", "securityDeposit",
+      ]);
       const categoryPayload = {};
       Object.entries(formData).forEach(([key, value]) => {
         if (EXCLUDED.has(key)) return;
         if (value == null) return;
         if (typeof value === "string" && value.trim() === "") return;
         if (Array.isArray(value) && value.length === 0) return;
-        categoryPayload[key] = value;
+        if (NUMERIC_CATEGORY_FIELDS.has(key) && typeof value === "string" && !isNaN(Number(value))) {
+          categoryPayload[key] = Number(value);
+        } else {
+          categoryPayload[key] = value;
+        }
       });
 
       const payload = {
@@ -579,8 +611,7 @@ export default function AdEdit({ route, navigation }) {
                   <Image source={{ uri }} style={styles.imageTile} />
                   <TouchableOpacity
                     style={styles.imageRemoveBtn}
-                    onPress={() => removeImageAt(index)}
-                  >
+                    onPress={() => removeImageAt(index)} >
                     <MaterialIcons name="close" size={16} color="#fff" />
                   </TouchableOpacity>
                 </View>

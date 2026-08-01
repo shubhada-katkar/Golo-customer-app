@@ -103,6 +103,35 @@ export default function NotificationsPage({ navigation }) {
 
   const renderItem = ({ item }) => {
     const isAccepted = item?.type === 'order_accepted';
+    const isAdmin =
+      item?.isAdmin ||
+      item?.isBroadcast ||
+      ['admin_warning', 'promotional', 'alert', 'emergency', 'system_update', 'admin', 'broadcast'].includes(item?.type) ||
+      (item?.senderName && String(item.senderName).toLowerCase().includes('admin')) ||
+      (item?.title && (!item?.adTitle || item?.adTitle === '-'));
+
+    let displayTitle = 'New update';
+    if (isAdmin) {
+      displayTitle = (item?.title && item.title !== '-')
+        ? item.title
+        : (item?.adTitle && item.adTitle !== '-' ? item.adTitle : (item?.senderName && item.senderName !== '-' ? item.senderName : 'Admin Notification'));
+    } else {
+      displayTitle = (item?.adTitle && item.adTitle !== '-')
+        ? item.adTitle
+        : (item?.title && item.title !== '-' ? item.title : 'New update');
+    }
+
+    const displayMessage = item?.description || item?.message || item?.body || 'You have a new notification.';
+
+    let iconName = 'notifications-active';
+    let iconColor = '#f8a812';
+    if (isAdmin) {
+      iconName = 'campaign';
+      iconColor = '#f8a812';
+    } else if (isAccepted) {
+      iconName = 'check-circle';
+      iconColor = '#16a34a';
+    }
 
     return (
       <TouchableOpacity
@@ -111,17 +140,17 @@ export default function NotificationsPage({ navigation }) {
       >
         <View style={styles.iconWrap}>
           <MaterialIcons
-            name={isAccepted ? 'check-circle' : 'notifications-active'}
+            name={iconName}
             size={22}
-            color={isAccepted ? '#16a34a' : '#f8a812'}
+            color={iconColor}
           />
         </View>
         <View style={styles.cardBody}>
           <Text style={styles.cardTitle} numberOfLines={2}>
-            {item.adTitle || item.title || 'New update'}
+            {displayTitle}
           </Text>
           <Text style={styles.cardMessage} numberOfLines={3}>
-            {item.message || 'You have a new notification.'}
+            {displayMessage}
           </Text>
           <Text style={styles.cardMeta}>{formatRelativeTime(item.createdAt)}</Text>
         </View>

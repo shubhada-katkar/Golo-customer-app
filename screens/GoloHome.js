@@ -1437,7 +1437,6 @@ const styles = StyleSheet.create({
     },
     retryButtonText: {
         color: "#ffffff",
-        fontWeight: "600",
         ...textPresets.label,
     },
     searchContainer: {
