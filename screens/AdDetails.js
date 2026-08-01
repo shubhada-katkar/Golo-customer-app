@@ -10,6 +10,7 @@ import { Linking } from 'react-native';
 import { getAdId, isFavoriteAdId, toggleFavoriteAd } from '../services/favoritesService';
 import { trackAdCardClick, trackContactClick, trackWishlistSave } from '../services/analyticsService';
 import { submitReport } from '../services/reportService';
+import { ensureAuthenticated } from '../services/authService';
 import { BASE_URL } from '../config';
 import Topbar from '../components/Topbar';
 import { ThemeContext } from '../theme/ThemeContext';
@@ -204,7 +205,7 @@ export default function AdDetails({ route, navigation }) {
     }
   };
 
-  const sellerName = seller?.name || ad?.contactInfo?.name || 'Seller';
+  const sellerName = seller?.name || ad?.sellerName || ad?.user?.name || ad?.contactInfo?.name || ad?.contactInfo?.sellerName || 'Seller';
   const sellerPhone = seller?.profile?.phone || ad?.contactInfo?.phone || '';
   const sellerAvatar = seller?.profile?.avatar || null;
 
@@ -215,15 +216,19 @@ export default function AdDetails({ route, navigation }) {
       return;
     }
 
-    const currentAdId = ad?.adId || ad?._id || adId;
+    const currentAdId = ad?.adId || ad?._id || resolvedAdId || adId;
+    const resolvedSellerId = ad?.userId || ad?.user?.id || ad?.user?._id || seller?._id || seller?.id;
+
     if (currentAdId) {
       console.log('[AdDetails] Tracking contact click for ad:', currentAdId);
-      trackContactClick(currentAdId);
+      trackContactClick(currentAdId).catch((error) => {
+        console.warn('[AdDetails] Failed to track contact click:', error.message);
+      });
     }
 
     navigation.navigate('ChatScreen', {
       adId: currentAdId,
-      sellerId: ad?.userId || ad?.user?.id,
+      sellerId: resolvedSellerId,
       sellerName,
       adRef: {
         adId: currentAdId,

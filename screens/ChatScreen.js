@@ -3,6 +3,7 @@ import {
     View, Text, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator,
     FlatList, Image, KeyboardAvoidingView, Platform, Modal, Keyboard
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -20,6 +21,63 @@ import {
 } from "../services/chatService";
 import { LinearGradient } from "expo-linear-gradient";
 import { textPresets } from "../theme/typography";
+
+const DRAFT_PREFIX = "CHAT_DRAFT_";
+const draftCache = {};
+
+const getDraftKey = (convId, params) => {
+    if (convId) return `${DRAFT_PREFIX}${convId}`;
+    if (params?.adId && params?.sellerId) return `${DRAFT_PREFIX}ad_${params.adId}_seller_${params.sellerId}`;
+    if (params?.adId) return `${DRAFT_PREFIX}ad_${params.adId}`;
+    return null;
+};
+
+const saveDraft = async (key, text) => {
+    if (!key) return;
+    if (text) {
+        draftCache[key] = text;
+        try {
+            await AsyncStorage.setItem(key, text);
+        } catch (e) {
+            console.error("Error saving chat draft:", e);
+        }
+    } else {
+        delete draftCache[key];
+        try {
+            await AsyncStorage.removeItem(key);
+        } catch (e) {
+            console.error("Error removing chat draft:", e);
+        }
+    }
+};
+
+const loadDraft = async (key, fallbackKey) => {
+    if (key && draftCache[key] !== undefined) {
+        return draftCache[key];
+    }
+    if (fallbackKey && draftCache[fallbackKey] !== undefined) {
+        return draftCache[fallbackKey];
+    }
+    try {
+        if (key) {
+            const saved = await AsyncStorage.getItem(key);
+            if (saved !== null) {
+                draftCache[key] = saved;
+                return saved;
+            }
+        }
+        if (fallbackKey) {
+            const savedFallback = await AsyncStorage.getItem(fallbackKey);
+            if (savedFallback !== null) {
+                draftCache[fallbackKey] = savedFallback;
+                return savedFallback;
+            }
+        }
+    } catch (e) {
+        console.error("Error loading chat draft:", e);
+    }
+    return "";
+};
 
 export default function ChatScreen({ navigation, route }) {
     const { colors } = useContext(ThemeContext);
@@ -266,9 +324,32 @@ export default function ChatScreen({ navigation, route }) {
         });
     }, [conversationId]);
 
+    useEffect(() => {
+        let isMounted = true;
+        const restoreDraft = async () => {
+            const key = getDraftKey(conversationId, route?.params);
+            const fallbackKey = conversationId ? getDraftKey(null, route?.params) : null;
+            const savedDraft = await loadDraft(key, fallbackKey);
+            if (isMounted && savedDraft) {
+                setInputText(savedDraft);
+                if (key && fallbackKey && savedDraft) {
+                    saveDraft(key, savedDraft);
+                    saveDraft(fallbackKey, "");
+                }
+            }
+        };
+        restoreDraft();
+        return () => {
+            isMounted = false;
+        };
+    }, [conversationId, route?.params?.adId, route?.params?.sellerId]);
+
     const handleInputChange = (text) => {
         setInputText(text);
         emitTyping(text.trim().length > 0);
+
+        const key = getDraftKey(conversationId, route?.params);
+        saveDraft(key, text);
     };
 
     const sendMessageRealtime = useCallback((payload) => {
@@ -311,6 +392,12 @@ export default function ChatScreen({ navigation, route }) {
             addOrMergeMessage(message);
             scrollToLatest(true);
             setInputText("");
+
+            const key = getDraftKey(conversationId, route?.params);
+            const fallbackKey = getDraftKey(null, route?.params);
+            saveDraft(key, "");
+            if (fallbackKey) saveDraft(fallbackKey, "");
+
             socketRef.current?.emit("mark_read", { conversationId });
         } catch (error) {
             showAlert("Send Failed", error.message || "Unable to send message", "error");
