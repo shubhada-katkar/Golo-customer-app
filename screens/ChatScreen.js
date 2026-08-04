@@ -1,7 +1,7 @@
 import React, { useCallback, useContext, useEffect, useRef, useState } from "react";
 import {
     View, Text, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator,
-    FlatList, Image, KeyboardAvoidingView, Platform, Modal, Keyboard
+    FlatList, Image, KeyboardAvoidingView, Platform, Modal, Keyboard, Alert, Dimensions
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
@@ -96,6 +96,8 @@ export default function ChatScreen({ navigation, route }) {
     const [uploadingImage, setUploadingImage] = useState(false);
     const [otherUserId, setOtherUserId] = useState("");
     const [showMenu, setShowMenu] = useState(false);
+    const [showImagePicker, setShowImagePicker] = useState(false);
+    const [imageViewerUri, setImageViewerUri] = useState(null);
 
     const [keyboardVisible, setKeyboardVisible] = useState(false);
     const [alertConfig, setAlertConfig] = useState({
@@ -406,7 +408,13 @@ export default function ChatScreen({ navigation, route }) {
         }
     };
 
-    const handleAttachImage = async () => {
+    const handlePickSource = () => {
+        if (!conversationId || sending || uploadingImage) return;
+        setShowImagePicker(true);
+    };
+
+    const handleAttachFromGallery = async () => {
+        setShowImagePicker(false);
         try {
             if (!conversationId || sending || uploadingImage) return;
 
@@ -418,18 +426,46 @@ export default function ChatScreen({ navigation, route }) {
 
             const pickerResult = await ImagePicker.launchImageLibraryAsync({
                 mediaTypes: ImagePicker.MediaTypeOptions.Images,
-                allowsEditing: true,
-                quality: 0.6,
+                allowsEditing: false,
+                quality: 0.7,
             });
 
-            if (pickerResult.canceled || !pickerResult.assets?.length) {
+            if (pickerResult.canceled || !pickerResult.assets?.length) return;
+
+            await _uploadAndSendImage(pickerResult.assets[0]);
+        } catch (error) {
+            showAlert("Attachment Failed", error.message || "Could not send image", "error");
+        }
+    };
+
+    const handleAttachFromCamera = async () => {
+        setShowImagePicker(false);
+        try {
+            if (!conversationId || sending || uploadingImage) return;
+
+            const permission = await ImagePicker.requestCameraPermissionsAsync();
+            if (!permission.granted) {
+                showAlert("Permission Needed", "Please allow camera access to take photos.", "warning");
                 return;
             }
 
-            const asset = pickerResult.assets[0];
+            const cameraResult = await ImagePicker.launchCameraAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                allowsEditing: false,
+                quality: 0.7,
+            });
 
-            setUploadingImage(true);
+            if (cameraResult.canceled || !cameraResult.assets?.length) return;
 
+            await _uploadAndSendImage(cameraResult.assets[0]);
+        } catch (error) {
+            showAlert("Camera Failed", error.message || "Could not send photo", "error");
+        }
+    };
+
+    const _uploadAndSendImage = async (asset) => {
+        setUploadingImage(true);
+        try {
             const uploadedUrl = await uploadChatImage(
                 asset.uri,
                 asset.fileName || `chat-${Date.now()}.jpg`,
@@ -454,8 +490,6 @@ export default function ChatScreen({ navigation, route }) {
             addOrMergeMessage(message);
             scrollToLatest(true);
             socketRef.current?.emit("mark_read", { conversationId });
-        } catch (error) {
-            showAlert("Attachment Failed", error.message || "Could not send image", "error");
         } finally {
             setUploadingImage(false);
         }
@@ -693,7 +727,7 @@ export default function ChatScreen({ navigation, route }) {
                 </View>
 
                 {/* Dropdown Menu */}
-                <Modal visible={showMenu} transparent animationType="fade">
+                <Modal visible={showMenu} transparent animationType="fade" statusBarTranslucent>
                     <TouchableOpacity
                         style={styles.menuOverlay}
                         activeOpacity={1}
@@ -779,11 +813,16 @@ export default function ChatScreen({ navigation, route }) {
                                         {Array.isArray(message.attachments) && message.attachments.length > 0 && (
                                             <View style={styles.attachmentsWrap}>
                                                 {message.attachments.map((attachment, index) => (
-                                                    <Image
+                                                    <TouchableOpacity
                                                         key={`${message.id}-att-${index}`}
-                                                        source={{ uri: attachment.url }}
-                                                        style={styles.attachmentImage}
-                                                    />
+                                                        activeOpacity={0.85}
+                                                        onPress={() => setImageViewerUri(attachment.url)}
+                                                    >
+                                                        <Image
+                                                            source={{ uri: attachment.url }}
+                                                            style={styles.attachmentImage}
+                                                        />
+                                                    </TouchableOpacity>
                                                 ))}
                                             </View>
                                         )}
@@ -808,12 +847,16 @@ export default function ChatScreen({ navigation, route }) {
                 />
 
                 <View style={styles.inputRow}>
-                    <TouchableOpacity onPress={handleAttachImage} disabled={uploadingImage || sending}>
-                        <Ionicons
-                            name="attach"
-                            size={24}
-                            color={uploadingImage ? "#999" : "#157a4f"}
-                        />
+                    <TouchableOpacity onPress={handlePickSource} disabled={uploadingImage || sending}>
+                        {uploadingImage ? (
+                            <View style={styles.uploadingIndicator}>
+                                <ActivityIndicator size="small" color="#157a4f" />
+                            </View>
+                        ) : (
+                            <View style={styles.attachBtn}>
+                                <Ionicons name="image-outline" size={22} color="#157a4f" />
+                            </View>
+                        )}
                     </TouchableOpacity>
                     <TextInput
                         placeholder="Type a message..."
@@ -824,9 +867,82 @@ export default function ChatScreen({ navigation, route }) {
                         editable={!sending && !uploadingImage}
                     />
                     <TouchableOpacity onPress={handleSend} disabled={sending || uploadingImage}>
-                        <Ionicons name="send" size={24} color={sending || uploadingImage ? "#999" : "#157a4f"} />
+                        {sending ? (
+                            <ActivityIndicator size="small" color="#157a4f" />
+                        ) : (
+                            <View style={[styles.sendBtn, (!inputText.trim() || uploadingImage) && styles.sendBtnDisabled]}>
+                                <Ionicons name="send" size={18} color="#fff" />
+                            </View>
+                        )}
                     </TouchableOpacity>
                 </View>
+
+                {/* Image Source Picker Modal */}
+                <Modal
+                    visible={showImagePicker}
+                    transparent
+                    animationType="slide"
+                    onRequestClose={() => setShowImagePicker(false)}
+                    statusBarTranslucent
+                >
+                    <TouchableOpacity
+                        style={styles.pickerOverlay}
+                        activeOpacity={1}
+                        onPress={() => setShowImagePicker(false)}
+                    >
+                        <View style={styles.pickerSheet}>
+                            <View style={styles.pickerHandle} />
+                            <Text style={styles.pickerTitle}>Share an Image</Text>
+                            <TouchableOpacity style={styles.pickerOption} onPress={handleAttachFromCamera}>
+                                <View style={styles.pickerOptionIcon}>
+                                    <Ionicons name="camera-outline" size={22} color="#157a4f" />
+                                </View>
+                                <View>
+                                    <Text style={styles.pickerOptionLabel}>Take a Photo</Text>
+                                    <Text style={styles.pickerOptionSub}>Use your camera</Text>
+                                </View>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.pickerOption} onPress={handleAttachFromGallery}>
+                                <View style={styles.pickerOptionIcon}>
+                                    <Ionicons name="images-outline" size={22} color="#157a4f" />
+                                </View>
+                                <View>
+                                    <Text style={styles.pickerOptionLabel}>Choose from Gallery</Text>
+                                    <Text style={styles.pickerOptionSub}>Pick an existing photo</Text>
+                                </View>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={styles.pickerCancel}
+                                onPress={() => setShowImagePicker(false)}
+                            >
+                                <Text style={styles.pickerCancelText}>Cancel</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </TouchableOpacity>
+                </Modal>
+
+                {/* Full-Screen Image Viewer */}
+                <Modal
+                    visible={!!imageViewerUri}
+                    transparent
+                    animationType="fade"
+                    onRequestClose={() => setImageViewerUri(null)}
+                    statusBarTranslucent
+                >
+                    <View style={styles.imageViewerOverlay}>
+                        <TouchableOpacity
+                            style={styles.imageViewerClose}
+                            onPress={() => setImageViewerUri(null)}
+                        >
+                            <Ionicons name="close-circle" size={34} color="#fff" />
+                        </TouchableOpacity>
+                        <Image
+                            source={{ uri: imageViewerUri }}
+                            style={styles.imageViewerImage}
+                            resizeMode="contain"
+                        />
+                    </View>
+                </Modal>
             </KeyboardAvoidingView>
             <CustomAlertModal
                 visible={alertConfig.visible}
@@ -929,10 +1045,11 @@ const styles = StyleSheet.create({
     },
     attachmentsWrap: {
         marginTop: 8,
+        gap: 6,
     },
     attachmentImage: {
-        width: 180,
-        height: 180,
+        width: 200,
+        height: 200,
         borderRadius: 10,
         backgroundColor: "#cfcfcf",
     },
@@ -978,18 +1095,127 @@ const styles = StyleSheet.create({
     inputRow: {
         flexDirection: "row",
         alignItems: "center",
-        padding: 12,
+        padding: 10,
+        paddingHorizontal: 12,
         borderTopWidth: 1,
         borderColor: "#eee",
         gap: 8,
+        backgroundColor: "#fff",
+    },
+    attachBtn: {
+        width: 38,
+        height: 38,
+        borderRadius: 19,
+        backgroundColor: "#e8f5ef",
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    uploadingIndicator: {
+        width: 38,
+        height: 38,
+        borderRadius: 19,
+        backgroundColor: "#e8f5ef",
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    sendBtn: {
+        width: 38,
+        height: 38,
+        borderRadius: 19,
+        backgroundColor: "#157a4f",
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    sendBtnDisabled: {
+        backgroundColor: "#aaa",
     },
     input: {
         flex: 1,
         backgroundColor: "#f0f0f0",
         borderRadius: 20,
-        paddingHorizontal: 12,
-        marginHorizontal: 8,
+        paddingHorizontal: 14,
+        paddingVertical: 10,
         minHeight: 42,
         ...textPresets.body,
-    }
+    },
+    // Image source picker bottom sheet
+    pickerOverlay: {
+        flex: 1,
+        backgroundColor: "rgba(0,0,0,0.45)",
+        justifyContent: "flex-end",
+    },
+    pickerSheet: {
+        backgroundColor: "#fff",
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        paddingHorizontal: 20,
+        paddingBottom: 32,
+        paddingTop: 12,
+    },
+    pickerHandle: {
+        width: 40,
+        height: 4,
+        backgroundColor: "#ddd",
+        borderRadius: 2,
+        alignSelf: "center",
+        marginBottom: 16,
+    },
+    pickerTitle: {
+        color: "#111",
+        marginBottom: 16,
+        ...textPresets.label
+    },
+    pickerOption: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 14,
+        paddingVertical: 14,
+        borderBottomWidth: 1,
+        borderBottomColor: "#f0f0f0",
+    },
+    pickerOptionIcon: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        backgroundColor: "#e8f5ef",
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    pickerOptionLabel: {
+        color: "#111",
+        ...textPresets.label
+    },
+    pickerOptionSub: {
+        color: "#888",
+        marginTop: 2,
+        ...textPresets.label
+    },
+    pickerCancel: {
+        marginTop: 16,
+        alignItems: "center",
+        paddingVertical: 12,
+        borderRadius: 10,
+        backgroundColor: "#f5f5f5",
+    },
+    pickerCancelText: {
+        color: "#c0392b",
+        ...textPresets.label
+    },
+    // Full-screen image viewer
+    imageViewerOverlay: {
+        flex: 1,
+        backgroundColor: "rgba(0,0,0,0.92)",
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    imageViewerClose: {
+        position: "absolute",
+        top: 48,
+        right: 20,
+        zIndex: 10,
+    },
+    imageViewerImage: {
+        width: Dimensions.get("window").width,
+        height: Dimensions.get("window").height * 0.8,
+    },
 });
