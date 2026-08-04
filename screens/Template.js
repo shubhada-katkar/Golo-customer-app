@@ -86,11 +86,11 @@ export default function Template({ navigation, route }) {
                         </View>
 
                         <View style={styles.priceStrip}>
-                            <Text style={styles.priceText}>For ₹15 Only</Text>
+                            <Text style={styles.priceText}>For ₹25 Only</Text>
                         </View>
 
                         <TouchableOpacity style={styles.selectStrip} onPress={() => navigation.navigate("FormPage",
-                            { template: 1, category: category, price: 15 })}>
+                            { template: 1, category: category, price: 25 })}>
                             <Text style={styles.stripText}>Select This Template</Text>
                         </TouchableOpacity>
 
@@ -157,11 +157,11 @@ export default function Template({ navigation, route }) {
                         </View>
 
                         <View style={styles.priceStrip}>
-                            <Text style={styles.priceText}>For ₹10 Only</Text>
+                            <Text style={styles.priceText}>For ₹15 Only</Text>
                         </View>
 
                         <TouchableOpacity style={styles.selectStrip} onPress={() => navigation.navigate("FormPage",
-                            { template: 2, category: category, price: 10 })}>
+                            { template: 2, category: category, price: 15 })}>
                             <Text style={styles.stripText}>Select This Template</Text>
                         </TouchableOpacity>
                     </View>
@@ -212,11 +212,11 @@ export default function Template({ navigation, route }) {
                         </View>
 
                         <View style={styles.priceStrip}>
-                            <Text style={styles.priceText}>For ₹5 only</Text>
+                            <Text style={styles.priceText}>For ₹10 Only</Text>
                         </View>
 
                         <TouchableOpacity style={styles.selectStrip} onPress={() => navigation.navigate("FormPage",
-                            { template: 3, category: category, price: 5 })}>
+                            { template: 3, category: category, price: 10 })}>
                             <Text style={styles.stripText}>Select This Template</Text>
                         </TouchableOpacity>
 

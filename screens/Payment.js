@@ -370,6 +370,102 @@ export default function Payment({ navigation, route }) {
         }
     };
 
+    const [adRate, setAdRate] = useState(null);
+    const [resolvedPopulation, setResolvedPopulation] = useState(null);
+    const [resolvedRateLocation, setResolvedRateLocation] = useState("");
+    const [isRateFetching, setIsRateFetching] = useState(false);
+    const [rateFetchError, setRateFetchError] = useState("");
+
+    const resolveTemplateId = (value) => {
+        if (typeof value === 'number' && [1, 2, 3].includes(value)) return value;
+        const normalized = String(value || '').toLowerCase().trim();
+        if (normalized.startsWith('card')) {
+            const parsed = Number(normalized.replace('card', ''));
+            if ([1, 2, 3].includes(parsed)) return parsed;
+        }
+        const parsed = Number(normalized);
+        return Number.isFinite(parsed) && [1, 2, 3].includes(parsed) ? parsed : 1;
+    };
+
+    const getCityStartWord = (value) => {
+        if (!value) return '';
+        const normalized = String(value).trim();
+        const firstSegment = normalized.split(',')[0].trim();
+        return firstSegment;
+    };
+
+    const getLocationQueryCandidates = (value) => {
+        if (!value) return [];
+        const normalized = String(value).trim();
+        const segments = normalized.split(',').map((part) => part.trim()).filter(Boolean);
+        const candidates = [];
+
+        if (segments.length > 0) {
+            candidates.push(segments[0]);
+        }
+        if (segments.length > 1) {
+            candidates.push(segments[1]);
+        }
+        if (segments.length > 2) {
+            candidates.push(segments[2]);
+        }
+
+        const firstWord = segments[0]?.split(' ').filter(Boolean)[0];
+        if (firstWord && !candidates.includes(firstWord)) {
+            candidates.push(firstWord);
+        }
+
+        return [...new Set(candidates)].filter(Boolean);
+    };
+
+    const getPrimaryLocationQuery = () => {
+        const chosen = Array.isArray(selectedLocations) && selectedLocations.length > 0
+            ? selectedLocations[0]
+            : formData?.location;
+        return getLocationQueryCandidates(chosen);
+    };
+
+    const fetchAdRateForLocation = async () => {
+        const locationQueries = getPrimaryLocationQuery();
+        if (!Array.isArray(locationQueries) || locationQueries.length === 0 || !BASE_URL) {
+            return;
+        }
+
+        setIsRateFetching(true);
+        setRateFetchError("");
+
+        for (const locationQuery of locationQueries) {
+            try {
+                const url = `${BASE_URL}/regions/search?q=${encodeURIComponent(locationQuery)}&mode=ad`;
+                const response = await fetch(url);
+                const data = await response.json().catch(() => []);
+                const results = Array.isArray(data) ? data : [];
+                const match = results.find((item) => item?.adDailyRates || item?.dailyRate) || results[0];
+
+                if (match) {
+                    const templateId = resolveTemplateId(template);
+                    const rateKey = `t${templateId}`;
+                    const selectedRate = Number(match.adDailyRates?.[rateKey] ?? match.dailyRate ?? NaN);
+                    if (Number.isFinite(selectedRate)) {
+                        setAdRate(selectedRate);
+                        setResolvedPopulation(Number(match.population) || null);
+                        setResolvedRateLocation(match.displayName || match.name || locationQuery);
+                        return;
+                    }
+                }
+            } catch (error) {
+                console.warn("Failed to fetch ad rate for", locationQuery, error);
+            }
+        }
+
+        setRateFetchError("Unable to resolve ad rate for the selected location.");
+        setIsRateFetching(false);
+    };
+
+    useEffect(() => {
+        fetchAdRateForLocation();
+    }, [selectedLocations, formData?.location, template]);
+
     useEffect(() => {
         const checkRestrictionStatus = async () => {
             try {
@@ -469,24 +565,25 @@ export default function Payment({ navigation, route }) {
     };
 
 
-    const STANDARD_FEE = Number(price || 0);     // base price from previous screen
     const FEATURED_FEE = 100;                   // featured ad cost
+    const templateId = resolveTemplateId(template);
+    const fallbackTemplatePrices = {
+        1: 25,
+        2: 15,
+        3: 10,
+    };
+    const fallbackDailyRate = Number(price || fallbackTemplatePrices[templateId] || 25);
+    const dailyRate = adRate != null && Number.isFinite(Number(adRate))
+        ? Number(adRate)
+        : fallbackDailyRate;
 
     const days = Number(selectedDays || 1);
+    const dayCount = days > 0 ? days : 1;
 
-    // Day-wise extra fee (only if days > 1)
-    const dayWiseFee = days > 1 ? STANDARD_FEE * days : 0;
-
-    // Featured fee
+    const dailyTotal = dailyRate * dayCount;
     const featuredFee = isFeatured ? FEATURED_FEE : 0;
-
-    // Subtotal
-    const subtotal = STANDARD_FEE + dayWiseFee + featuredFee;
-
-    // GST 18%
+    const subtotal = dailyTotal + featuredFee;
     const gst = subtotal * 0.18;
-
-    // Total
     const total = subtotal + gst;
 
     const handlePaymentAndSubmit = async () => {
@@ -559,6 +656,10 @@ export default function Payment({ navigation, route }) {
             const resolvedExpiryDate = endDate
                 || (resolvedSelectedDates.length > 0 ? resolvedSelectedDates[resolvedSelectedDates.length - 1] : undefined);
 
+            const cityList = Array.isArray(selectedLocations) && selectedLocations.length > 0
+                ? selectedLocations
+                : formData?.location ? [String(formData.location).trim()] : [];
+
             const payload = {
                 title: formData?.heading || "Ad Title",
                 description: formData?.body || "Ad Description",
@@ -568,17 +669,19 @@ export default function Payment({ navigation, route }) {
                 userType: "Customer",
                 images: uploadedImages,
                 price: parsedPrice,
-                location: formData?.location || "Not specified",
+                location: cityList[0] || formData?.location || "Not specified",
+                cities: cityList,
                 contactInfo: {
                     name: formData?.institutionName || formData?.contactPerson || "User",
                     phone: phone,
                     preferredContactMethod: "phone"
                 },
                 templateId: Number(template !== undefined ? (typeof template === 'string' ? template.replace('card', '') : template) : 1),
-                // cities: selectedLocations || [],
                 selectedDates: resolvedSelectedDates,
                 expiryDate: resolvedExpiryDate,
                 isPromoted: isFeatured,
+                adDailyRate: Number(dailyRate || 0),
+                cityPopulation: resolvedPopulation,
                 ...(categoryDtoField ? { [categoryDtoField]: categoryFormPayload } : {}),
             };
 
@@ -780,22 +883,21 @@ export default function Payment({ navigation, route }) {
                             </View>
 
                             {/* 1. Standard Listing Fee */}
-                            <View style={styles.rows}>
-                                <Text style={styles.label}>Template:</Text>
-                                <Text style={styles.value}>₹{STANDARD_FEE}</Text>
+                                    <View style={styles.rows}>
+                                <Text style={styles.label}>Template Rate ({resolvedRateLocation || 'default'})</Text>
+                                <Text style={styles.value}>₹{dailyRate.toFixed(0)}</Text>
                             </View>
 
-                            {/* 2. Day-wise Fee (only if days > 1) */}
-                            {days > 1 && (
-                                <View style={styles.rows}>
-                                    <Text style={styles.label}>
-                                        Standard Listing Fee:
-                                    </Text>
-                                    <Text style={styles.value}>₹{dayWiseFee}</Text>
-                                </View>
-                            )}
+                            <View style={styles.rows}>
+                                <Text style={styles.label}>Days</Text>
+                                <Text style={styles.value}>{dayCount}</Text>
+                            </View>
 
-                            {/* 3. Featured Ad Fee (only if checked) */}
+                            <View style={styles.rows}>
+                                <Text style={styles.label}>Listing Cost</Text>
+                                <Text style={styles.value}>₹{dailyTotal.toFixed(0)}</Text>
+                            </View>
+
                             {isFeatured && (
                                 <View style={styles.rows}>
                                     <Text style={styles.label}>Featured Ad Fee:</Text>
@@ -803,7 +905,6 @@ export default function Payment({ navigation, route }) {
                                 </View>
                             )}
 
-                            {/* 4. Bulk Discount */}
                             <View style={styles.rows}>
                                 <Text style={styles.label}>Bulk Discount:</Text>
                                 <Text style={styles.value}>- ₹0</Text>

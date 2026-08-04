@@ -9,6 +9,7 @@ import { Modal } from "react-native";
 import { TouchableWithoutFeedback, Keyboard } from "react-native";
 import { textPresets } from "../theme/typography";
 import CustomAlertModal from "../components/CustomeAlertModal";
+import { BASE_URL } from "../config";
 
 export default function CalendarScreen({ navigation, route }) {
   const { category, template, formData, price } = route.params || {};
@@ -37,7 +38,62 @@ export default function CalendarScreen({ navigation, route }) {
   // --- Location suggestion state (same pattern as GoloHome.js) ---
   const [locationSuggestions, setLocationSuggestions] = useState([]);
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+  const [suggestionsRates, setSuggestionsRates] = useState({});
   const debounceTimer = useRef(null);
+
+  const resolveTemplateId = (value) => {
+    if (typeof value === 'number' && [1, 2, 3].includes(value)) return value;
+    const normalized = String(value || '').toLowerCase().trim();
+    if (normalized.startsWith('card')) {
+      const parsed = Number(normalized.replace('card', ''));
+      if ([1, 2, 3].includes(parsed)) return parsed;
+    }
+    const parsed = Number(normalized);
+    return Number.isFinite(parsed) && [1, 2, 3].includes(parsed) ? parsed : 1;
+  };
+
+  const getCityStartWord = (value) => {
+    if (!value) return "";
+    const normalized = String(value).trim();
+    const firstSegment = normalized.split(",")[0].trim();
+    return firstSegment;
+  };
+
+  const getAdRateForQuery = async (query) => {
+    if (!query || !BASE_URL) return null;
+    try {
+      const url = `${BASE_URL}/regions/search?q=${encodeURIComponent(query)}&mode=ad`;
+      const response = await fetch(url);
+      if (!response.ok) return null;
+      const data = await response.json().catch(() => []);
+      const results = Array.isArray(data) ? data : [];
+      const match = results.find((item) => item?.adDailyRates) || results[0];
+      if (!match) return null;
+      const templateId = resolveTemplateId(template);
+      const rateKey = `t${templateId}`;
+      const selectedRate = Number(match.adDailyRates?.[rateKey] ?? NaN);
+      return Number.isFinite(selectedRate) ? selectedRate : null;
+    } catch (err) {
+      console.warn("Suggestion rate fetch failed for", query, err);
+      return null;
+    }
+  };
+
+  const fetchSuggestionRates = useCallback(async (suggestions) => {
+    if (!Array.isArray(suggestions) || suggestions.length === 0) return;
+    const updates = {};
+    await Promise.all(suggestions.slice(0, 10).map(async (suggestion) => {
+      const query = getCityStartWord(suggestion.label);
+      if (!query) return;
+      const rate = await getAdRateForQuery(query);
+      if (Number.isFinite(rate)) {
+        updates[suggestion.id] = rate;
+      }
+    }));
+    if (Object.keys(updates).length > 0) {
+      setSuggestionsRates((prev) => ({ ...prev, ...updates }));
+    }
+  }, [template]);
 
   const buildDateRange = (startDateStr, endDateStr) => {
     const result = [];
@@ -86,41 +142,33 @@ export default function CalendarScreen({ navigation, route }) {
 
       const data = await response.json();
 
-      const suggestions = (data || []).map((item, idx) => {
-        const addr = item.address || {};
-        const parts = [
-          addr.amenity || addr.shop || addr.tourism || addr.leisure || addr.building || addr.place,
-          addr.house_number,
-          addr.road || addr.pedestrian || addr.footway || addr.street,
-          addr.neighbourhood,
-          addr.suburb,
-          addr.quarter,
-          addr.city_district,
-          addr.village,
-          addr.town,
-          addr.city,
-          addr.district,
-          addr.county,
-          addr.state_district,
-          addr.state,
-          addr.postcode,
-          addr.country,
-        ].filter(Boolean);
+      const suggestions = (data || [])
+        .map((item, idx) => {
+          const addr = item.address || {};
+          const city = addr.city || addr.town || addr.village || addr.hamlet;
+          if (!city) return null;
 
-        const cleanParts = parts.map(p => String(p).trim()).filter(Boolean);
-        const uniqueParts = [];
-        for (const part of cleanParts) {
-          if (!uniqueParts.some(p => p.toLowerCase() === part.toLowerCase())) {
-            uniqueParts.push(part);
+          const parts = [
+            city,
+            addr.state || addr.county || addr.region,
+            addr.country,
+          ].filter(Boolean);
+
+          const cleanParts = parts.map(p => String(p).trim()).filter(Boolean);
+          const uniqueParts = [];
+          for (const part of cleanParts) {
+            if (!uniqueParts.some(p => p.toLowerCase() === part.toLowerCase())) {
+              uniqueParts.push(part);
+            }
           }
-        }
-        const resolvedLabel = uniqueParts.join(", ");
+          const resolvedLabel = uniqueParts.join(", ");
 
-        return {
-          id: `${item.place_id || idx}`,
-          label: resolvedLabel || item.display_name || trimmed,
-        };
-      });
+          return {
+            id: `${item.place_id || idx}`,
+            label: resolvedLabel,
+          };
+        })
+        .filter(Boolean);
 
       // Deduplicate by label
       const seen = new Set();
@@ -131,6 +179,7 @@ export default function CalendarScreen({ navigation, route }) {
       });
 
       setLocationSuggestions(unique);
+      fetchSuggestionRates(unique);
     } catch (err) {
       console.error("Location suggestion error:", err);
       setLocationSuggestions([]);
@@ -150,8 +199,10 @@ export default function CalendarScreen({ navigation, route }) {
 
   const addLocation = useCallback((label) => {
     if (!label) return;
+    const cityName = getCityStartWord(label);
+    if (!cityName) return;
     setSelectedLocations((prev) =>
-      prev.includes(label) ? prev : [...prev, label]
+      prev.includes(cityName) ? prev : [...prev, cityName]
     );
     setLocationInput("");
     setLocationSuggestions([]);
@@ -177,7 +228,7 @@ export default function CalendarScreen({ navigation, route }) {
   const handleNext = () => {
     const pendingInputLocations = (locationInput || "")
       .split(",")
-      .map((s) => s.trim())
+      .map((s) => getCityStartWord(s))
       .filter(Boolean);
 
     const mergedLocations = [
@@ -330,8 +381,17 @@ export default function CalendarScreen({ navigation, route }) {
                         onPress={() => handleSelectSuggestion(s)}
                         activeOpacity={0.7}
                       >
-                        <MaterialIcons name="location-on" size={16} color="#157a4f" style={{ marginRight: 8 }} />
-                        <Text style={styles.suggestionText} numberOfLines={2}>{s.label}</Text>
+                        <View style={styles.suggestionItemText}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <MaterialIcons name="location-on" size={16} color="#157a4f" style={{ marginRight: 8 }} />
+                            <Text style={styles.suggestionText} numberOfLines={2}>{s.label}</Text>
+                          </View>
+                          {suggestionsRates[s.id] != null ? (
+                            <Text style={styles.suggestionRateText}>₹{suggestionsRates[s.id].toFixed(0)} per day</Text>
+                          ) : (
+                            <Text style={styles.suggestionRateTextInactive}>Rate unavailable</Text>
+                          )}
+                        </View>
                       </TouchableOpacity>
                     ))}
                   </ScrollView>
@@ -718,17 +778,27 @@ const styles = StyleSheet.create({
     zIndex: 999,
   },
   suggestionItem: {
-    flexDirection: "row",
-    alignItems: "center",
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: "#f5e9cf",
   },
-  suggestionText: {
+  suggestionItemText: {
     flex: 1,
+  },
+  suggestionText: {
     color: "#333",
-    ...textPresets.label
+    ...textPresets.label,
+  },
+  suggestionRateText: {
+    marginTop: 4,
+    color: "#157a4f",
+    ...textPresets.caption,
+  },
+  suggestionRateTextInactive: {
+    marginTop: 4,
+    color: "#999",
+    ...textPresets.caption,
   },
   button: {
     flexDirection: "row",
