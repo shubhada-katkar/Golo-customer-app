@@ -58,7 +58,7 @@ async function authorizedFetch(path, options = {}) {
   return data?.data;
 }
 
-async function authorizedMultipartFetch(path, formData) {
+async function authorizedMultipartFetch(path, formData, timeoutMs = 15000) {
   const { token } = await getAuthContext();
   if (!token) {
     throw new Error("Please login to use chat");
@@ -73,24 +73,36 @@ async function authorizedMultipartFetch(path, formData) {
     ? path
     : `${baseUrl}${path.startsWith("/") ? path : `/${path}`}`;
 
-  const response = await fetch(requestUrl, {
-    method: "POST",
-    body: formData,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+  const timeoutId = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
 
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok || data?.success === false) {
-    const message =
-      (Array.isArray(data?.message) ? data.message.join(", ") : data?.message) ||
-      "Image upload failed";
-    throw new Error(message);
+  try {
+    const response = await fetch(requestUrl, {
+      method: "POST",
+      body: formData,
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      signal: controller?.signal,
+    });
+
+    if (timeoutId) clearTimeout(timeoutId);
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || data?.success === false) {
+      const message =
+        (Array.isArray(data?.message) ? data.message.join(", ") : data?.message) ||
+        "Image upload failed";
+      throw new Error(message);
+    }
+
+    return data?.data || data;
+  } catch (err) {
+    if (timeoutId) clearTimeout(timeoutId);
+    throw err;
   }
-
-  return data?.data || data;
 }
+
 
 async function listConversations() {
   const data = await authorizedFetch("/chats/conversations", { method: "GET" });
@@ -225,9 +237,10 @@ async function listMessages(conversationId, page = 1, limit = 50) {
 
 async function sendMessage(conversationId, payload) {
   const safeConversationId = encodeURIComponent(conversationId);
+  const { conversationId: _cid, ...cleanPayload } = payload || {};
   return authorizedFetch(`/chats/conversations/${safeConversationId}/messages`, {
     method: "POST",
-    body: JSON.stringify(payload),
+    body: JSON.stringify(cleanPayload),
   });
 }
 
@@ -304,32 +317,90 @@ async function connectChatSocket() {
   });
 }
 
+function normalizeFileUri(uri) {
+  if (!uri || typeof uri !== "string") return "";
+  if (uri.startsWith("file://") || uri.startsWith("content://") || uri.startsWith("ph://") || uri.startsWith("data:")) {
+    return uri;
+  }
+  return `file://${uri}`;
+}
+
+async function uploadToCloudinaryFallback(localUri, fileName = "image.jpg", mimeType = "image/jpeg", timeoutMs = 20000) {
+  try {
+    const cloudName = process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME || "dcm1plq42";
+    const uploadPreset = process.env.EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "choja_preset";
+    const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
+
+    const fileUri = normalizeFileUri(localUri);
+    const formData = new FormData();
+    formData.append("file", {
+      uri: fileUri,
+      name: fileName,
+      type: mimeType,
+    });
+    formData.append("upload_preset", uploadPreset);
+
+    const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+    const timeoutId = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
+
+    const res = await fetch(uploadUrl, {
+      method: "POST",
+      body: formData,
+      signal: controller?.signal,
+    });
+
+    if (timeoutId) clearTimeout(timeoutId);
+
+    const data = await res.json().catch(() => ({}));
+    if (data?.secure_url || data?.url) {
+      return data.secure_url || data.url;
+    }
+  } catch (err) {
+    console.warn("Cloudinary direct fallback upload error:", err);
+  }
+  return null;
+}
+
 async function uploadChatImage(localUri, fileName = "image.jpg", mimeType = "image/jpeg") {
   if (!localUri) {
     throw new Error("Image uri is missing");
   }
 
-  const formData = new FormData();
-  formData.append("file", {
-    uri: localUri,
+  const fileUri = normalizeFileUri(localUri);
+  const filePayload = {
+    uri: fileUri,
     name: fileName,
     type: mimeType,
-  });
+  };
 
-  const uploadResponse = await authorizedMultipartFetch(CHAT_UPLOAD_URL || CHAT_UPLOAD_PATH, formData);
-  const uploadedUrl =
-    uploadResponse?.url ||
-    uploadResponse?.secure_url ||
-    uploadResponse?.imageUrl ||
-    uploadResponse?.image?.url ||
-    "";
+  const formData = new FormData();
+  formData.append("file", filePayload);
+  formData.append("image", filePayload);
 
-  if (!/^https?:\/\//i.test(uploadedUrl)) {
-    throw new Error("Upload did not return a valid image URL");
+  try {
+    const uploadResponse = await authorizedMultipartFetch(CHAT_UPLOAD_URL || CHAT_UPLOAD_PATH, formData);
+    const uploadedUrl =
+      uploadResponse?.url ||
+      uploadResponse?.secure_url ||
+      uploadResponse?.imageUrl ||
+      uploadResponse?.image?.url ||
+      "";
+
+    if (typeof uploadedUrl === "string" && /^https?:\/\//i.test(uploadedUrl)) {
+      return uploadedUrl;
+    }
+  } catch (backendError) {
+    console.warn("Backend chat image upload failed, attempting Cloudinary fallback...", backendError);
+    const fallbackUrl = await uploadToCloudinaryFallback(localUri, fileName, mimeType);
+    if (fallbackUrl) {
+      return fallbackUrl;
+    }
+    throw backendError;
   }
 
-  return uploadedUrl;
+  throw new Error("Upload did not return a valid image URL");
 }
+
 
 export {
   getAuthContext,

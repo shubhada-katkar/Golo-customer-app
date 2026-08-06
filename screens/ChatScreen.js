@@ -362,18 +362,45 @@ export default function ChatScreen({ navigation, route }) {
             }
 
             if (!socketRef.current?.connected) {
-                reject(new Error("Chat socket is not connected"));
+                sendMessage(conversationId, payload)
+                    .then(resolve)
+                    .catch(reject);
                 return;
             }
 
-            socketRef.current.emit("send_message", payload, (response) => {
-                if (!response?.success) {
-                    reject(new Error(response?.message || "Failed to send message"));
-                    return;
-                }
+            let handled = false;
+            const timeoutId = setTimeout(() => {
+                if (handled) return;
+                handled = true;
+                console.warn("Socket send_message timed out, falling back to REST API");
+                sendMessage(conversationId, payload)
+                    .then(resolve)
+                    .catch(reject);
+            }, 5000);
 
-                resolve(response?.data || null);
-            });
+            try {
+                socketRef.current.emit("send_message", payload, (response) => {
+                    if (handled) return;
+                    handled = true;
+                    clearTimeout(timeoutId);
+
+                    if (!response?.success) {
+                        sendMessage(conversationId, payload)
+                            .then(resolve)
+                            .catch((err) => reject(new Error(response?.message || err.message || "Failed to send message")));
+                        return;
+                    }
+
+                    resolve(response?.data || null);
+                });
+            } catch (err) {
+                if (handled) return;
+                handled = true;
+                clearTimeout(timeoutId);
+                sendMessage(conversationId, payload)
+                    .then(resolve)
+                    .catch(reject);
+            }
         });
     }, [conversationId]);
 
@@ -425,7 +452,7 @@ export default function ChatScreen({ navigation, route }) {
             }
 
             const pickerResult = await ImagePicker.launchImageLibraryAsync({
-                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                mediaTypes: ImagePicker.MediaType?.Images || ImagePicker.MediaTypeOptions?.Images || "images",
                 allowsEditing: false,
                 quality: 0.7,
             });
@@ -450,7 +477,7 @@ export default function ChatScreen({ navigation, route }) {
             }
 
             const cameraResult = await ImagePicker.launchCameraAsync({
-                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                mediaTypes: ImagePicker.MediaType?.Images || ImagePicker.MediaTypeOptions?.Images || "images",
                 allowsEditing: false,
                 quality: 0.7,
             });
@@ -474,7 +501,7 @@ export default function ChatScreen({ navigation, route }) {
 
             const message = await sendMessageRealtime({
                 conversationId,
-                text: "",
+                text: "📷 Photo",
                 adId: conversation?.adId || undefined,
                 attachments: [
                     {
@@ -487,13 +514,18 @@ export default function ChatScreen({ navigation, route }) {
                 ],
             });
 
-            addOrMergeMessage(message);
-            scrollToLatest(true);
-            socketRef.current?.emit("mark_read", { conversationId });
+            if (message) {
+                addOrMergeMessage(message);
+                scrollToLatest(true);
+                socketRef.current?.emit("mark_read", { conversationId });
+            }
+        } catch (error) {
+            showAlert("Send Failed", error.message || "Could not send image", "error");
         } finally {
             setUploadingImage(false);
         }
     };
+
 
     useEffect(() => {
         let cancelled = false;
