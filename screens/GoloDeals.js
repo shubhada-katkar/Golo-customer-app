@@ -636,19 +636,60 @@ export default function GoloDeals() {
                 ? "Checking your location..."
                 : "Tap to set location";
 
+    // ─── Banner Tracking (Impressions & Clicks as per Backend Logic) ──
+    const trackBannerImpression = useCallback((item) => {
+        if (!item || item.isStatic || item.trackedImpression || !BASE_URL) return;
+        item.trackedImpression = true;
+        const bannerId = item.requestId || item.id || item._id;
+        if (!bannerId || !item.merchantId) return;
+
+        fetch(`${BASE_URL}/banners/promotions/impression`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                bannerId: String(bannerId),
+                merchantId: String(item.merchantId),
+                city: customerCity || "global",
+                slot: item.slot || 1,
+                generation: item.generation || 0,
+                token: item.token || "",
+            }),
+        }).catch((err) => console.warn("Impression tracking error:", err));
+    }, [customerCity]);
+
+    const handleBannerPress = useCallback((item) => {
+        if (item.isStatic) return;
+
+        const bannerId = item.requestId || item.id || item._id;
+        if (bannerId && item.merchantId && BASE_URL) {
+            fetch(`${BASE_URL}/banners/promotions/click`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    bannerId: String(bannerId),
+                    merchantId: String(item.merchantId),
+                    city: customerCity || "global",
+                }),
+            }).catch((err) => console.warn("Click tracking error:", err));
+        }
+
+        if (item.merchantId) {
+            navigation.navigate("StorePage", { merchantId: item.merchantId, bannerData: item });
+        }
+    }, [navigation, customerCity]);
+
     // ─── Render banner item ──────────────────────────────────
     const BANNER_GAP = 12;
     const renderBannerItem = useCallback(({ item }) => {
         const imageSource = item.isStatic ? item.imageUrl : { uri: resolveImageUrl(item.imageUrl) };
+        if (!item.isStatic) {
+            trackBannerImpression(item);
+        }
         return (
             <TouchableOpacity
                 activeOpacity={0.9}
                 style={[styles.bannerSlide, { marginRight: BANNER_GAP }]}
-                onPress={() => {
-                    if (!item.isStatic && item.merchantId) {
-                        navigation.navigate("StorePage", { merchantId: item.merchantId });
-                    }
-                }}
+                onPress={() => handleBannerPress(item)}
             >
                 <Image
                     source={imageSource}
@@ -657,7 +698,7 @@ export default function GoloDeals() {
                 />
             </TouchableOpacity>
         );
-    }, [navigation]);
+    }, [handleBannerPress, trackBannerImpression]);
 
     const SLIDE_WIDTH = SCREEN_WIDTH - 32;
     const getItemLayout = useCallback((data, index) => ({
