@@ -272,6 +272,12 @@ function isModerationFailureResponse(data) {
         "policy violation",
         "violat",
         "unsafe",
+        "prohibited",
+        "abusive",
+        "bad words",
+        "profanity",
+        "offensive",
+        "review your input",
     ].some((token) => message.includes(token));
 }
 
@@ -349,6 +355,9 @@ export default function Payment({ navigation, route }) {
     const [isFeatured, setIsFeatured] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [flaggedModalVisible, setFlaggedModalVisible] = useState(false);
+    const [flaggedModalTitle, setFlaggedModalTitle] = useState("Upload Rejected");
+    const [flaggedModalSubtitle, setFlaggedModalSubtitle] = useState("Your image has been flagged by our safety system.");
+    const [flaggedModalDescription, setFlaggedModalDescription] = useState("One or more of your uploaded images contains content that violates our community guidelines. Please remove the inappropriate images and try posting again.");
     const [warningModalVisible, setWarningModalVisible] = useState(false);
     const [warningModalMessage, setWarningModalMessage] = useState("");
     const [isRazorpayProcessing, setIsRazorpayProcessing] = useState(false);
@@ -738,11 +747,24 @@ export default function Payment({ navigation, route }) {
                 || (data?.success === false && responseMessage.toLowerCase().includes("upload"));
 
             if (moderationDetected) {
-                try {
-                    await AsyncStorage.setItem(`golo_images_flagged:${userId}`, "true");
-                } catch (storageError) {
-                    // Ignore storage issues for the moderation flow.
+                const lowerMsg = (responseMessage || "").toLowerCase();
+                const isImageFailure = lowerMsg.includes("image") || lowerMsg.includes("upload") || lowerMsg.includes("cannot be uploaded");
+
+                if (isImageFailure) {
+                    setFlaggedModalTitle("Upload Rejected");
+                    setFlaggedModalSubtitle("Your image has been flagged by our safety system.");
+                    setFlaggedModalDescription("One or more of your uploaded images contains content that violates our community guidelines. Please remove the inappropriate images and try posting again.");
+                    try {
+                        await AsyncStorage.setItem(`golo_images_flagged:${userId}`, "true");
+                    } catch (storageError) {
+                        // Ignore storage issues for the moderation flow.
+                    }
+                } else {
+                    setFlaggedModalTitle("Abusive Content Detected");
+                    setFlaggedModalSubtitle("Your ad content has been flagged by our safety system.");
+                    setFlaggedModalDescription("One or more fields in your ad contains abusive words or inappropriate content that violates our community guidelines. Please review and edit your input before posting.");
                 }
+
                 setFlaggedModalVisible(true);
                 return false;
             }
@@ -779,11 +801,24 @@ export default function Payment({ navigation, route }) {
                 || errorMessage.toLowerCase().includes("upload");
 
             if (moderationDetected) {
-                try {
-                    await AsyncStorage.setItem(`golo_images_flagged:${userId}`, "true");
-                } catch (storageError) {
-                    // Ignore storage issues for the moderation flow.
+                const lowerMsg = (errorMessage || "").toLowerCase();
+                const isImageFailure = lowerMsg.includes("image") || lowerMsg.includes("upload") || lowerMsg.includes("cannot be uploaded");
+
+                if (isImageFailure) {
+                    setFlaggedModalTitle("Upload Rejected");
+                    setFlaggedModalSubtitle("Your image has been flagged by our safety system.");
+                    setFlaggedModalDescription("One or more of your uploaded images contains content that violates our community guidelines. Please remove the inappropriate images and try posting again.");
+                    try {
+                        await AsyncStorage.setItem(`golo_images_flagged:${userId}`, "true");
+                    } catch (storageError) {
+                        // Ignore storage issues for the moderation flow.
+                    }
+                } else {
+                    setFlaggedModalTitle("Abusive Content Detected");
+                    setFlaggedModalSubtitle("Your ad content has been flagged by our safety system.");
+                    setFlaggedModalDescription("One or more fields in your ad contains abusive words or inappropriate content that violates our community guidelines. Please review and edit your input before posting.");
                 }
+
                 setFlaggedModalVisible(true);
                 return false;
             }
@@ -1377,7 +1412,7 @@ export default function Payment({ navigation, route }) {
                                     <View style={{ flex: 1 }}>
                                         <Text style={styles.flaggedHeaderTitle}>Inappropriate Content</Text>
                                         <Text style={styles.flaggedHeaderSubtitle}>
-                                            Your image has been flagged by our safety system.
+                                            {flaggedModalSubtitle}
                                         </Text>
                                     </View>
                                 </View>
@@ -1395,10 +1430,9 @@ export default function Payment({ navigation, route }) {
                                 </View>
                             </View>
 
-                            <Text style={styles.flaggedTitle}>Upload Rejected</Text>
+                            <Text style={styles.flaggedTitle}>{flaggedModalTitle}</Text>
                             <Text style={styles.flaggedDescription}>
-                                One or more of your uploaded images contains content that violates our community
-                                guidelines. Please remove the inappropriate images and try posting again.
+                                {flaggedModalDescription}
                             </Text>
 
                             <TouchableOpacity
