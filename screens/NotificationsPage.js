@@ -13,7 +13,9 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BASE_URL } from '../config';
 import Topbar from '../components/Topbar';
+import CustomAlertModal from '../components/CustomeAlertModal';
 import { getValidToken } from '../services/authService';
+import { fetchOfferDetails } from '../services/offersService';
 import { textPresets } from '../theme/typography';
 
 const POLL_INTERVAL_MS = 10000;
@@ -38,6 +40,13 @@ export default function NotificationsPage({ navigation }) {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [navigatingOfferId, setNavigatingOfferId] = useState(null);
+  const [alertConfig, setAlertConfig] = useState({
+    visible: false,
+    title: '',
+    message: '',
+    type: 'warning',
+  });
 
   const markAllAsSeen = async () => {
     try {
@@ -74,7 +83,8 @@ export default function NotificationsPage({ navigation }) {
       }
 
       const json = await response.json();
-      const items = Array.isArray(json?.data?.notifications) ? json.data.notifications : [];
+      const rawItems = json?.data?.notifications || json?.notifications || (Array.isArray(json?.data) ? json.data : []);
+      const items = Array.isArray(rawItems) ? rawItems : [];
       const normalizedItems = items.map((item) => ({ ...item, read: true }));
       setNotifications(normalizedItems);
 
@@ -101,17 +111,96 @@ export default function NotificationsPage({ navigation }) {
 
   const unreadCount = notifications.filter((item) => !item.read).length;
 
+  const isOfferExpired = (offer) => {
+    if (!offer) return true;
+    if (offer.status === 'expired' || offer.status === 'deleted' || offer.isActive === false) return true;
+
+    if (offer.endDate) {
+      const end = new Date(offer.endDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (end < today) return true;
+    }
+
+    if (Array.isArray(offer.selectedDates) && offer.selectedDates.length > 0) {
+      const todayStr = new Date().toISOString().split('T')[0];
+      const validDates = offer.selectedDates.filter((d) => String(d) >= todayStr);
+      if (validDates.length === 0) return true;
+    }
+
+    return false;
+  };
+
+  const handleNotificationPress = async (item) => {
+    if (!item) return;
+
+    // Only redirect if this is specifically a new offer notification
+    const isNewOfferNotification = item?.type === 'new_offer' || item?.type === 'offer';
+    if (!isNewOfferNotification) {
+      return;
+    }
+
+    const offerId = item?.offerId || item?.adId || item?.requestId || item?.id;
+    if (!offerId) {
+      setAlertConfig({
+        visible: true,
+        type: 'warning',
+        title: 'Offer Expired',
+        message: 'This offer has expired or is no longer available.',
+      });
+      return;
+    }
+
+    setNavigatingOfferId(offerId);
+
+    try {
+      const fetchedOffer = await fetchOfferDetails(offerId);
+
+      if (!fetchedOffer || isOfferExpired(fetchedOffer)) {
+        setAlertConfig({
+          visible: true,
+          type: 'warning',
+          title: 'Offer Expired',
+          message: 'This offer has expired or is no longer available.',
+        });
+        return;
+      }
+
+      navigation.navigate('OfferDetails', {
+        offerId,
+        offerData: fetchedOffer,
+      });
+    } catch (error) {
+      setAlertConfig({
+        visible: true,
+        type: 'warning',
+        title: 'Offer Expired',
+        message: 'This offer has expired or is no longer available.',
+      });
+    } finally {
+      setNavigatingOfferId(null);
+    }
+  };
+
   const renderItem = ({ item }) => {
     const isAccepted = item?.type === 'order_accepted';
+    const isNewOffer = item?.type === 'new_offer';
+    const currentOfferId = item?.offerId || item?.adId || item?.requestId || item?.id;
+    const isNavigating = navigatingOfferId === currentOfferId;
+
     const isAdmin =
-      item?.isAdmin ||
-      item?.isBroadcast ||
-      ['admin_warning', 'promotional', 'alert', 'emergency', 'system_update', 'admin', 'broadcast'].includes(item?.type) ||
-      (item?.senderName && String(item.senderName).toLowerCase().includes('admin')) ||
-      (item?.title && (!item?.adTitle || item?.adTitle === '-'));
+      !isNewOffer && (
+        item?.isAdmin ||
+        item?.isBroadcast ||
+        ['admin_warning', 'promotional', 'alert', 'emergency', 'system_update', 'admin', 'broadcast'].includes(item?.type) ||
+        (item?.senderName && String(item.senderName).toLowerCase().includes('admin')) ||
+        (item?.title && (!item?.adTitle || item?.adTitle === '-'))
+      );
 
     let displayTitle = 'New update';
-    if (isAdmin) {
+    if (isNewOffer) {
+      displayTitle = item?.title || item?.adTitle || (item?.senderName ? `${item.senderName} posted a new offer!` : 'New Offer Posted!');
+    } else if (isAdmin) {
       displayTitle = (item?.title && item.title !== '-')
         ? item.title
         : (item?.adTitle && item.adTitle !== '-' ? item.adTitle : (item?.senderName && item.senderName !== '-' ? item.senderName : 'Admin Notification'));
@@ -121,11 +210,14 @@ export default function NotificationsPage({ navigation }) {
         : (item?.title && item.title !== '-' ? item.title : 'New update');
     }
 
-    const displayMessage = item?.description || item?.message || item?.body || 'You have a new notification.';
+    const displayMessage = item?.message || item?.description || item?.body || 'You have a new notification.';
 
     let iconName = 'notifications-active';
     let iconColor = '#f8a812';
-    if (isAdmin) {
+    if (isNewOffer) {
+      iconName = 'local-offer';
+      iconColor = '#157a4f';
+    } else if (isAdmin) {
       iconName = 'campaign';
       iconColor = '#f8a812';
     } else if (isAccepted) {
@@ -136,14 +228,19 @@ export default function NotificationsPage({ navigation }) {
     return (
       <TouchableOpacity
         activeOpacity={0.85}
+        onPress={() => handleNotificationPress(item)}
         style={[styles.card, !item.read && styles.cardUnread]}
       >
         <View style={styles.iconWrap}>
-          <MaterialIcons
-            name={iconName}
-            size={22}
-            color={iconColor}
-          />
+          {isNavigating ? (
+            <ActivityIndicator size="small" color="#157a4f" />
+          ) : (
+            <MaterialIcons
+              name={iconName}
+              size={22}
+              color={iconColor}
+            />
+          )}
         </View>
         <View style={styles.cardBody}>
           <Text style={styles.cardTitle} numberOfLines={2}>
@@ -206,6 +303,14 @@ export default function NotificationsPage({ navigation }) {
           renderItem={renderItem}
         />
       )}
+
+      <CustomAlertModal
+        visible={alertConfig.visible}
+        type={alertConfig.type}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        onClose={() => setAlertConfig((prev) => ({ ...prev, visible: false }))}
+      />
     </SafeAreaView>
   );
 }

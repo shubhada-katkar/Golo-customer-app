@@ -464,7 +464,6 @@ export default function OfferDetails({ navigation, route }) {
             }
         } catch (error) {
             // Keep the original route offer data if remote fetch fails.
-            console.error("OfferDetails fetch failed, using route data instead:", error);
         } finally {
             setOfferLoading(false);
         }
