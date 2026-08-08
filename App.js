@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import * as SplashScreen from "expo-splash-screen";
-import { NavigationContainer, getStateFromPath } from "@react-navigation/native";
+import { NavigationContainer, getStateFromPath, createNavigationContainerRef } from "@react-navigation/native";
+import * as Notifications from "expo-notifications";
 import { createStackNavigator, CardStyleInterpolators } from "@react-navigation/stack";
 import { ThemeProvider } from "./theme/ThemeContext";
 import Login from './screens/Login';
@@ -46,9 +47,11 @@ import {
 } from "@expo-google-fonts/poppins";
 import Support from "./screens/Support";
 
-import { startCustomerNotificationPolling, stopCustomerNotificationPolling } from "./services/notificationService";
+import { startCustomerNotificationPolling, stopCustomerNotificationPolling, registerCustomerPushToken } from "./services/notificationService";
 
 SplashScreen.preventAutoHideAsync();
+
+export const navigationRef = createNavigationContainerRef();
 
 const Stack = createStackNavigator();
 
@@ -131,9 +134,22 @@ export default function App() {
 
   useEffect(() => {
     startCustomerNotificationPolling();
+    void registerCustomerPushToken();
+
+    const responseSubscription = Notifications.addNotificationResponseReceivedListener((response) => {
+      const data = response?.notification?.request?.content?.data;
+      if (navigationRef.isReady()) {
+        if (data?.offerId) {
+          navigationRef.navigate("OfferDetails", { offerId: data.offerId });
+        } else {
+          navigationRef.navigate("NotificationsPage");
+        }
+      }
+    });
 
     return () => {
       stopCustomerNotificationPolling();
+      responseSubscription.remove();
     };
   }, []);
 
@@ -142,7 +158,7 @@ export default function App() {
 
   return (
     <ThemeProvider>
-      <NavigationContainer linking={linking}>
+      <NavigationContainer ref={navigationRef} linking={linking}>
         <Stack.Navigator
           initialRouteName="AuthLoading"
           screenOptions={{
