@@ -437,13 +437,8 @@ export const fetchOfferDetails = async (offerId) => {
 
     const data = await response.json();
 
-    if (!response.ok) {
-      throw new Error(data?.message || `HTTP ${response.status}`);
-    }
-
     return data?.data || null;
   } catch (err) {
-    console.error("Failed to fetch offer details:", err);
     throw err;
   }
 };
