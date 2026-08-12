@@ -287,7 +287,11 @@ export default function ChatScreen({ navigation, route }) {
                     console.log("chat_error", payload);
                 });
             } catch (error) {
-                showAlert("Chat Error", error.message || "Unable to open this chat", "error", {
+                let msg = error?.message || "Unable to open this chat";
+                if (msg.includes("Cast to ObjectId") || msg.includes("ObjectId failed")) {
+                    msg = "Unable to open this chat at this time.";
+                }
+                showAlert("Chat Error", msg, "error", {
                     onClose: () => { navigation.goBack(); }
                 });
             } finally {

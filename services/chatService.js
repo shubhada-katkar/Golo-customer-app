@@ -49,9 +49,12 @@ async function authorizedFetch(path, options = {}) {
 
   const data = await response.json().catch(() => ({}));
   if (!response.ok || data?.success === false) {
-    const message =
+    let message =
       (Array.isArray(data?.message) ? data.message.join(", ") : data?.message) ||
       "Chat request failed";
+    if (typeof message === "string" && (message.includes("Cast to ObjectId") || message.includes("ObjectId failed"))) {
+      message = "Unable to process request due to a server data issue.";
+    }
     throw new Error(message);
   }
 
@@ -105,60 +108,65 @@ async function authorizedMultipartFetch(path, formData, timeoutMs = 15000) {
 
 
 async function listConversations() {
-  const data = await authorizedFetch("/chats/conversations", { method: "GET" });
-  const conversationList = Array.isArray(data) ? data : [];
-
   try {
-    const { userId } = await getAuthContext();
-    if (userId) {
-      const pinnedKey = `pinned_chats_${userId}`;
-      const pinnedStr = await AsyncStorage.getItem(pinnedKey);
-      const pinnedIds = pinnedStr ? JSON.parse(pinnedStr) : [];
+    const data = await authorizedFetch("/chats/conversations", { method: "GET" });
+    const conversationList = Array.isArray(data) ? data : [];
 
-      const enriched = await Promise.all(
-        conversationList.map(async (conversation) => {
-          const conversationId = conversation.id;
-          const clearedKey = `cleared_chat_${userId}_${conversationId}`;
-          const clearedAtStr = await AsyncStorage.getItem(clearedKey);
+    try {
+      const { userId } = await getAuthContext();
+      if (userId) {
+        const pinnedKey = `pinned_chats_${userId}`;
+        const pinnedStr = await AsyncStorage.getItem(pinnedKey);
+        const pinnedIds = pinnedStr ? JSON.parse(pinnedStr) : [];
 
-          let lastMessageText = conversation.lastMessageText;
-          let messagesCount = conversation.messagesCount;
-          let lastMessageAt = conversation.lastMessageAt;
+        const enriched = await Promise.all(
+          conversationList.map(async (conversation) => {
+            const conversationId = conversation.id;
+            const clearedKey = `cleared_chat_${userId}_${conversationId}`;
+            const clearedAtStr = await AsyncStorage.getItem(clearedKey);
 
-          if (clearedAtStr) {
-            const clearedAt = new Date(clearedAtStr).getTime();
-            const lastMsgTime = new Date(lastMessageAt).getTime();
-            if (lastMsgTime <= clearedAt) {
-              lastMessageText = "";
-              messagesCount = 0;
+            let lastMessageText = conversation.lastMessageText;
+            let messagesCount = conversation.messagesCount;
+            let lastMessageAt = conversation.lastMessageAt;
+
+            if (clearedAtStr) {
+              const clearedAt = new Date(clearedAtStr).getTime();
+              const lastMsgTime = new Date(lastMessageAt).getTime();
+              if (lastMsgTime <= clearedAt) {
+                lastMessageText = "";
+                messagesCount = 0;
+              }
             }
-          }
 
-          const pinnedBy = Array.isArray(conversation.pinnedBy) ? [...conversation.pinnedBy] : [];
-          const isPinned = pinnedIds.includes(conversationId);
-          if (isPinned && !pinnedBy.includes(userId)) {
-            pinnedBy.push(userId);
-          } else if (!isPinned && pinnedBy.includes(userId)) {
-            const idx = pinnedBy.indexOf(userId);
-            if (idx > -1) pinnedBy.splice(idx, 1);
-          }
+            const pinnedBy = Array.isArray(conversation.pinnedBy) ? [...conversation.pinnedBy] : [];
+            const isPinned = pinnedIds.includes(conversationId);
+            if (isPinned && !pinnedBy.includes(userId)) {
+              pinnedBy.push(userId);
+            } else if (!isPinned && pinnedBy.includes(userId)) {
+              const idx = pinnedBy.indexOf(userId);
+              if (idx > -1) pinnedBy.splice(idx, 1);
+            }
 
-          return {
-            ...conversation,
-            lastMessageText,
-            lastMessageAt,
-            messagesCount,
-            pinnedBy,
-          };
-        })
-      );
-      return enriched;
+            return {
+              ...conversation,
+              lastMessageText,
+              lastMessageAt,
+              messagesCount,
+              pinnedBy,
+            };
+          })
+        );
+        return enriched;
+      }
+    } catch (err) {
+      console.log("Error enriching conversations list with local states", err);
     }
-  } catch (err) {
-    console.log("Error enriching conversations list with local states", err);
-  }
 
-  return conversationList;
+    return conversationList;
+  } catch (err) {
+    console.log("Failed to load conversations list:", err.message);
+    return [];
+  }
 }
 
 async function startConversation(payload) {

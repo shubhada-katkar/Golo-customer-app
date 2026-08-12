@@ -57,7 +57,11 @@ export default function ChatPage({ navigation, route }) {
 
             setConversations(talkedUsersOnly);
         } catch (error) {
-            Alert.alert("Chat Error", error.message || "Failed to load chats");
+            console.log("Failed to load conversations:", error?.message);
+            const msg = error?.message || "";
+            if (msg && !msg.includes("Cast to ObjectId") && !msg.includes("ObjectId failed")) {
+                Alert.alert("Chat Error", msg);
+            }
         } finally {
             setLoading(false);
             setRefreshing(false);
