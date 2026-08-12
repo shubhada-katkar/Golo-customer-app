@@ -10,6 +10,7 @@ import { deleteAd, getAdAnalytics } from "../services/analyticsService";
 import { LinearGradient } from "expo-linear-gradient";
 import { textPresets } from "../theme/typography";
 import CustomAlertModal from "../components/CustomeAlertModal";
+import RatingsBox from "../components/RatingsBox";
 
 const StatCard = ({ title, value, subtitle }) => (
     <View style={styles.card}>
@@ -293,6 +294,7 @@ export default function AdAnalytics({ navigation, route }) {
                 onClose={hideAlert}
                 onCancel={hideAlert}
             />
+            <RatingsBox />
         </SafeAreaView>
     );
 }
@@ -355,16 +357,6 @@ const styles = StyleSheet.create({
     sectionTitle: {
         marginBottom: 10,
         ...textPresets.subtitle
-    },
-    funnelRow: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        paddingVertical: 6,
-    },
-    funnelText: {
-        color: "#444",
-        ...textPresets.body,
-        lineHeight: Math.round(14 * 1.5),
     },
     rateBox: {
         alignItems: "center",

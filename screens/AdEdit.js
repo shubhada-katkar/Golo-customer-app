@@ -23,6 +23,7 @@ import ChojaBottom from "../components/ChojaBottom";
 import { BASE_URL } from "../config";
 import { textPresets } from "../theme/typography";
 import { getValidToken } from "../services/authService";
+import RatingsBox from "../components/RatingsBox";
 
 // Category-specific form components
 import AstrologyForm from "../components/Astrology";
@@ -877,6 +878,7 @@ export default function AdEdit({ route, navigation }) {
       >
         <ChojaBottom />
       </SafeAreaView>
+      <RatingsBox />
     </SafeAreaView>
   );
 }
