@@ -183,7 +183,7 @@ export default function Claimed({ navigation }) {
                     }
                 >
                     <View style={styles.metricsGrid}>
-                        <TouchableOpacity
+                        {/* <TouchableOpacity
                             activeOpacity={0.8}
                             onPress={() => setSelectedFilter("active")}
                             style={[
@@ -198,7 +198,7 @@ export default function Claimed({ navigation }) {
                                 <Text style={styles.metricCount}>{activeSavingsCount}</Text>
                                 <Text style={styles.metricLabel}>Active Savings</Text>
                             </View>
-                        </TouchableOpacity>
+                        </TouchableOpacity> */}
 
                         <TouchableOpacity
                             activeOpacity={0.8}
@@ -345,13 +345,12 @@ const styles = StyleSheet.create({
     },
     metricsGrid: {
         flexDirection: "row",
-        flexWrap: "wrap",
-        justifyContent: "space-between",
-        paddingHorizontal: 14,
+        justifyContent: "space-evenly",
+        paddingHorizontal: 4,
         marginTop: 10,
     },
     metricCard: {
-        width: "48%",
+        width: "30%",
         backgroundColor: "#ffffff",
         borderRadius: 12,
         padding: 10,
