@@ -23,7 +23,7 @@ import { ClaimedSkeleton } from "../components/Skeleton";
 export default function Claimed({ navigation }) {
     const { colors } = useContext(ThemeContext);
     const [claimedOffers, setClaimedOffers] = useState([]);
-    const [selectedFilter, setSelectedFilter] = useState("active"); // "active" | "all" | "redeemed" | "expired"
+    const [selectedFilter, setSelectedFilter] = useState("all"); // "active" | "all" | "redeemed" | "expired"
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState("");
@@ -378,7 +378,7 @@ const styles = StyleSheet.create({
         justifyContent: "center",
     },
     metricTextWrap: {
-        marginLeft: 8,
+        marginLeft: 10,
         flex: 1,
     },
     metricCount: {
