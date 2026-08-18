@@ -212,6 +212,7 @@ export default function GoloDeals() {
     const [locationPlaceName, setLocationPlaceName] = useState("");
     const [customerCity, setCustomerCity] = useState("");
     const [gpsCity, setGpsCity] = useState("");
+    const [searchInput, setSearchInput] = useState("");
     const [searchQuery, setSearchQuery] = useState("");
 
     // Location editing state
@@ -710,19 +711,53 @@ export default function GoloDeals() {
     // ─── Render deals sections dynamically ────────────────────
     const renderDealSection = (section) => {
         const { title, products = [], key } = section;
+        const query = String(searchQuery || "").trim().toLowerCase();
 
-        const filteredProducts = products.filter(item => {
-            const query = String(searchQuery || "").trim().toLowerCase();
-            if (!query) return true;
+        const displayItems = [];
 
-            const itemTitle = getOfferTitle(item).toLowerCase();
-            const subtitle = getOfferSubtitle(item).toLowerCase();
-            const offerType = String(item?.bannerCategory || item?.offerType || item?.category || "").toLowerCase();
+        products.forEach((offer, offerIdx) => {
+            if (!query) {
+                displayItems.push({
+                    type: 'offer',
+                    offer,
+                    id: offer?._id || offer?.id || offer?.requestId || `offer-${offerIdx}`,
+                });
+                return;
+            }
 
-            return itemTitle.includes(query) || subtitle.includes(query) || offerType.includes(query);
+            const offerTitle = String(getOfferTitle(offer)).toLowerCase();
+            const subtitle = String(getOfferSubtitle(offer)).toLowerCase();
+            const offerType = String(offer?.bannerCategory || offer?.offerType || offer?.category || "").toLowerCase();
+            const isOfferMatch = offerTitle.includes(query) || subtitle.includes(query) || offerType.includes(query);
+
+            const rawProducts = Array.isArray(offer?.selectedProducts) && offer.selectedProducts.length
+                ? offer.selectedProducts
+                : (Array.isArray(offer?.products) ? offer.products : []);
+
+            const matchingProducts = rawProducts.filter(p => {
+                const pName = String(p?.productName || p?.name || p?.title || "").toLowerCase();
+                return pName.includes(query);
+            });
+
+            if (isOfferMatch) {
+                displayItems.push({
+                    type: 'offer',
+                    offer,
+                    id: offer?._id || offer?.id || offer?.requestId || `offer-${offerIdx}`,
+                });
+            }
+
+            matchingProducts.forEach((p, pIdx) => {
+                displayItems.push({
+                    type: 'product',
+                    product: p,
+                    offer,
+                    id: `${offer?._id || offer?.id || offer?.requestId || offerIdx}_prod_${p?._id || p?.productId || pIdx}`,
+                });
+            });
         });
 
-        if (filteredProducts.length === 0) {
+        if (displayItems.length === 0) {
             return null;
         }
 
@@ -741,21 +776,40 @@ export default function GoloDeals() {
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={{ paddingBottom: 4 }}
                 >
-                    {filteredProducts.map((item, index) => {
-                        const directPrice = getOfferDisplayPrice(item);
-                        const offerType = item?.bannerCategory || item?.offerType || item?.category || "-";
-                        const itemTitle = getOfferTitle(item);
-                        const subtitle = getOfferSubtitle(item);
-                        const image = getOfferImage(item);
-                        const distanceText = getDistanceText(item, userCoordinates);
+                    {displayItems.map((itemObj, index) => {
+                        const parentOffer = itemObj.offer;
+                        const isProd = itemObj.type === 'product';
+
+                        let itemTitle, subtitle, directPrice, image, offerType, endDate;
+
+                        if (isProd) {
+                            const prod = itemObj.product;
+                            itemTitle = prod?.productName || prod?.name || prod?.title || "Product";
+                            subtitle = getOfferSubtitle(parentOffer);
+                            image = prod?.imageUrl || prod?.image?.url || (Array.isArray(prod?.images) ? prod.images[0] : null) || getOfferImage(parentOffer);
+                            const prodPrice = prod?.offerPrice ?? prod?.discountedPrice ?? prod?.salePrice ?? prod?.finalPrice ?? prod?.price;
+                            const prodOrigPrice = prod?.originalPrice ?? prod?.mrp;
+                            directPrice = formatPrice(prodPrice) || formatPrice(prodOrigPrice) || getOfferDisplayPrice(parentOffer);
+                            offerType = parentOffer?.bannerCategory || parentOffer?.offerType || parentOffer?.category || "-";
+                            endDate = parentOffer?.endDate || parentOffer?.validTo || null;
+                        } else {
+                            itemTitle = getOfferTitle(parentOffer);
+                            subtitle = getOfferSubtitle(parentOffer);
+                            image = getOfferImage(parentOffer);
+                            directPrice = getOfferDisplayPrice(parentOffer);
+                            offerType = parentOffer?.bannerCategory || parentOffer?.offerType || parentOffer?.category || "-";
+                            endDate = parentOffer?.endDate || parentOffer?.validTo || null;
+                        }
+
+                        const distanceText = getDistanceText(parentOffer, userCoordinates);
                         const imageSource = image ? { uri: resolveImageUrl(image) } : null;
 
                         return (
                             <TouchableOpacity
-                                key={item._id || item.id || `card-${key}-${index}`}
+                                key={itemObj.id || `card-${key}-${index}`}
                                 activeOpacity={0.9}
                                 style={[styles.card, { width: 170, marginRight: 12, marginBottom: 8 }]}
-                                onPress={() => navigation.navigate("OfferDetails", { offerData: item })}
+                                onPress={() => navigation.navigate("OfferDetails", { offerData: parentOffer })}
                             >
                                 <View style={styles.cardInner}>
                                     {imageSource ? (
@@ -791,9 +845,9 @@ export default function GoloDeals() {
                                             Offer Type: {offerType}
                                         </Text>
 
-                                        <Text style={styles.validText} numberOfLines={1}>
-                                            Expires on: {item.endDate ? new Date(item.endDate).toDateString() : "-"}
-                                        </Text>
+                                        {/* <Text style={styles.validText} numberOfLines={1}>
+                                            Expires on: {endDate ? new Date(endDate).toDateString() : "-"}
+                                        </Text> */}
                                     </View>
                                 </View>
                             </TouchableOpacity>
@@ -894,16 +948,38 @@ export default function GoloDeals() {
                 justifyContent: "space-between", paddingHorizontal: 16
             }}>
                 <View style={styles.searchContainer}>
-                    <EvilIcons name="search" size={24} color="#555" />
+                    <TouchableOpacity
+                        onPress={() => {
+                            const q = searchInput.trim();
+                            if (q) {
+                                navigation.navigate("GoloHome", { searchQuery: q });
+                            }
+                        }}
+                        activeOpacity={0.7}
+                    >
+                        <EvilIcons name="search" size={24} color="#555" />
+                    </TouchableOpacity>
                     <TextInput
                         placeholder="Search offers or products"
-                        value={searchQuery}
-                        onChangeText={setSearchQuery}
+                        value={searchInput}
+                        onChangeText={setSearchInput}
+                        onSubmitEditing={() => {
+                            const q = searchInput.trim();
+                            if (q) {
+                                navigation.navigate("GoloHome", { searchQuery: q });
+                            }
+                        }}
                         style={styles.searchInput}
                         returnKeyType="search"
                     />
-                    {searchQuery.length > 0 && (
-                        <TouchableOpacity onPress={() => setSearchQuery("")} style={{ padding: 8 }}>
+                    {searchInput.length > 0 && (
+                        <TouchableOpacity
+                            onPress={() => {
+                                setSearchInput("");
+                                setSearchQuery("");
+                            }}
+                            style={{ padding: 8 }}
+                        >
                             <Ionicons name="close-circle" size={18} color="#555" />
                         </TouchableOpacity>
                     )}

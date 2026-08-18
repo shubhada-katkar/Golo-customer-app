@@ -25,6 +25,7 @@ import RatingsBox from "../components/RatingsBox";
 import { fetchAllOffers } from "../services/offersService";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { BASE_URL } from "../config";
 import { textPresets } from "../theme/typography";
 
 const CATEGORY_ICONS = {
@@ -133,6 +134,15 @@ const categoryMatches = (offer, selectedCategory) => {
         const canonical = getCanonicalCategory(candidate);
         return normalizeCategoryText(canonical) === selected;
     });
+};
+
+const resolveImageUrl = (value) => {
+    if (!value || typeof value !== 'string') return null;
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith('data:')) return trimmed;
+    if (trimmed.startsWith('/')) return `${BASE_URL}${trimmed}`;
+    return `${BASE_URL}/${trimmed}`;
 };
 
 const getOfferImage = (item) =>
@@ -277,8 +287,18 @@ export default function GoloHome({ route }) {
         }
     }, [route?.params?.category]);
 
+    React.useEffect(() => {
+        if (route?.params?.searchQuery !== undefined) {
+            const q = String(route.params.searchQuery || "").trim();
+            setSearchInput(q);
+            setSearchQuery(q);
+            navigation.setParams({ searchQuery: undefined });
+        }
+    }, [route?.params?.searchQuery]);
+
     const [allCategoriesModalOpen, setAllCategoriesModalOpen] = useState(false);
     const [categorySearchQuery, setCategorySearchQuery] = useState("");
+    const [searchInput, setSearchInput] = useState("");
     const [searchQuery, setSearchQuery] = useState("");
     const [offers, setOffers] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -666,37 +686,89 @@ export default function GoloHome({ route }) {
                 ? "Checking your location..."
                 : "Tap to set location";
 
-    const filteredOffers = offers
-        .filter(
-            (offer) =>
-                isOfferCurrentlyActive(offer) &&
-                categoryMatches(offer, selectedCategory) &&
-                offerMatchesSearch(offer, searchQuery) &&
-                offerTypeMatches(offer, selectedOfferTypes)
-        )
-        .sort((offerA, offerB) => {
-            const distanceA = Number(offerA?.distanceKm);
-            const distanceB = Number(offerB?.distanceKm);
-            const hasDistanceA = Number.isFinite(distanceA);
-            const hasDistanceB = Number.isFinite(distanceB);
+    const query = String(searchQuery || "").trim().toLowerCase();
 
-            if (hasDistanceA && hasDistanceB) {
-                return distanceA - distanceB;
-            }
+    const candidateOffers = offers.filter(
+        (offer) =>
+            isOfferCurrentlyActive(offer) &&
+            categoryMatches(offer, selectedCategory) &&
+            offerMatchesSearch(offer, searchQuery) &&
+            offerTypeMatches(offer, selectedOfferTypes)
+    );
 
-            if (hasDistanceA) {
-                return -1;
-            }
+    const displayCards = [];
 
-            if (hasDistanceB) {
-                return 1;
-            }
+    candidateOffers.forEach((offer, offerIdx) => {
+        if (!query) {
+            displayCards.push({
+                type: 'offer',
+                offer,
+                id: offer?.requestId || offer?._id || offer?.offerId || `offer-${offerIdx}`,
+                sortDistance: offer?.distanceKm,
+                sortDate: offer?.createdAt || offer?.updatedAt,
+            });
+            return;
+        }
 
-            return (
-                new Date(offerB?.createdAt || offerB?.updatedAt || 0).getTime() -
-                new Date(offerA?.createdAt || offerA?.updatedAt || 0).getTime()
-            );
+        const title = String(offer?.bannerTitle || offer?.title || "").toLowerCase();
+        const subtitle = String(getOfferSubtitle(offer)).toLowerCase();
+        const offerType = String(offer?.bannerCategory || offer?.offerType || offer?.category || "").toLowerCase();
+        const isOfferMatch = title.includes(query) || subtitle.includes(query) || offerType.includes(query);
+
+        const products = Array.isArray(offer?.selectedProducts) && offer.selectedProducts.length
+            ? offer.selectedProducts
+            : (Array.isArray(offer?.products) ? offer.products : []);
+
+        const matchingProducts = products.filter((p) => {
+            const name = String(p?.productName || p?.name || p?.title || "").toLowerCase();
+            return name.includes(query);
         });
+
+        if (isOfferMatch) {
+            displayCards.push({
+                type: 'offer',
+                offer,
+                id: offer?.requestId || offer?._id || offer?.offerId || `offer-${offerIdx}`,
+                sortDistance: offer?.distanceKm,
+                sortDate: offer?.createdAt || offer?.updatedAt,
+            });
+        }
+
+        matchingProducts.forEach((prod, prodIdx) => {
+            displayCards.push({
+                type: 'product',
+                product: prod,
+                offer,
+                id: `${offer?.requestId || offer?._id || offer?.offerId || offerIdx}_prod_${prod?._id || prod?.productId || prodIdx}`,
+                sortDistance: offer?.distanceKm,
+                sortDate: offer?.createdAt || offer?.updatedAt,
+            });
+        });
+    });
+
+    displayCards.sort((itemA, itemB) => {
+        const distanceA = Number(itemA?.sortDistance);
+        const distanceB = Number(itemB?.sortDistance);
+        const hasDistanceA = Number.isFinite(distanceA);
+        const hasDistanceB = Number.isFinite(distanceB);
+
+        if (hasDistanceA && hasDistanceB) {
+            return distanceA - distanceB;
+        }
+
+        if (hasDistanceA) {
+            return -1;
+        }
+
+        if (hasDistanceB) {
+            return 1;
+        }
+
+        return (
+            new Date(itemB?.sortDate || 0).getTime() -
+            new Date(itemA?.sortDate || 0).getTime()
+        );
+    });
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
@@ -788,16 +860,28 @@ export default function GoloHome({ route }) {
                 justifyContent: "space-between", paddingHorizontal: 16
             }}>
                 <View style={styles.searchContainer}>
-                    <EvilIcons name="search" size={24} color="#555" />
+                    <TouchableOpacity
+                        onPress={() => setSearchQuery(searchInput.trim())}
+                        activeOpacity={0.7}
+                    >
+                        <EvilIcons name="search" size={24} color="#555" />
+                    </TouchableOpacity>
                     <TextInput
                         placeholder="Search offers or products"
-                        value={searchQuery}
-                        onChangeText={setSearchQuery}
+                        value={searchInput}
+                        onChangeText={setSearchInput}
+                        onSubmitEditing={() => setSearchQuery(searchInput.trim())}
                         style={styles.searchInput}
                         returnKeyType="search"
                     />
-                    {searchQuery.length > 0 && (
-                        <TouchableOpacity onPress={() => setSearchQuery("")} style={{ padding: 8 }}>
+                    {searchInput.length > 0 && (
+                        <TouchableOpacity
+                            onPress={() => {
+                                setSearchInput("");
+                                setSearchQuery("");
+                            }}
+                            style={{ padding: 8 }}
+                        >
                             <Ionicons name="close-circle" size={18} color="#555" />
                         </TouchableOpacity>
                     )}
@@ -868,11 +952,11 @@ export default function GoloHome({ route }) {
                         <ActivityIndicator size="small" color="#157a4f" />
                         <Text style={styles.helperText}>Loading live offers...</Text>
                     </View>
-                ) : filteredOffers.length ? (
+                ) : displayCards.length ? (
                     <View style={styles.cardsGrid}>
-                        {filteredOffers.map((item, index) => (
+                        {displayCards.map((item, index) => (
                             <OfferCard
-                                key={item?.requestId || item?._id || item?.offerId || `offer-${index}`}
+                                key={item?.id || `card-${index}`}
                                 item={item}
                                 navigation={navigation}
                             />
@@ -1031,21 +1115,38 @@ const CategoryChip = ({ icon, label, isActive, onPress }) => {
 };
 
 const OfferCard = ({ item, navigation }) => {
-    const productImage = getOfferImage(item);
-    const title = getOfferTitle(item);
-    const subtitle = getOfferSubtitle(item);
-    const offerType = item?.bannerCategory || item?.offerType || item?.category || "-";
-    const endDate = item?.endDate || item?.validTo || null;
-    const requestStatus = item?.status || "active";
-    const normalizedStatus = String(requestStatus).replace(/_/g, " ");
-    const displayPrice = getOfferDisplayPrice(item);
-    const distanceText = getDistanceText(item?.distanceKm);
+    const parentOffer = item?.type ? item.offer : item;
+    const isProd = item?.type === "product";
+
+    let productImage, title, subtitle, offerType, endDate, displayPrice;
+
+    if (isProd) {
+        const prod = item.product;
+        const rawImg = prod?.imageUrl || prod?.image?.url || (Array.isArray(prod?.images) ? prod.images[0] : null) || getOfferImage(parentOffer);
+        productImage = resolveImageUrl(rawImg);
+        title = prod?.productName || prod?.name || prod?.title || "Product";
+        subtitle = getOfferSubtitle(parentOffer);
+        offerType = parentOffer?.bannerCategory || parentOffer?.offerType || parentOffer?.category || "-";
+        endDate = parentOffer?.endDate || parentOffer?.validTo || null;
+        const prodPrice = prod?.offerPrice ?? prod?.discountedPrice ?? prod?.salePrice ?? prod?.finalPrice ?? prod?.price;
+        const prodOrigPrice = prod?.originalPrice ?? prod?.mrp;
+        displayPrice = formatPrice(prodPrice) || formatPrice(prodOrigPrice) || getOfferDisplayPrice(parentOffer);
+    } else {
+        productImage = resolveImageUrl(getOfferImage(parentOffer));
+        title = getOfferTitle(parentOffer);
+        subtitle = getOfferSubtitle(parentOffer);
+        offerType = parentOffer?.bannerCategory || parentOffer?.offerType || parentOffer?.category || "-";
+        endDate = parentOffer?.endDate || parentOffer?.validTo || null;
+        displayPrice = getOfferDisplayPrice(parentOffer);
+    }
+
+    const distanceText = getDistanceText(parentOffer?.distanceKm);
 
     return (
         <TouchableOpacity
             activeOpacity={0.9}
             style={styles.card}
-            onPress={() => navigation.navigate("OfferDetails", { offerData: item })}
+            onPress={() => navigation.navigate("OfferDetails", { offerData: parentOffer })}
         >
             <View style={styles.cardInner}>
                 {productImage ? (
@@ -1065,7 +1166,6 @@ const OfferCard = ({ item, navigation }) => {
                         ) : null}
 
                         {distanceText ? <Text style={styles.distanceMetaText}>{distanceText}</Text> : null}
-
                     </View>
 
                     <Text style={styles.title} numberOfLines={1}>
