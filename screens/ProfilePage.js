@@ -15,6 +15,7 @@ import { BASE_URL } from "../config";
 import { LinearGradient } from "expo-linear-gradient";
 import { textPresets } from "../theme/typography";
 import RatingsBox from "../components/RatingsBox";
+import { SkeletonBox } from "../components/Skeleton";
 
 const ORANGE = "#f5b849";
 const GREEN = "#157a4f";
@@ -339,14 +340,6 @@ export default function ProfilePage({ navigation }) {
         }
     };
 
-    if (loading) {
-        return (
-            <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: colors?.background || "#fff" }}>
-                <ActivityIndicator size="large" color={GREEN} />
-            </View>
-        );
-    }
-
     const profileImageSource = profileImage
         ? (profileImage.startsWith("http") || profileImage.startsWith("data:") || profileImage.startsWith("file:")
             ? { uri: profileImage }
@@ -452,278 +445,295 @@ export default function ProfilePage({ navigation }) {
                     keyboardShouldPersistTaps="handled"
                     showsVerticalScrollIndicator={false} >
 
-                    {/* PROFILE IMAGE */}
-                    <View style={{ alignItems: "center", paddingHorizontal: 14, marginTop: 18 }}>
-                        <TouchableOpacity style={styles.avatarWrapper} onPress={pickImage} activeOpacity={0.85}>
-                            <View style={styles.avatarRing}>
-                                <Image
-                                    source={profileImageSource}
-                                    style={styles.profileImage}
-                                />
+                    {loading ? (
+                        <View style={{ paddingHorizontal: 14, paddingTop: 18 }}>
+                            <View style={{ alignItems: "center", marginBottom: 20 }}>
+                                <SkeletonBox width={90} height={90} borderRadius={45} style={{ marginBottom: 12 }} />
+                                <SkeletonBox width={140} height={20} borderRadius={6} style={{ marginBottom: 16 }} />
+                                <SkeletonBox width="100%" height={70} borderRadius={16} />
                             </View>
-                            <View style={styles.cameraIcon}>
-                                <MaterialIcons name="camera-alt" size={16} color="#ffffff" />
+                            <SkeletonBox width={150} height={18} borderRadius={4} style={{ marginBottom: 12, marginTop: 10 }} />
+                            <View style={styles.settingsCard}>
+                                <SkeletonBox width="100%" height={44} borderRadius={12} style={{ marginBottom: 16 }} />
+                                <SkeletonBox width="100%" height={44} borderRadius={12} style={{ marginBottom: 16 }} />
+                                <SkeletonBox width="100%" height={44} borderRadius={12} />
                             </View>
-                        </TouchableOpacity>
-
-                        {!!username && (
-                            <Text style={[styles.nameText, { color: colors.text }]}>{username}</Text>
-                        )}
-
-                        <View style={styles.profileCard}>
-                            <View style={styles.loyaltyIconCircle}>
-                                <MaterialIcons name="workspace-premium" size={22} color={ORANGE} />
-                            </View>
-                            <View style={{ flex: 1 }}>
-                                <Text style={styles.cardTitle}>{loyaltyTier} Tier</Text>
-                                <Text style={styles.cardSubtitle}>Loyalty status</Text>
-                            </View>
-                            <View style={styles.pointsPill}>
-                                <Text style={styles.cardValue}>{loyaltyPoints}</Text>
-                                <Text style={styles.pointsLabel}>pts</Text>
-                            </View>
+                            <SkeletonBox width="100%" height={48} borderRadius={14} style={{ marginTop: 20 }} />
                         </View>
-                    </View>
-
-                    <View style={{ paddingHorizontal: 14, marginTop: 22 }}>
-
-                        <Text style={[styles.sectionHeader, { color: colors.text }]}>PROFILE SETTINGS</Text>
-
-                        <View style={styles.settingsCard}>
-                            {/* NAME */}
-                            <Text style={[styles.text, { color: colors.text }]}>Your Name</Text>
-                            <View style={styles.inputWrapper}>
-                                <TextInput
-                                    ref={nameRef}
-                                    value={username}
-                                    onChangeText={setUsername}
-                                    editable={editName}
-                                    style={[
-                                        styles.input,
-                                        editName && styles.inputActive,
-                                        { paddingRight: 40 }
-                                    ]}
-                                />
-
-                                <TouchableOpacity
-                                    style={styles.editIcon}
-                                    onPress={() => {
-                                        setEditName(true);
-                                        setEditPhone(false);
-                                        setTimeout(() => nameRef.current?.focus(), 100);
-                                    }}
-                                >
-                                    <MaterialIcons name="edit" size={18} color={editName ? GREEN : "#9a9a9a"} />
+                    ) : (
+                        <>
+                            <View style={{ alignItems: "center", paddingHorizontal: 14, marginTop: 18 }}>
+                                <TouchableOpacity style={styles.avatarWrapper} onPress={pickImage} activeOpacity={0.85}>
+                                    <View style={styles.avatarRing}>
+                                        <Image
+                                            source={profileImageSource}
+                                            style={styles.profileImage}
+                                        />
+                                    </View>
+                                    <View style={styles.cameraIcon}>
+                                        <MaterialIcons name="camera-alt" size={16} color="#ffffff" />
+                                    </View>
                                 </TouchableOpacity>
+
+                                {!!username && (
+                                    <Text style={[styles.nameText, { color: colors.text }]}>{username}</Text>
+                                )}
+
+                                <View style={styles.profileCard}>
+                                    <View style={styles.loyaltyIconCircle}>
+                                        <MaterialIcons name="workspace-premium" size={22} color={ORANGE} />
+                                    </View>
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={styles.cardTitle}>{loyaltyTier} Tier</Text>
+                                        <Text style={styles.cardSubtitle}>Loyalty status</Text>
+                                    </View>
+                                    <View style={styles.pointsPill}>
+                                        <Text style={styles.cardValue}>{loyaltyPoints}</Text>
+                                        <Text style={styles.pointsLabel}>pts</Text>
+                                    </View>
+                                </View>
                             </View>
 
-                            {/* PHONE */}
-                            <Text style={[styles.text, { color: colors.text, marginTop: 16 }]}>Contact Number</Text>
-                            <View style={styles.inputWrapper}>
-                                <TextInput
-                                    ref={phoneRef}
-                                    value={phone}
-                                    onChangeText={setPhone}
-                                    editable={editPhone}
-                                    keyboardType="numeric"
-                                    style={[
-                                        styles.input,
-                                        editPhone && styles.inputActive,
-                                        { paddingRight: 40 }
-                                    ]} />
+                            <View style={{ paddingHorizontal: 14, marginTop: 22 }}>
 
-                                <TouchableOpacity style={styles.editIcon}
-                                    onPress={() => {
-                                        setEditPhone(true);
-                                        setEditName(false);
-                                        setEditEmail(false);
-                                        setTimeout(() => phoneRef.current?.focus(), 100);
-                                    }}  >
-                                    <MaterialIcons name="edit" size={18} color={editPhone ? GREEN : "#9a9a9a"} />
-                                </TouchableOpacity>
-                            </View>
+                                <Text style={[styles.sectionHeader, { color: colors.text }]}>PROFILE SETTINGS</Text>
 
-                            {/* EMAIL */}
-                            <Text style={[styles.text, { color: colors.text, marginTop: 16 }]}>Email</Text>
-                            <View style={styles.inputWrapper}>
-                                <TextInput
-                                    ref={emailRef}
-                                    value={email}
-                                    onChangeText={(text) => {
-                                        setEmail(text);
-                                        setEmailVerified(text.trim().toLowerCase() === originalEmail.trim().toLowerCase());
-                                        setOtpSent(false);
-                                        setOtp("");
-                                    }}
-                                    editable={editEmail}
-                                    keyboardType="email-address"
-                                    autoCapitalize="none"
-                                    style={[
-                                        styles.input,
-                                        editEmail && styles.inputActive,
-                                        !editEmail && styles.disabledInput,
-                                        { paddingRight: 40 }
-                                    ]}
-                                />
-                                <TouchableOpacity
-                                    style={styles.editIcon}
-                                    onPress={() => {
-                                        setEditEmail(true);
-                                        setEditName(false);
-                                        setEditPhone(false);
-                                        setTimeout(() => emailRef.current?.focus(), 100);
-                                    }}
-                                >
-                                    <MaterialIcons name="edit" size={18} color={editEmail ? GREEN : "#9a9a9a"} />
-                                </TouchableOpacity>
-                            </View>
-
-                            {/* OTP Send Button */}
-                            {email !== originalEmail && !emailVerified && !otpSent && (
-                                <TouchableOpacity
-                                    style={[styles.otpBtn, otpLoading && { opacity: 0.7 }, { marginTop: 8 }]}
-                                    onPress={handleSendEmailOtp}
-                                    disabled={otpLoading}
-                                >
-                                    {otpLoading ? (
-                                        <ActivityIndicator size="small" color={GREEN} />
-                                    ) : (
-                                        <Text style={styles.otpBtnText}>Send Verification Code</Text>
-                                    )}
-                                </TouchableOpacity>
-                            )}
-
-                            {/* OTP Input and Verify Button */}
-                            {email !== originalEmail && otpSent && !emailVerified && (
-                                <View style={{ marginTop: 8 }}>
-                                    <Text style={[styles.text, { color: colors.text, marginBottom: 4, ...textPresets.label }]}>
-                                        Enter verification code sent to your email
-                                    </Text>
+                                <View style={styles.settingsCard}>
+                                    {/* NAME */}
+                                    <Text style={[styles.text, { color: colors.text }]}>Your Name</Text>
                                     <View style={styles.inputWrapper}>
                                         <TextInput
-                                            style={[styles.input, styles.inputActive, { flex: 1 }]}
-                                            value={otp}
-                                            onChangeText={setOtp}
-                                            keyboardType="number-pad"
-                                            placeholder="6-digit code"
-                                            placeholderTextColor="#a0a0a0"
-                                            maxLength={6}
+                                            ref={nameRef}
+                                            value={username}
+                                            onChangeText={setUsername}
+                                            editable={editName}
+                                            style={[
+                                                styles.input,
+                                                editName && styles.inputActive,
+                                                { paddingRight: 40 }
+                                            ]}
                                         />
+
                                         <TouchableOpacity
-                                            style={[styles.verifyOtpBtn, verifyingOtp && { opacity: 0.7 }]}
-                                            onPress={handleVerifyEmailOtp}
-                                            disabled={verifyingOtp}
+                                            style={styles.editIcon}
+                                            onPress={() => {
+                                                setEditName(true);
+                                                setEditPhone(false);
+                                                setTimeout(() => nameRef.current?.focus(), 100);
+                                            }}
                                         >
-                                            {verifyingOtp ? (
-                                                <ActivityIndicator size="small" color="#ffffff" />
-                                            ) : (
-                                                <Text style={styles.verifyOtpBtnText}>Verify</Text>
-                                            )}
+                                            <MaterialIcons name="edit" size={18} color={editName ? GREEN : "#9a9a9a"} />
                                         </TouchableOpacity>
                                     </View>
-                                    <TouchableOpacity
-                                        onPress={handleSendEmailOtp}
-                                        disabled={otpLoading || timer > 0}
-                                        style={{ alignSelf: "flex-end", marginTop: 4 }}
+
+                                    {/* PHONE */}
+                                    <Text style={[styles.text, { color: colors.text, marginTop: 16 }]}>Contact Number</Text>
+                                    <View style={styles.inputWrapper}>
+                                        <TextInput
+                                            ref={phoneRef}
+                                            value={phone}
+                                            onChangeText={setPhone}
+                                            editable={editPhone}
+                                            keyboardType="numeric"
+                                            style={[
+                                                styles.input,
+                                                editPhone && styles.inputActive,
+                                                { paddingRight: 40 }
+                                            ]} />
+
+                                        <TouchableOpacity style={styles.editIcon}
+                                            onPress={() => {
+                                                setEditPhone(true);
+                                                setEditName(false);
+                                                setEditEmail(false);
+                                                setTimeout(() => phoneRef.current?.focus(), 100);
+                                            }}  >
+                                            <MaterialIcons name="edit" size={18} color={editPhone ? GREEN : "#9a9a9a"} />
+                                        </TouchableOpacity>
+                                    </View>
+
+                                    {/* EMAIL */}
+                                    <Text style={[styles.text, { color: colors.text, marginTop: 16 }]}>Email</Text>
+                                    <View style={styles.inputWrapper}>
+                                        <TextInput
+                                            ref={emailRef}
+                                            value={email}
+                                            onChangeText={(text) => {
+                                                setEmail(text);
+                                                setEmailVerified(text.trim().toLowerCase() === originalEmail.trim().toLowerCase());
+                                                setOtpSent(false);
+                                                setOtp("");
+                                            }}
+                                            editable={editEmail}
+                                            keyboardType="email-address"
+                                            autoCapitalize="none"
+                                            style={[
+                                                styles.input,
+                                                editEmail && styles.inputActive,
+                                                !editEmail && styles.disabledInput,
+                                                { paddingRight: 40 }
+                                            ]}
+                                        />
+                                        <TouchableOpacity
+                                            style={styles.editIcon}
+                                            onPress={() => {
+                                                setEditEmail(true);
+                                                setEditName(false);
+                                                setEditPhone(false);
+                                                setTimeout(() => emailRef.current?.focus(), 100);
+                                            }}
+                                        >
+                                            <MaterialIcons name="edit" size={18} color={editEmail ? GREEN : "#9a9a9a"} />
+                                        </TouchableOpacity>
+                                    </View>
+
+                                    {/* OTP Send Button */}
+                                    {email !== originalEmail && !emailVerified && !otpSent && (
+                                        <TouchableOpacity
+                                            style={[styles.otpBtn, otpLoading && { opacity: 0.7 }, { marginTop: 8 }]}
+                                            onPress={handleSendEmailOtp}
+                                            disabled={otpLoading}
+                                        >
+                                            {otpLoading ? (
+                                                <ActivityIndicator size="small" color={GREEN} />
+                                            ) : (
+                                                <Text style={styles.otpBtnText}>Send Verification Code</Text>
+                                            )}
+                                        </TouchableOpacity>
+                                    )}
+
+                                    {/* OTP Input and Verify Button */}
+                                    {email !== originalEmail && otpSent && !emailVerified && (
+                                        <View style={{ marginTop: 8 }}>
+                                            <Text style={[styles.text, { color: colors.text, marginBottom: 4, ...textPresets.label }]}>
+                                                Enter verification code sent to your email
+                                            </Text>
+                                            <View style={styles.inputWrapper}>
+                                                <TextInput
+                                                    style={[styles.input, styles.inputActive, { flex: 1 }]}
+                                                    value={otp}
+                                                    onChangeText={setOtp}
+                                                    keyboardType="number-pad"
+                                                    placeholder="6-digit code"
+                                                    placeholderTextColor="#a0a0a0"
+                                                    maxLength={6}
+                                                />
+                                                <TouchableOpacity
+                                                    style={[styles.verifyOtpBtn, verifyingOtp && { opacity: 0.7 }]}
+                                                    onPress={handleVerifyEmailOtp}
+                                                    disabled={verifyingOtp}
+                                                >
+                                                    {verifyingOtp ? (
+                                                        <ActivityIndicator size="small" color="#ffffff" />
+                                                    ) : (
+                                                        <Text style={styles.verifyOtpBtnText}>Verify</Text>
+                                                    )}
+                                                </TouchableOpacity>
+                                            </View>
+                                            <TouchableOpacity
+                                                onPress={handleSendEmailOtp}
+                                                disabled={otpLoading || timer > 0}
+                                                style={{ alignSelf: "flex-end", marginTop: 4 }}
+                                            >
+                                                <Text style={{ color: (otpLoading || timer > 0) ? "#a0a0a0" : GREEN, ...textPresets.label }}>
+                                                    {timer > 0 ? `Resend Code in ${Math.floor(timer / 60)}:${String(timer % 60).padStart(2, '0')}` : "Resend Code"}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        </View>
+                                    )}
+
+                                    {email !== originalEmail && emailVerified && (
+                                        <View style={{ marginTop: 8, flexDirection: "row", alignItems: "center", gap: 6 }}>
+                                            <MaterialIcons name="check-circle" size={18} color={GREEN} />
+                                            <Text style={{ color: GREEN, ...textPresets.label }}>Email verified successfully!</Text>
+                                        </View>
+                                    )}
+                                </View>
+
+                                {/* SAVE BUTTON */}
+                                <TouchableOpacity
+                                    onPress={handleSave}
+                                    disabled={saving}
+                                    activeOpacity={0.85}
+                                    style={{ marginTop: 20 }} >
+                                    <LinearGradient
+                                        colors={[ORANGE, "#f5b849"]}
+                                        start={{ x: 0, y: 0 }}
+                                        end={{ x: 1, y: 0 }}
+                                        style={styles.saveButton}
                                     >
-                                        <Text style={{ color: (otpLoading || timer > 0) ? "#a0a0a0" : GREEN, ...textPresets.label }}>
-                                            {timer > 0 ? `Resend Code in ${Math.floor(timer / 60)}:${String(timer % 60).padStart(2, '0')}` : "Resend Code"}
+                                        {saving
+                                            ? <ActivityIndicator size="small" color="#fff" />
+                                            : <Text style={styles.saveButtonText}>Save Changes</Text>
+                                        }
+                                    </LinearGradient>
+                                </TouchableOpacity>
+                            </View>
+
+                            <View style={styles.divider} />
+
+                            <View style={styles.menuContainer}>
+                                <Text style={[styles.sectionHeader, { color: colors.text }]}>MENU</Text>
+
+                                <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.card || "#fff" }]} onPress={() => navigation.navigate("Analytics")} activeOpacity={0.7}>
+                                    <View style={styles.iconCircle}>
+                                        <AntDesign name="unordered-list" size={18} color={GREEN} />
+                                    </View>
+                                    <View style={styles.menuText}>
+                                        <Text style={[styles.menuTitle, { color: colors.text }]}>Analytics</Text>
+                                        <Text style={[styles.menuSub, { color: colors.subText || "#888" }]}>View your ads analytics</Text>
+                                    </View>
+                                    <Feather name="chevron-right" size={20} color={colors.subText || "#aaa"} />
+                                </TouchableOpacity>
+
+                                <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.card || "#fff" }]} onPress={() => navigation.navigate("Transaction")} activeOpacity={0.7}>
+                                    <View style={styles.iconCircle}>
+                                        <AntDesign name="credit-card" size={18} color={GREEN} />
+                                    </View>
+                                    <View style={styles.menuText}>
+                                        <Text style={[styles.menuTitle, { color: colors.text }]}>Transactions</Text>
+                                        <Text style={[styles.menuSub, { color: colors.subText || "#888" }]}>View your transaction history</Text>
+                                    </View>
+                                    <Feather name="chevron-right" size={20} color={colors.subText || "#aaa"} />
+                                </TouchableOpacity>
+
+                                <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.card || "#fff" }]} onPress={() => navigation.navigate("Support")} activeOpacity={0.7}>
+                                    <View style={styles.iconCircle}>
+                                        <AntDesign name="question-circle" size={18} color={GREEN} />
+                                    </View>
+                                    <View style={styles.menuText}>
+                                        <Text style={[styles.menuTitle, { color: colors.text }]}>Help & Support</Text>
+                                        <Text style={[styles.menuSub, { color: colors.subText || "#888" }]}>Get help with any issues</Text>
+                                    </View>
+                                    <Feather name="chevron-right" size={20} color={colors.subText || "#aaa"} />
+                                </TouchableOpacity>
+
+                                <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.card || "#fff" }]} onPress={() => openBox()} activeOpacity={0.7}>
+                                    <View style={styles.iconCircle}>
+                                        <AntDesign name="question-circle" size={18} color={GREEN} />
+                                    </View>
+                                    <View style={styles.menuText}>
+                                        <Text style={[styles.menuTitle, { color: colors.text }]}>Ratings & Reviews</Text>
+                                        <Text style={[styles.menuSub, { color: colors.subText || "#888" }]}>View ratings and reviews</Text>
+                                    </View>
+                                    <Feather name="chevron-right" size={20} color={colors.subText || "#aaa"} />
+                                </TouchableOpacity>
+
+                                <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.card || "#fff", marginBottom: 0 }]}
+                                    onPress={() => { confirmLogout(); }} activeOpacity={0.7}>
+                                    <View style={[styles.iconCircle, { backgroundColor: "#fff0f0" }]}>
+                                        <MaterialIcons name="logout" size={18} color="#ff6b6b" />
+                                    </View>
+                                    <View style={styles.menuText}>
+                                        <Text style={[styles.menuTitle, { color: "#ff6b6b" }]}>
+                                            Sign Out
                                         </Text>
-                                    </TouchableOpacity>
-                                </View>
-                            )}
-
-                            {email !== originalEmail && emailVerified && (
-                                <View style={{ marginTop: 8, flexDirection: "row", alignItems: "center", gap: 6 }}>
-                                    <MaterialIcons name="check-circle" size={18} color={GREEN} />
-                                    <Text style={{ color: GREEN, ...textPresets.label }}>Email verified successfully!</Text>
-                                </View>
-                            )}
-                        </View>
-
-                        {/* SAVE BUTTON */}
-                        <TouchableOpacity
-                            onPress={handleSave}
-                            disabled={saving}
-                            activeOpacity={0.85}
-                            style={{ marginTop: 20 }} >
-                            <LinearGradient
-                                colors={[ORANGE, "#f5b849"]}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 0 }}
-                                style={styles.saveButton}
-                            >
-                                {saving
-                                    ? <ActivityIndicator size="small" color="#fff" />
-                                    : <Text style={styles.saveButtonText}>Save Changes</Text>
-                                }
-                            </LinearGradient>
-                        </TouchableOpacity>
-                    </View>
-
-                    <View style={styles.divider} />
-
-                    <View style={styles.menuContainer}>
-                        <Text style={[styles.sectionHeader, { color: colors.text }]}>MENU</Text>
-
-                        <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.card || "#fff" }]} onPress={() => navigation.navigate("Analytics")} activeOpacity={0.7}>
-                            <View style={styles.iconCircle}>
-                                <AntDesign name="unordered-list" size={18} color={GREEN} />
+                                    </View>
+                                    <Feather name="chevron-right" size={20} color="#ff6b6b" />
+                                </TouchableOpacity>
                             </View>
-                            <View style={styles.menuText}>
-                                <Text style={[styles.menuTitle, { color: colors.text }]}>Analytics</Text>
-                                <Text style={[styles.menuSub, { color: colors.subText || "#888" }]}>View your ads analytics</Text>
-                            </View>
-                            <Feather name="chevron-right" size={20} color={colors.subText || "#aaa"} />
-                        </TouchableOpacity>
-
-                        <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.card || "#fff" }]} onPress={() => navigation.navigate("Transaction")} activeOpacity={0.7}>
-                            <View style={styles.iconCircle}>
-                                <AntDesign name="credit-card" size={18} color={GREEN} />
-                            </View>
-                            <View style={styles.menuText}>
-                                <Text style={[styles.menuTitle, { color: colors.text }]}>Transactions</Text>
-                                <Text style={[styles.menuSub, { color: colors.subText || "#888" }]}>View your transaction history</Text>
-                            </View>
-                            <Feather name="chevron-right" size={20} color={colors.subText || "#aaa"} />
-                        </TouchableOpacity>
-
-                        <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.card || "#fff" }]} onPress={() => navigation.navigate("Support")} activeOpacity={0.7}>
-                            <View style={styles.iconCircle}>
-                                <AntDesign name="question-circle" size={18} color={GREEN} />
-                            </View>
-                            <View style={styles.menuText}>
-                                <Text style={[styles.menuTitle, { color: colors.text }]}>Help & Support</Text>
-                                <Text style={[styles.menuSub, { color: colors.subText || "#888" }]}>Get help with any issues</Text>
-                            </View>
-                            <Feather name="chevron-right" size={20} color={colors.subText || "#aaa"} />
-                        </TouchableOpacity>
-
-                        <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.card || "#fff" }]} onPress={() => openBox()} activeOpacity={0.7}>
-                            <View style={styles.iconCircle}>
-                                <AntDesign name="question-circle" size={18} color={GREEN} />
-                            </View>
-                            <View style={styles.menuText}>
-                                <Text style={[styles.menuTitle, { color: colors.text }]}>Ratings & Reviews</Text>
-                                <Text style={[styles.menuSub, { color: colors.subText || "#888" }]}>View ratings and reviews</Text>
-                            </View>
-                            <Feather name="chevron-right" size={20} color={colors.subText || "#aaa"} />
-                        </TouchableOpacity>
-
-                        <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.card || "#fff", marginBottom: 0 }]}
-                            onPress={() => { confirmLogout(); }} activeOpacity={0.7}>
-                            <View style={[styles.iconCircle, { backgroundColor: "#fff0f0" }]}>
-                                <MaterialIcons name="logout" size={18} color="#ff6b6b" />
-                            </View>
-                            <View style={styles.menuText}>
-                                <Text style={[styles.menuTitle, { color: "#ff6b6b" }]}>
-                                    Sign Out
-                                </Text>
-                            </View>
-                            <Feather name="chevron-right" size={20} color="#ff6b6b" />
-                        </TouchableOpacity>
-                    </View>
-
+                        </>
+                    )}
                 </ScrollView>
             </KeyboardAvoidingView>
             <CustomAlertModal

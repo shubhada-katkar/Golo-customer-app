@@ -210,6 +210,108 @@ export const ProfileSkeleton = () => {
   );
 };
 
+export const ChatSkeleton = ({ count = 5 }) => {
+  const items = Array.from({ length: count });
+  return (
+    <View style={{ width: "100%" }}>
+      {items.map((_, idx) => (
+        <View
+          key={idx}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            paddingVertical: 12,
+            paddingHorizontal: 14,
+            borderBottomWidth: 1,
+            borderBottomColor: "#f0f0f0",
+          }}
+        >
+          <SkeletonBox width={50} height={50} borderRadius={25} style={{ marginRight: 12 }} />
+          <View style={{ flex: 1 }}>
+            <SkeletonBox width="50%" height={16} borderRadius={4} style={{ marginBottom: 8 }} />
+            <SkeletonBox width="80%" height={12} borderRadius={4} />
+          </View>
+          <SkeletonBox width={40} height={12} borderRadius={4} style={{ marginLeft: 8 }} />
+        </View>
+      ))}
+    </View>
+  );
+};
+
+export const FavSkeleton = ({ count = 4 }) => {
+  const items = Array.from({ length: count });
+  return (
+    <View style={{ paddingHorizontal: 14, paddingTop: 14 }}>
+      {items.map((_, idx) => (
+        <View
+          key={idx}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            padding: 10,
+            marginBottom: 14,
+            borderRadius: 12,
+            backgroundColor: "#ffffff",
+            elevation: 2,
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.1,
+            shadowRadius: 3,
+          }}
+        >
+          <SkeletonBox width={68} height={68} borderRadius={8} />
+          <View style={{ flex: 1, marginLeft: 12 }}>
+            <SkeletonBox width="70%" height={16} borderRadius={4} style={{ marginBottom: 8 }} />
+            <SkeletonBox width="45%" height={12} borderRadius={4} style={{ marginBottom: 6 }} />
+            <SkeletonBox width="60%" height={12} borderRadius={4} />
+          </View>
+          <SkeletonBox width={26} height={26} borderRadius={13} style={{ marginLeft: 8 }} />
+        </View>
+      ))}
+    </View>
+  );
+};
+
+export const ClaimedSkeleton = ({ count = 3 }) => {
+  const items = Array.from({ length: count });
+  return (
+    <View style={{ paddingHorizontal: 14, paddingTop: 10 }}>
+      <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 16 }}>
+        <SkeletonBox width="30%" height={54} borderRadius={12} />
+        <SkeletonBox width="30%" height={54} borderRadius={12} />
+        <SkeletonBox width="30%" height={54} borderRadius={12} />
+      </View>
+      {items.map((_, idx) => (
+        <View
+          key={idx}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            padding: 10,
+            marginBottom: 14,
+            borderRadius: 12,
+            backgroundColor: "#ffffff",
+            elevation: 2,
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.1,
+            shadowRadius: 3,
+          }}
+        >
+          <SkeletonBox width={60} height={60} borderRadius={8} />
+          <View style={{ flex: 1, marginLeft: 12 }}>
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+              <SkeletonBox width="55%" height={16} borderRadius={4} />
+              <SkeletonBox width="25%" height={18} borderRadius={4} />
+            </View>
+            <SkeletonBox width="45%" height={12} borderRadius={4} />
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+};
+
 export const CardSkeleton = ({ count = 4, layout = "grid" }) => {
   const cards = Array.from({ length: count });
 

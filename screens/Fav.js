@@ -9,6 +9,7 @@ import { MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { getFavoriteAds, toggleFavoriteAd } from "../services/favoritesService";
 import { LinearGradient } from "expo-linear-gradient";
 import { textPresets } from "../theme/typography";
+import { FavSkeleton } from "../components/Skeleton";
 
 export default function Fav({ navigation }) {
     const { colors } = useContext(ThemeContext);
@@ -83,12 +84,7 @@ export default function Fav({ navigation }) {
                 }
             >
                 {loading ? (
-                    <View style={{ padding: 24, alignItems: "center" }}>
-                        <ActivityIndicator size="small" color={colors.primary} />
-                        <Text style={{ color: colors.text, marginTop: 10 }}>
-                            Loading saved ads...
-                        </Text>
-                    </View>
+                    <FavSkeleton count={4} />
                 ) : favorites.length === 0 ? (
                     <View style={{ padding: 24, alignItems: "center" }}>
                         <Text style={{ color: colors.text, }}>No favorite ads yet</Text>

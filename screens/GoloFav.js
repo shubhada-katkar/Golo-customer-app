@@ -9,6 +9,7 @@ import { MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { getFavoriteOffers, toggleFavoriteOffer } from "../services/offerFavoritesService";
 import { LinearGradient } from "expo-linear-gradient";
 import { textPresets } from "../theme/typography";
+import { FavSkeleton } from "../components/Skeleton";
 
 export default function GoloFav({ navigation }) {
     const { colors } = useContext(ThemeContext);
@@ -70,12 +71,7 @@ export default function GoloFav({ navigation }) {
                 }
             >
                 {loading ? (
-                    <View style={{ padding: 24, alignItems: "center" }}>
-                        <ActivityIndicator size="small" color={colors.primary} />
-                        <Text style={{ ...textPresets.body, marginTop: 10 }}>
-                            Loading saved offers...
-                        </Text>
-                    </View>
+                    <FavSkeleton count={4} />
                 ) : favorites.length === 0 ? (
                     <View style={{ padding: 24, alignItems: "center" }}>
                         <Text style={{ ...textPresets.body }}>No saved offers yet</Text>

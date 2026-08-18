@@ -19,6 +19,7 @@ import { MaterialIcons, Ionicons, Entypo } from "@expo/vector-icons";
 import { connectChatSocket, listConversations, getAuthContext } from "../services/chatService";
 import { LinearGradient } from "expo-linear-gradient";
 import { textPresets } from "../theme/typography";
+import { ChatSkeleton } from "../components/Skeleton";
 
 export default function ChatPage({ navigation, route }) {
     const { colors } = useContext(ThemeContext);
@@ -158,9 +159,9 @@ export default function ChatPage({ navigation, route }) {
     const renderConversationList = () => {
         if (loading) {
             return (
-                <View style={styles.centerWrap}>
-                    <ActivityIndicator size="large" color="#157a4f" />
-                </View>
+                <ScrollView contentContainerStyle={{ paddingBottom: 90 }}>
+                    <ChatSkeleton count={6} />
+                </ScrollView>
             );
         }
 
