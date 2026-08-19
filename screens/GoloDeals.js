@@ -1191,7 +1191,6 @@ export default function GoloDeals() {
             >
                 <GoloBottom />
             </SafeAreaView>
-            <RatingsBox />
         </SafeAreaView >
     );
 }

@@ -294,7 +294,6 @@ export default function AdAnalytics({ navigation, route }) {
                 onClose={hideAlert}
                 onCancel={hideAlert}
             />
-            <RatingsBox />
         </SafeAreaView>
     );
 }

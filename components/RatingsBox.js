@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     Modal,
     View,
@@ -7,6 +7,7 @@ import {
     TouchableOpacity,
     StyleSheet,
     ActivityIndicator,
+    AppState,
 } from 'react-native';
 import { MaterialIcons, Feather } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -14,16 +15,97 @@ import { BASE_URL } from '../config';
 import { textPresets } from '../theme/typography';
 import CustomAlertModal from './CustomeAlertModal';
 
+const ASYNC_KEY_ACCUMULATED_TIME = '@golo_ratings_accumulated_seconds';
+const DEFAULT_INTERVAL_MINUTES = 20;
+
 export default function RatingsBox({
     visible: controlledVisible,
     onClose,
     onSubmit,
+    intervalMinutes = DEFAULT_INTERVAL_MINUTES,
+    enableTimer = true,
 }) {
     const [rating, setRating] = useState(0);
     const [feedback, setFeedback] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [internalVisible, setInternalVisible] = useState(false);
     const [alertConfig, setAlertConfig] = useState({ visible: false, title: "", message: "", type: "error", onClose: null });
+
+    const accumulatedSecondsRef = useRef(0);
+    const isControlled = controlledVisible !== undefined;
+    const targetSeconds = (intervalMinutes || DEFAULT_INTERVAL_MINUTES) * 60;
+
+    useEffect(() => {
+        if (isControlled || !enableTimer) return;
+
+        let intervalId = null;
+
+        const loadSavedTime = async () => {
+            try {
+                const saved = await AsyncStorage.getItem(ASYNC_KEY_ACCUMULATED_TIME);
+                if (saved !== null) {
+                    const parsed = parseInt(saved, 10);
+                    if (!isNaN(parsed) && parsed >= 0) {
+                        accumulatedSecondsRef.current = parsed;
+                    }
+                }
+            } catch (err) {
+                console.error("Error loading accumulated time:", err);
+            }
+        };
+
+        const saveTime = async (seconds) => {
+            try {
+                await AsyncStorage.setItem(ASYNC_KEY_ACCUMULATED_TIME, String(seconds));
+            } catch (err) {
+                console.error("Error saving accumulated time:", err);
+            }
+        };
+
+        const startTimer = () => {
+            if (intervalId) clearInterval(intervalId);
+            intervalId = setInterval(() => {
+                accumulatedSecondsRef.current += 1;
+
+                if (accumulatedSecondsRef.current % 10 === 0) {
+                    saveTime(accumulatedSecondsRef.current);
+                }
+
+                if (accumulatedSecondsRef.current >= targetSeconds) {
+                    setInternalVisible(true);
+                    accumulatedSecondsRef.current = 0;
+                    saveTime(0);
+                }
+            }, 1000);
+        };
+
+        const stopTimer = () => {
+            if (intervalId) {
+                clearInterval(intervalId);
+                intervalId = null;
+            }
+            saveTime(accumulatedSecondsRef.current);
+        };
+
+        loadSavedTime().then(() => {
+            if (AppState.currentState === 'active') {
+                startTimer();
+            }
+        });
+
+        const subscription = AppState.addEventListener('change', (nextAppState) => {
+            if (nextAppState === 'active') {
+                startTimer();
+            } else if (nextAppState.match(/inactive|background/)) {
+                stopTimer();
+            }
+        });
+
+        return () => {
+            stopTimer();
+            subscription?.remove();
+        };
+    }, [isControlled, enableTimer, targetSeconds]);
 
     const showAlert = (title, message, type = "error", extraProps = {}) => {
         setAlertConfig({ visible: true, title, message, type, onClose: null, ...extraProps });
@@ -43,6 +125,8 @@ export default function RatingsBox({
 
     const handleClose = () => {
         setInternalVisible(false);
+        accumulatedSecondsRef.current = 0;
+        AsyncStorage.setItem(ASYNC_KEY_ACCUMULATED_TIME, '0').catch(() => { });
         onClose?.();
     };
 
@@ -100,6 +184,8 @@ export default function RatingsBox({
                     setRating(0);
                     setFeedback('');
                     setInternalVisible(false);
+                    accumulatedSecondsRef.current = 0;
+                    AsyncStorage.setItem(ASYNC_KEY_ACCUMULATED_TIME, '0').catch(() => { });
                     onClose?.();
                 }
             });

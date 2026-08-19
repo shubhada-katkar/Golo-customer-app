@@ -878,7 +878,6 @@ export default function AdEdit({ route, navigation }) {
       >
         <ChojaBottom />
       </SafeAreaView>
-      <RatingsBox />
     </SafeAreaView>
   );
 }

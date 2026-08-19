@@ -46,6 +46,7 @@ import {
   useFonts,
 } from "@expo-google-fonts/poppins";
 import Support from "./screens/Support";
+import RatingsBox from "./components/RatingsBox";
 
 import { startCustomerNotificationPolling, stopCustomerNotificationPolling, registerCustomerPushToken } from "./services/notificationService";
 
@@ -163,7 +164,8 @@ export default function App() {
           initialRouteName="AuthLoading"
           screenOptions={{
             headerShown: false,
-            cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+            animationEnabled: false,
+            cardStyleInterpolator: CardStyleInterpolators.forNoAnimation,
           }}
         >
           <Stack.Screen name="JahiratiCategory" component={JahiratiCategory} />
@@ -202,6 +204,7 @@ export default function App() {
           <Stack.Screen name="Support" component={Support} />
         </Stack.Navigator>
       </NavigationContainer>
+      <RatingsBox intervalMinutes={20} />
     </ThemeProvider>
   );
 }

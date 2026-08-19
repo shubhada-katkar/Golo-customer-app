@@ -1094,7 +1094,6 @@ export default function GoloHome({ route }) {
             >
                 <GoloBottom />
             </SafeAreaView>
-            <RatingsBox />
         </SafeAreaView>
     );
 }
