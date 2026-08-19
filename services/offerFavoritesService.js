@@ -102,6 +102,18 @@ async function fetchWithAuth(url, options = {}) {
   return fetch(url, { headers, ...options });
 }
 
+async function getLocalFavoriteOffers() {
+  try {
+    const key = await getFavoritesStorageKey();
+    const raw = await AsyncStorage.getItem(key);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch { }
+  return [];
+}
+
 async function getFavoriteOffers() {
   try {
     const response = await fetchWithAuth(`${BASE_URL}/users/wishlist`);
@@ -128,28 +140,26 @@ async function getFavoriteOffers() {
           })
           .filter(Boolean);
 
-        if (mapped.length) return mapped;
+        if (mapped.length) {
+          await saveFavoriteOffers(mapped);
+          return mapped;
+        }
 
         // Fallback: keep items that explicitly declare offer identifiers
-        return json.data.filter(
+        const fallback = json.data.filter(
           (item) => item._type === "offer" || Boolean(item.offerId) || Boolean(item.requestId)
         );
+        if (fallback.length) {
+          await saveFavoriteOffers(fallback);
+          return fallback;
+        }
       }
     }
   } catch (error) {
     console.warn("Favorite offers fetch failed:", error?.message || error);
   }
 
-  const key = await getFavoritesStorageKey();
-  const raw = await AsyncStorage.getItem(key);
-  if (!raw) return [];
-
-  try {
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch (error) {
-    return [];
-  }
+  return await getLocalFavoriteOffers();
 }
 
 async function saveFavoriteOffers(items) {
@@ -223,4 +233,4 @@ async function toggleFavoriteOffer(offer) {
   return { isFavorite: true, items: updated };
 }
 
-export { getOfferId, getFavoriteOffers, isFavoriteOfferId, toggleFavoriteOffer };
+export { getOfferId, getFavoriteOffers, getLocalFavoriteOffers, isFavoriteOfferId, toggleFavoriteOffer };

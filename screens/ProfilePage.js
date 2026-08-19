@@ -92,7 +92,44 @@ export default function ProfilePage({ navigation }) {
     }, [timer]);
 
     // ================= FETCH PROFILE =================
+    const PROFILE_CACHE_KEY = "@golo_user_profile_cache";
+
+    const applyProfileData = (profile) => {
+        if (!profile) return;
+        const totalLoyaltyPoints = typeof profile.loyaltyPoints === 'number'
+            ? profile.loyaltyPoints
+            : Object.values(profile.merchantLoyaltyPoints || {}).reduce(
+                (sum, value) => sum + Number(value || 0),
+                0,
+            );
+        const derivedLoyaltyTier = profile.loyaltyTier ||
+            (totalLoyaltyPoints >= 20000 ? 'Platinum' :
+                totalLoyaltyPoints >= 5000 ? 'Gold' :
+                    totalLoyaltyPoints >= 1000 ? 'Silver' :
+                        'Bronze');
+
+        setUsername(profile.name || "");
+        setPhone(profile.profile?.phone || "");
+        setEmail(profile.email || "");
+        setOriginalEmail(profile.email || "");
+        setLoyaltyPoints(totalLoyaltyPoints);
+        setLoyaltyTier(derivedLoyaltyTier);
+        setProfileImage(profile.profile?.avatar || profile.profilePhoto || null);
+    };
+
     const fetchProfile = async () => {
+        // Stale-While-Revalidate: load local cache immediately (0ms delay)
+        try {
+            const cachedRaw = await AsyncStorage.getItem(PROFILE_CACHE_KEY);
+            if (cachedRaw) {
+                const cachedProfile = JSON.parse(cachedRaw);
+                if (cachedProfile && typeof cachedProfile === "object") {
+                    applyProfileData(cachedProfile);
+                    setLoading(false);
+                }
+            }
+        } catch { }
+
         try {
             let token;
             try {
@@ -126,32 +163,13 @@ export default function ProfilePage({ navigation }) {
             }
 
             const profile = data.data;
-            const totalLoyaltyPoints = typeof profile.loyaltyPoints === 'number'
-                ? profile.loyaltyPoints
-                : Object.values(profile.merchantLoyaltyPoints || {}).reduce(
-                    (sum, value) => sum + Number(value || 0),
-                    0,
-                );
-            const derivedLoyaltyTier = profile.loyaltyTier ||
-                (totalLoyaltyPoints >= 20000 ? 'Platinum' :
-                    totalLoyaltyPoints >= 5000 ? 'Gold' :
-                        totalLoyaltyPoints >= 1000 ? 'Silver' :
-                            'Bronze');
-
-            setUsername(profile.name || "");
-            setPhone(profile.profile?.phone || "");
-            setEmail(profile.email || "");
-            setOriginalEmail(profile.email || "");
-            setLoyaltyPoints(totalLoyaltyPoints);
-            setLoyaltyTier(derivedLoyaltyTier);
-            // image url/base64 may not exist
-            setProfileImage(profile.profile?.avatar || profile.profilePhoto || null);
+            applyProfileData(profile);
+            AsyncStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(profile)).catch(() => { });
 
             setLoading(false);
 
         } catch (err) {
             setLoading(false);
-            showAlert("Error", "Failed to load profile", "error");
         }
     };
 
@@ -324,11 +342,8 @@ export default function ProfilePage({ navigation }) {
             }
 
             const updatedProfile = data.data;
-            setProfileImage(updatedProfile.profile?.avatar || updatedProfile.profilePhoto || profileImage);
-            setUsername(updatedProfile.name || username);
-            setPhone(updatedProfile.profile?.phone || phone);
-            setEmail(updatedProfile.email || email);
-            setOriginalEmail(updatedProfile.email || email);
+            applyProfileData(updatedProfile);
+            AsyncStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(updatedProfile)).catch(() => { });
             setProfilePhotoBase64(null);
             setEditName(false);
             setEditPhone(false);

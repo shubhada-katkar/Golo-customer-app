@@ -5,7 +5,7 @@ import {
     Image,
     Text,
     TouchableOpacity,
-    ScrollView,
+    FlatList,
     ActivityIndicator,
     RefreshControl,
     Alert,
@@ -16,10 +16,76 @@ import { ThemeContext } from "../theme/ThemeContext";
 import Topbar from "../components/Topbar";
 import ChojaBottom from "../components/ChojaBottom";
 import { MaterialIcons, Ionicons, Entypo } from "@expo/vector-icons";
-import { connectChatSocket, listConversations, getAuthContext } from "../services/chatService";
+import { connectChatSocket, listConversations, getCachedConversations, getAuthContext } from "../services/chatService";
 import { LinearGradient } from "expo-linear-gradient";
 import { textPresets } from "../theme/typography";
 import { ChatSkeleton } from "../components/Skeleton";
+
+const AVATAR_COLORS = ["#157a4f", "#e8b923", "#e8743b", "#c0392b", "#2c6fbb", "#7c4dbd", "#16a0a0"];
+
+const getAvatarColor = (seed) => {
+    const str = String(seed || "?");
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+};
+
+const formatTime = (timeValue) => {
+    if (!timeValue) return "";
+    const date = new Date(timeValue);
+    if (Number.isNaN(date.getTime())) return "";
+
+    return date.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+    });
+};
+
+const ConversationCard = React.memo(({ conversation, colors, currentUserId, onOpen }) => {
+    return (
+        <TouchableOpacity
+            style={styles.chatCard}
+            onPress={() => onOpen(conversation)}
+            activeOpacity={0.8}
+        >
+            {conversation?.otherUser?.avatar ? (
+                <Image source={{ uri: conversation.otherUser.avatar }} style={styles.avatar} />
+            ) : (
+                <View
+                    style={[
+                        styles.avatar,
+                        styles.avatarFallback,
+                        { backgroundColor: getAvatarColor(conversation?.otherUser?.name || conversation?.otherUser?.id || conversation.id) },
+                    ]}
+                >
+                    <Text style={styles.avatarInitial}>
+                        {(conversation?.otherUser?.name || "?").trim().charAt(0).toUpperCase()}
+                    </Text>
+                </View>
+            )}
+
+            <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                    <Text style={[styles.name, { color: colors.text, flex: 1 }]} numberOfLines={1}>
+                        {conversation?.otherUser?.name || "Unknown User"}
+                    </Text>
+                </View>
+                <Text style={[styles.message, { color: colors.text }]} numberOfLines={1}>
+                    {conversation?.lastMessageText || "Tap to open chat"}
+                </Text>
+            </View>
+
+            <View style={{ alignItems: "flex-end" }}>
+                <Text style={styles.time}>{formatTime(conversation?.lastMessageAt)}</Text>
+            </View>
+            {Array.isArray(conversation.pinnedBy) && conversation.pinnedBy.includes(currentUserId) && (
+                <Entypo name="pin" size={20} color="#f5b846ff" style={{ left: 5 }} />
+            )}
+        </TouchableOpacity>
+    );
+});
 
 export default function ChatPage({ navigation, route }) {
     const { colors } = useContext(ThemeContext);
@@ -36,7 +102,14 @@ export default function ChatPage({ navigation, route }) {
             if (isPullToRefresh) {
                 setRefreshing(true);
             } else {
-                setLoading(true);
+                // Stale-While-Revalidate: load local cache immediately (0ms delay)
+                const cached = await getCachedConversations();
+                if (Array.isArray(cached) && cached.length > 0) {
+                    setConversations(cached);
+                    setLoading(false);
+                } else {
+                    setLoading(true);
+                }
             }
 
             const data = await listConversations();
@@ -117,21 +190,10 @@ export default function ChatPage({ navigation, route }) {
                 socketRef.current?.disconnect();
                 socketRef.current = null;
             };
-        }, [loadConversations]),
+        }, [loadConversations, currentUserId]),
     );
 
-    const AVATAR_COLORS = ["#157a4f", "#e8b923", "#e8743b", "#c0392b", "#2c6fbb", "#7c4dbd", "#16a0a0"];
-
-    const getAvatarColor = (seed) => {
-        const str = String(seed || "?");
-        let hash = 0;
-        for (let i = 0; i < str.length; i++) {
-            hash = str.charCodeAt(i) + ((hash << 5) - hash);
-        }
-        return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
-    };
-
-    const openConversation = (conversation) => {
+    const openConversation = useCallback((conversation) => {
         const pendingShare = shareAd;
 
         if (pendingShare) {
@@ -143,26 +205,22 @@ export default function ChatPage({ navigation, route }) {
             conversation,
             shareAd: pendingShare,
         });
-    };
+    }, [navigation, shareAd]);
 
-    const formatTime = (timeValue) => {
-        if (!timeValue) return "";
-        const date = new Date(timeValue);
-        if (Number.isNaN(date.getTime())) return "";
+    const renderItem = useCallback(({ item }) => (
+        <ConversationCard
+            conversation={item}
+            colors={colors}
+            currentUserId={currentUserId}
+            onOpen={openConversation}
+        />
+    ), [colors, currentUserId, openConversation]);
 
-        return date.toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-        });
-    };
+    const keyExtractor = useCallback((item) => String(item.id), []);
 
     const renderConversationList = () => {
         if (loading) {
-            return (
-                <ScrollView contentContainerStyle={{ paddingBottom: 90 }}>
-                    <ChatSkeleton count={6} />
-                </ScrollView>
-            );
+            return <ChatSkeleton count={6} />;
         }
 
         if (conversations.length === 0) {
@@ -175,57 +233,23 @@ export default function ChatPage({ navigation, route }) {
         }
 
         return (
-            <ScrollView
+            <FlatList
+                data={conversations}
+                renderItem={renderItem}
+                keyExtractor={keyExtractor}
                 contentContainerStyle={{ paddingBottom: 90 }}
                 refreshControl={
                     <RefreshControl
                         refreshing={refreshing}
                         onRefresh={() => loadConversations(true)}
+                        tintColor={colors.text}
                     />
                 }
-            >
-                {conversations.map((conversation) => (
-                    <TouchableOpacity
-                        key={conversation.id}
-                        style={styles.chatCard}
-                        onPress={() => openConversation(conversation)}
-                    >
-                        {conversation?.otherUser?.avatar ? (
-                            <Image source={{ uri: conversation.otherUser.avatar }} style={styles.avatar} />
-                        ) : (
-                            <View
-                                style={[
-                                    styles.avatar,
-                                    styles.avatarFallback,
-                                    { backgroundColor: getAvatarColor(conversation?.otherUser?.name || conversation?.otherUser?.id || conversation.id) },
-                                ]}
-                            >
-                                <Text style={styles.avatarInitial}>
-                                    {(conversation?.otherUser?.name || "?").trim().charAt(0).toUpperCase()}
-                                </Text>
-                            </View>
-                        )}
-
-                        <View style={{ flex: 1 }}>
-                            <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                                <Text style={[styles.name, { color: colors.text, flex: 1 }]} numberOfLines={1}>
-                                    {conversation?.otherUser?.name || "Unknown User"}
-                                </Text>
-                            </View>
-                            <Text style={[styles.message, { color: colors.text }]} numberOfLines={1}>
-                                {conversation?.lastMessageText || "Tap to open chat"}
-                            </Text>
-                        </View>
-
-                        <View style={{ alignItems: "flex-end" }}>
-                            <Text style={styles.time}>{formatTime(conversation?.lastMessageAt)}</Text>
-                        </View>
-                        {Array.isArray(conversation.pinnedBy) && conversation.pinnedBy.includes(currentUserId) && (
-                            <Entypo name="pin" size={20} color="#f5b846ff" style={{ left: 5 }} />
-                        )}
-                    </TouchableOpacity>
-                ))}
-            </ScrollView>
+                initialNumToRender={10}
+                maxToRenderPerBatch={10}
+                windowSize={5}
+                removeClippedSubviews={true}
+            />
         );
     };
 
@@ -249,7 +273,6 @@ export default function ChatPage({ navigation, route }) {
                             style={{ padding: 10 }}
                         />
                     </View>
-
                 </TouchableOpacity>
                 <Text style={{ ...textPresets.title }}>Chats</Text>
             </View>
@@ -343,4 +366,4 @@ const styles = StyleSheet.create({
         color: "#999",
         ...textPresets.label
     },
-})
+});

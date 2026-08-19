@@ -1,10 +1,10 @@
-import React, { useCallback, useContext, useState } from "react";
+import React, { useCallback, useContext, useMemo, useState } from "react";
 import {
     View,
     StyleSheet,
     Text,
     TouchableOpacity,
-    ScrollView,
+    FlatList,
     ActivityIndicator,
     Image,
     RefreshControl,
@@ -15,10 +15,126 @@ import { ThemeContext } from "../theme/ThemeContext";
 import Topbar from "../components/Topbar";
 import GoloBottom from "../components/GoloBottom";
 import { MaterialIcons } from "@expo/vector-icons";
-import { fetchMyClaimedOffers } from "../services/voucherService";
+import { fetchMyClaimedOffers, getCachedClaimedOffers } from "../services/voucherService";
 import { LinearGradient } from "expo-linear-gradient";
 import { textPresets } from "../theme/typography";
 import { ClaimedSkeleton } from "../components/Skeleton";
+
+const isOfferExpired = (offer) => {
+    if (!offer) return false;
+
+    const displayItem = offer?.offer || offer;
+    const status = String(
+        offer?.status ||
+        offer?.voucherStatus ||
+        displayItem?.status ||
+        displayItem?.voucherStatus ||
+        ""
+    ).toLowerCase();
+    if (status === "expired" || status === "expired_offer") {
+        return true;
+    }
+
+    const expiryValue =
+        offer?.endDate ||
+        offer?.validTo ||
+        offer?.expiresAt ||
+        offer?.expiryDate ||
+        offer?.expiry ||
+        displayItem?.endDate ||
+        displayItem?.validTo ||
+        displayItem?.expiresAt ||
+        displayItem?.expiryDate ||
+        displayItem?.expiry ||
+        displayItem?.offer?.endDate ||
+        displayItem?.offer?.validTo ||
+        displayItem?.offer?.expiresAt ||
+        displayItem?.offer?.expiryDate ||
+        displayItem?.offer?.expiry;
+
+    if (!expiryValue) {
+        return false;
+    }
+
+    const expiryDate = new Date(expiryValue);
+    if (Number.isNaN(expiryDate.getTime())) {
+        return false;
+    }
+
+    return expiryDate.getTime() < Date.now();
+};
+
+const getClaimDisplayItem = (item) => item?.offer || item;
+
+const isValidClaimedDeal = (item) => {
+    const displayItem = getClaimDisplayItem(item);
+    return Boolean(
+        displayItem?.offerId ||
+        displayItem?._id ||
+        displayItem?.requestId ||
+        displayItem?.id
+    );
+};
+
+const ClaimedOfferCard = React.memo(({ item, navigation, colors }) => {
+    const displayItem = getClaimDisplayItem(item);
+    const offerTitle = displayItem?.title || displayItem?.bannerTitle || "Untitled Offer";
+    const merchantName =
+        displayItem?.merchantName ||
+        displayItem?.shopName ||
+        displayItem?.businessName ||
+        displayItem?.storeName ||
+        displayItem?.merchant?.name ||
+        "Unknown Merchant";
+    const imageUri =
+        displayItem?.image ||
+        displayItem?.imageUrl ||
+        displayItem?.offerImage ||
+        displayItem?.selectedProducts?.[0]?.imageUrl ||
+        null;
+
+    const expired = isOfferExpired(item);
+    const isRedeemed = item.status === "redeemed";
+
+    return (
+        <TouchableOpacity
+            onPress={() => navigation.navigate("OfferDetails", { offerData: displayItem })}
+            activeOpacity={0.8}
+            style={styles.card}
+        >
+            {imageUri ? (
+                <Image source={{ uri: imageUri }} style={styles.offerImage} />
+            ) : (
+                <View style={styles.imagePlaceholder} />
+            )}
+
+            <View style={{ flex: 1, marginLeft: 12 }}>
+                <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                    <Text style={{ flex: 1, marginRight: 8, ...textPresets.body, lineHeight: Math.round(14 * 1.5) }} numberOfLines={1}>
+                        {offerTitle}
+                    </Text>
+                    {isRedeemed ? (
+                        <View style={[styles.badge, { backgroundColor: "#e8f5e9" }]}>
+                            <Text style={[styles.badgeText, { color: "#2e7d32" }]}>REDEEMED</Text>
+                        </View>
+                    ) : expired ? (
+                        <View style={[styles.badge, { backgroundColor: "#ffebee" }]}>
+                            <Text style={[styles.badgeText, { color: "#c62828" }]}>EXPIRED</Text>
+                        </View>
+                    ) : (
+                        <View style={[styles.badge, { backgroundColor: "#e3f2fd" }]}>
+                            <Text style={[styles.badgeText, { color: "#1565c0" }]}>ACTIVE</Text>
+                        </View>
+                    )}
+                </View>
+
+                <Text style={{ ...textPresets.caption, color: colors.text, marginTop: 2 }} numberOfLines={1}>
+                    Deal by {merchantName}
+                </Text>
+            </View>
+        </TouchableOpacity>
+    );
+});
 
 export default function Claimed({ navigation }) {
     const { colors } = useContext(ThemeContext);
@@ -28,68 +144,19 @@ export default function Claimed({ navigation }) {
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState("");
 
-    const isOfferExpired = (offer) => {
-        if (!offer) return false;
-
-        const displayItem = offer?.offer || offer;
-        const status = String(
-            offer?.status ||
-            offer?.voucherStatus ||
-            displayItem?.status ||
-            displayItem?.voucherStatus ||
-            ""
-        ).toLowerCase();
-        if (status === "expired" || status === "expired_offer") {
-            return true;
-        }
-
-        const expiryValue =
-            offer?.endDate ||
-            offer?.validTo ||
-            offer?.expiresAt ||
-            offer?.expiryDate ||
-            offer?.expiry ||
-            displayItem?.endDate ||
-            displayItem?.validTo ||
-            displayItem?.expiresAt ||
-            displayItem?.expiryDate ||
-            displayItem?.expiry ||
-            displayItem?.offer?.endDate ||
-            displayItem?.offer?.validTo ||
-            displayItem?.offer?.expiresAt ||
-            displayItem?.offer?.expiryDate ||
-            displayItem?.offer?.expiry;
-
-        if (!expiryValue) {
-            return false;
-        }
-
-        const expiryDate = new Date(expiryValue);
-        if (Number.isNaN(expiryDate.getTime())) {
-            return false;
-        }
-
-        return expiryDate.getTime() < Date.now();
-    };
-
-    const getClaimDisplayItem = (item) => item?.offer || item;
-
-    const isValidClaimedDeal = (item) => {
-        const displayItem = getClaimDisplayItem(item);
-        return Boolean(
-            displayItem?.offerId ||
-            displayItem?._id ||
-            displayItem?.requestId ||
-            displayItem?.id
-        );
-    };
-
     const loadClaimedOffers = useCallback(async ({ isRefresh = false } = {}) => {
         try {
             if (isRefresh) {
                 setRefreshing(true);
             } else {
-                setLoading(true);
+                // Stale-While-Revalidate: Show cached data immediately if available
+                const cached = await getCachedClaimedOffers();
+                if (Array.isArray(cached) && cached.length > 0) {
+                    setClaimedOffers(cached);
+                    setLoading(false);
+                } else {
+                    setLoading(true);
+                }
             }
 
             setError("");
@@ -111,33 +178,120 @@ export default function Claimed({ navigation }) {
         }, [loadClaimedOffers]),
     );
 
-    const activeSavingsCount = claimedOffers.filter(
-        (item) => item.status === "active" && !isOfferExpired(item) && isValidClaimedDeal(item)
-    ).length;
+    const activeSavingsCount = useMemo(
+        () => claimedOffers.filter((item) => item.status === "active" && !isOfferExpired(item) && isValidClaimedDeal(item)).length,
+        [claimedOffers]
+    );
 
-    const claimedCodesCount = claimedOffers.filter(isValidClaimedDeal).length;
+    const claimedCodesCount = useMemo(
+        () => claimedOffers.filter(isValidClaimedDeal).length,
+        [claimedOffers]
+    );
 
-    const totalRedeemedCount = claimedOffers.filter(
-        (item) => item.status === "redeemed" && isValidClaimedDeal(item)
-    ).length;
+    const totalRedeemedCount = useMemo(
+        () => claimedOffers.filter((item) => item.status === "redeemed" && isValidClaimedDeal(item)).length,
+        [claimedOffers]
+    );
 
-    const expiredCount = claimedOffers.filter(
-        (item) => (item.status === "expired" || isOfferExpired(item)) && isValidClaimedDeal(item)
-    ).length;
+    const expiredCount = useMemo(
+        () => claimedOffers.filter((item) => (item.status === "expired" || isOfferExpired(item)) && isValidClaimedDeal(item)).length,
+        [claimedOffers]
+    );
 
-    const filteredOffers = claimedOffers.filter((item) => {
-        if (!isValidClaimedDeal(item)) return false;
-        if (selectedFilter === "active") {
-            return item.status === "active" && !isOfferExpired(item);
-        }
-        if (selectedFilter === "redeemed") {
-            return item.status === "redeemed";
-        }
-        if (selectedFilter === "expired") {
-            return item.status === "expired" || isOfferExpired(item);
-        }
-        return true; // "all"
-    });
+    const filteredOffers = useMemo(() => {
+        return claimedOffers.filter((item) => {
+            if (!isValidClaimedDeal(item)) return false;
+            if (selectedFilter === "active") {
+                return item.status === "active" && !isOfferExpired(item);
+            }
+            if (selectedFilter === "redeemed") {
+                return item.status === "redeemed";
+            }
+            if (selectedFilter === "expired") {
+                return item.status === "expired" || isOfferExpired(item);
+            }
+            return true; // "all"
+        });
+    }, [claimedOffers, selectedFilter]);
+
+    const renderItem = useCallback(({ item }) => (
+        <ClaimedOfferCard item={item} navigation={navigation} colors={colors} />
+    ), [navigation, colors]);
+
+    const keyExtractor = useCallback((item, index) => {
+        const displayItem = getClaimDisplayItem(item);
+        return String(displayItem?.offerId || displayItem?._id || displayItem?.requestId || item?.id || `claimed-${index}`);
+    }, []);
+
+    const ListHeader = useMemo(() => (
+        <>
+            <View style={styles.metricsGrid}>
+                <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={() => setSelectedFilter("all")}
+                    style={[
+                        styles.metricCard,
+                        selectedFilter === "all" && styles.metricCardActive,
+                    ]}
+                >
+                    <View style={[styles.iconWrap, { backgroundColor: "#eff6ff" }]}>
+                        <MaterialIcons name="qr-code" size={20} color="#3b82f6" />
+                    </View>
+                    <View style={styles.metricTextWrap}>
+                        <Text style={styles.metricCount}>{claimedCodesCount}</Text>
+                        <Text style={styles.metricLabel}>Claimed Codes</Text>
+                    </View>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={() => setSelectedFilter("redeemed")}
+                    style={[
+                        styles.metricCard,
+                        selectedFilter === "redeemed" && styles.metricCardActive,
+                    ]}
+                >
+                    <View style={[styles.iconWrap, { backgroundColor: "#fffbeb" }]}>
+                        <MaterialIcons name="check-circle" size={20} color="#d97706" />
+                    </View>
+                    <View style={styles.metricTextWrap}>
+                        <Text style={styles.metricCount}>{totalRedeemedCount}</Text>
+                        <Text style={styles.metricLabel}>Total Redeemed</Text>
+                    </View>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={() => setSelectedFilter("expired")}
+                    style={[
+                        styles.metricCard,
+                        selectedFilter === "expired" && styles.metricCardActive,
+                    ]}
+                >
+                    <View style={[styles.iconWrap, { backgroundColor: "#fef2f2" }]}>
+                        <MaterialIcons name="history" size={20} color="#ef4444" />
+                    </View>
+                    <View style={styles.metricTextWrap}>
+                        <Text style={styles.metricCount}>{expiredCount}</Text>
+                        <Text style={styles.metricLabel}>Expired</Text>
+                    </View>
+                </TouchableOpacity>
+            </View>
+
+            {error ? (
+                <Text style={[styles.infoText, { color: "#D32F2F" }]}>{error}</Text>
+            ) : null}
+
+            {!error && !loading && filteredOffers.length === 0 ? (
+                <Text style={[styles.infoText, { color: colors.text }]}>
+                    {selectedFilter === "active" && "No active claimed offers."}
+                    {selectedFilter === "redeemed" && "No redeemed offers."}
+                    {selectedFilter === "expired" && "No expired offers."}
+                    {selectedFilter === "all" && "No claimed offers found."}
+                </Text>
+            ) : null}
+        </>
+    ), [selectedFilter, claimedCodesCount, totalRedeemedCount, expiredCount, error, loading, filteredOffers.length, colors.text]);
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
@@ -159,7 +313,6 @@ export default function Claimed({ navigation }) {
                             style={{ padding: 10 }}
                         />
                     </View>
-
                 </TouchableOpacity>
                 <View style={{ flexDirection: "column" }}>
                     <Text style={{ ...textPresets.title }}>Claimed Offers</Text>
@@ -168,166 +321,28 @@ export default function Claimed({ navigation }) {
 
             <View style={{ flexDirection: "row", backgroundColor: colors.divider, height: 1, marginVertical: 6 }} />
 
-            <ScrollView
-                contentContainerStyle={{ paddingBottom: 90 }}
-                refreshControl={
-                    <RefreshControl
-                        refreshing={refreshing}
-                        onRefresh={() => loadClaimedOffers({ isRefresh: true })}
-                        tintColor={colors.text}
-                    />
-                }
-            >
-                {loading ? (
-                    <ClaimedSkeleton count={4} />
-                ) : (
-                    <>
-                        <View style={styles.metricsGrid}>
-                            {/* <TouchableOpacity
-                            activeOpacity={0.8}
-                            onPress={() => setSelectedFilter("active")}
-                            style={[
-                                styles.metricCard,
-                                selectedFilter === "active" && styles.metricCardActive,
-                            ]}
-                        >
-                            <View style={[styles.iconWrap, { backgroundColor: "#ecfdf5" }]}>
-                                <MaterialIcons name="local-offer" size={20} color="#10b981" />
-                            </View>
-                            <View style={styles.metricTextWrap}>
-                                <Text style={styles.metricCount}>{activeSavingsCount}</Text>
-                                <Text style={styles.metricLabel}>Active Savings</Text>
-                            </View>
-                        </TouchableOpacity> */}
-
-                            <TouchableOpacity
-                                activeOpacity={0.8}
-                                onPress={() => setSelectedFilter("all")}
-                                style={[
-                                    styles.metricCard,
-                                    selectedFilter === "all" && styles.metricCardActive,
-                                ]}
-                            >
-                                <View style={[styles.iconWrap, { backgroundColor: "#eff6ff" }]}>
-                                    <MaterialIcons name="qr-code" size={20} color="#3b82f6" />
-                                </View>
-                                <View style={styles.metricTextWrap}>
-                                    <Text style={styles.metricCount}>{claimedCodesCount}</Text>
-                                    <Text style={styles.metricLabel}>Claimed Codes</Text>
-                                </View>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                activeOpacity={0.8}
-                                onPress={() => setSelectedFilter("redeemed")}
-                                style={[
-                                    styles.metricCard,
-                                    selectedFilter === "redeemed" && styles.metricCardActive,
-                                ]}
-                            >
-                                <View style={[styles.iconWrap, { backgroundColor: "#fffbeb" }]}>
-                                    <MaterialIcons name="check-circle" size={20} color="#d97706" />
-                                </View>
-                                <View style={styles.metricTextWrap}>
-                                    <Text style={styles.metricCount}>{totalRedeemedCount}</Text>
-                                    <Text style={styles.metricLabel}>Total Redeemed</Text>
-                                </View>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity
-                                activeOpacity={0.8}
-                                onPress={() => setSelectedFilter("expired")}
-                                style={[
-                                    styles.metricCard,
-                                    selectedFilter === "expired" && styles.metricCardActive,
-                                ]}
-                            >
-                                <View style={[styles.iconWrap, { backgroundColor: "#fef2f2" }]}>
-                                    <MaterialIcons name="history" size={20} color="#ef4444" />
-                                </View>
-                                <View style={styles.metricTextWrap}>
-                                    <Text style={styles.metricCount}>{expiredCount}</Text>
-                                    <Text style={styles.metricLabel}>Expired</Text>
-                                </View>
-                            </TouchableOpacity>
-                        </View>
-
-                        {error ? (
-                            <Text style={[styles.infoText, { color: "#D32F2F" }]}>{error}</Text>
-                        ) : null}
-
-                        {!error && filteredOffers.length === 0 ? (
-                            <Text style={[styles.infoText, { color: colors.text }]}>
-                                {selectedFilter === "active" && "No active claimed offers."}
-                                {selectedFilter === "redeemed" && "No redeemed offers."}
-                                {selectedFilter === "expired" && "No expired offers."}
-                                {selectedFilter === "all" && "No claimed offers found."}
-                            </Text>
-                        ) : null}
-
-                        {filteredOffers.map((item, index) => {
-                            const displayItem = getClaimDisplayItem(item);
-                            const offerTitle = displayItem?.title || displayItem?.bannerTitle || "Untitled Offer";
-                            const merchantName =
-                                displayItem?.merchantName ||
-                                displayItem?.shopName ||
-                                displayItem?.businessName ||
-                                displayItem?.storeName ||
-                                displayItem?.merchant?.name ||
-                                "Unknown Merchant";
-                            const imageUri =
-                                displayItem?.image ||
-                                displayItem?.imageUrl ||
-                                displayItem?.offerImage ||
-                                displayItem?.selectedProducts?.[0]?.imageUrl ||
-                                null;
-
-                            const isExpired = isOfferExpired(item);
-                            const isRedeemed = item.status === "redeemed";
-
-                            return (
-                                <TouchableOpacity
-                                    key={displayItem?.offerId || displayItem?._id || displayItem?.requestId || item?.id || `claimed-${index}`}
-                                    onPress={() => navigation.navigate("OfferDetails", { offerData: displayItem })}
-                                    activeOpacity={0.8}
-                                    style={styles.card}
-                                >
-                                    {imageUri ? (
-                                        <Image source={{ uri: imageUri }} style={styles.offerImage} />
-                                    ) : (
-                                        <View style={styles.imagePlaceholder} />
-                                    )}
-
-                                    <View style={{ flex: 1, marginLeft: 12 }}>
-                                        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-                                            <Text style={{ flex: 1, marginRight: 8, ...textPresets.body, lineHeight: Math.round(14 * 1.5) }} numberOfLines={1}>
-                                                {offerTitle}
-                                            </Text>
-                                            {isRedeemed ? (
-                                                <View style={[styles.badge, { backgroundColor: "#e8f5e9" }]}>
-                                                    <Text style={[styles.badgeText, { color: "#2e7d32" }]}>REDEEMED</Text>
-                                                </View>
-                                            ) : isExpired ? (
-                                                <View style={[styles.badge, { backgroundColor: "#ffebee" }]}>
-                                                    <Text style={[styles.badgeText, { color: "#c62828" }]}>EXPIRED</Text>
-                                                </View>
-                                            ) : (
-                                                <View style={[styles.badge, { backgroundColor: "#e3f2fd" }]}>
-                                                    <Text style={[styles.badgeText, { color: "#1565c0" }]}>ACTIVE</Text>
-                                                </View>
-                                            )}
-                                        </View>
-
-                                        <Text style={{ ...textPresets.caption, color: colors.text, marginTop: 2 }} numberOfLines={1}>
-                                            Deal by {merchantName}
-                                        </Text>
-                                    </View>
-                                </TouchableOpacity>
-                            );
-                        })}
-                    </>
-                )}
-            </ScrollView>
+            {loading ? (
+                <ClaimedSkeleton count={4} />
+            ) : (
+                <FlatList
+                    data={filteredOffers}
+                    renderItem={renderItem}
+                    keyExtractor={keyExtractor}
+                    ListHeaderComponent={ListHeader}
+                    contentContainerStyle={{ paddingBottom: 90 }}
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={refreshing}
+                            onRefresh={() => loadClaimedOffers({ isRefresh: true })}
+                            tintColor={colors.text}
+                        />
+                    }
+                    initialNumToRender={10}
+                    maxToRenderPerBatch={10}
+                    windowSize={5}
+                    removeClippedSubviews={true}
+                />
+            )}
 
             <SafeAreaView
                 edges={["bottom"]}

@@ -273,7 +273,7 @@ export default function NotificationsPage({ navigation }) {
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Notifications</Text>
         </View>
-        <Text style={styles.headerBadge}>{unreadCount > 0 ? `${unreadCount} new` : 'Live'}</Text>
+        {/* <Text style={styles.headerBadge}>{unreadCount > 0 ? `${unreadCount} new` : 'Live'}</Text> */}
       </View>
 
       {loading ? (

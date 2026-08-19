@@ -48,29 +48,34 @@ async function fetchWithAuth(url, options = {}) {
   return fetch(url, { headers, ...options });
 }
 
+async function getLocalFavoriteAds() {
+  try {
+    const key = await getFavoritesStorageKey();
+    const raw = await AsyncStorage.getItem(key);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch { }
+  return [];
+}
+
 async function getFavoriteAds() {
   try {
     const response = await fetchWithAuth(`${BASE_URL}/users/wishlist`);
     if (response?.ok) {
       const json = await response.json();
       if (Array.isArray(json?.data)) {
-        return json.data.filter((item) => item._type === "ad" || (!item._type && Boolean(item.adId)));
+        const filtered = json.data.filter((item) => item._type === "ad" || (!item._type && Boolean(item.adId)));
+        await saveFavoriteAds(filtered);
+        return filtered;
       }
     }
   } catch (error) {
     console.warn("Favorite ads fetch failed:", error?.message || error);
   }
 
-  const key = await getFavoritesStorageKey();
-  const raw = await AsyncStorage.getItem(key);
-  if (!raw) return [];
-
-  try {
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch (error) {
-    return [];
-  }
+  return await getLocalFavoriteAds();
 }
 
 async function getFavoriteIds() {
@@ -138,6 +143,7 @@ async function toggleFavoriteAd(ad) {
 export {
   getAdId,
   getFavoriteAds,
+  getLocalFavoriteAds,
   isFavoriteAdId,
   toggleFavoriteAd,
 };

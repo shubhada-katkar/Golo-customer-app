@@ -107,6 +107,37 @@ async function authorizedMultipartFetch(path, formData, timeoutMs = 15000) {
 }
 
 
+let inMemoryConversationsCache = null;
+
+async function getCachedConversations() {
+  if (Array.isArray(inMemoryConversationsCache) && inMemoryConversationsCache.length > 0) {
+    return inMemoryConversationsCache;
+  }
+  try {
+    const { userId } = await getAuthContext();
+    const key = `@golo_conversations_cache_${userId || "guest"}`;
+    const raw = await AsyncStorage.getItem(key);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        inMemoryConversationsCache = parsed;
+        return parsed;
+      }
+    }
+  } catch { }
+  return [];
+}
+
+async function setCachedConversations(conversations) {
+  if (!Array.isArray(conversations)) return;
+  inMemoryConversationsCache = conversations;
+  try {
+    const { userId } = await getAuthContext();
+    const key = `@golo_conversations_cache_${userId || "guest"}`;
+    await AsyncStorage.setItem(key, JSON.stringify(conversations));
+  } catch { }
+}
+
 async function listConversations() {
   try {
     const data = await authorizedFetch("/chats/conversations", { method: "GET" });
@@ -156,16 +187,18 @@ async function listConversations() {
             };
           })
         );
+        await setCachedConversations(enriched);
         return enriched;
       }
     } catch (err) {
       console.log("Error enriching conversations list with local states", err);
     }
 
+    await setCachedConversations(conversationList);
     return conversationList;
   } catch (err) {
     console.log("Failed to load conversations list:", err.message);
-    return [];
+    return await getCachedConversations();
   }
 }
 
@@ -412,6 +445,7 @@ async function uploadChatImage(localUri, fileName = "image.jpg", mimeType = "ima
 
 export {
   getAuthContext,
+  getCachedConversations,
   listConversations,
   startConversation,
   listMessages,

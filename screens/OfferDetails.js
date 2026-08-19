@@ -1010,6 +1010,50 @@ export default function OfferDetails({ navigation, route }) {
                                 </TouchableOpacity>
                             </View>
 
+                            {isVoucherRedeemed(voucher) && !reviewSubmitted ? (
+                                <View style={styles.reviewContainer}>
+                                    <Text style={styles.reviewLabel}>Write a review</Text>
+                                    <View style={styles.ratingRow}>
+                                        {Array.from({ length: 5 }).map((_, starIndex) => (
+                                            <TouchableOpacity
+                                                key={starIndex}
+                                                onPress={() => !reviewLoading && setReviewRating(starIndex + 1)}
+                                                disabled={reviewLoading}
+                                            >
+                                                <Ionicons
+                                                    name={starIndex < reviewRating ? "star" : "star-outline"}
+                                                    size={26}
+                                                    color={starIndex < reviewRating ? "#fbbf24" : "#9ca3af"}
+                                                    style={styles.ratingStar}
+                                                />
+                                            </TouchableOpacity>
+                                        ))}
+                                    </View>
+                                    <TextInput
+                                        style={styles.reviewInput}
+                                        placeholder="Write your review for the merchant or offer..."
+                                        placeholderTextColor="#6b7280"
+                                        value={reviewText}
+                                        onChangeText={setReviewText}
+                                        multiline
+                                        editable={!reviewLoading}
+                                    />
+                                    <TouchableOpacity
+                                        style={[
+                                            styles.reviewButton,
+                                            reviewLoading ? styles.disabledBtn : null,
+                                        ]}
+                                        onPress={submitReview}
+                                        disabled={reviewLoading}
+                                    >
+                                        {reviewLoading ? (
+                                            <ActivityIndicator size="small" color="#fff" />
+                                        ) : (
+                                            <Text style={styles.reviewButtonText}>Submit Review</Text>
+                                        )}
+                                    </TouchableOpacity>
+                                </View>
+                            ) : null}
 
                             {/* How to Redeem Section */}
                             <View style={[styles.card, styles.redeemCard]}>
@@ -1060,53 +1104,6 @@ export default function OfferDetails({ navigation, route }) {
                                     );
                                 })}
                             </View>
-
-
-                            {isVoucherRedeemed(voucher) && !reviewSubmitted ? (
-                                <View style={styles.reviewContainer}>
-                                    <Text style={styles.reviewLabel}>Write a review</Text>
-                                    <Text style={styles.ratingLabel}>Rate your experience</Text>
-                                    <View style={styles.ratingRow}>
-                                        {Array.from({ length: 5 }).map((_, starIndex) => (
-                                            <TouchableOpacity
-                                                key={starIndex}
-                                                onPress={() => !reviewLoading && setReviewRating(starIndex + 1)}
-                                                disabled={reviewLoading}
-                                            >
-                                                <Ionicons
-                                                    name={starIndex < reviewRating ? "star" : "star-outline"}
-                                                    size={28}
-                                                    color={starIndex < reviewRating ? "#fbbf24" : "#9ca3af"}
-                                                    style={styles.ratingStar}
-                                                />
-                                            </TouchableOpacity>
-                                        ))}
-                                    </View>
-                                    <TextInput
-                                        style={styles.reviewInput}
-                                        placeholder="Write your review for the merchant or offer..."
-                                        placeholderTextColor="#6b7280"
-                                        value={reviewText}
-                                        onChangeText={setReviewText}
-                                        multiline
-                                        editable={!reviewLoading}
-                                    />
-                                    <TouchableOpacity
-                                        style={[
-                                            styles.reviewButton,
-                                            reviewLoading ? styles.disabledBtn : null,
-                                        ]}
-                                        onPress={submitReview}
-                                        disabled={reviewLoading}
-                                    >
-                                        {reviewLoading ? (
-                                            <ActivityIndicator size="small" color="#fff" />
-                                        ) : (
-                                            <Text style={styles.reviewButtonText}>Submit Review</Text>
-                                        )}
-                                    </TouchableOpacity>
-                                </View>
-                            ) : null}
                         </View>
                     </ScrollView>
                 </KeyboardAvoidingView>
@@ -1423,14 +1420,8 @@ const styles = StyleSheet.create({
     },
     reviewLabel: {
         ...textPresets.subtitle,
-        marginBottom: 10,
         color: "#111827",
-    },
-    ratingLabel: {
-        ...textPresets.body,
-        marginBottom: 8,
-        color: "#111827",
-        lineHeight: Math.round(14 * 1.5),
+        marginBottom: 8
     },
     ratingRow: {
         flexDirection: "row",
@@ -1448,8 +1439,7 @@ const styles = StyleSheet.create({
         padding: 12,
         color: "#111827",
         textAlignVertical: "top",
-        ...textPresets.body,
-        lineHeight: Math.round(14 * 1.5),
+        ...textPresets.label,
     },
     reviewButton: {
         marginTop: 12,

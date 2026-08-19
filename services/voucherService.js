@@ -110,6 +110,34 @@ export const fetchMyVouchers = async (options = {}) => {
   return payload?.data || [];
 };
 
+const CLAIMED_CACHE_KEY = "@golo_claimed_offers_cache";
+let inMemoryClaimedOffersCache = null;
+
+export const getCachedClaimedOffers = async () => {
+  if (Array.isArray(inMemoryClaimedOffersCache) && inMemoryClaimedOffersCache.length > 0) {
+    return inMemoryClaimedOffersCache;
+  }
+  try {
+    const raw = await AsyncStorage.getItem(CLAIMED_CACHE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        inMemoryClaimedOffersCache = parsed;
+        return parsed;
+      }
+    }
+  } catch { }
+  return [];
+};
+
+export const setCachedClaimedOffers = async (offers) => {
+  if (!Array.isArray(offers)) return;
+  inMemoryClaimedOffersCache = offers;
+  try {
+    await AsyncStorage.setItem(CLAIMED_CACHE_KEY, JSON.stringify(offers));
+  } catch { }
+};
+
 const normalizeClaimedOffer = (item) => ({
   ...item,
   id: item?.id || item?._id || null,
@@ -125,24 +153,16 @@ const normalizeClaimedOffer = (item) => ({
 });
 
 export const fetchMyClaimedOffers = async (options = {}) => {
-  const limit = Number(options?.limit) || 50;
-  const params = new URLSearchParams();
-  params.set("limit", String(limit));
+  const limit = Number(options?.limit) || 100;
+  const page = Number(options?.page) || 1;
 
-  try {
-    const query = params.toString();
-    const payload = await authorizedFetch(
-      `/vouchers/my-claimed-offers${query ? `?${query}` : ""}`,
-      { method: "GET" },
-      "Unable to load claimed offers"
-    );
+  const vouchers = await fetchMyVouchers({ page, limit, status: options?.status });
+  const normalized = (Array.isArray(vouchers) ? vouchers : []).map(normalizeClaimedOffer);
 
-    const list = Array.isArray(payload?.data) ? payload.data : Array.isArray(payload) ? payload : [];
-    return list.map(normalizeClaimedOffer);
-  } catch (error) {
-    const vouchers = await fetchMyVouchers({ page: 1, limit });
-    return (Array.isArray(vouchers) ? vouchers : []).map(normalizeClaimedOffer);
+  if (normalized.length > 0) {
+    setCachedClaimedOffers(normalized);
   }
+  return normalized;
 };
 
 export const fetchVoucherById = async (voucherId) => {
@@ -220,5 +240,7 @@ export default {
   fetchMyVouchers,
   fetchVoucherById,
   findVoucherForOffer,
+  getCachedClaimedOffers,
+  setCachedClaimedOffers,
   submitOfferReview,
 };
