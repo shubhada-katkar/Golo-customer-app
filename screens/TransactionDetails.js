@@ -1,45 +1,128 @@
-import React, { useContext } from "react";
+import React, { useContext, useState, useCallback } from "react";
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
+  ScrollView,
+  ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
 import { ThemeContext } from "../theme/ThemeContext";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
 import Topbar from "../components/Topbar";
 import { LinearGradient } from "expo-linear-gradient";
 import { textPresets } from "../theme/typography";
+import { BASE_URL } from "../config";
+import { getValidToken } from "../services/authService";
+
+const formatDateTime = (dateString) => {
+  if (!dateString) return "N/A";
+  try {
+    const d = new Date(dateString);
+    if (isNaN(d.getTime())) return dateString;
+    return d.toLocaleString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+  } catch {
+    return dateString;
+  }
+};
+
+const getStatusColors = (status) => {
+  const s = (status || "").toLowerCase();
+  if (s === "captured" || s === "completed" || s === "paid" || s === "success") {
+    return { bg: "#e3f2ea", text: "#157a4f", label: "Success" };
+  }
+  if (s === "created" || s === "authorized" || s === "pending") {
+    return { bg: "#fdf0db", text: "#f5b849", label: "Pending" };
+  }
+  if (s === "failed" || s === "cancelled" || s === "declined") {
+    return { bg: "#fde8e8", text: "#d9534f", label: "Failed" };
+  }
+  if (s === "refunded" || s === "partially_refunded") {
+    return { bg: "#f0ebf8", text: "#6f42c1", label: "Refunded" };
+  }
+  return { bg: "#f0f0f0", text: "#777777", label: status || "Unknown" };
+};
 
 export default function TransactionDetails() {
   const { colors } = useContext(ThemeContext);
   const navigation = useNavigation();
   const route = useRoute();
 
-  const { transaction } = route.params;
+  const initialTransaction = route.params?.transaction || {};
+  const paymentId = route.params?.paymentId || initialTransaction.paymentId || initialTransaction.id;
 
-  const getStatusColors = (status) => {
-    const s = (status || "").toLowerCase();
-    if (s === "success" || s === "completed" || s === "paid") {
-      return { bg: "#e3f2ea", text: "#157a4f" };
+  const [txData, setTxData] = useState(initialTransaction);
+  const [loading, setLoading] = useState(!initialTransaction.paymentId && !!paymentId);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchLivePaymentDetails = useCallback(async (isSilent = false) => {
+    if (!paymentId) return;
+    if (!isSilent && !txData.paymentId) setLoading(true);
+
+    try {
+      const token = await getValidToken();
+      const res = await fetch(`${BASE_URL}/payments/${paymentId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      const json = await res.json();
+      if (res.ok && json?.success && json?.data) {
+        setTxData(json.data);
+      }
+    } catch {
+      // Keep existing route param data on network error
+    } finally {
+      if (!isSilent) {
+        setLoading(false);
+        setRefreshing(false);
+      }
     }
-    if (s === "pending" || s === "processing") {
-      return { bg: "#fdf0db", text: "#f5b849" };
-    }
-    if (s === "failed" || s === "cancelled" || s === "declined") {
-      return { bg: "#f0f0f0", text: "#777777" };
-    }
-    return { bg: "#f0f0f0", text: "#777777" };
+  }, [paymentId, txData.paymentId]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchLivePaymentDetails(false);
+      // Poll every 5s if status is pending/created
+      const statusStr = (txData.status || "").toLowerCase();
+      let interval;
+      if (statusStr === "created" || statusStr === "pending" || statusStr === "authorized") {
+        interval = setInterval(() => {
+          fetchLivePaymentDetails(true);
+        }, 5000);
+      }
+      return () => {
+        if (interval) clearInterval(interval);
+      };
+    }, [fetchLivePaymentDetails, txData.status])
+  );
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchLivePaymentDetails(true);
   };
 
-  const statusColors = getStatusColors(transaction.status);
+  const statusColors = getStatusColors(txData.status);
+
+  const displayAmount = txData.amount != null
+    ? `₹${txData.amount}`
+    : txData.amountInPaise
+      ? `₹${txData.amountInPaise / 100}`
+      : "₹0";
 
   return (
-    <SafeAreaView
-      style={{ flex: 1, backgroundColor: colors.background }}
-    >
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <LinearGradient
         colors={["#f8a812", "#fad081", "#f8f6f265"]}
         start={{ x: 0, y: 0 }}
@@ -54,10 +137,7 @@ export default function TransactionDetails() {
           onPress={() => navigation.goBack()}
           style={styles.backButton}
         >
-          <MaterialIcons
-            name="arrow-back-ios"
-            size={22}
-          />
+          <MaterialIcons name="arrow-back-ios" size={22} color={colors.text} />
         </TouchableOpacity>
 
         <Text style={styles.heading}>
@@ -65,64 +145,174 @@ export default function TransactionDetails() {
         </Text>
       </View>
 
-      {/* Hero Amount Card */}
-      <View style={styles.heroCard}>
-        <Text style={[styles.cardTitle, { alignSelf: "flex-start" }]}>Transaction Amount</Text>
-        <Text style={styles.heroLabel}>Total Amount</Text>
-        <Text style={styles.heroAmount}>{transaction.amount}</Text>
-
-        <View
-          style={[
-            styles.statusBadge,
-            { backgroundColor: statusColors.bg },
-          ]}
-        >
-          <View
-            style={[
-              styles.statusDot,
-              { backgroundColor: statusColors.text },
-            ]}
-          />
-          <Text style={[styles.statusText, { color: statusColors.text }]}>
-            {transaction.status}
-          </Text>
-        </View>
-      </View>
-
-      {/* Details Card */}
-      <View
-        style={[
-          styles.card,
-          {
-            backgroundColor: "#fff",
-            borderColor: "#eee",
-          },
-        ]}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 30 }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#157a4f"]} />
+        }
       >
-        <Text style={styles.cardTitle}>
-          Transaction Info
-        </Text>
+        {loading && !txData.paymentId ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#157a4f" />
+            <Text style={[styles.loadingText, { color: colors.text }]}>Fetching transaction details...</Text>
+          </View>
+        ) : (
+          <>
+            {/* Hero Amount Card */}
+            <View style={styles.heroCard}>
+              <Text style={[styles.cardTitle, { alignSelf: "flex-start" }]}>Transaction Summary</Text>
+              <Text style={styles.heroLabel}>Total Amount</Text>
+              <Text style={styles.heroAmount}>{displayAmount}</Text>
 
-        <DetailRow
-          icon="receipt-long"
-          label="Transaction ID"
-          value={transaction.id}
-          colors={colors}
-        />
-        <View style={[styles.rowDivider, { backgroundColor: "#f0f0f0" }]} />
+              <View
+                style={[
+                  styles.statusBadge,
+                  { backgroundColor: statusColors.bg },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.statusDot,
+                    { backgroundColor: statusColors.text },
+                  ]}
+                />
+                <Text style={[styles.statusText, { color: statusColors.text }]}>
+                  {statusColors.label}
+                </Text>
+              </View>
+            </View>
 
-        <DetailRow
-          icon="event"
-          label="Date"
-          value={transaction.date}
-          colors={colors}
-        />
-      </View>
+            {/* Details Card */}
+            <View
+              style={[
+                styles.card,
+                {
+                  backgroundColor: "#fff",
+                  borderColor: "#eee",
+                },
+              ]}
+            >
+              <Text style={styles.cardTitle}>
+                Transaction Info
+              </Text>
+
+              <DetailRow
+                icon="receipt-long"
+                label="Transaction ID"
+                value={txData.paymentId || txData.id || "N/A"}
+                colors={colors}
+              />
+              <View style={[styles.rowDivider, { backgroundColor: "#f0f0f0" }]} />
+
+              <DetailRow
+                icon="event"
+                label="Date & Time"
+                value={formatDateTime(txData.createdAt || txData.date)}
+                colors={colors}
+              />
+              <View style={[styles.rowDivider, { backgroundColor: "#f0f0f0" }]} />
+
+              {txData.razorpayPaymentId ? (
+                <>
+                  <DetailRow
+                    icon="payment"
+                    label="Payment Reference"
+                    value={txData.razorpayPaymentId}
+                    colors={colors}
+                  />
+                  <View style={[styles.rowDivider, { backgroundColor: "#f0f0f0" }]} />
+                </>
+              ) : null}
+
+              {txData.razorpayOrderId ? (
+                <>
+                  <DetailRow
+                    icon="numbers"
+                    label="Order ID"
+                    value={txData.razorpayOrderId}
+                    colors={colors}
+                  />
+                  <View style={[styles.rowDivider, { backgroundColor: "#f0f0f0" }]} />
+                </>
+              ) : null}
+
+              {txData.method ? (
+                <>
+                  <DetailRow
+                    icon="credit-card"
+                    label="Payment Method"
+                    value={String(txData.method).toUpperCase()}
+                    colors={colors}
+                  />
+                  <View style={[styles.rowDivider, { backgroundColor: "#f0f0f0" }]} />
+                </>
+              ) : null}
+
+              {txData.adId ? (
+                <>
+                  <DetailRow
+                    icon="campaign"
+                    label="Ad Reference ID"
+                    value={txData.adId}
+                    colors={colors}
+                  />
+                  <View style={[styles.rowDivider, { backgroundColor: "#f0f0f0" }]} />
+                </>
+              ) : null}
+
+              {txData.description ? (
+                <DetailRow
+                  icon="description"
+                  label="Description"
+                  value={txData.description}
+                  colors={colors}
+                />
+              ) : (
+                <DetailRow
+                  icon="receipt"
+                  label="Receipt Code"
+                  value={txData.receipt || "N/A"}
+                  colors={colors}
+                />
+              )}
+
+              {/* Failure information */}
+              {txData.failureDescription || txData.failureCode ? (
+                <>
+                  <View style={[styles.rowDivider, { backgroundColor: "#f0f0f0" }]} />
+                  <DetailRow
+                    icon="error-outline"
+                    label="Failure Details"
+                    value={txData.failureDescription || txData.failureCode}
+                    colors={colors}
+                    valueColor="#d9534f"
+                  />
+                </>
+              ) : null}
+
+              {/* Refund information */}
+              {txData.refundedAmountInPaise > 0 ? (
+                <>
+                  <View style={[styles.rowDivider, { backgroundColor: "#f0f0f0" }]} />
+                  <DetailRow
+                    icon="history"
+                    label="Refunded Amount"
+                    value={`₹${txData.refundedAmountInPaise / 100}`}
+                    colors={colors}
+                    valueColor="#6f42c1"
+                  />
+                </>
+              ) : null}
+            </View>
+          </>
+        )}
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
-const DetailRow = ({ icon, label, value, colors }) => (
+const DetailRow = ({ icon, label, value, colors, valueColor }) => (
   <View style={styles.row}>
     <View style={styles.rowLeft}>
       <View style={styles.iconBadge}>
@@ -130,7 +320,9 @@ const DetailRow = ({ icon, label, value, colors }) => (
       </View>
       <Text style={[styles.label, { color: colors.subtext || "#777" }]}>{label}</Text>
     </View>
-    <Text style={[styles.value, { color: colors.text }]}>{value}</Text>
+    <Text style={[styles.value, { color: valueColor || colors.text }]}>
+      {value}
+    </Text>
   </View>
 );
 
@@ -143,11 +335,22 @@ const styles = StyleSheet.create({
   },
 
   backButton: {
-    padding: 10
+    padding: 10,
   },
 
   heading: {
-    ...textPresets.title
+    ...textPresets.title,
+  },
+
+  loadingContainer: {
+    padding: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  loadingText: {
+    marginTop: 12,
+    ...textPresets.body,
   },
 
   heroCard: {
@@ -170,13 +373,13 @@ const styles = StyleSheet.create({
     color: "#999999",
     marginBottom: 6,
     lineHeight: Math.round(14 * 1.5),
-    ...textPresets.body
+    ...textPresets.body,
   },
 
   heroAmount: {
     color: "#157a4f",
     marginBottom: 14,
-    ...textPresets.title
+    ...textPresets.title,
   },
 
   statusBadge: {
@@ -213,18 +416,14 @@ const styles = StyleSheet.create({
     ...textPresets.body,
     lineHeight: Math.round(14 * 1.5),
   },
-
   row: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
     paddingVertical: 12,
   },
 
   rowLeft: {
     flexDirection: "row",
     alignItems: "center",
-    flexShrink: 1,
+    marginBottom: 6,
   },
 
   rowDivider: {
@@ -248,7 +447,7 @@ const styles = StyleSheet.create({
 
   value: {
     lineHeight: Math.round(14 * 1.5),
-    marginLeft: 10,
+    marginLeft: 40, // aligns under the label text, past the icon badge
     ...textPresets.body,
   },
 });

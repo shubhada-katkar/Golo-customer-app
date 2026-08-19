@@ -752,6 +752,44 @@ export default function OfferDetails({ navigation, route }) {
         }
     };
 
+    const handlePayOnline = async () => {
+        const merchantUpi =
+            offerData?.merchant?.upiId ||
+            offerData?.merchant?.upi ||
+            offerData?.merchant?.vpa ||
+            offerData?.upiId ||
+            offerData?.upi ||
+            merchantProfile?.upiId ||
+            merchantProfile?.upi ||
+            "";
+
+        const merchantNameParam = encodeURIComponent(merchant || "Merchant");
+        const upiUrl = merchantUpi
+            ? `upi://pay?pa=${encodeURIComponent(merchantUpi)}&pn=${merchantNameParam}&cu=INR`
+            : `upi://pay?pn=${merchantNameParam}&cu=INR`;
+
+        try {
+            const supported = await Linking.canOpenURL("upi://pay");
+            if (supported) {
+                await Linking.openURL(upiUrl);
+            } else {
+                await Linking.openURL(upiUrl).catch(() => {
+                    showAlert(
+                        "No Payment App Found",
+                        "Please install a UPI payment app (Google Pay, PhonePe, Paytm, etc.) to pay online.",
+                        "warning"
+                    );
+                });
+            }
+        } catch (error) {
+            showAlert(
+                "Payment Error",
+                "Unable to open payment app. Please ensure a UPI payment app is installed on your phone.",
+                "error"
+            );
+        }
+    };
+
     const downloadQR = async () => {
         if (!voucher?.qrCode && !voucher?.qrImage) {
             showAlert("QR unavailable", "Please claim this offer first.", "warning");
@@ -1143,9 +1181,17 @@ export default function OfferDetails({ navigation, route }) {
                             </View>
                         )}
 
-                        <TouchableOpacity style={styles.downloadBtn} onPress={downloadQR}>
-                            <Text style={styles.downloadText}>Download QR</Text>
-                        </TouchableOpacity>
+                        <View style={styles.qrModalBtnRow}>
+                            <TouchableOpacity style={styles.payOnlineBtn} onPress={handlePayOnline} activeOpacity={0.85}>
+                                <Ionicons name="card" size={16} color="#fff" style={{ marginRight: 6 }} />
+                                <Text style={styles.payOnlineText}>Pay Online</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity style={styles.downloadBtn} onPress={downloadQR} activeOpacity={0.85}>
+                                <Ionicons name="download-outline" size={16} color="#fff" style={{ marginRight: 6 }} />
+                                <Text style={styles.downloadText}>Download QR</Text>
+                            </TouchableOpacity>
+                        </View>
 
                         <TouchableOpacity onPress={() => setShowQR(false)}>
                             <Text style={styles.closeText}>Close</Text>
@@ -1347,23 +1393,44 @@ const styles = StyleSheet.create({
         ...textPresets.subtitle
     },
     verificationCodeHint: {
+        ...textPresets.caption
+    },
+    qrModalBtnRow: {
+        flexDirection: "row",
+        gap: 10,
+        width: "100%",
+        marginTop: 16,
+    },
+    payOnlineBtn: {
+        flex: 1,
+        backgroundColor: "#f5b849",
+        paddingVertical: 10,
+        paddingHorizontal: 10,
+        borderRadius: 8,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    payOnlineText: {
         ...textPresets.label,
-        color: "#6b7280",
-        textAlign: "center",
+        color: "#fff",
     },
     downloadBtn: {
-        marginTop: 15,
+        flex: 1,
         backgroundColor: "#065f46",
-        padding: 10,
+        paddingVertical: 10,
+        paddingHorizontal: 8,
         borderRadius: 8,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
     },
     downloadText: {
-        ...textPresets.body,
+        ...textPresets.label,
         color: "#fff",
-        lineHeight: Math.round(14 * 1.5),
     },
     closeText: {
-        marginTop: 10,
+        marginTop: 14,
         color: "#f94741",
         lineHeight: Math.round(14 * 1.5),
         ...textPresets.body

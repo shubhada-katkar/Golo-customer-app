@@ -723,7 +723,7 @@ export default function ProfilePage({ navigation }) {
                                     <Feather name="chevron-right" size={20} color={colors.subText || "#aaa"} />
                                 </TouchableOpacity>
 
-                                <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.card || "#fff" }]} onPress={() => openBox()} activeOpacity={0.7}>
+                                {/* <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.card || "#fff" }]} onPress={() => openBox()} activeOpacity={0.7}>
                                     <View style={styles.iconCircle}>
                                         <AntDesign name="question-circle" size={18} color={GREEN} />
                                     </View>
@@ -732,7 +732,7 @@ export default function ProfilePage({ navigation }) {
                                         <Text style={[styles.menuSub, { color: colors.subText || "#888" }]}>View ratings and reviews</Text>
                                     </View>
                                     <Feather name="chevron-right" size={20} color={colors.subText || "#aaa"} />
-                                </TouchableOpacity>
+                                </TouchableOpacity> */}
 
                                 <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.card || "#fff", marginBottom: 0 }]}
                                     onPress={() => { confirmLogout(); }} activeOpacity={0.7}>
