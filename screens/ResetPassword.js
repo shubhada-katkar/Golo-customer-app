@@ -16,7 +16,6 @@ export default function ResetPassword({ navigation, route }) {
   const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const { colors } = useContext(ThemeContext);
 
   const handleResetPassword = async () => {
     if (submitting) {
@@ -76,7 +75,7 @@ export default function ResetPassword({ navigation, route }) {
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+    <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         <Text style={styles.title}>Reset Password</Text>
         <Text style={styles.subtitle}>Set a new password for {email}</Text>

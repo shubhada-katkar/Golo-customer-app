@@ -128,7 +128,7 @@ const ClaimedOfferCard = React.memo(({ item, navigation, colors }) => {
                     )}
                 </View>
 
-                <Text style={{ ...textPresets.caption, color: colors.text, marginTop: 2 }} numberOfLines={1}>
+                <Text style={{ ...textPresets.caption, marginTop: 2 }} numberOfLines={1}>
                     Deal by {merchantName}
                 </Text>
             </View>
@@ -283,7 +283,7 @@ export default function Claimed({ navigation }) {
             ) : null}
 
             {!error && !loading && filteredOffers.length === 0 ? (
-                <Text style={[styles.infoText, { color: colors.text }]}>
+                <Text style={styles.infoText}>
                     {selectedFilter === "active" && "No active claimed offers."}
                     {selectedFilter === "redeemed" && "No redeemed offers."}
                     {selectedFilter === "expired" && "No expired offers."}
@@ -291,10 +291,10 @@ export default function Claimed({ navigation }) {
                 </Text>
             ) : null}
         </>
-    ), [selectedFilter, claimedCodesCount, totalRedeemedCount, expiredCount, error, loading, filteredOffers.length, colors.text]);
+    ), [selectedFilter, claimedCodesCount, totalRedeemedCount, expiredCount, error, loading, filteredOffers.length]);
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+        <SafeAreaView style={{ flex: 1 }}>
             <LinearGradient
                 colors={["#f8a812", "#fad081", "#f8f6f265"]}
                 start={{ x: 0, y: 0 }}
@@ -309,7 +309,6 @@ export default function Claimed({ navigation }) {
                         <MaterialIcons
                             name="arrow-back-ios"
                             size={22}
-                            color={colors.text}
                             style={{ padding: 10 }}
                         />
                     </View>
@@ -319,7 +318,7 @@ export default function Claimed({ navigation }) {
                 </View>
             </View>
 
-            <View style={{ flexDirection: "row", backgroundColor: colors.divider, height: 1, marginVertical: 6 }} />
+            <View style={{ flexDirection: "row", height: 1, marginVertical: 6, backgroundColor: "#000" }} />
 
             {loading ? (
                 <ClaimedSkeleton count={4} />
@@ -334,7 +333,6 @@ export default function Claimed({ navigation }) {
                         <RefreshControl
                             refreshing={refreshing}
                             onRefresh={() => loadClaimedOffers({ isRefresh: true })}
-                            tintColor={colors.text}
                         />
                     }
                     initialNumToRender={10}

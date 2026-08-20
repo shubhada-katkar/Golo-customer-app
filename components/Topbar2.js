@@ -1,7 +1,5 @@
 import React from "react";
 import { Image, View, Text, TouchableOpacity, StyleSheet } from "react-native";
-import { useContext } from "react";
-import { ThemeContext } from "../theme/ThemeContext";
 import { useNavigation } from "@react-navigation/native";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRoute } from "@react-navigation/native";
@@ -9,7 +7,6 @@ import { textPresets } from "../theme/typography";
 
 export default function Topbar2() {
     const navigation = useNavigation();
-    const { colors } = useContext(ThemeContext);
     const route = useRoute();
     const currentRoute = route.name;
     return (

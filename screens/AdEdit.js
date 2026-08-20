@@ -178,8 +178,6 @@ export default function AdEdit({ route, navigation }) {
   const [restrictionUntil, setRestrictionUntil] = useState(null);
   const [countdownText, setCountdownText] = useState("");
 
-  const colors = useContext(ThemeContext);
-
   const templateNumber = useMemo(() => {
     const parsed = Number(ad?.templateId ?? ad?.template ?? 1);
     return Number.isFinite(parsed) ? parsed : 1;
@@ -566,7 +564,7 @@ export default function AdEdit({ route, navigation }) {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+    <SafeAreaView style={{ flex: 1 }}>
       <LinearGradient
         colors={["#f8a812", "#fad081", "#f8f6f265"]}
         start={{ x: 0, y: 0 }}
@@ -582,7 +580,7 @@ export default function AdEdit({ route, navigation }) {
       />
       <Topbar />
 
-      <View style={[styles.header, { backgroundColor: colors.background }]}>
+      <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <MaterialIcons
             name="arrow-back-ios"
@@ -590,7 +588,7 @@ export default function AdEdit({ route, navigation }) {
             style={{ padding: 10 }}
           />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>
+        <Text style={styles.headerTitle}>
           Edit Ad
         </Text>
         <View style={{ width: 24 }} />
@@ -600,7 +598,6 @@ export default function AdEdit({ route, navigation }) {
 
       <ScrollView
         contentContainerStyle={styles.content}
-        style={{ backgroundColor: colors.background }}
       >
         {/* ── Image Section ── */}
         {showImageSection && (

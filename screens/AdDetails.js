@@ -171,7 +171,6 @@ function getCommonAdDetails(adData) {
 }
 
 export default function AdDetails({ route, navigation }) {
-  const { colors } = useContext(ThemeContext);
   const routeAdId = route?.params?.adId || route?.params?.id || route?.params?.ad?.adId || route?.params?.ad?._id || "";
   const { adId } = route.params || {};
   const resolvedAdId = routeAdId || adId || "";
@@ -481,7 +480,7 @@ export default function AdDetails({ route, navigation }) {
           </View>
         </View>
 
-        <View style={{ backgroundColor: colors.divider, height: 1, marginVertical: 6 }} />
+        <View style={{ height: 1, marginVertical: 6, backgroundColor: "#000" }} />
 
         <ScrollView contentContainerStyle={styles.scrollContent}>
           {/* Image Carousel */}

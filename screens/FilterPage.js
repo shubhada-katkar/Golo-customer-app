@@ -6,7 +6,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Topbar from "../components/Topbar";
 import { MaterialIcons } from "@expo/vector-icons";
 import { BASE_URL } from "../config";
-import { ThemeContext } from "../theme/ThemeContext";
 import { LinearGradient } from "expo-linear-gradient";
 import Slider from "@react-native-community/slider";
 import GoloBottom from "../components/GoloBottom";
@@ -14,7 +13,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { textPresets } from "../theme/typography";
 
 export default function FilterPage({ navigation }) {
-    const { colors } = useContext(ThemeContext);
     const [radius, setRadius] = useState(50);
     const [offerTypes, setOfferTypes] = useState({});
 
@@ -98,7 +96,7 @@ export default function FilterPage({ navigation }) {
     ];
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+        <SafeAreaView style={{ flex: 1 }}>
             <LinearGradient
                 colors={["#f8a812", "#fad081", "#f8f6f265"]}
                 start={{ x: 0, y: 0 }}
@@ -112,7 +110,6 @@ export default function FilterPage({ navigation }) {
                     <MaterialIcons
                         name="arrow-back-ios"
                         size={22}
-                        color={colors.text}
                     />
                 </TouchableOpacity>
 
@@ -132,7 +129,7 @@ export default function FilterPage({ navigation }) {
 
 
                 <View style={styles.clearAllRow}>
-                    <Text style={[styles.filtersEyebrow, { color: colors.text }]}>Filters</Text>
+                    <Text style={styles.filtersEyebrow}>Filters</Text>
                     <TouchableOpacity
                         onPress={async () => {
                             setRadius(50);
@@ -146,28 +143,28 @@ export default function FilterPage({ navigation }) {
                         }}
                         style={styles.clearAllButton}
                     >
-                        <MaterialIcons name="refresh" size={15} color={colors.danger || "#e63946"} />
-                        <Text style={[styles.clearAllText, { color: colors.danger || "#e63946" }]}>
+                        <MaterialIcons name="refresh" size={15} color="#e63946" />
+                        <Text style={[styles.clearAllText, { color: "#e63946" }]}>
                             Clear All
                         </Text>
                     </TouchableOpacity>
                 </View>
 
-                <View style={[styles.card, styles.cardShadow, { backgroundColor: colors.cardBackground }]}>
+                <View style={[styles.card, styles.cardShadow]}>
                     <View style={styles.cardHeaderRow}>
                         <View style={styles.cardTitleRow}>
-                            <View style={[styles.iconBadge, { backgroundColor: (colors.primary || "#157a4f") + "1A" }]}>
-                                <MaterialIcons name="my-location" size={16} color={colors.primary || "#157a4f"} />
+                            <View style={[styles.iconBadge, { backgroundColor: ("#157a4f") + "1A" }]}>
+                                <MaterialIcons name="my-location" size={16} color="#157a4f" />
                             </View>
-                            <Text style={[styles.cardTitle, { color: colors.text }]}>Distance Radius</Text>
+                            <Text style={styles.cardTitle}>Distance Radius</Text>
                         </View>
                     </View>
 
-                    <View style={[styles.radiusPill, { backgroundColor: (colors.primary || "#157a4f") + "14" }]}>
-                        <Text style={[styles.radiusPillValue, { color: colors.primary || "#157a4f" }]}>
+                    <View style={[styles.radiusPill, { backgroundColor: ("#157a4f") + "14" }]}>
+                        <Text style={[styles.radiusPillValue, { color: "#157a4f" }]}>
                             {radius} km
                         </Text>
-                        <Text style={[styles.radiusPillLabel, { color: colors.primary || "#157a4f" }]}>
+                        <Text style={[styles.radiusPillLabel, { color: "#157a4f" }]}>
                             Selected Radius
                         </Text>
                     </View>
@@ -179,7 +176,7 @@ export default function FilterPage({ navigation }) {
                             end={{ x: 1, y: 0 }}
                             style={[styles.sliderTrackFill, { width: `${(radius / 50) * 100}%` }]}
                         />
-                        <View style={[styles.sliderTrackRemainder, { backgroundColor: colors.border }]} />
+                        <View style={[styles.sliderTrackRemainder]} />
                         <Slider
                             style={styles.slider}
                             minimumValue={1}
@@ -195,21 +192,21 @@ export default function FilterPage({ navigation }) {
                     </View>
 
                     <View style={styles.sliderLabelsRow}>
-                        <Text style={[styles.sliderLabel, { color: colors.textSecondary }]}>0 km</Text>
-                        <Text style={[styles.sliderLabel, { color: colors.textSecondary }]}>25 km</Text>
-                        <Text style={[styles.sliderLabel, { color: colors.textSecondary }]}>50 km</Text>
+                        <Text style={styles.sliderLabel}>0 km</Text>
+                        <Text style={styles.sliderLabel}>25 km</Text>
+                        <Text style={styles.sliderLabel}>50 km</Text>
                     </View>
                 </View>
 
-                <View style={[styles.card, styles.cardShadow, { backgroundColor: colors.cardBackground }]}>
+                <View style={[styles.card, styles.cardShadow]}>
                     <View style={styles.cardTitleRow}>
-                        <View style={[styles.iconBadge, { backgroundColor: (colors.primary || "#157a4f") + "1A" }]}>
-                            <MaterialIcons name="local-offer" size={16} color={colors.primary || "#157a4f"} />
+                        <View style={[styles.iconBadge, { backgroundColor: ("#157a4f") + "1A" }]}>
+                            <MaterialIcons name="local-offer" size={16} color={"#157a4f"} />
                         </View>
-                        <Text style={[styles.cardTitle, { color: colors.text }]}>Offer Type</Text>
+                        <Text style={styles.cardTitle}>Offer Type</Text>
                     </View>
 
-                    <Text style={[styles.cardSubtitle, { color: colors.textSecondary }]}>
+                    <Text style={styles.cardSubtitle}>
                         Select one or more to narrow your results
                     </Text>
 
@@ -224,17 +221,17 @@ export default function FilterPage({ navigation }) {
                                         styles.chip,
                                         {
                                             backgroundColor: isSelected
-                                                ? (colors.primary || "#157a4f") + "16"
-                                                : colors.background,
+                                                ? ("#157a4f") + "16"
+                                                : "#fff",
                                             borderColor: isSelected
-                                                ? (colors.primary || "#157a4f")
-                                                : colors.border,
+                                                ? ("#157a4f")
+                                                : "#000",
                                         },
                                     ]}
                                 >
                                     <View style={[
                                         styles.chipIconWrap,
-                                        { backgroundColor: isSelected ? (colors.primary || "#157a4f") : colors.border }
+                                        { backgroundColor: isSelected ? "#157a4f" : "#fff" }
                                     ]}>
                                         <MaterialIcons
                                             name={isSelected ? "check" : item.icon}
@@ -245,7 +242,7 @@ export default function FilterPage({ navigation }) {
                                     <Text
                                         style={[
                                             styles.chipLabel,
-                                            { color: isSelected ? (colors.primary || "#157a4f") : colors.text },
+                                            { color: isSelected ? "#157a4f" : "#000" },
                                             isSelected && { ...textPresets.label },
                                         ]}
                                     >
@@ -257,7 +254,7 @@ export default function FilterPage({ navigation }) {
                     </View>
                 </View>
                 <TouchableOpacity
-                    style={[styles.applyButton, { backgroundColor: colors.primary || "#157a4f" }]}
+                    style={[styles.applyButton, { backgroundColor: "#157a4f" }]}
                     onPress={() => {
                         navigation.goBack();
                     }}

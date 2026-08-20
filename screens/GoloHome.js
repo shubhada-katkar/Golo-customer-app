@@ -277,7 +277,6 @@ const DEFAULT_RADIUS_KM = 50;
 
 export default function GoloHome({ route }) {
     const navigation = useNavigation();
-    const { colors } = useContext(ThemeContext);
     const [selectedCategory, setSelectedCategory] = useState(null);
 
     React.useEffect(() => {
@@ -771,7 +770,7 @@ export default function GoloHome({ route }) {
     });
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+        <SafeAreaView style={{ flex: 1 }}>
             <LinearGradient
                 colors={["#f8a812", "#fad081", "#f8f6f265"]}
                 start={{ x: 0, y: 0 }}

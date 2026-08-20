@@ -7,7 +7,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ThemeContext } from "../theme/ThemeContext";
 import CustomAlertModal from "../components/CustomeAlertModal";
 import {
     connectChatSocket,
@@ -80,7 +79,6 @@ const loadDraft = async (key, fallbackKey) => {
 };
 
 export default function ChatScreen({ navigation, route }) {
-    const { colors } = useContext(ThemeContext);
     const [conversation, setConversation] = useState(route?.params?.conversation || null);
     const [conversationId, setConversationId] = useState(route?.params?.conversationId || null);
     const [messages, setMessages] = useState([]);
@@ -726,7 +724,7 @@ export default function ChatScreen({ navigation, route }) {
 
     if (loading) {
         return (
-            <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+            <SafeAreaView style={{ flex: 1 }}>
                 <View style={styles.loadingWrap}>
                     <ActivityIndicator size="large" color="#157a4f" />
                 </View>
@@ -735,7 +733,7 @@ export default function ChatScreen({ navigation, route }) {
     }
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+        <SafeAreaView style={{ flex: 1 }}>
             <KeyboardAvoidingView
                 style={{ flex: 1 }}
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -749,15 +747,15 @@ export default function ChatScreen({ navigation, route }) {
                 />
                 <View style={styles.header}>
                     <TouchableOpacity onPress={() => navigation.goBack()}>
-                        <Ionicons name="arrow-back" size={26} style={{ padding: 5, color: colors.text }} />
+                        <Ionicons name="arrow-back" size={26} style={{ padding: 5 }} />
                     </TouchableOpacity>
                     <View style={{ flex: 1 }}>
-                        <Text style={[styles.headerTitle, { color: colors.text }]}>{sellerName}</Text>
-                        <Text style={[styles.presenceText, { color: colors.text }]}>{renderPresence()}</Text>
+                        <Text style={styles.headerTitle}>{sellerName}</Text>
+                        <Text style={styles.presenceText}>{renderPresence()}</Text>
                     </View>
                     <View>
                         <TouchableOpacity onPress={() => setShowMenu(true)}>
-                            <Ionicons name="ellipsis-vertical" size={22} color={colors.text} />
+                            <Ionicons name="ellipsis-vertical" size={22} />
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -783,7 +781,7 @@ export default function ChatScreen({ navigation, route }) {
                     </TouchableOpacity>
                 </Modal>
 
-                <View style={{ flexDirection: "row", backgroundColor: colors.divider, height: 1, color: colors.divider }} />
+                <View style={{ flexDirection: "row", backgroundColor: "#000", height: 1 }} />
 
                 <FlatList
                     ref={scrollRef}

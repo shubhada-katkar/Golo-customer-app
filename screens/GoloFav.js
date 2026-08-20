@@ -45,7 +45,6 @@ const FavOfferCard = React.memo(({ item, navigation, onRemove }) => {
 });
 
 export default function GoloFav({ navigation }) {
-    const { colors } = useContext(ThemeContext);
     const [favorites, setFavorites] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -103,7 +102,7 @@ export default function GoloFav({ navigation }) {
     }, []);
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+        <SafeAreaView style={{ flex: 1 }}>
             <LinearGradient
                 colors={["#f8a812", "#fad081", "#f8f6f265"]}
                 start={{ x: 0, y: 0 }}
@@ -118,7 +117,6 @@ export default function GoloFav({ navigation }) {
                         <MaterialIcons
                             name="arrow-back-ios"
                             size={22}
-                            color={colors.text}
                             style={{ padding: 10 }}
                         />
                     </View>
@@ -126,7 +124,7 @@ export default function GoloFav({ navigation }) {
                 <Text style={{ ...textPresets.title }}>Saved Offers</Text>
             </View>
 
-            <View style={{ backgroundColor: colors.divider, height: 1, marginVertical: 6 }} />
+            <View style={{ height: 1, marginVertical: 6, backgroundColor: "#000" }} />
 
             {loading ? (
                 <FavSkeleton count={4} />
@@ -144,7 +142,6 @@ export default function GoloFav({ navigation }) {
                         <RefreshControl
                             refreshing={refreshing}
                             onRefresh={() => loadFavorites({ isRefresh: true })}
-                            tintColor={colors.text}
                         />
                     }
                     initialNumToRender={10}

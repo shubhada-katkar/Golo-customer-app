@@ -21,8 +21,6 @@ const ORANGE = "#f5b849";
 const GREEN = "#157a4f";
 
 export default function ProfilePage({ navigation }) {
-    const { theme, colors, toggleTheme } = useContext(ThemeContext);
-
     const [profileImage, setProfileImage] = useState(null);
     const [profilePhotoBase64, setProfilePhotoBase64] = useState(null);
     const [username, setUsername] = useState("");
@@ -418,7 +416,7 @@ export default function ProfilePage({ navigation }) {
     }
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: colors?.background || "#fdfdfd" }}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: "#fdfdfd" }}>
             <KeyboardAvoidingView style={{ flex: 1 }}
                 behavior={Platform.OS === "ios" ? "padding" : "height"} >
                 <LinearGradient
@@ -427,14 +425,12 @@ export default function ProfilePage({ navigation }) {
                     end={{ x: 0, y: 1 }}
                     style={{ height: 240, position: "absolute", top: 0, left: 0, right: 0, zIndex: 0 }}
                 />
-                <Topbar />
                 <View style={styles.row1}>
                     <TouchableOpacity onPress={() => navigation.goBack()}
                         style={styles.backButton}>
                         <MaterialIcons
                             name="arrow-back-ios"
                             size={18}
-                            color={colors.text}
                         />
                     </TouchableOpacity>
 
@@ -448,7 +444,7 @@ export default function ProfilePage({ navigation }) {
                         <TouchableOpacity
                             style={styles.bellButton}
                             onPress={() => navigation.navigate("NotificationsPage")}>
-                            <FontAwesome name="bell-o" size={24} color={colors.text} />
+                            <FontAwesome name="bell-o" size={24} />
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -491,7 +487,7 @@ export default function ProfilePage({ navigation }) {
                                 </TouchableOpacity>
 
                                 {!!username && (
-                                    <Text style={[styles.nameText, { color: colors.text }]}>{username}</Text>
+                                    <Text style={styles.nameText}>{username}</Text>
                                 )}
 
                                 <View style={styles.profileCard}>
@@ -511,11 +507,11 @@ export default function ProfilePage({ navigation }) {
 
                             <View style={{ paddingHorizontal: 14, marginTop: 22 }}>
 
-                                <Text style={[styles.sectionHeader, { color: colors.text }]}>PROFILE SETTINGS</Text>
+                                <Text style={styles.sectionHeader}>PROFILE SETTINGS</Text>
 
                                 <View style={styles.settingsCard}>
                                     {/* NAME */}
-                                    <Text style={[styles.text, { color: colors.text }]}>Your Name</Text>
+                                    <Text style={styles.text}>Your Name</Text>
                                     <View style={styles.inputWrapper}>
                                         <TextInput
                                             ref={nameRef}
@@ -542,7 +538,7 @@ export default function ProfilePage({ navigation }) {
                                     </View>
 
                                     {/* PHONE */}
-                                    <Text style={[styles.text, { color: colors.text, marginTop: 16 }]}>Contact Number</Text>
+                                    <Text style={[styles.text, { marginTop: 16 }]}>Contact Number</Text>
                                     <View style={styles.inputWrapper}>
                                         <TextInput
                                             ref={phoneRef}
@@ -568,7 +564,7 @@ export default function ProfilePage({ navigation }) {
                                     </View>
 
                                     {/* EMAIL */}
-                                    <Text style={[styles.text, { color: colors.text, marginTop: 16 }]}>Email</Text>
+                                    <Text style={[styles.text, { marginTop: 16 }]}>Email</Text>
                                     <View style={styles.inputWrapper}>
                                         <TextInput
                                             ref={emailRef}
@@ -620,7 +616,7 @@ export default function ProfilePage({ navigation }) {
                                     {/* OTP Input and Verify Button */}
                                     {email !== originalEmail && otpSent && !emailVerified && (
                                         <View style={{ marginTop: 8 }}>
-                                            <Text style={[styles.text, { color: colors.text, marginBottom: 4, ...textPresets.label }]}>
+                                            <Text style={[styles.text, { marginBottom: 4, ...textPresets.label }]}>
                                                 Enter verification code sent to your email
                                             </Text>
                                             <View style={styles.inputWrapper}>
@@ -688,39 +684,39 @@ export default function ProfilePage({ navigation }) {
                             <View style={styles.divider} />
 
                             <View style={styles.menuContainer}>
-                                <Text style={[styles.sectionHeader, { color: colors.text }]}>MENU</Text>
+                                <Text style={styles.sectionHeader}>MENU</Text>
 
-                                <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.card || "#fff" }]} onPress={() => navigation.navigate("Analytics")} activeOpacity={0.7}>
+                                <TouchableOpacity style={[styles.menuItem, { backgroundColor: "#fff" }]} onPress={() => navigation.navigate("Analytics")} activeOpacity={0.7}>
                                     <View style={styles.iconCircle}>
                                         <AntDesign name="unordered-list" size={18} color={GREEN} />
                                     </View>
                                     <View style={styles.menuText}>
-                                        <Text style={[styles.menuTitle, { color: colors.text }]}>Analytics</Text>
-                                        <Text style={[styles.menuSub, { color: colors.subText || "#888" }]}>View your ads analytics</Text>
+                                        <Text style={styles.menuTitle}>Analytics</Text>
+                                        <Text style={[styles.menuSub, { color: "#888" }]}>View your ads analytics</Text>
                                     </View>
-                                    <Feather name="chevron-right" size={20} color={colors.subText || "#aaa"} />
+                                    <Feather name="chevron-right" size={20} color={"#aaa"} />
                                 </TouchableOpacity>
 
-                                <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.card || "#fff" }]} onPress={() => navigation.navigate("Transaction")} activeOpacity={0.7}>
+                                <TouchableOpacity style={[styles.menuItem, { backgroundColor: "#fff" }]} onPress={() => navigation.navigate("Transaction")} activeOpacity={0.7}>
                                     <View style={styles.iconCircle}>
                                         <AntDesign name="credit-card" size={18} color={GREEN} />
                                     </View>
                                     <View style={styles.menuText}>
-                                        <Text style={[styles.menuTitle, { color: colors.text }]}>Transactions</Text>
-                                        <Text style={[styles.menuSub, { color: colors.subText || "#888" }]}>View your transaction history</Text>
+                                        <Text style={styles.menuTitle}>Transactions</Text>
+                                        <Text style={[styles.menuSub, { color: "#888" }]}>View your transaction history</Text>
                                     </View>
-                                    <Feather name="chevron-right" size={20} color={colors.subText || "#aaa"} />
+                                    <Feather name="chevron-right" size={20} color={"#aaa"} />
                                 </TouchableOpacity>
 
-                                <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.card || "#fff" }]} onPress={() => navigation.navigate("Support")} activeOpacity={0.7}>
+                                <TouchableOpacity style={[styles.menuItem, { backgroundColor: "#fff" }]} onPress={() => navigation.navigate("Support")} activeOpacity={0.7}>
                                     <View style={styles.iconCircle}>
                                         <AntDesign name="question-circle" size={18} color={GREEN} />
                                     </View>
                                     <View style={styles.menuText}>
-                                        <Text style={[styles.menuTitle, { color: colors.text }]}>Help & Support</Text>
-                                        <Text style={[styles.menuSub, { color: colors.subText || "#888" }]}>Get help with any issues</Text>
+                                        <Text style={styles.menuTitle}>Help & Support</Text>
+                                        <Text style={[styles.menuSub, { color: "#888" }]}>Get help with any issues</Text>
                                     </View>
-                                    <Feather name="chevron-right" size={20} color={colors.subText || "#aaa"} />
+                                    <Feather name="chevron-right" size={20} color={"#aaa"} />
                                 </TouchableOpacity>
 
                                 {/* <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.card || "#fff" }]} onPress={() => openBox()} activeOpacity={0.7}>
@@ -734,7 +730,7 @@ export default function ProfilePage({ navigation }) {
                                     <Feather name="chevron-right" size={20} color={colors.subText || "#aaa"} />
                                 </TouchableOpacity> */}
 
-                                <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.card || "#fff", marginBottom: 0 }]}
+                                <TouchableOpacity style={[styles.menuItem, { backgroundColor: "#fff", marginBottom: 0 }]}
                                     onPress={() => { confirmLogout(); }} activeOpacity={0.7}>
                                     <View style={[styles.iconCircle, { backgroundColor: "#fff0f0" }]}>
                                         <MaterialIcons name="logout" size={18} color="#ff6b6b" />
@@ -777,7 +773,7 @@ const styles = StyleSheet.create({
     row1: {
         alignItems: "center",
         flexDirection: "row",
-        paddingLeft: 8,
+        paddingTop: 30
     },
     backButton: {
         padding: 10,

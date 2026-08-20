@@ -159,7 +159,6 @@ const faqData = [
 
 export default function OfferDetails({ navigation, route }) {
     const scrollViewRef = useRef(null);
-    const { colors } = useContext(ThemeContext);
     const [showQR, setShowQR] = useState(false);
     const [alertConfig, setAlertConfig] = useState({ visible: false, title: "", message: "", type: "error", onClose: null });
 
@@ -817,7 +816,7 @@ export default function OfferDetails({ navigation, route }) {
 
     return (
         <>
-            <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+            <SafeAreaView style={{ flex: 1 }}>
                 <LinearGradient
                     colors={["#f8a812", "#fad081", "#f8f6f265"]}
                     start={{ x: 0, y: 0 }}
@@ -832,7 +831,7 @@ export default function OfferDetails({ navigation, route }) {
                         name="arrow-back-ios"
                         size={24}
                         onPress={() => navigation.goBack()}
-                        style={{ paddingLeft: 6, color: colors.text }}
+                        style={{ paddingLeft: 6 }}
                     />
                     <View style={styles.headerRight}>
                         <TouchableOpacity onPress={handleToggleFavorite} disabled={favoriteLoading}>
@@ -842,13 +841,13 @@ export default function OfferDetails({ navigation, route }) {
                                 <Ionicons
                                     name={isFavorite ? "heart" : "heart-outline"}
                                     size={22}
-                                    color={isFavorite ? "#e74c3c" : colors.text}
+                                    color={isFavorite ? "#e74c3c" : "#000"}
                                     style={styles.icon}
                                 />
                             )}
                         </TouchableOpacity>
                         <TouchableOpacity onPress={handleShareOffer}>
-                            <Ionicons name="share-social-outline" size={22} style={{ color: colors.text }} />
+                            <Ionicons name="share-social-outline" size={22} color="#000" />
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -938,9 +937,9 @@ export default function OfferDetails({ navigation, route }) {
                         </View>
 
                         <View style={styles.content}>
-                            <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+                            <Text style={styles.title}>{title}</Text>
 
-                            <Text style={[styles.by, { color: colors.text }]}>By {merchant}</Text>
+                            <Text style={styles.by}>By {merchant}</Text>
 
                             <View style={styles.card}>
                                 <Text style={styles.cardTitle}>Offer Details</Text>

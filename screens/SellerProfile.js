@@ -156,7 +156,6 @@ export default function SellerProfile({ route, navigation }) {
   const [showReportModal, setShowReportModal] = useState(false);
   const [selectedReason, setSelectedReason] = useState(null);
   const [details, setDetails] = useState("");
-  const { colors } = useContext(ThemeContext);
   const [alertConfig, setAlertConfig] = useState({ visible: false, title: "", message: "", type: "error", onClose: null });
 
   const showAlert = (title, message, type = "error", extraProps = {}) => {

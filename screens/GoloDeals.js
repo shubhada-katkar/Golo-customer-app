@@ -202,7 +202,6 @@ const getDistanceText = (item, userCoords) => {
 
 export default function GoloDeals() {
     const navigation = useNavigation();
-    const { colors } = useContext(ThemeContext);
 
     // ─── Location state ──────────────────────────────────────
     const [locationStatus, setLocationStatus] = useState("loading");
@@ -859,7 +858,7 @@ export default function GoloDeals() {
     };
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+        <SafeAreaView style={{ flex: 1 }}>
             <LinearGradient
                 colors={["#f8a812", "#fad081", "#f8f6f265"]}
                 start={{ x: 0, y: 0 }}

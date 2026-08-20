@@ -68,11 +68,11 @@ const ConversationCard = React.memo(({ conversation, colors, currentUserId, onOp
 
             <View style={{ flex: 1 }}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                    <Text style={[styles.name, { color: colors.text, flex: 1 }]} numberOfLines={1}>
+                    <Text style={[styles.name, { flex: 1 }]} numberOfLines={1}>
                         {conversation?.otherUser?.name || "Unknown User"}
                     </Text>
                 </View>
-                <Text style={[styles.message, { color: colors.text }]} numberOfLines={1}>
+                <Text style={styles.message} numberOfLines={1}>
                     {conversation?.lastMessageText || "Tap to open chat"}
                 </Text>
             </View>
@@ -226,8 +226,8 @@ export default function ChatPage({ navigation, route }) {
         if (conversations.length === 0) {
             return (
                 <View style={styles.centerWrap}>
-                    <Text style={[styles.emptyText, { color: colors.text }]}>No chats yet</Text>
-                    <Text style={[styles.emptySubText, { color: colors.text }]}>Start a chat from any ad</Text>
+                    <Text style={styles.emptyText}>No chats yet</Text>
+                    <Text style={styles.emptySubText}>Start a chat from any ad</Text>
                 </View>
             );
         }
@@ -242,7 +242,6 @@ export default function ChatPage({ navigation, route }) {
                     <RefreshControl
                         refreshing={refreshing}
                         onRefresh={() => loadConversations(true)}
-                        tintColor={colors.text}
                     />
                 }
                 initialNumToRender={10}
@@ -254,7 +253,7 @@ export default function ChatPage({ navigation, route }) {
     };
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+        <SafeAreaView style={{ flex: 1 }}>
             <LinearGradient
                 colors={["#f8a812", "#fad081", "#f8f6f265"]}
                 start={{ x: 0, y: 0 }}
@@ -269,7 +268,6 @@ export default function ChatPage({ navigation, route }) {
                         <MaterialIcons
                             name="arrow-back-ios"
                             size={22}
-                            color={colors.text}
                             style={{ padding: 10 }}
                         />
                     </View>
@@ -285,7 +283,7 @@ export default function ChatPage({ navigation, route }) {
                 </View>
             )}
 
-            <View style={{ flexDirection: "row", backgroundColor: colors.divider, height: 1, marginVertical: 6 }} />
+            <View style={{ flexDirection: "row", height: 1, marginVertical: 6, backgroundColor: "#000" }} />
 
             {renderConversationList()}
 

@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import * as SplashScreen from "expo-splash-screen";
-import { NavigationContainer, getStateFromPath, createNavigationContainerRef } from "@react-navigation/native";
+import { NavigationContainer, DefaultTheme, getStateFromPath, createNavigationContainerRef } from "@react-navigation/native";
 import * as Notifications from "expo-notifications";
 import { createStackNavigator, CardStyleInterpolators } from "@react-navigation/stack";
 import { ThemeProvider } from "./theme/ThemeContext";
@@ -159,7 +159,7 @@ export default function App() {
 
   return (
     <ThemeProvider>
-      <NavigationContainer ref={navigationRef} linking={linking}>
+      <NavigationContainer ref={navigationRef} linking={linking} theme={DefaultTheme}>
         <Stack.Navigator
           initialRouteName="AuthLoading"
           screenOptions={{

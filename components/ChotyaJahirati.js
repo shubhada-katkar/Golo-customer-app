@@ -8,7 +8,6 @@ import {
     KeyboardAvoidingView,
     Platform,
 } from "react-native";
-import { ThemeContext } from "../theme/ThemeContext";
 import { useNavigation } from "@react-navigation/native";
 
 import Template1Card from "../components/Template1Card";
@@ -45,7 +44,6 @@ const adMatchesSearch = (ad, query) => {
 };
 
 export default function ChotyaJahirati({ selectedCategory, selectedSubFilter = null, searchQuery = "", lat, lng, locationPlaceName = "", selectedSort = "newest" }) {
-    const { colors } = useContext(ThemeContext);
     const [ads, setAds] = useState([]);
     const [loading, setLoading] = useState(true);
 

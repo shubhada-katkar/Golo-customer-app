@@ -122,7 +122,7 @@ export default function TransactionDetails() {
       : "₹0";
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+    <SafeAreaView style={{ flex: 1 }}>
       <LinearGradient
         colors={["#f8a812", "#fad081", "#f8f6f265"]}
         start={{ x: 0, y: 0 }}
@@ -137,7 +137,7 @@ export default function TransactionDetails() {
           onPress={() => navigation.goBack()}
           style={styles.backButton}
         >
-          <MaterialIcons name="arrow-back-ios" size={22} color={colors.text} />
+          <MaterialIcons name="arrow-back-ios" size={22} />
         </TouchableOpacity>
 
         <Text style={styles.heading}>
@@ -155,7 +155,7 @@ export default function TransactionDetails() {
         {loading && !txData.paymentId ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#157a4f" />
-            <Text style={[styles.loadingText, { color: colors.text }]}>Fetching transaction details...</Text>
+            <Text style={styles.loadingText}>Fetching transaction details...</Text>
           </View>
         ) : (
           <>
@@ -194,7 +194,7 @@ export default function TransactionDetails() {
               ]}
             >
               <Text style={styles.cardTitle}>
-                Transaction Info
+                Transaction Details
               </Text>
 
               <DetailRow
@@ -318,9 +318,9 @@ const DetailRow = ({ icon, label, value, colors, valueColor }) => (
       <View style={styles.iconBadge}>
         <MaterialIcons name={icon} size={16} color="#157a4f" />
       </View>
-      <Text style={[styles.label, { color: colors.subtext || "#777" }]}>{label}</Text>
+      <Text style={[styles.label, { color: "#777" }]}>{label}</Text>
     </View>
-    <Text style={[styles.value, { color: valueColor || colors.text }]}>
+    <Text style={[styles.value, { color: valueColor }]}>
       {value}
     </Text>
   </View>
@@ -446,8 +446,7 @@ const styles = StyleSheet.create({
   },
 
   value: {
-    lineHeight: Math.round(14 * 1.5),
     marginLeft: 40, // aligns under the label text, past the icon badge
-    ...textPresets.body,
+    ...textPresets.label,
   },
 });

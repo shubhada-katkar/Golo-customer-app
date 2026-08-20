@@ -2,7 +2,6 @@ import React, { useCallback, useContext, useState } from "react";
 import { ActivityIndicator, RefreshControl, View, StyleSheet, Text, TouchableOpacity, FlatList, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
-import { ThemeContext } from "../theme/ThemeContext";
 import Topbar from "../components/Topbar";
 import ChojaBottom from "../components/ChojaBottom";
 import { MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -71,7 +70,6 @@ const FavAdCard = React.memo(({ item, navigation, onRemove }) => {
 });
 
 export default function Fav({ navigation }) {
-    const { colors } = useContext(ThemeContext);
     const [favorites, setFavorites] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -127,7 +125,7 @@ export default function Fav({ navigation }) {
     }, []);
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+        <SafeAreaView style={{ flex: 1 }}>
             <LinearGradient
                 colors={["#f8a812", "#fad081", "#f8f6f265"]}
                 start={{ x: 0, y: 0 }}
@@ -142,7 +140,6 @@ export default function Fav({ navigation }) {
                         <MaterialIcons
                             name="arrow-back-ios"
                             size={22}
-                            color={colors.text}
                             style={{ padding: 10 }}
                         />
                     </View>
@@ -150,13 +147,13 @@ export default function Fav({ navigation }) {
                 <Text style={{ ...textPresets.title }}>Saved Ads</Text>
             </View>
 
-            <View style={{ flexDirection: "row", backgroundColor: colors.divider, height: 1, color: colors.divider, marginTop: 10 }} />
+            <View style={{ flexDirection: "row", height: 1, marginTop: 10, backgroundColor: "#000" }} />
 
             {loading ? (
                 <FavSkeleton count={4} />
             ) : favorites.length === 0 ? (
                 <View style={{ padding: 24, alignItems: "center" }}>
-                    <Text style={{ color: colors.text }}>No favorite ads yet</Text>
+                    <Text>No favorite ads yet</Text>
                 </View>
             ) : (
                 <FlatList
@@ -168,7 +165,6 @@ export default function Fav({ navigation }) {
                         <RefreshControl
                             refreshing={refreshing}
                             onRefresh={() => loadFavorites({ isRefresh: true })}
-                            tintColor={colors.text}
                         />
                     }
                     initialNumToRender={10}

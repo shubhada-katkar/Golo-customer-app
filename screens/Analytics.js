@@ -5,7 +5,6 @@ import {
   ActivityIndicator, Dimensions
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ThemeContext } from "../theme/ThemeContext";
 import Topbar from "../components/Topbar";
 import ChojaBottom from "../components/ChojaBottom";
 import { MaterialIcons, Entypo } from "@expo/vector-icons";
@@ -56,7 +55,6 @@ function getStatusLabel(status) {
 }
 
 export default function Analytics({ navigation }) {
-  const { colors } = useContext(ThemeContext);
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -236,7 +234,6 @@ export default function Analytics({ navigation }) {
             <MaterialIcons
               name="arrow-back-ios"
               size={22}
-              color={colors.text}
               style={{ padding: 10 }}
             />
           </View>
@@ -244,11 +241,11 @@ export default function Analytics({ navigation }) {
         <Text style={{ ...textPresets.title }}>Analytics</Text>
       </View>
 
-      <View style={{ flexDirection: "row", backgroundColor: colors.divider, height: 1, marginVertical: 6 }} />
+      <View style={{ flexDirection: "row", height: 1, marginVertical: 6, backgroundColor: "#000" }} />
 
       <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 110 }}>
 
-        <Text style={[styles.subtitle, { color: colors.text }]}>
+        <Text style={styles.subtitle}>
           Track performance of your posted ads</Text>
         {loading && (
           <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
@@ -285,8 +282,8 @@ export default function Analytics({ navigation }) {
         />
 
         {/* Statistics Card */}
-        <View style={[styles.statsCard, { borderColor: colors.divider }]}>
-          <Text style={[styles.statsCardTitle, { color: colors.text }]}>Statistics</Text>
+        <View style={styles.statsCard}>
+          <Text style={styles.statsCardTitle}>Statistics</Text>
           <View style={styles.pieChartWrapper}>
             <PieChart
               data={categoryData}
@@ -303,7 +300,7 @@ export default function Analytics({ navigation }) {
             {categoryData.map((item, index) => (
               <View key={index} style={styles.legendItem}>
                 <View style={[styles.legendDot, { backgroundColor: item.color }]} />
-                <Text style={[styles.legendText, { color: colors.text }]} numberOfLines={1} ellipsizeMode="tail">
+                <Text style={styles.legendText} numberOfLines={1} ellipsizeMode="tail">
                   {item.population} {item.name}
                 </Text>
               </View>
@@ -312,13 +309,13 @@ export default function Analytics({ navigation }) {
         </View>
 
         {/* Ads Table */}
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Your Ads</Text>
+        <Text style={styles.sectionTitle}>Your Ads</Text>
 
         <View style={styles.tableHeader}>
-          <Text style={[styles.headerText, { color: colors.text }]}>Ad</Text>
-          <Text style={[styles.headerText, { color: colors.text }]}>Date</Text>
-          <Text style={[styles.headerText, { color: colors.text }]}>Status</Text>
-          <Text style={[styles.headerText, { color: colors.text }]}>Action</Text>
+          <Text style={styles.headerText}>Ad</Text>
+          <Text style={styles.headerText}>Date</Text>
+          <Text style={styles.headerText}>Status</Text>
+          <Text style={styles.headerText}>Action</Text>
         </View>
 
         {!adsList.length && (
@@ -340,7 +337,7 @@ export default function Analytics({ navigation }) {
                 <Text style={styles.adName} numberOfLines={1} ellipsizeMode="tail" >{ad.name}</Text>
               </View>
 
-              <Text style={[styles.cell, { color: colors.text }]}>{formatDate(ad.date)}</Text>
+              <Text style={styles.cell}>{formatDate(ad.date)}</Text>
 
               <Text
                 style={[

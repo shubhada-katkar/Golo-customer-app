@@ -45,7 +45,6 @@ const getStatusLabel = (status) => {
 };
 
 export default function Transaction() {
-  const { colors } = useContext(ThemeContext);
   const navigation = useNavigation();
   const { width } = useWindowDimensions();
 
@@ -125,11 +124,11 @@ export default function Transaction() {
       <View
         style={[
           styles.tableRow,
-          { borderBottomColor: colors.border || "#eee" },
+          { borderBottomColor: "#eee" },
         ]}
       >
         <Text
-          style={[styles.cell, { color: colors.text, width: columnWidth }]}
+          style={[styles.cell, { width: columnWidth }]}
           numberOfLines={1}
         >
           {displayAmount}
@@ -147,7 +146,7 @@ export default function Transaction() {
         </Text>
 
         <Text
-          style={[styles.cell, { color: colors.text, width: columnWidth }]}
+          style={[styles.cell, { width: columnWidth }]}
           numberOfLines={1}
         >
           {dateLabel}
@@ -157,14 +156,14 @@ export default function Transaction() {
           style={{ width: columnWidth, alignItems: "center" }}
           onPress={() => navigation.navigate("TransactionDetails", { transaction: item, paymentId: item.paymentId || item.id })}
         >
-          <MaterialIcons name="arrow-forward-ios" size={18} color={colors.text} />
+          <MaterialIcons name="arrow-forward-ios" size={18} />
         </TouchableOpacity>
       </View>
     );
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+    <SafeAreaView style={{ flex: 1 }}>
       <LinearGradient
         colors={["#f8a812", "#fad081", "#f8f6f265"]}
         start={{ x: 0, y: 0 }}
@@ -179,7 +178,6 @@ export default function Transaction() {
           <MaterialIcons
             name="arrow-back-ios"
             size={22}
-            color={colors.text}
             style={{ padding: 10 }}
           />
         </TouchableOpacity>
@@ -195,12 +193,12 @@ export default function Transaction() {
         {loading && transactions.length === 0 ? (
           <View style={styles.centerContainer}>
             <ActivityIndicator size="large" color="#157a4f" />
-            <Text style={[styles.infoText, { color: colors.text }]}>Loading transactions...</Text>
+            <Text style={styles.infoText}>Loading transactions...</Text>
           </View>
         ) : error && transactions.length === 0 ? (
           <View style={styles.centerContainer}>
             <MaterialIcons name="error-outline" size={48} color="#d9534f" />
-            <Text style={[styles.infoText, { color: colors.text }]}>{error}</Text>
+            <Text style={styles.infoText}>{error}</Text>
             <TouchableOpacity style={styles.retryButton} onPress={() => fetchTransactions(false)}>
               <Text style={styles.retryText}>Retry</Text>
             </TouchableOpacity>
@@ -208,7 +206,7 @@ export default function Transaction() {
         ) : transactions.length === 0 ? (
           <View style={styles.centerContainer}>
             <MaterialIcons name="receipt-long" size={48} color="#aaa" />
-            <Text style={[styles.infoText, { color: colors.text }]}>No transactions found</Text>
+            <Text style={styles.infoText}>No transactions found</Text>
           </View>
         ) : (
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>

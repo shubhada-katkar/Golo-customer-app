@@ -1,7 +1,6 @@
 import React, { useCallback, useContext, useRef, useState, useEffect } from "react";
 import { ActivityIndicator, View, StyleSheet, Text, TouchableOpacity, ScrollView, TextInput, Keyboard, TouchableWithoutFeedback, Modal, Dimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ThemeContext } from "../theme/ThemeContext";
 import ChojaBottom from "../components/ChojaBottom";
 import { EvilIcons, Ionicons } from "@expo/vector-icons";
 import Iwant from "../components/Iwant";
@@ -85,7 +84,6 @@ export default function ChojaHome() {
     const [selectedSubFilter, setSelectedSubFilter] = useState(null);
     const [showSubFilterMenu, setShowSubFilterMenu] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
-    const { colors } = useContext(ThemeContext);
     const inputRef = useRef(null);
     const [tab, setTab] = useState("Chotya Jahirati");
     const sortedCategories = categories;
@@ -411,7 +409,7 @@ export default function ChojaHome() {
             handleCloseSubFilterMenu();
             setShowSortDropdown(false);
         }}>
-            <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+            <SafeAreaView style={{ flex: 1 }}>
                 <LinearGradient
                     colors={["#f8a812", "#fad081", "#f8f6f265"]}
                     start={{ x: 0, y: 0 }}

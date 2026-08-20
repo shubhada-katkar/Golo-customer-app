@@ -3,8 +3,6 @@ import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { MaterialCommunityIcons, Ionicons, FontAwesome, MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useRoute } from "@react-navigation/native";
-import { useContext } from "react";
-import { ThemeContext } from "../theme/ThemeContext";
 import { ensureAuthenticated } from "../services/authService";
 import { textPresets } from "../theme/typography";
 
@@ -12,7 +10,6 @@ export default function GoloBottom() {
     const navigation = useNavigation();
     const route = useRoute();
     const currentRoute = route.name;
-    const { colors } = useContext(ThemeContext);
 
     const handleProtectedNavigate = async (screenName) => {
         try {
@@ -24,7 +21,7 @@ export default function GoloBottom() {
     };
 
     return (
-        <View style={[styles.top, { backgroundColor: colors.bottombar }]}>
+        <View style={styles.top}>
 
             <TouchableOpacity style={[styles.bar]} onPress={() => navigation.navigate("GoloDeals")}>
                 <MaterialCommunityIcons name="home-outline" size={26}

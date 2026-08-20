@@ -1,4 +1,4 @@
-import React, { useContext, useState, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import {
     View,
@@ -7,7 +7,6 @@ import {
     ActivityIndicator,
     FlatList
 } from "react-native";
-import { ThemeContext } from "../theme/ThemeContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getValidToken } from "../services/authService";
 
@@ -45,9 +44,6 @@ const adMatchesSearch = (ad, query) => {
 };
 
 export default function MyAds({ selectedCategory, selectedSubFilter = null, searchQuery = "" }) {
-
-    const { colors } = useContext(ThemeContext);
-
     const [ads, setAds] = useState([]);
     const [loading, setLoading] = useState(true);
 

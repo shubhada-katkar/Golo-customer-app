@@ -269,7 +269,6 @@ async function getAuthHeaders() {
 }
 
 export default function ProductDetail({ route, navigation }) {
-  const { colors } = useContext(ThemeContext);
   const routeProduct = route?.params?.product;
   const routeProductId = route?.params?.productId || route?.params?.id;
   const initialProduct = routeProduct || {};
@@ -526,7 +525,7 @@ export default function ProductDetail({ route, navigation }) {
   }, [videoPlaying]);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+    <SafeAreaView style={{ flex: 1 }}>
       <LinearGradient
         colors={["#f8a812", "#fad081", "#f8f6f265"]}
         start={{ x: 0, y: 0 }}
@@ -538,9 +537,9 @@ export default function ProductDetail({ route, navigation }) {
 
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <MaterialIcons name="arrow-back-ios" size={22} color={colors.text} />
+          <MaterialIcons name="arrow-back-ios" size={22} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Product Details</Text>
+        <Text style={styles.headerTitle}>Product Details</Text>
         <View style={styles.headerRight}>
           <TouchableOpacity onPress={handleToggleFavorite} disabled={favoriteLoading}>
             {favoriteLoading ? (
@@ -549,13 +548,13 @@ export default function ProductDetail({ route, navigation }) {
               <Ionicons
                 name={isFavorite ? "heart" : "heart-outline"}
                 size={22}
-                color={isFavorite ? "#e74c3c" : colors.text}
+                color={isFavorite ? "#e74c3c" : "#000"}
                 style={styles.icon}
               />
             )}
           </TouchableOpacity>
           <TouchableOpacity onPress={handleShareProduct}>
-            <Ionicons name="share-social-outline" size={22} style={{ color: colors.text }} />
+            <Ionicons name="share-social-outline" size={22} />
           </TouchableOpacity>
         </View>
       </View>
@@ -580,7 +579,7 @@ export default function ProductDetail({ route, navigation }) {
                   item.type === "video" ? (
                     <View
                       key={`${item.uri}-${index}`}
-                      style={[styles.mediaSlide, { backgroundColor: colors.card || "#fff" }]}
+                      style={[styles.mediaSlide, { backgroundColor: "#fff" }]}
                     >
                       <Video
                         source={{ uri: item.uri }}
@@ -620,7 +619,7 @@ export default function ProductDetail({ route, navigation }) {
             </View>
           ) : allMedia.length === 1 ? (
             allMedia[0]?.type === "video" ? (
-              <View style={[styles.mediaSlide, { backgroundColor: colors.card || "#fff" }]}>
+              <View style={[styles.mediaSlide, { backgroundColor: "#fff" }]}>
                 <Video
                   source={{ uri: allMedia[0].uri }}
                   style={styles.videoPlayer}
@@ -634,7 +633,7 @@ export default function ProductDetail({ route, navigation }) {
               <Image source={{ uri: allMedia[0].uri }} style={styles.productImage} />
             )
           ) : (
-            <View style={[styles.imagePlaceholder, { backgroundColor: colors.card || "#fff" }]}>
+            <View style={[styles.imagePlaceholder, { backgroundColor: "#fff" }]}>
               <Ionicons name="image-outline" size={60} color="#9a9a9a" />
             </View>
           )}
@@ -644,13 +643,13 @@ export default function ProductDetail({ route, navigation }) {
           style={[
             styles.card,
             {
-              backgroundColor: colors.card || "#fff",
-              borderColor: colors.border || "#eee",
+              backgroundColor: "#fff",
+              borderColor: "#eee",
             },
           ]}
         >
           <View style={styles.titleRow}>
-            <Text style={[styles.productName, { color: colors.text }]}>{name}</Text>
+            <Text style={styles.productName}>{name}</Text>
             {price && (
               <View style={styles.priceBadge}>
                 <Text style={styles.priceText}>{price}</Text>
@@ -671,9 +670,9 @@ export default function ProductDetail({ route, navigation }) {
           )}
           <View style={styles.sectionTitleRow}>
             <MaterialIcons name="description" size={18} color="#157a4f" />
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Description</Text>
+            <Text style={styles.sectionTitle}>Description</Text>
           </View>
-          <Text style={[styles.description, { color: colors.subtext || "#666" }]}>{details}</Text>
+          <Text style={[styles.description, { color: "#666" }]}>{details}</Text>
         </View>
       </ScrollView>
       <SafeAreaView

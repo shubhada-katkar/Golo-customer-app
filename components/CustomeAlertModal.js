@@ -1,7 +1,6 @@
 import React, { useContext } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Modal } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { ThemeContext } from "../theme/ThemeContext";
 import { textPresets } from "../theme/typography";
 
 export default function CustomAlertModal({
@@ -16,8 +15,6 @@ export default function CustomAlertModal({
   onCancel,
   onConfirm,
 }) {
-  const themeContext = useContext(ThemeContext);
-  const colors = themeContext?.colors || {};
 
   if (!visible) return null;
 
@@ -63,7 +60,7 @@ export default function CustomAlertModal({
         <View
           style={[
             styles.modalCard,
-            { backgroundColor: colors.background === "#383838" ? "#2d2d2d" : "#ffffff" },
+            { backgroundColor: "#ffffff" },
           ]}
         >
           {/* Centered Top Icon */}
@@ -71,7 +68,7 @@ export default function CustomAlertModal({
 
           {/* Title */}
           {!!title && (
-            <Text style={[styles.modalTitle, { color: colors.text || "#000000" }]}>
+            <Text style={[styles.modalTitle, { color: "#000000" }]}>
               {title}
             </Text>
           )}
@@ -81,7 +78,7 @@ export default function CustomAlertModal({
             <Text
               style={[
                 styles.modalMessage,
-                { color: colors.text === "#ffffff" ? "#cccccc" : "#555555" },
+                { color: "#555555" },
               ]}
             >
               {message}

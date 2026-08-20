@@ -38,7 +38,6 @@ const InsightCard = ({ title, value, tip, color }) => (
 );
 
 export default function AdAnalytics({ navigation, route }) {
-    const { colors } = useContext(ThemeContext);
     const routeParams = route?.params || {};
     const adId = routeParams.adId;
     const [analytics, setAnalytics] = useState(null);
@@ -185,9 +184,8 @@ export default function AdAnalytics({ navigation, route }) {
                     <View style={{ justifyContent: 'center' }}>
                         <MaterialIcons
                             name="arrow-back-ios"
-                            size={22}
-                            color={colors.text}
                             style={{ padding: 10 }}
+                            size={22}
                         />
                     </View>
 
@@ -202,14 +200,14 @@ export default function AdAnalytics({ navigation, route }) {
                 </TouchableOpacity>
             </View>
 
-            <View style={{ flexDirection: "row", backgroundColor: colors.divider, height: 1, marginVertical: 6 }} />
+            <View style={{ flexDirection: "row", height: 1, marginVertical: 6, backgroundColor: "#000" }} />
 
 
             <ScrollView style={styles.container}
                 contentContainerStyle={{ paddingBottom: 110 }}>
                 {/* HEADER */}
                 <View style={styles.header}>
-                    <Text style={[styles.headerTitle, { color: colors.text }]}>{adInfo.title || routeParams.adName || "Ad"}</Text>
+                    <Text style={styles.headerTitle}>{adInfo.title || routeParams.adName || "Ad"}</Text>
                     <Text style={styles.sub}>Posted {postedDate}</Text>
                 </View>
 

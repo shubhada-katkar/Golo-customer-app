@@ -17,7 +17,6 @@ export default function ForgotPassword({ navigation }) {
   const [verifyLoading, setVerifyLoading] = useState(false);
   const [otpTimer, setOtpTimer] = useState(0);
   const [resendCooldown, setResendCooldown] = useState(0);
-  const colors = useContext(ThemeContext);
 
   const isValidEmail = (value) => /\S+@\S+\.\S+/.test(value);
 
@@ -128,12 +127,12 @@ export default function ForgotPassword({ navigation }) {
   };
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
+    <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
-        <Text style={[styles.title, { color: colors.text }]}>Forgot Password</Text>
-        <Text style={[styles.subtitle, { color: colors.text }]}>Enter your email, verify the OTP, then set a new password.</Text>
+        <Text style={styles.title}>Forgot Password</Text>
+        <Text style={styles.subtitle}>Enter your email, verify the OTP, then set a new password.</Text>
 
-        <Text style={[styles.label, { color: colors.text }]}>Email</Text>
+        <Text style={styles.label}>Email</Text>
         <TextInput
           value={email}
           onChangeText={setEmail}
@@ -160,10 +159,10 @@ export default function ForgotPassword({ navigation }) {
         {otpSent ? (
           <>
             <View style={styles.otpInfoRow}>
-              <Text style={[styles.otpInfoText, { color: colors.text }]}>OTP expires in {otpTimer > 0 ? formatTime(otpTimer) : "00:00"}.</Text>
+              <Text style={styles.otpInfoText}>OTP expires in {otpTimer > 0 ? formatTime(otpTimer) : "00:00"}.</Text>
             </View>
 
-            <Text style={[styles.label, { color: colors.text }]}>OTP</Text>
+            <Text style={styles.label}>OTP</Text>
             <OtpInput value={otp} onChangeOtp={setOtp} />
 
             <TouchableOpacity
