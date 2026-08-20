@@ -83,6 +83,39 @@ const formatPrice = (value) => {
     return Number.isFinite(numericValue) ? `Rs ${numericValue}` : String(value);
 };
 
+const getOfferDisplayPrice = (item) => {
+    const directPrice = formatPrice(
+        item?.displayPrice ||
+        item?.discountedPrice ||
+        item?.offerPrice ||
+        item?.salePrice ||
+        item?.finalPrice ||
+        item?.price
+    );
+    if (directPrice) {
+        return directPrice;
+    }
+    const selectedProducts = Array.isArray(item?.selectedProducts)
+        ? item.selectedProducts
+        : [];
+    const lowestProductPrice = selectedProducts
+        .map((product) =>
+            formatPrice(
+                product?.offerPrice ||
+                product?.discountedPrice ||
+                product?.salePrice ||
+                product?.finalPrice ||
+                product?.displayPrice ||
+                product?.price
+            )
+        )
+        .filter(Boolean)
+        .map((value) => Number(String(value).replace(/[^0-9.-]/g, "")))
+        .filter((value) => Number.isFinite(value) && value > 0)
+        .sort((a, b) => a - b)[0];
+    return lowestProductPrice !== undefined ? formatPrice(lowestProductPrice) : null;
+};
+
 const isMongoObjectId = (value) => /^[a-fA-F0-9]{24}$/.test(String(value || ""));
 
 const getOfferIdFromData = (data) => {
@@ -939,6 +972,15 @@ export default function OfferDetails({ navigation, route }) {
                         <View style={styles.content}>
                             <Text style={styles.title}>{title}</Text>
 
+                            {(() => {
+                                const displayPrice = getOfferDisplayPrice(offerData);
+                                return displayPrice ? (
+                                    <View style={styles.priceBadge}>
+                                        <Text style={styles.priceText}>{displayPrice}</Text>
+                                    </View>
+                                ) : null;
+                            })()}
+
                             <Text style={styles.by}>By {merchant}</Text>
 
                             <View style={styles.card}>
@@ -1592,5 +1634,21 @@ const styles = StyleSheet.create({
     inactiveDot: {
         width: 8,
         backgroundColor: "rgba(255, 255, 255, 0.6)",
+    },
+    priceBadge: {
+        alignSelf: "flex-start",
+        backgroundColor: "rgba(255, 255, 255, 0.7)",
+        borderWidth: 1,
+        borderColor: "#f8a812",
+        borderRadius: 8,
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        marginTop: 4,
+        marginBottom: 2,
+    },
+    priceText: {
+        color: "#157a4f",
+        ...textPresets.body,
+        lineHeight: Math.round(14 * 1.5)
     },
 });

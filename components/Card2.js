@@ -360,7 +360,30 @@ export default function Card2({ category, formData, setFormData, onNext }) {
           ) : null}
         </View>
 
-        <TouchableOpacity style={styles.nextBtn} onPress={() => onNext && onNext()}>
+        <TouchableOpacity
+          style={styles.nextBtn}
+          onPress={() => {
+            const heading = (formData.heading || "").trim();
+            const hasImage = !!formData.image;
+            if (!heading) {
+              Alert.alert(
+                "Missing Information",
+                "Please fill in the ad heading before proceeding.",
+                [{ text: "OK" }]
+              );
+              return;
+            }
+            if (!hasImage) {
+              Alert.alert(
+                "Missing Image",
+                "Please select an image for the ad before proceeding.",
+                [{ text: "OK" }]
+              );
+              return;
+            }
+            onNext && onNext();
+          }}
+        >
           <Text style={styles.nextText}>Next</Text>
         </TouchableOpacity>
 

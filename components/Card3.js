@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useRef } from "react";
 import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView,
-  TextInput, ActivityIndicator, Keyboard, TouchableWithoutFeedback
+  TextInput, ActivityIndicator, Keyboard, TouchableWithoutFeedback, Alert
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { textPresets } from "../theme/typography";
@@ -191,7 +191,21 @@ export default function Card3({ category, onNext, formData, setFormData }) {
           {/* No image section for Card3 — text-only ad */}
         </View>
 
-        <TouchableOpacity style={styles.nextBtn} onPress={onNext}>
+        <TouchableOpacity
+          style={styles.nextBtn}
+          onPress={() => {
+            const heading = (formData.heading || "").trim();
+            if (!heading) {
+              Alert.alert(
+                "Missing Information",
+                "Please fill in the ad heading before proceeding.",
+                [{ text: "OK" }]
+              );
+              return;
+            }
+            onNext && onNext();
+          }}
+        >
           <Text style={styles.nextText}>Next</Text>
         </TouchableOpacity>
       </ScrollView>
