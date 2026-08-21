@@ -1,6 +1,8 @@
 import React, { useCallback, useContext, useRef, useState, useEffect } from "react";
-import { ActivityIndicator, View, StyleSheet, Text, TouchableOpacity, ScrollView, TextInput, Keyboard, TouchableWithoutFeedback, Modal, Dimensions } from "react-native";
+import { ActivityIndicator, View, StyleSheet, Text, TouchableOpacity, ScrollView, TextInput, Keyboard, TouchableWithoutFeedback, Modal, Dimensions, BackHandler } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useFocusEffect } from "@react-navigation/native";
+import CustomAlertModal from "../components/CustomeAlertModal";
 import ChojaBottom from "../components/ChojaBottom";
 import { EvilIcons, Ionicons } from "@expo/vector-icons";
 import Iwant from "../components/Iwant";
@@ -88,6 +90,42 @@ export default function ChojaHome() {
     const [tab, setTab] = useState("Chotya Jahirati");
     const sortedCategories = categories;
     const scrollRef = useRef(null);
+
+    const [showExitModal, setShowExitModal] = useState(false);
+    const backPressCountRef = useRef(0);
+    const backPressTimerRef = useRef(null);
+
+    useFocusEffect(
+        useCallback(() => {
+            const onBackPress = () => {
+                if (showExitModal) {
+                    setShowExitModal(false);
+                    backPressCountRef.current = 0;
+                    return true;
+                }
+
+                if (backPressCountRef.current === 0) {
+                    backPressCountRef.current = 1;
+                    if (backPressTimerRef.current) clearTimeout(backPressTimerRef.current);
+                    backPressTimerRef.current = setTimeout(() => {
+                        backPressCountRef.current = 0;
+                    }, 2000);
+                    return true;
+                } else {
+                    if (backPressTimerRef.current) clearTimeout(backPressTimerRef.current);
+                    backPressCountRef.current = 0;
+                    setShowExitModal(true);
+                    return true;
+                }
+            };
+
+            const subscription = BackHandler.addEventListener("hardwareBackPress", onBackPress);
+            return () => {
+                if (backPressTimerRef.current) clearTimeout(backPressTimerRef.current);
+                subscription.remove();
+            };
+        }, [showExitModal])
+    );
 
     const [locationStatus, setLocationStatus] = useState("loading");
     const [userCoordinates, setUserCoordinates] = useState(null);
@@ -763,6 +801,24 @@ export default function ChojaHome() {
                         </ScrollView>
                     </SafeAreaView>
                 </Modal>
+
+                <CustomAlertModal
+                    visible={showExitModal}
+                    type="warning"
+                    title="Exit App"
+                    message="Do you really want to exit the app?"
+                    showCancelButton={true}
+                    cancelText="Cancel"
+                    buttonText="Yes"
+                    onCancel={() => {
+                        setShowExitModal(false);
+                        backPressCountRef.current = 0;
+                    }}
+                    onConfirm={() => {
+                        setShowExitModal(false);
+                        BackHandler.exitApp();
+                    }}
+                />
 
             </SafeAreaView>
         </TouchableWithoutFeedback>

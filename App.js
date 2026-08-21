@@ -137,13 +137,22 @@ export default function App() {
     startCustomerNotificationPolling();
     void registerCustomerPushToken();
 
+    let lastHandledResponseId = null;
+
     const responseSubscription = Notifications.addNotificationResponseReceivedListener((response) => {
-      const data = response?.notification?.request?.content?.data;
-      if (navigationRef.isReady()) {
-        if (data?.offerId) {
-          navigationRef.navigate("OfferDetails", { offerId: data.offerId });
-        } else {
-          navigationRef.navigate("NotificationsPage");
+      const responseId = response?.notification?.request?.identifier;
+      const actionId = response?.actionIdentifier;
+
+      // Only navigate if the user EXPLICITLY clicked the push notification
+      if (actionId === Notifications.DEFAULT_ACTION_IDENTIFIER && responseId && responseId !== lastHandledResponseId) {
+        lastHandledResponseId = responseId;
+        const data = response?.notification?.request?.content?.data;
+        if (navigationRef.isReady() && data) {
+          if (data?.offerId) {
+            navigationRef.navigate("OfferDetails", { offerId: data.offerId });
+          } else if (data?.screen === "NotificationsPage") {
+            navigationRef.navigate("NotificationsPage");
+          }
         }
       }
     });

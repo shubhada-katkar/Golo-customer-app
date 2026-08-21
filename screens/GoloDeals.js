@@ -13,11 +13,13 @@ import {
     Image,
     RefreshControl,
     Modal,
+    BackHandler,
 } from "react-native";
 import { Feather, Ionicons, EvilIcons, MaterialIcons } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import CustomAlertModal from "../components/CustomeAlertModal";
 import { ThemeContext } from "../theme/ThemeContext";
 import Topbar2 from "../components/Topbar2";
 import GoloBottom from "../components/GoloBottom";
@@ -202,6 +204,42 @@ const getDistanceText = (item, userCoords) => {
 
 export default function GoloDeals() {
     const navigation = useNavigation();
+
+    const [showExitModal, setShowExitModal] = useState(false);
+    const backPressCountRef = useRef(0);
+    const backPressTimerRef = useRef(null);
+
+    useFocusEffect(
+        useCallback(() => {
+            const onBackPress = () => {
+                if (showExitModal) {
+                    setShowExitModal(false);
+                    backPressCountRef.current = 0;
+                    return true;
+                }
+
+                if (backPressCountRef.current === 0) {
+                    backPressCountRef.current = 1;
+                    if (backPressTimerRef.current) clearTimeout(backPressTimerRef.current);
+                    backPressTimerRef.current = setTimeout(() => {
+                        backPressCountRef.current = 0;
+                    }, 2000);
+                    return true;
+                } else {
+                    if (backPressTimerRef.current) clearTimeout(backPressTimerRef.current);
+                    backPressCountRef.current = 0;
+                    setShowExitModal(true);
+                    return true;
+                }
+            };
+
+            const subscription = BackHandler.addEventListener("hardwareBackPress", onBackPress);
+            return () => {
+                if (backPressTimerRef.current) clearTimeout(backPressTimerRef.current);
+                subscription.remove();
+            };
+        }, [showExitModal])
+    );
 
     // ─── Location state ──────────────────────────────────────
     const [locationStatus, setLocationStatus] = useState("loading");
@@ -1190,6 +1228,24 @@ export default function GoloDeals() {
             >
                 <GoloBottom />
             </SafeAreaView>
+
+            <CustomAlertModal
+                visible={showExitModal}
+                type="warning"
+                title="Exit App"
+                message="Do you really want to exit the app?"
+                showCancelButton={true}
+                cancelText="Cancel"
+                buttonText="Yes"
+                onCancel={() => {
+                    setShowExitModal(false);
+                    backPressCountRef.current = 0;
+                }}
+                onConfirm={() => {
+                    setShowExitModal(false);
+                    BackHandler.exitApp();
+                }}
+            />
         </SafeAreaView >
     );
 }

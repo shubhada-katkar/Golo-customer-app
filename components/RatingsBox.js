@@ -156,7 +156,7 @@ export default function RatingsBox({
             const payload = {
                 rating,
                 content: feedback.trim(),
-                source: 'website',
+                source: 'app',
             };
 
             if (userId && /^[0-9a-fA-F]{24}$/.test(String(userId))) {
