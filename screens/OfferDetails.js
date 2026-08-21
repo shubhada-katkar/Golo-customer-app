@@ -17,7 +17,6 @@ import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { Video, ResizeMode } from "expo-av";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
-import { ThemeContext } from "../theme/ThemeContext";
 import Topbar from "../components/Topbar";
 import GoloBottom from "../components/GoloBottom";
 import CustomAlertModal from "../components/CustomeAlertModal";
@@ -785,39 +784,15 @@ export default function OfferDetails({ navigation, route }) {
     };
 
     const handlePayOnline = async () => {
-        const merchantUpi =
-            offerData?.merchant?.upiId ||
-            offerData?.merchant?.upi ||
-            offerData?.merchant?.vpa ||
-            offerData?.upiId ||
-            offerData?.upi ||
-            merchantProfile?.upiId ||
-            merchantProfile?.upi ||
-            "";
-
-        const merchantNameParam = encodeURIComponent(merchant || "Merchant");
-        const upiUrl = merchantUpi
-            ? `upi://pay?pa=${encodeURIComponent(merchantUpi)}&pn=${merchantNameParam}&cu=INR`
-            : `upi://pay?pn=${merchantNameParam}&cu=INR`;
-
         try {
-            const supported = await Linking.canOpenURL("upi://pay");
-            if (supported) {
-                await Linking.openURL(upiUrl);
-            } else {
-                await Linking.openURL(upiUrl).catch(() => {
-                    showAlert(
-                        "No Payment App Found",
-                        "Please install a UPI payment app (Google Pay, PhonePe, Paytm, etc.) to pay online.",
-                        "warning"
-                    );
-                });
-            }
+            // Global scheme call without any merchant data (no pa, pn, am).
+            // Direct openURL call without canOpenURL to prevent Android 11+ package visibility blocking.
+            await Linking.openURL("upi://pay");
         } catch (error) {
             showAlert(
-                "Payment Error",
-                "Unable to open payment app. Please ensure a UPI payment app is installed on your phone.",
-                "error"
+                "No Payment App Found",
+                "Please install a UPI payment app (Google Pay, PhonePe, Paytm, etc.) to pay online.",
+                "warning"
             );
         }
     };

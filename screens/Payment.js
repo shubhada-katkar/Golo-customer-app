@@ -316,8 +316,8 @@ function isModerationWarningResponse(data) {
     );
 }
 
-const CLOUDINARY_CLOUD_NAME = process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME;
-const CLOUDINARY_UPLOAD_PRESET = process.env.EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+const CLOUDINARY_CLOUD_NAME = process.env.EXPO_PUBLIC_CLOUDINARY_CLOUD_NAME || "dkiagrvnp";
+const CLOUDINARY_UPLOAD_PRESET = process.env.EXPO_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "choja_preset";
 const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
 
 async function uploadAdImageToCloud(uri) {
@@ -823,7 +823,7 @@ export default function Payment({ navigation, route }) {
                 return false;
             }
 
-            showAlert("Error", "An unexpected error occurred while posting.", "error");
+            showAlert("Error", errorMessage || String(error?.message || "An unexpected error occurred while posting."), "error");
             return false;
         } finally {
             setIsSubmitting(false);
