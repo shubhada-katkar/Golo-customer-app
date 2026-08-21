@@ -182,9 +182,11 @@ const styles = StyleSheet.create({
   cancelButtonText: {
     ...textPresets.body,
     color: "#333333",
+    lineHeight: Math.round(14 * 1.5)
   },
   modalButtonText: {
     ...textPresets.body,
     color: "#ffffff",
+    lineHeight: Math.round(14 * 1.5)
   },
 });
