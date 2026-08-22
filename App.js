@@ -46,6 +46,8 @@ import {
   useFonts,
 } from "@expo-google-fonts/poppins";
 import Support from "./screens/Support";
+import NoNetPage from "./screens/NoNetPage";
+import NetInfo from "@react-native-community/netinfo";
 import RatingsBox from "./components/RatingsBox";
 
 import { startCustomerNotificationPolling, stopCustomerNotificationPolling, registerCustomerPushToken } from "./services/notificationService";
@@ -134,6 +136,16 @@ export default function App() {
   }, [fontsLoaded]);
 
   useEffect(() => {
+    const unsubscribeNetInfo = NetInfo.addEventListener((state) => {
+      const isOffline = state.isConnected === false || (state.isConnected === true && state.isInternetReachable === false);
+      if (isOffline && navigationRef.isReady()) {
+        const currentRoute = navigationRef.getCurrentRoute()?.name;
+        if (currentRoute && currentRoute !== "NoNetPage") {
+          navigationRef.navigate("NoNetPage");
+        }
+      }
+    });
+
     startCustomerNotificationPolling();
     void registerCustomerPushToken();
 
@@ -158,6 +170,7 @@ export default function App() {
     });
 
     return () => {
+      unsubscribeNetInfo();
       stopCustomerNotificationPolling();
       responseSubscription.remove();
     };
@@ -211,6 +224,7 @@ export default function App() {
           <Stack.Screen name="StorePage" component={StorePage} />
           <Stack.Screen name="ResetPassword" component={ResetPassword} />
           <Stack.Screen name="Support" component={Support} />
+          <Stack.Screen name="NoNetPage" component={NoNetPage} />
         </Stack.Navigator>
       </NavigationContainer>
       <RatingsBox intervalMinutes={20} />

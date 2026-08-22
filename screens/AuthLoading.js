@@ -1,11 +1,14 @@
 import React, { useEffect } from "react";
 import { View, ActivityIndicator, Text, StyleSheet } from "react-native";
+import NetInfo from "@react-native-community/netinfo";
 import { textPresets } from "../theme/typography";
 import { getValidToken } from "../services/authService";
 
 /**
  * AuthLoading – shown on every cold start.
  *
+ * Checks network state first:
+ *  - If device is offline → resets to NoNetPage.
  * Silently attempts to validate / refresh the stored access token so that:
  *  - Returning logged-in users never get kicked to Login just because their
  *    access token expired while the app was backgrounded (the refresh token
@@ -21,6 +24,15 @@ export default function AuthLoading({ navigation }) {
 
     const bootstrap = async () => {
       try {
+        const netState = await NetInfo.fetch();
+        const isOffline = netState.isConnected === false || (netState.isConnected === true && netState.isInternetReachable === false);
+        if (isOffline) {
+          if (!cancelled) {
+            navigation.reset({ index: 0, routes: [{ name: "NoNetPage" }] });
+          }
+          return;
+        }
+
         // Try to get a valid token — auto-refreshes if access token is expired
         await getValidToken();
       } catch {
