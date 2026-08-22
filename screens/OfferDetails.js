@@ -785,13 +785,15 @@ export default function OfferDetails({ navigation, route }) {
 
     const handlePayOnline = async () => {
         try {
-            // Global scheme call without any merchant data (no pa, pn, am).
-            // Direct openURL call without canOpenURL to prevent Android 11+ package visibility blocking.
-            await Linking.openURL("upi://pay");
+            try {
+                await Linking.openURL("tez://upi/pay");
+            } catch {
+                await Linking.openURL("gpay://upi/pay");
+            }
         } catch (error) {
             showAlert(
-                "No Payment App Found",
-                "Please install a UPI payment app (Google Pay, PhonePe, Paytm, etc.) to pay online.",
+                "Google Pay Not Installed",
+                "Please install Google Pay app first to pay online.",
                 "warning"
             );
         }
@@ -1112,7 +1114,7 @@ export default function OfferDetails({ navigation, route }) {
                             {/* How to Redeem Section */}
                             <View style={[styles.card, styles.redeemCard]}>
                                 <Text style={{ ...textPresets.subtitle }}>How to Redeem</Text>
-                                <View style={styles.redeemRow}>
+                                <View>
                                     <View style={styles.redeemStep}>
                                         <Ionicons name="ticket-outline" size={33} color="#157a4f" />
                                         <Text style={styles.redeemStepLabel}>Claim Offer</Text>
@@ -1538,9 +1540,6 @@ const styles = StyleSheet.create({
     },
     redeemCard: {
         marginTop: 16,
-    },
-    redeemRow: {
-        // flexDirection: "row",
     },
     redeemStep: {
         flex: 1,
