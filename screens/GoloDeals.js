@@ -95,6 +95,8 @@ const STRIP_CATEGORIES = [
     { label: "Healthcare & Medical", displayLabel: "Healthcare", icon: "medkit-outline" },
 ];
 
+const MAX_SLIDES = 10;
+
 const staticBanners = [
     { id: "static-1", imageUrl: require("../assets/banner1.png"), isStatic: true },
     { id: "static-2", imageUrl: require("../assets/banner2.png"), isStatic: true },
@@ -102,13 +104,81 @@ const staticBanners = [
     { id: "static-4", imageUrl: require("../assets/banner4.png"), isStatic: true },
 ];
 
+const isRemoteUrl = (url) => {
+    const normalized = String(url || "").trim();
+    if (!normalized) return false;
+    return /^(https?:\/\/|data:|blob:)/i.test(normalized);
+};
+
+const extractBannerImageUrl = (item) => {
+    if (!item) return null;
+    if (typeof item === "string") return item;
+    return (
+        item.imageUrl ||
+        item.imageURL ||
+        item.bannerImageUrl ||
+        item.bannerImageURL ||
+        item.bannerImage ||
+        item.image ||
+        item?.selectedProducts?.[0]?.imageUrl ||
+        item?.products?.[0]?.images?.[0] ||
+        item?.products?.[0]?.image?.url ||
+        null
+    );
+};
+
+const normalizeImageUrl = (rawUrl) => {
+    const url = String(rawUrl || "").trim();
+    if (!url) return null;
+    if (/^(data:|blob:)/i.test(url)) return url;
+    if (isRemoteUrl(url) || url.startsWith("/")) {
+        if (url.startsWith("/") && BASE_URL) {
+            return `${BASE_URL.replace(/\/$/, "")}${url}`;
+        }
+        return url;
+    }
+
+    if (BASE_URL) {
+        const base = BASE_URL.replace(/\/$/, "");
+        const path = url.replace(/\\/g, "/").replace(/^\//, "");
+        return `${base}/${path}`;
+    }
+
+    return url.replace(/\\/g, "/");
+};
+
 const resolveImageUrl = (value) => {
-    if (!value || typeof value !== 'string') return null;
-    const trimmed = value.trim();
-    if (!trimmed) return null;
-    if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith('data:')) return trimmed;
-    if (trimmed.startsWith('/')) return `${BASE_URL}${trimmed}`;
-    return `${BASE_URL}/${trimmed}`;
+    return normalizeImageUrl(value);
+};
+
+const extractMerchantId = (item) => {
+    const raw = String(item?.merchantId || "").trim();
+    if (raw && !raw.startsWith("shop-")) {
+        return raw;
+    }
+    return "";
+};
+
+const parseDateValue = (value) => {
+    if (!value) return null;
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const getBannerDisplayStatus = (item) => {
+    const rawStatus = String(item?.status || "").trim().toLowerCase();
+    if (rawStatus === "rejected") return "rejected";
+    if (rawStatus === "under_review" || rawStatus === "pending") return "under_review";
+
+    const startDate = parseDateValue(item?.startDate || item?.start || item?.start_date);
+    const endDate = parseDateValue(item?.endDate || item?.end || item?.end_date);
+    const now = new Date();
+
+    if (startDate && now < startDate) return "upcoming";
+    if (endDate && now > endDate) return "expired";
+    if (rawStatus === "active" || rawStatus === "approved") return "active";
+    if (!startDate && !endDate) return rawStatus || "active";
+    return "active";
 };
 
 const getOfferImage = (item) =>
@@ -511,16 +581,88 @@ export default function GoloDeals() {
         try {
             setBannersLoading(true);
             const cityParam = customerCity || "";
-            const url = `${BASE_URL}/banners/promotions/active?limit=10&city=${encodeURIComponent(cityParam)}&fullLocation=${encodeURIComponent(locationPlaceName || "")}`;
+            const url = `${BASE_URL}/banners/promotions/active?limit=${MAX_SLIDES}&city=${encodeURIComponent(cityParam)}&fullLocation=${encodeURIComponent(locationPlaceName || "")}`;
             const response = await fetch(url);
-            const payload = await response.json().catch(() => ({}));
-            if (response.ok && Array.isArray(payload?.data)) {
-                const merchantBanners = payload.data;
-                const merchantCount = merchantBanners.length;
-                const staticCountNeeded = Math.max(0, Math.min(4, 10 - merchantCount));
-                const neededStaticBanners = staticBanners.slice(0, staticCountNeeded);
-                const combinedBanners = [...merchantBanners, ...neededStaticBanners];
-                setBanners(combinedBanners);
+            const res = await response.json().catch(() => ({}));
+
+            const bannerCandidate =
+                res?.data?.data ??
+                res?.data?.rows ??
+                res?.data ??
+                res?.rows ??
+                res;
+
+            const rows = Array.isArray(bannerCandidate)
+                ? bannerCandidate
+                : Array.isArray(bannerCandidate?.rows)
+                    ? bannerCandidate.rows
+                    : [];
+
+            if (response.ok && Array.isArray(rows)) {
+                const dynamicSlides = rows
+                    .filter((item) => getBannerDisplayStatus(item) === "active")
+                    .map((item) => {
+                        const imageUrl = normalizeImageUrl(extractBannerImageUrl(item));
+                        if (!imageUrl) return null;
+
+                        const merchantId = extractMerchantId(item);
+
+                        return {
+                            ...item,
+                            imageUrl,
+                            merchantId,
+                            id: item._id || item.id || item.requestId,
+                            rawTitle: item.bannerTitle || "",
+                            isStatic: false,
+                        };
+                    })
+                    .filter(Boolean);
+
+                const platformBanners = staticBanners;
+                let finalSlides = [];
+                const D = dynamicSlides.length;
+
+                if (D === 0) {
+                    finalSlides = platformBanners.map((p, idx) => ({
+                        ...p,
+                        isFallback: true,
+                        id: `fallback_${idx}`,
+                    }));
+                } else if (D >= MAX_SLIDES) {
+                    finalSlides = dynamicSlides.slice(0, MAX_SLIDES);
+                } else {
+                    const globalPaddingCount = MAX_SLIDES - D;
+                    const globalPadding = [];
+
+                    for (let i = 0; i < globalPaddingCount; i++) {
+                        globalPadding.push({
+                            ...platformBanners[i % platformBanners.length],
+                            isFallback: true,
+                            id: `fallback_pad_${i}`,
+                        });
+                    }
+
+                    const slots = new Array(MAX_SLIDES).fill(null);
+                    for (let i = 0; i < D; i++) {
+                        const idx = Math.round(i * (MAX_SLIDES / D));
+                        let placeIdx = idx % MAX_SLIDES;
+                        while (slots[placeIdx] !== null) {
+                            placeIdx = (placeIdx + 1) % MAX_SLIDES;
+                        }
+                        slots[placeIdx] = dynamicSlides[i];
+                    }
+
+                    let pIdx = 0;
+                    for (let i = 0; i < MAX_SLIDES; i++) {
+                        if (slots[i] === null) {
+                            slots[i] = globalPadding[pIdx++];
+                        }
+                    }
+
+                    finalSlides = slots;
+                }
+
+                setBanners(finalSlides.slice(0, MAX_SLIDES));
             } else {
                 setBanners(staticBanners);
             }
@@ -676,7 +818,7 @@ export default function GoloDeals() {
 
     // ─── Banner Tracking (Impressions & Clicks as per Backend Logic) ──
     const trackBannerImpression = useCallback((item) => {
-        if (!item || item.isStatic || item.trackedImpression || !BASE_URL) return;
+        if (!item || item.isStatic || item.isFallback || item.trackedImpression || !BASE_URL) return;
         item.trackedImpression = true;
         const bannerId = item.requestId || item.id || item._id;
         if (!bannerId || !item.merchantId) return;
@@ -696,7 +838,7 @@ export default function GoloDeals() {
     }, [customerCity]);
 
     const handleBannerPress = useCallback((item) => {
-        if (item.isStatic) return;
+        if (item.isStatic || item.isFallback) return;
 
         const bannerId = item.requestId || item.id || item._id;
         if (bannerId && item.merchantId && BASE_URL) {
@@ -713,16 +855,26 @@ export default function GoloDeals() {
 
         if (item.merchantId) {
             navigation.navigate("StorePage", { merchantId: item.merchantId, bannerData: item });
+        } else if (item.requestId || item._id) {
+            navigation.navigate("OfferDetails", { offerData: item });
         }
     }, [navigation, customerCity]);
 
     // ─── Render banner item ──────────────────────────────────
     const BANNER_GAP = 12;
     const renderBannerItem = useCallback(({ item }) => {
-        const imageSource = item.isStatic ? item.imageUrl : { uri: resolveImageUrl(item.imageUrl) };
-        if (!item.isStatic) {
+        const isStaticOrFallback = item.isStatic || item.isFallback;
+        const rawUrl = isStaticOrFallback ? null : extractBannerImageUrl(item);
+        const bannerUri = isStaticOrFallback ? null : (item.imageUrl || normalizeImageUrl(rawUrl));
+
+        const imageSource = isStaticOrFallback
+            ? item.imageUrl
+            : (bannerUri ? { uri: bannerUri } : staticBanners[0].imageUrl);
+
+        if (!isStaticOrFallback) {
             trackBannerImpression(item);
         }
+
         return (
             <TouchableOpacity
                 activeOpacity={0.9}
