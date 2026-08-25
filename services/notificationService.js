@@ -117,7 +117,7 @@ export async function registerCustomerPushToken(force = false) {
     const baseUrl = getBaseUrl();
     if (!token || !baseUrl) return;
 
-    await fetch(`${baseUrl}/users/notifications/push-token`, {
+    const response = await fetch(`${baseUrl}/users/notifications/push-token`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -126,7 +126,10 @@ export async function registerCustomerPushToken(force = false) {
       body: JSON.stringify({ pushToken: expoToken }),
     });
 
-    pushTokenRegistered = true;
+    if (response.ok) {
+      pushTokenRegistered = true;
+      console.log("Customer push token registered successfully");
+    }
   } catch (error) {
     console.log("Register customer push token error:", error);
   }
