@@ -272,7 +272,7 @@ const getDistanceText = (item, userCoords) => {
     return null;
 };
 
-export default function GoloDeals() {
+export default function GoloDeals({ route }) {
     const navigation = useNavigation();
 
     const [showExitModal, setShowExitModal] = useState(false);
@@ -321,6 +321,25 @@ export default function GoloDeals() {
     const [gpsCity, setGpsCity] = useState("");
     const [searchInput, setSearchInput] = useState("");
     const [searchQuery, setSearchQuery] = useState("");
+
+    const [offersLimit, setOffersLimit] = useState(6);
+    const [merchantsLimit, setMerchantsLimit] = useState(6);
+    const [productsLimit, setProductsLimit] = useState(6);
+
+    useEffect(() => {
+        setOffersLimit(6);
+        setMerchantsLimit(6);
+        setProductsLimit(6);
+    }, [searchQuery]);
+
+    useEffect(() => {
+        if (route?.params?.searchQuery !== undefined) {
+            const q = String(route.params.searchQuery || "").trim();
+            setSearchInput(q);
+            setSearchQuery(q);
+            navigation.setParams({ searchQuery: undefined });
+        }
+    }, [route?.params?.searchQuery]);
 
     // Location editing state
     const [isEditingLocation, setIsEditingLocation] = useState(false);
@@ -898,6 +917,239 @@ export default function GoloDeals() {
     }), []);
 
     // ─── Render deals sections dynamically ────────────────────
+    const query = String(searchQuery || "").trim().toLowerCase();
+
+    const allDealsOffers = [];
+    sections.forEach((sec) => {
+        const prods = Array.isArray(sec?.products) ? sec.products : [];
+        prods.forEach((offer) => {
+            if (offer && !allDealsOffers.some((o) => (o._id || o.id || o.requestId) === (offer._id || offer.id || offer.requestId))) {
+                allDealsOffers.push(offer);
+            }
+        });
+    });
+    banners.forEach((b) => {
+        if (b && !b.isStatic && !b.isFallback && !allDealsOffers.some((o) => (o._id || o.id || o.requestId) === (b._id || b.id || b.requestId))) {
+            allDealsOffers.push(b);
+        }
+    });
+
+    const searchResultsOffers = [];
+    const searchResultsMerchantsMap = new Map();
+    const searchResultsProducts = [];
+
+    if (query) {
+        allDealsOffers.forEach((offer, offerIdx) => {
+            const offerTitle = String(getOfferTitle(offer)).toLowerCase();
+            const subtitle = String(getOfferSubtitle(offer)).toLowerCase();
+            const offerType = String(offer?.bannerCategory || offer?.offerType || offer?.category || "").toLowerCase();
+            const desc = String(offer?.description || offer?.details || "").toLowerCase();
+
+            const isOfferMatch = offerTitle.includes(query) || subtitle.includes(query) || offerType.includes(query) || desc.includes(query);
+
+            // 1. Offers Match
+            if (isOfferMatch) {
+                searchResultsOffers.push({
+                    type: 'offer',
+                    offer,
+                    id: offer?._id || offer?.id || offer?.requestId || `offer-${offerIdx}`,
+                });
+            }
+
+            // 2. Merchants Match
+            const merchantName = getOfferSubtitle(offer);
+            const merchantId = offer?.merchantId || offer?.merchant?._id || offer?.merchant?.id || merchantName;
+            const merchantCategory = offer?.merchant?.storeCategory || offer?.merchant?.category || offer?.bannerCategory || offer?.category || "";
+            const merchantAddress = offer?.merchant?.address || offer?.merchantAddress || offer?.location || offer?.address || "";
+            const merchantLogo = offer?.merchant?.logo || offer?.merchant?.imageUrl || offer?.merchant?.image || getOfferImage(offer);
+            const distanceText = getDistanceText(offer, userCoordinates);
+
+            const isMerchantMatch =
+                merchantName.toLowerCase().includes(query) ||
+                merchantCategory.toLowerCase().includes(query) ||
+                merchantAddress.toLowerCase().includes(query);
+
+            if (isMerchantMatch && merchantId) {
+                const key = String(merchantId).toLowerCase();
+                if (!searchResultsMerchantsMap.has(key)) {
+                    searchResultsMerchantsMap.set(key, {
+                        id: merchantId,
+                        merchantId: offer?.merchantId || offer?.merchant?._id || offer?.merchant?.id,
+                        name: merchantName,
+                        category: merchantCategory,
+                        address: merchantAddress,
+                        logo: merchantLogo,
+                        distanceText,
+                        merchantObj: offer?.merchant,
+                        offer,
+                    });
+                }
+            }
+
+            // 3. Products Match
+            const products = Array.isArray(offer?.selectedProducts) && offer.selectedProducts.length
+                ? offer.selectedProducts
+                : (Array.isArray(offer?.products) ? offer.products : []);
+
+            if (products.length > 0) {
+                products.forEach((prod, prodIdx) => {
+                    const prodName = String(prod?.productName || prod?.name || prod?.title || "").toLowerCase();
+                    const prodDesc = String(prod?.description || "").toLowerCase();
+                    if (isOfferMatch || prodName.includes(query) || prodDesc.includes(query)) {
+                        searchResultsProducts.push({
+                            type: 'product',
+                            product: prod,
+                            offer,
+                            id: `${offer?._id || offer?.id || offer?.requestId || offerIdx}_prod_${prod?._id || prod?.productId || prodIdx}`,
+                        });
+                    }
+                });
+            } else if (isOfferMatch) {
+                searchResultsProducts.push({
+                    type: 'product',
+                    product: null,
+                    offer,
+                    id: `${offer?._id || offer?.id || offer?.requestId || offerIdx}_prod_self`,
+                });
+            }
+        });
+    }
+
+    const searchResultsMerchants = Array.from(searchResultsMerchantsMap.values());
+
+    const renderDealsCardItem = (itemObj, index) => {
+        const parentOffer = itemObj.offer;
+        const isProd = itemObj.type === 'product';
+        const prod = itemObj?.product;
+
+        let itemTitle, subtitle, directPrice, image, offerType;
+
+        if (isProd && prod) {
+            itemTitle = prod?.productName || prod?.name || prod?.title || getOfferTitle(parentOffer);
+            subtitle = getOfferSubtitle(parentOffer);
+            image = prod?.imageUrl || prod?.image?.url || (Array.isArray(prod?.images) ? prod.images[0] : null) || getOfferImage(parentOffer);
+            const prodPrice = prod?.offerPrice ?? prod?.discountedPrice ?? prod?.salePrice ?? prod?.finalPrice ?? prod?.price;
+            const prodOrigPrice = prod?.originalPrice ?? prod?.mrp;
+            directPrice = formatPrice(prodPrice) || formatPrice(prodOrigPrice) || getOfferDisplayPrice(parentOffer);
+            offerType = parentOffer?.bannerCategory || parentOffer?.offerType || parentOffer?.category || "-";
+        } else {
+            itemTitle = getOfferTitle(parentOffer);
+            subtitle = getOfferSubtitle(parentOffer);
+            image = getOfferImage(parentOffer);
+            directPrice = getOfferDisplayPrice(parentOffer);
+            offerType = parentOffer?.bannerCategory || parentOffer?.offerType || parentOffer?.category || "-";
+        }
+
+        const distanceText = getDistanceText(parentOffer, userCoordinates);
+        const imageSource = image ? { uri: resolveImageUrl(image) } : null;
+
+        return (
+            <TouchableOpacity
+                key={itemObj.id || `card-${index}`}
+                activeOpacity={0.9}
+                style={[styles.card, { width: "48%", marginBottom: 16 }]}
+                onPress={() => navigation.navigate("OfferDetails", { offerData: parentOffer })}
+            >
+                <View style={styles.cardInner}>
+                    {imageSource ? (
+                        <Image source={imageSource} style={styles.image} />
+                    ) : (
+                        <View style={[styles.image, styles.imageFallback]}>
+                            <Ionicons name="image-outline" size={28} color="#8a8a8a" />
+                        </View>
+                    )}
+
+                    <View style={styles.cardContent}>
+                        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                            {directPrice ? (
+                                <Text style={styles.discountPrice} numberOfLines={1}>
+                                    {directPrice}
+                                </Text>
+                            ) : null}
+
+                            {distanceText ? (
+                                <Text style={styles.distanceMetaText}>{distanceText}</Text>
+                            ) : null}
+                        </View>
+
+                        <Text style={styles.title} numberOfLines={1}>
+                            {itemTitle}
+                        </Text>
+
+                        <Text style={styles.subtitle} numberOfLines={1}>
+                            By {subtitle}
+                        </Text>
+
+                        <Text style={styles.metaText} numberOfLines={1}>
+                            Offer Type: {offerType}
+                        </Text>
+                    </View>
+                </View>
+            </TouchableOpacity>
+        );
+    };
+
+    const renderDealsMerchantCard = (merchant, index) => {
+        const logoUri = resolveImageUrl(merchant?.logo);
+        return (
+            <TouchableOpacity
+                key={merchant.id || `merchant-${index}`}
+                activeOpacity={0.9}
+                style={[styles.card, { width: "48%", marginBottom: 16 }]}
+                onPress={() =>
+                    navigation.navigate("StorePage", {
+                        merchantId: merchant.merchantId,
+                        passedMerchant: merchant.merchantObj,
+                    })
+                }
+            >
+                <View style={styles.cardInner}>
+                    {logoUri ? (
+                        <Image source={{ uri: logoUri }} style={{ width: "100%", height: 100, backgroundColor: "#f5f5f5" }} resizeMode="cover" />
+                    ) : (
+                        <View style={[{ width: "100%", height: 100, backgroundColor: "#fff8ec" }, styles.imageFallback]}>
+                            <Ionicons name="storefront" size={26} color="#f8a812" />
+                        </View>
+                    )}
+
+                    <View style={styles.cardContent}>
+                        <Text style={styles.title} numberOfLines={1}>
+                            {merchant.name}
+                        </Text>
+
+                        {merchant.category ? (
+                            <Text style={styles.subtitle} numberOfLines={1}>
+                                {merchant.category}
+                            </Text>
+                        ) : null}
+
+                        {merchant.distanceText ? (
+                            <Text style={styles.distanceMetaText} numberOfLines={1}>
+                                📍 {merchant.distanceText}
+                            </Text>
+                        ) : null}
+
+                        <View style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            marginTop: 8,
+                            paddingVertical: 4,
+                            paddingHorizontal: 8,
+                            backgroundColor: "#eaf7f0",
+                            borderRadius: 6,
+                            alignSelf: "flex-start",
+                        }}>
+                            <Text style={{ color: "#157a4f", marginRight: 2, ...textPresets.label }}>
+                                Visit Store
+                            </Text>
+                            <Ionicons name="chevron-forward" size={12} color="#157a4f" />
+                        </View>
+                    </View>
+                </View>
+            </TouchableOpacity>
+        );
+    };
+
     const renderDealSection = (section) => {
         const { title, products = [], key } = section;
         const query = String(searchQuery || "").trim().toLowerCase();
@@ -1138,12 +1390,7 @@ export default function GoloDeals() {
             }}>
                 <View style={styles.searchContainer}>
                     <TouchableOpacity
-                        onPress={() => {
-                            const q = searchInput.trim();
-                            if (q) {
-                                navigation.navigate("GoloHome", { searchQuery: q });
-                            }
-                        }}
+                        onPress={() => setSearchQuery(searchInput.trim())}
                         activeOpacity={0.7}
                     >
                         <EvilIcons name="search" size={24} color="#555" />
@@ -1152,12 +1399,7 @@ export default function GoloDeals() {
                         placeholder="Search offers or products"
                         value={searchInput}
                         onChangeText={setSearchInput}
-                        onSubmitEditing={() => {
-                            const q = searchInput.trim();
-                            if (q) {
-                                navigation.navigate("GoloHome", { searchQuery: q });
-                            }
-                        }}
+                        onSubmitEditing={() => setSearchQuery(searchInput.trim())}
                         style={styles.searchInput}
                         returnKeyType="search"
                     />
@@ -1189,104 +1431,197 @@ export default function GoloDeals() {
                 }
                 showsVerticalScrollIndicator={false}
             >
-                {/* ---- Category Strip (First 4 Categories + See All) ---- */}
-                <View style={styles.categorySection}>
-                    <View style={styles.categoryStripRow}>
-                        {STRIP_CATEGORIES.map((item, index) => {
-                            const { bg, dark } = CATEGORY_COLORS[item.label] || { bg: "#f0f0f0", dark: "#555" };
-                            return (
-                                <TouchableOpacity
-                                    key={index}
-                                    style={styles.stripChip}
-                                    activeOpacity={0.8}
-                                    onPress={() => navigation.navigate("GoloHome", { category: item.label })}
-                                >
-                                    <View style={[styles.stripIconCircle, { backgroundColor: bg }]}>
-                                        <Ionicons name={item.icon} size={18} color={dark} />
-                                    </View>
-                                    <Text style={[styles.stripText, { color: dark }]} numberOfLines={2}>
-                                        {item.displayLabel}
-                                    </Text>
-                                </TouchableOpacity>
-                            );
-                        })}
-                        <TouchableOpacity
-                            style={styles.stripChip}
-                            activeOpacity={0.8}
-                            onPress={() => setAllCategoriesModalOpen(true)}
-                        >
-                            <View style={[styles.stripIconCircle, { backgroundColor: "#f2f2f2" }]}>
-                                <Ionicons name="grid" size={18} color="#444" />
+                {query ? (
+                    <View style={{ width: "100%", marginTop: 10 }}>
+                        {/* ---- Section 1: Offers ---- */}
+                        {searchResultsOffers.length > 0 && (
+                            <View style={{ marginBottom: 24 }}>
+                                <View style={styles.sectionHeaderRow}>
+                                    <Text style={styles.sectionTitle}>Offers ({searchResultsOffers.length})</Text>
+                                </View>
+                                <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" }}>
+                                    {searchResultsOffers.slice(0, offersLimit).map((item, index) =>
+                                        renderDealsCardItem(item, index)
+                                    )}
+                                </View>
+                                {searchResultsOffers.length > offersLimit && (
+                                    <TouchableOpacity
+                                        style={styles.loadMoreBtn}
+                                        onPress={() => setOffersLimit((prev) => prev + 5)}
+                                        activeOpacity={0.8}
+                                    >
+                                        <Text style={styles.loadMoreBtnText}>Load More</Text>
+                                        <Ionicons name="chevron-down" size={16} color="#157a4f" />
+                                    </TouchableOpacity>
+                                )}
                             </View>
-                            <Text style={[styles.stripText, { color: "#444" }]} numberOfLines={1}>
-                                See All
-                            </Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
+                        )}
 
-                {/* ---- Banner Carousel Section ---- */}
-                <View style={styles.bannerSection}>
-                    <Text style={styles.bannerSectionTitle}>Featured Promotions</Text>
+                        {/* ---- Section 2: Merchant ---- */}
+                        {searchResultsMerchants.length > 0 && (
+                            <View style={{ marginBottom: 24 }}>
+                                <View style={styles.sectionHeaderRow}>
+                                    <Text style={styles.sectionTitle}>Merchant ({searchResultsMerchants.length})</Text>
+                                </View>
+                                <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" }}>
+                                    {searchResultsMerchants.slice(0, merchantsLimit).map((merchant, index) =>
+                                        renderDealsMerchantCard(merchant, index)
+                                    )}
+                                </View>
+                                {searchResultsMerchants.length > merchantsLimit && (
+                                    <TouchableOpacity
+                                        style={styles.loadMoreBtn}
+                                        onPress={() => setMerchantsLimit((prev) => prev + 5)}
+                                        activeOpacity={0.8}
+                                    >
+                                        <Text style={styles.loadMoreBtnText}>Load More</Text>
+                                        <Ionicons name="chevron-down" size={16} color="#157a4f" />
+                                    </TouchableOpacity>
+                                )}
+                            </View>
+                        )}
 
-                    {bannersLoading && banners.length === 0 ? (
-                        <View style={styles.bannerLoaderBox}>
-                            {/* <ActivityIndicator size="small" color="#f8a812" />
-                            <Text style={styles.bannerLoaderText}>Loading banners...</Text> */}
-                        </View>
-                    ) : banners.length === 0 ? (
-                        <View style={styles.bannerEmptyBox}>
-                            <Ionicons name="megaphone-outline" size={32} color="#ccc" />
-                            <Text style={styles.bannerEmptyText}>No promotions available right now</Text>
-                        </View>
-                    ) : (
-                        <>
-                            <FlatList
-                                ref={bannerFlatListRef}
-                                data={loopingBanners}
-                                keyExtractor={(item, index) => `${item.requestId || item._id || item.id || 'static'}-${index}`}
-                                renderItem={renderBannerItem}
-                                horizontal
-                                pagingEnabled
-                                showsHorizontalScrollIndicator={false}
-                                onScroll={onBannerScroll}
-                                onScrollBeginDrag={onBannerScrollBeginDrag}
-                                onScrollEndDrag={onBannerScrollEndDrag}
-                                scrollEventThrottle={16}
-                                getItemLayout={getItemLayout}
-                                snapToInterval={SLIDE_WIDTH + BANNER_GAP}
-                                decelerationRate="fast"
-                                contentContainerStyle={{ paddingRight: 0 }}
-                            />
+                        {/* ---- Section 3: Products Cards ---- */}
+                        {searchResultsProducts.length > 0 && (
+                            <View style={{ marginBottom: 24 }}>
+                                <View style={styles.sectionHeaderRow}>
+                                    <Text style={styles.sectionTitle}>Products Cards ({searchResultsProducts.length})</Text>
+                                </View>
+                                <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" }}>
+                                    {searchResultsProducts.slice(0, productsLimit).map((item, index) =>
+                                        renderDealsCardItem(item, index)
+                                    )}
+                                </View>
+                                {searchResultsProducts.length > productsLimit && (
+                                    <TouchableOpacity
+                                        style={styles.loadMoreBtn}
+                                        onPress={() => setProductsLimit((prev) => prev + 5)}
+                                        activeOpacity={0.8}
+                                    >
+                                        <Text style={styles.loadMoreBtnText}>Load More</Text>
+                                        <Ionicons name="chevron-down" size={16} color="#157a4f" />
+                                    </TouchableOpacity>
+                                )}
+                            </View>
+                        )}
 
-                            {/* Dot indicators */}
-                            {banners.length > 1 && (
-                                <View style={styles.dotsContainer}>
-                                    {banners.map((_, index) => (
-                                        <View
-                                            key={index}
-                                            style={[
-                                                styles.dot,
-                                                currentBannerIndex === index
-                                                    ? styles.dotActive
-                                                    : styles.dotInactive,
-                                            ]}
-                                        />
-                                    ))}
+                        {/* Empty search state */}
+                        {searchResultsOffers.length === 0 &&
+                            searchResultsMerchants.length === 0 &&
+                            searchResultsProducts.length === 0 && (
+                                <View style={{ alignItems: "center", justifyContent: "center", paddingVertical: 40 }}>
+                                    <Ionicons name="search-outline" size={48} color="#aaa" />
+                                    <Text style={{ textAlign: "center", marginTop: 12, ...textPresets.body }}>
+                                        No results found for "{searchQuery}"
+                                    </Text>
+                                    <Text style={{ textAlign: "center", marginTop: 8, color: "#666", ...textPresets.label }}>
+                                        Try searching with a different keyword
+                                    </Text>
                                 </View>
                             )}
-                        </>
-                    )}
-                </View>
-
-                {/* ---- Dynamic Deals Sections ---- */}
-                {sectionsLoading && sections.length === 0 ? (
-                    <View style={{ marginVertical: 32, alignItems: "center" }}>
-                        <ActivityIndicator size="small" color="#f8a812" />
-                        <Text style={{ marginTop: 8, color: "#666", ...textPresets.label }}>Loading deals...</Text>
                     </View>
                 ) : (
-                    sections.map((section) => renderDealSection(section))
+                    <>
+                        {/* ---- Category Strip (First 4 Categories + See All) ---- */}
+                        <View style={styles.categorySection}>
+                            <View style={styles.categoryStripRow}>
+                                {STRIP_CATEGORIES.map((item, index) => {
+                                    const { bg, dark } = CATEGORY_COLORS[item.label] || { bg: "#f0f0f0", dark: "#555" };
+                                    return (
+                                        <TouchableOpacity
+                                            key={index}
+                                            style={styles.stripChip}
+                                            activeOpacity={0.8}
+                                            onPress={() => navigation.navigate("GoloHome", { category: item.label })}
+                                        >
+                                            <View style={[styles.stripIconCircle, { backgroundColor: bg }]}>
+                                                <Ionicons name={item.icon} size={18} color={dark} />
+                                            </View>
+                                            <Text style={[styles.stripText, { color: dark }]} numberOfLines={2}>
+                                                {item.displayLabel}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                                <TouchableOpacity
+                                    style={styles.stripChip}
+                                    activeOpacity={0.8}
+                                    onPress={() => setAllCategoriesModalOpen(true)}
+                                >
+                                    <View style={[styles.stripIconCircle, { backgroundColor: "#f2f2f2" }]}>
+                                        <Ionicons name="grid" size={18} color="#444" />
+                                    </View>
+                                    <Text style={[styles.stripText, { color: "#444" }]} numberOfLines={1}>
+                                        See All
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+
+                        {/* ---- Banner Carousel Section ---- */}
+                        <View style={styles.bannerSection}>
+                            <Text style={styles.bannerSectionTitle}>Featured Promotions</Text>
+
+                            {bannersLoading && banners.length === 0 ? (
+                                <View style={styles.bannerLoaderBox}>
+                                    {/* <ActivityIndicator size="small" color="#f8a812" />
+                                    <Text style={styles.bannerLoaderText}>Loading banners...</Text> */}
+                                </View>
+                            ) : banners.length === 0 ? (
+                                <View style={styles.bannerEmptyBox}>
+                                    <Ionicons name="megaphone-outline" size={32} color="#ccc" />
+                                    <Text style={styles.bannerEmptyText}>No promotions available right now</Text>
+                                </View>
+                            ) : (
+                                <>
+                                    <FlatList
+                                        ref={bannerFlatListRef}
+                                        data={loopingBanners}
+                                        keyExtractor={(item, index) => `${item.requestId || item._id || item.id || 'static'}-${index}`}
+                                        renderItem={renderBannerItem}
+                                        horizontal
+                                        pagingEnabled
+                                        showsHorizontalScrollIndicator={false}
+                                        onScroll={onBannerScroll}
+                                        onScrollBeginDrag={onBannerScrollBeginDrag}
+                                        onScrollEndDrag={onBannerScrollEndDrag}
+                                        scrollEventThrottle={16}
+                                        getItemLayout={getItemLayout}
+                                        snapToInterval={SLIDE_WIDTH + BANNER_GAP}
+                                        decelerationRate="fast"
+                                        contentContainerStyle={{ paddingRight: 0 }}
+                                    />
+
+                                    {/* Dot indicators */}
+                                    {banners.length > 1 && (
+                                        <View style={styles.dotsContainer}>
+                                            {banners.map((_, index) => (
+                                                <View
+                                                    key={index}
+                                                    style={[
+                                                        styles.dot,
+                                                        currentBannerIndex === index
+                                                            ? styles.dotActive
+                                                            : styles.dotInactive,
+                                                    ]}
+                                                />
+                                            ))}
+                                        </View>
+                                    )}
+                                </>
+                            )}
+                        </View>
+
+                        {/* ---- Dynamic Deals Sections ---- */}
+                        {sectionsLoading && sections.length === 0 ? (
+                            <View style={{ marginVertical: 32, alignItems: "center" }}>
+                                <ActivityIndicator size="small" color="#f8a812" />
+                                <Text style={{ marginTop: 8, color: "#666", ...textPresets.label }}>Loading deals...</Text>
+                            </View>
+                        ) : (
+                            sections.map((section) => renderDealSection(section))
+                        )}
+                    </>
                 )}
 
                 {/* Small padding space before footer */}
@@ -1505,7 +1840,7 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         borderWidth: 1,
         borderColor: "#cacaca",
-        marginTop: 6,
+        marginVertical: 8,
         paddingHorizontal: 6,
         width: "100%",
     },
@@ -1819,5 +2154,23 @@ const styles = StyleSheet.create({
         ...textPresets.label,
         textAlign: "center",
         color: "#111",
+    },
+    loadMoreBtn: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "#f0faf5",
+        borderWidth: 1,
+        borderColor: "#b6e5d0",
+        paddingVertical: 10,
+        paddingHorizontal: 18,
+        borderRadius: 20,
+        marginTop: 4,
+        alignSelf: "center",
+    },
+    loadMoreBtnText: {
+        color: "#157a4f",
+        ...textPresets.label,
+        marginRight: 6,
     },
 });

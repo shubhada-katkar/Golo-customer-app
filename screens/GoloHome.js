@@ -311,6 +311,16 @@ export default function GoloHome({ route }) {
     const [radius, setRadius] = useState(DEFAULT_RADIUS_KM);
     const [selectedOfferTypes, setSelectedOfferTypes] = useState("");
 
+    const [offersLimit, setOffersLimit] = useState(5);
+    const [merchantsLimit, setMerchantsLimit] = useState(5);
+    const [productsLimit, setProductsLimit] = useState(5);
+
+    useEffect(() => {
+        setOffersLimit(5);
+        setMerchantsLimit(5);
+        setProductsLimit(5);
+    }, [searchQuery]);
+
     // Location editing state
     const [isEditingLocation, setIsEditingLocation] = useState(false);
     const [locationQuery, setLocationQuery] = useState("");
@@ -687,18 +697,103 @@ export default function GoloHome({ route }) {
 
     const query = String(searchQuery || "").trim().toLowerCase();
 
-    const candidateOffers = offers.filter(
+    const activeOffers = offers.filter(
         (offer) =>
             isOfferCurrentlyActive(offer) &&
             categoryMatches(offer, selectedCategory) &&
-            offerMatchesSearch(offer, searchQuery) &&
             offerTypeMatches(offer, selectedOfferTypes)
     );
 
+    const searchResultsOffers = [];
+    const searchResultsMerchantsMap = new Map();
+    const searchResultsProducts = [];
+
+    if (query) {
+        activeOffers.forEach((offer, offerIdx) => {
+            const offerTitle = String(offer?.bannerTitle || offer?.title || "").toLowerCase();
+            const subtitle = String(getOfferSubtitle(offer)).toLowerCase();
+            const offerType = String(offer?.bannerCategory || offer?.offerType || offer?.category || "").toLowerCase();
+            const desc = String(offer?.description || offer?.details || "").toLowerCase();
+
+            // 1. Offers Match
+            if (offerTitle.includes(query) || subtitle.includes(query) || offerType.includes(query) || desc.includes(query)) {
+                searchResultsOffers.push({
+                    type: 'offer',
+                    offer,
+                    id: offer?.requestId || offer?._id || offer?.offerId || `offer-${offerIdx}`,
+                    sortDistance: offer?.distanceKm,
+                    sortDate: offer?.createdAt || offer?.updatedAt,
+                });
+            }
+
+            // 2. Merchants Match
+            const merchantName = getOfferSubtitle(offer);
+            const merchantId = offer?.merchantId || offer?.merchant?._id || offer?.merchant?.id || merchantName;
+            const merchantCategory = offer?.merchant?.storeCategory || offer?.merchant?.category || offer?.bannerCategory || offer?.category || "";
+            const merchantAddress = offer?.merchant?.address || offer?.merchantAddress || offer?.location || offer?.address || "";
+            const merchantLogo = offer?.merchant?.logo || offer?.merchant?.imageUrl || offer?.merchant?.image || getOfferImage(offer);
+            const distanceText = getDistanceText(offer?.distanceKm);
+
+            const isMerchantMatch =
+                merchantName.toLowerCase().includes(query) ||
+                merchantCategory.toLowerCase().includes(query) ||
+                merchantAddress.toLowerCase().includes(query);
+
+            if (isMerchantMatch && merchantId) {
+                const key = String(merchantId).toLowerCase();
+                if (!searchResultsMerchantsMap.has(key)) {
+                    searchResultsMerchantsMap.set(key, {
+                        id: merchantId,
+                        merchantId: offer?.merchantId || offer?.merchant?._id || offer?.merchant?.id,
+                        name: merchantName,
+                        category: merchantCategory,
+                        address: merchantAddress,
+                        logo: merchantLogo,
+                        distanceText,
+                        merchantObj: offer?.merchant,
+                        offer,
+                    });
+                }
+            }
+
+            // 3. Products Match
+            const products = Array.isArray(offer?.selectedProducts) && offer.selectedProducts.length
+                ? offer.selectedProducts
+                : (Array.isArray(offer?.products) ? offer.products : []);
+
+            if (products.length > 0) {
+                products.forEach((prod, prodIdx) => {
+                    const prodName = String(prod?.productName || prod?.name || prod?.title || "").toLowerCase();
+                    const prodDesc = String(prod?.description || "").toLowerCase();
+                    if (isOfferMatch || prodName.includes(query) || prodDesc.includes(query)) {
+                        searchResultsProducts.push({
+                            type: 'product',
+                            product: prod,
+                            offer,
+                            id: `${offer?.requestId || offer?._id || offer?.offerId || offerIdx}_prod_${prod?._id || prod?.productId || prodIdx}`,
+                            sortDistance: offer?.distanceKm,
+                            sortDate: offer?.createdAt || offer?.updatedAt,
+                        });
+                    }
+                });
+            } else if (isOfferMatch) {
+                searchResultsProducts.push({
+                    type: 'product',
+                    product: null,
+                    offer,
+                    id: `${offer?.requestId || offer?._id || offer?.offerId || offerIdx}_prod_self`,
+                    sortDistance: offer?.distanceKm,
+                    sortDate: offer?.createdAt || offer?.updatedAt,
+                });
+            }
+        });
+    }
+
+    const searchResultsMerchants = Array.from(searchResultsMerchantsMap.values());
+
     const displayCards = [];
-
-    candidateOffers.forEach((offer, offerIdx) => {
-        if (!query) {
+    if (!query) {
+        activeOffers.forEach((offer, offerIdx) => {
             displayCards.push({
                 type: 'offer',
                 offer,
@@ -706,68 +801,26 @@ export default function GoloHome({ route }) {
                 sortDistance: offer?.distanceKm,
                 sortDate: offer?.createdAt || offer?.updatedAt,
             });
-            return;
-        }
-
-        const title = String(offer?.bannerTitle || offer?.title || "").toLowerCase();
-        const subtitle = String(getOfferSubtitle(offer)).toLowerCase();
-        const offerType = String(offer?.bannerCategory || offer?.offerType || offer?.category || "").toLowerCase();
-        const isOfferMatch = title.includes(query) || subtitle.includes(query) || offerType.includes(query);
-
-        const products = Array.isArray(offer?.selectedProducts) && offer.selectedProducts.length
-            ? offer.selectedProducts
-            : (Array.isArray(offer?.products) ? offer.products : []);
-
-        const matchingProducts = products.filter((p) => {
-            const name = String(p?.productName || p?.name || p?.title || "").toLowerCase();
-            return name.includes(query);
         });
 
-        if (isOfferMatch) {
-            displayCards.push({
-                type: 'offer',
-                offer,
-                id: offer?.requestId || offer?._id || offer?.offerId || `offer-${offerIdx}`,
-                sortDistance: offer?.distanceKm,
-                sortDate: offer?.createdAt || offer?.updatedAt,
-            });
-        }
+        displayCards.sort((itemA, itemB) => {
+            const distanceA = Number(itemA?.sortDistance);
+            const distanceB = Number(itemB?.sortDistance);
+            const hasDistanceA = Number.isFinite(distanceA);
+            const hasDistanceB = Number.isFinite(distanceB);
 
-        matchingProducts.forEach((prod, prodIdx) => {
-            displayCards.push({
-                type: 'product',
-                product: prod,
-                offer,
-                id: `${offer?.requestId || offer?._id || offer?.offerId || offerIdx}_prod_${prod?._id || prod?.productId || prodIdx}`,
-                sortDistance: offer?.distanceKm,
-                sortDate: offer?.createdAt || offer?.updatedAt,
-            });
+            if (hasDistanceA && hasDistanceB) {
+                return distanceA - distanceB;
+            }
+            if (hasDistanceA) return -1;
+            if (hasDistanceB) return 1;
+
+            return (
+                new Date(itemB?.sortDate || 0).getTime() -
+                new Date(itemA?.sortDate || 0).getTime()
+            );
         });
-    });
-
-    displayCards.sort((itemA, itemB) => {
-        const distanceA = Number(itemA?.sortDistance);
-        const distanceB = Number(itemB?.sortDistance);
-        const hasDistanceA = Number.isFinite(distanceA);
-        const hasDistanceB = Number.isFinite(distanceB);
-
-        if (hasDistanceA && hasDistanceB) {
-            return distanceA - distanceB;
-        }
-
-        if (hasDistanceA) {
-            return -1;
-        }
-
-        if (hasDistanceB) {
-            return 1;
-        }
-
-        return (
-            new Date(itemB?.sortDate || 0).getTime() -
-            new Date(itemA?.sortDate || 0).getTime()
-        );
-    });
+    }
 
     return (
         <SafeAreaView style={{ flex: 1 }}>
@@ -951,6 +1004,103 @@ export default function GoloHome({ route }) {
                         <ActivityIndicator size="small" color="#157a4f" />
                         <Text style={styles.helperText}>Loading live offers...</Text>
                     </View>
+                ) : query ? (
+                    <View style={styles.searchResultsContainer}>
+                        {/* ---- Section 1: Offers ---- */}
+                        {searchResultsOffers.length > 0 && (
+                            <View style={styles.sectionBlock}>
+                                <View style={styles.sectionHeaderRow}>
+                                    <Text style={styles.sectionHeaderTitle}>Offers ({searchResultsOffers.length})</Text>
+                                </View>
+                                <View style={styles.cardsGrid}>
+                                    {searchResultsOffers.slice(0, offersLimit).map((item, index) => (
+                                        <OfferCard
+                                            key={item?.id || `search-offer-${index}`}
+                                            item={item}
+                                            navigation={navigation}
+                                        />
+                                    ))}
+                                </View>
+                                {searchResultsOffers.length > offersLimit && (
+                                    <TouchableOpacity
+                                        style={styles.loadMoreBtn}
+                                        onPress={() => setOffersLimit((prev) => prev + 5)}
+                                        activeOpacity={0.8}
+                                    >
+                                        <Text style={styles.loadMoreBtnText}>Load More</Text>
+                                        <Ionicons name="chevron-down" size={16} color="#157a4f" />
+                                    </TouchableOpacity>
+                                )}
+                            </View>
+                        )}
+
+                        {/* ---- Section 2: Merchant ---- */}
+                        {searchResultsMerchants.length > 0 && (
+                            <View style={styles.sectionBlock}>
+                                <View style={styles.sectionHeaderRow}>
+                                    <Text style={styles.sectionHeaderTitle}>Merchant ({searchResultsMerchants.length})</Text>
+                                </View>
+                                <View style={styles.cardsGrid}>
+                                    {searchResultsMerchants.slice(0, merchantsLimit).map((merchant, index) => (
+                                        <MerchantCard
+                                            key={merchant.id || `search-merchant-${index}`}
+                                            merchant={merchant}
+                                            navigation={navigation}
+                                        />
+                                    ))}
+                                </View>
+                                {searchResultsMerchants.length > merchantsLimit && (
+                                    <TouchableOpacity
+                                        style={styles.loadMoreBtn}
+                                        onPress={() => setMerchantsLimit((prev) => prev + 5)}
+                                        activeOpacity={0.8}
+                                    >
+                                        <Text style={styles.loadMoreBtnText}>Load More</Text>
+                                        <Ionicons name="chevron-down" size={16} color="#157a4f" />
+                                    </TouchableOpacity>
+                                )}
+                            </View>
+                        )}
+
+                        {/* ---- Section 3: Products Cards ---- */}
+                        {searchResultsProducts.length > 0 && (
+                            <View style={styles.sectionBlock}>
+                                <View style={styles.sectionHeaderRow}>
+                                    <Text style={styles.sectionHeaderTitle}>Products Cards ({searchResultsProducts.length})</Text>
+                                </View>
+                                <View style={styles.cardsGrid}>
+                                    {searchResultsProducts.slice(0, productsLimit).map((item, index) => (
+                                        <OfferCard
+                                            key={item?.id || `search-product-${index}`}
+                                            item={item}
+                                            navigation={navigation}
+                                        />
+                                    ))}
+                                </View>
+                                {searchResultsProducts.length > productsLimit && (
+                                    <TouchableOpacity
+                                        style={styles.loadMoreBtn}
+                                        onPress={() => setProductsLimit((prev) => prev + 5)}
+                                        activeOpacity={0.8}
+                                    >
+                                        <Text style={styles.loadMoreBtnText}>Load More</Text>
+                                        <Ionicons name="chevron-down" size={16} color="#157a4f" />
+                                    </TouchableOpacity>
+                                )}
+                            </View>
+                        )}
+
+                        {/* Empty search state */}
+                        {searchResultsOffers.length === 0 &&
+                            searchResultsMerchants.length === 0 &&
+                            searchResultsProducts.length === 0 && (
+                                <View style={styles.centerState}>
+                                    <Ionicons name="search-outline" size={48} color="#aaa" />
+                                    <Text style={styles.emptyTitle}>No results found for "{searchQuery}"</Text>
+                                    <Text style={styles.helperText}>Try searching with a different keyword</Text>
+                                </View>
+                            )}
+                    </View>
                 ) : displayCards.length ? (
                     <View style={styles.cardsGrid}>
                         {displayCards.map((item, index) => (
@@ -1108,6 +1258,52 @@ const CategoryChip = ({ icon, label, isActive, onPress }) => {
                 {label}
             </Text>
             {isActive && <View style={styles.chipUnderline} />}
+        </TouchableOpacity>
+    );
+};
+
+const MerchantCard = ({ merchant, navigation }) => {
+    const logoUri = resolveImageUrl(merchant?.logo);
+
+    return (
+        <TouchableOpacity
+            activeOpacity={0.9}
+            style={styles.merchantCard}
+            onPress={() =>
+                navigation.navigate("StorePage", {
+                    merchantId: merchant.merchantId,
+                    passedMerchant: merchant.merchantObj,
+                })
+            }
+        >
+            <View style={styles.merchantCardInner}>
+                {logoUri ? (
+                    <Image source={{ uri: logoUri }} style={styles.merchantLogo} resizeMode="cover" />
+                ) : (
+                    <View style={[styles.merchantLogo, styles.merchantLogoFallback]}>
+                        <Ionicons name="storefront" size={26} color="#f8a812" />
+                    </View>
+                )}
+                <View style={styles.merchantContent}>
+                    <Text style={styles.merchantName} numberOfLines={1}>
+                        {merchant.name}
+                    </Text>
+                    {merchant.category ? (
+                        <Text style={styles.merchantCategory} numberOfLines={1}>
+                            {merchant.category}
+                        </Text>
+                    ) : null}
+                    {merchant.distanceText ? (
+                        <Text style={styles.merchantDistance} numberOfLines={1}>
+                            📍 {merchant.distanceText}
+                        </Text>
+                    ) : null}
+                    <View style={styles.visitStoreBadge}>
+                        <Text style={styles.visitStoreText}>Visit Store</Text>
+                        <Ionicons name="chevron-forward" size={12} color="#157a4f" />
+                    </View>
+                </View>
+            </View>
         </TouchableOpacity>
     );
 };
@@ -1568,5 +1764,97 @@ const styles = StyleSheet.create({
         marginLeft: 16,
         marginTop: 4,
         marginBottom: 2,
+    },
+    merchantCard: {
+        width: "48%",
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: "#ececec",
+        elevation: 3,
+        backgroundColor: "#fff",
+        overflow: "hidden",
+        marginBottom: 18,
+    },
+    merchantCardInner: {
+        flexDirection: "column",
+    },
+    merchantLogo: {
+        width: "100%",
+        height: 100,
+        backgroundColor: "#f5f5f5",
+    },
+    merchantLogoFallback: {
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "#fff8ec",
+    },
+    merchantContent: {
+        paddingHorizontal: 10,
+        paddingVertical: 10,
+    },
+    merchantName: {
+        ...textPresets.label,
+        color: "#111",
+    },
+    merchantCategory: {
+        marginTop: 4,
+        color: "#666",
+        ...textPresets.caption,
+    },
+    merchantDistance: {
+        marginTop: 4,
+        color: "#157a4f",
+        ...textPresets.caption,
+    },
+    visitStoreBadge: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginTop: 8,
+        paddingVertical: 4,
+        paddingHorizontal: 8,
+        backgroundColor: "#eaf7f0",
+        borderRadius: 6,
+        alignSelf: "flex-start",
+    },
+    visitStoreText: {
+        color: "#157a4f",
+        ...textPresets.label,
+        marginRight: 2,
+    },
+    searchResultsContainer: {
+        width: "100%",
+        marginTop: 10,
+    },
+    sectionBlock: {
+        marginBottom: 24,
+    },
+    sectionHeaderRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        marginBottom: 12,
+        paddingHorizontal: 2,
+    },
+    sectionHeaderTitle: {
+        ...textPresets.subtitle,
+        color: "#111",
+    },
+    loadMoreBtn: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "#f0faf5",
+        borderWidth: 1,
+        borderColor: "#b6e5d0",
+        paddingVertical: 10,
+        paddingHorizontal: 18,
+        borderRadius: 20,
+        marginTop: 4,
+        alignSelf: "center",
+    },
+    loadMoreBtnText: {
+        color: "#157a4f",
+        ...textPresets.label,
+        marginRight: 6,
     },
 });
