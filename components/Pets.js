@@ -1,12 +1,14 @@
-import React, { useContext } from "react";
-import { View, Text, TextInput, StyleSheet, ConditionButton, TouchableOpacity } from "react-native";
+import React, { useContext, useState } from "react";
+import { View, Text, TextInput, StyleSheet, TouchableOpacity } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { textPresets } from "../theme/typography";
+import CustomAlertModal from "./CustomeAlertModal";
 
 export default function Pets({ formData, setFormData, category, onPrevious, template, price, selectedDays, selectedLocations, selectedDates, startDate, endDate, isEditMode }) {
     if (category?.id !== "pets") return null;
     const navigation = useNavigation();
+    const [alertConfig, setAlertConfig] = useState({ visible: false, title: "", message: "", type: "warning" });
 
     const ConditionButton = ({ label, value }) => (
         <TouchableOpacity
@@ -69,7 +71,7 @@ export default function Pets({ formData, setFormData, category, onPrevious, temp
 
             <View style={styles.formCard}>
 
-                <Text style={styles.label}>Animal Species</Text>
+                <Text style={styles.label}>Animal Species <Text style={{ color: "#d92d20" }}>*</Text></Text>
                 <TextInput
                     style={styles.input}
                     value={formData.species || ""}
@@ -79,7 +81,7 @@ export default function Pets({ formData, setFormData, category, onPrevious, temp
                     placeholder="e.g. Dog, Cat"
                 />
 
-                <Text style={styles.label}>Pet Breed</Text>
+                <Text style={styles.label}>Pet Breed <Text style={{ color: "#d92d20" }}>*</Text></Text>
                 <TextInput
                     style={styles.input}
                     value={formData.breed || ""}
@@ -89,7 +91,7 @@ export default function Pets({ formData, setFormData, category, onPrevious, temp
                     placeholder="Breed (if known)"
                 />
 
-                <Text style={styles.label}>Age</Text>
+                <Text style={styles.label}>Age <Text style={{ color: "#d92d20" }}>*</Text></Text>
                 <TextInput
                     style={styles.input}
                     value={formData.age || ""}
@@ -99,13 +101,13 @@ export default function Pets({ formData, setFormData, category, onPrevious, temp
                     placeholder="Pet Age"
                 />
 
-                <Text style={styles.label}>Gender</Text>
+                <Text style={styles.label}>Gender <Text style={{ color: "#d92d20" }}>*</Text></Text>
                 <View style={styles.segmentRow}>
                     <ConditionButton label="Male" value="male" />
                     <ConditionButton label="Female" value="female" />
                 </View>
 
-                <Text style={styles.label}>Weight</Text>
+                <Text style={styles.label}>Weight <Text style={{ color: "#d92d20" }}>*</Text></Text>
                 <TextInput
                     style={styles.input}
                     value={formData.weight || ""}
@@ -183,7 +185,7 @@ export default function Pets({ formData, setFormData, category, onPrevious, temp
 
 
 
-                <Text style={styles.label}>Special Diet / Needs</Text>
+                <Text style={styles.label}>Special Diet / Needs <Text style={{ color: "#d92d20" }}>*</Text></Text>
                 <TextInput
                     style={styles.descriptionInput}
                     value={formData.specialDiet || ""}
@@ -198,10 +200,47 @@ export default function Pets({ formData, setFormData, category, onPrevious, temp
             </View>
 
             {!isEditMode && (
-                <TouchableOpacity style={styles.nextBtn} onPress={() => { navigation.navigate("CalendarScreen", { category, template, formData, price }); }}>
+                <TouchableOpacity
+                    style={styles.nextBtn}
+                    onPress={() => {
+                        if (!formData.species?.trim()) {
+                            setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Animal Species.", type: "warning" });
+                            return;
+                        }
+                        if (!formData.breed?.trim()) {
+                            setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Pet Breed.", type: "warning" });
+                            return;
+                        }
+                        if (!formData.age?.trim()) {
+                            setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Age.", type: "warning" });
+                            return;
+                        }
+                        if (!formData.condition) {
+                            setAlertConfig({ visible: true, title: "Missing Information", message: "Please select Gender.", type: "warning" });
+                            return;
+                        }
+                        if (!formData.weight?.trim()) {
+                            setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Weight.", type: "warning" });
+                            return;
+                        }
+                        if (!formData.specialDiet?.trim()) {
+                            setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Special Diet / Needs.", type: "warning" });
+                            return;
+                        }
+                        navigation.navigate("CalendarScreen", { category, template, formData, price });
+                    }}
+                >
                     <Text style={styles.nextText}>Next</Text>
                 </TouchableOpacity>
             )}
+
+            <CustomAlertModal
+                visible={alertConfig.visible}
+                type={alertConfig.type || "warning"}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                onClose={() => setAlertConfig({ ...alertConfig, visible: false })}
+            />
         </View>
     );
 }

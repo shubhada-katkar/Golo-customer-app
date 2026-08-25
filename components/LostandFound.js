@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
     View,
     Text,
@@ -9,6 +9,7 @@ import {
 import { AntDesign } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { textPresets } from "../theme/typography";
+import CustomAlertModal from "./CustomeAlertModal";
 
 export default function LostandFound({
     formData,
@@ -26,6 +27,7 @@ export default function LostandFound({
 }) {
     if (category?.id !== "lostandfound") return null;
     const navigation = useNavigation();
+    const [alertConfig, setAlertConfig] = useState({ visible: false, title: "", message: "", type: "warning" });
 
     const StatusButton = ({ label, value }) => (
         <TouchableOpacity
@@ -63,14 +65,14 @@ export default function LostandFound({
             <View style={styles.formCard}>
 
                 {/* Status */}
-                <Text style={styles.label}>Status</Text>
+                <Text style={styles.label}>Status <Text style={{ color: "#d92d20" }}>*</Text></Text>
                 <View style={styles.segmentRow}>
                     <StatusButton label="Lost" value="lost" />
                     <StatusButton label="Found" value="found" />
                 </View>
 
                 {/* Item Name */}
-                <Text style={styles.label}>Item Name</Text>
+                <Text style={styles.label}>Item Name <Text style={{ color: "#d92d20" }}>*</Text></Text>
                 <TextInput
                     style={styles.input}
                     value={formData.itemName || ""}
@@ -81,7 +83,7 @@ export default function LostandFound({
                 />
 
                 {/* Item Type */}
-                <Text style={styles.label}>Item Type</Text>
+                <Text style={styles.label}>Item Type <Text style={{ color: "#d92d20" }}>*</Text></Text>
                 <TextInput
                     style={styles.input}
                     value={formData.itemType || ""}
@@ -92,7 +94,7 @@ export default function LostandFound({
                 />
 
                 {/* Date */}
-                <Text style={styles.label}>Date</Text>
+                <Text style={styles.label}>Date <Text style={{ color: "#d92d20" }}>*</Text></Text>
                 <TextInput
                     style={styles.input}
                     value={formData.date || ""}
@@ -103,7 +105,7 @@ export default function LostandFound({
                 />
 
                 {/* Location */}
-                <Text style={styles.label}>Location</Text>
+                <Text style={styles.label}>Location <Text style={{ color: "#d92d20" }}>*</Text></Text>
                 <TextInput
                     style={styles.input}
                     value={formData.location || ""}
@@ -114,7 +116,7 @@ export default function LostandFound({
                 />
 
                 {/* Description */}
-                <Text style={styles.label}>Description</Text>
+                <Text style={styles.label}>Description <Text style={{ color: "#d92d20" }}>*</Text></Text>
                 <TextInput
                     style={styles.descriptionInput}
                     value={formData.description || ""}
@@ -145,18 +147,50 @@ export default function LostandFound({
             {!isEditMode && (
                 <TouchableOpacity
                     style={styles.nextBtn}
-                    onPress={() =>
+                    onPress={() => {
+                        if (!formData.condition) {
+                            setAlertConfig({ visible: true, title: "Missing Information", message: "Please select Status (Lost or Found).", type: "warning" });
+                            return;
+                        }
+                        if (!formData.itemName?.trim()) {
+                            setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Item Name.", type: "warning" });
+                            return;
+                        }
+                        if (!formData.itemType?.trim()) {
+                            setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Item Type.", type: "warning" });
+                            return;
+                        }
+                        if (!formData.date?.trim()) {
+                            setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Date.", type: "warning" });
+                            return;
+                        }
+                        if (!formData.location?.trim()) {
+                            setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Location.", type: "warning" });
+                            return;
+                        }
+                        if (!formData.description?.trim()) {
+                            setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Description.", type: "warning" });
+                            return;
+                        }
                         navigation.navigate("CalendarScreen", {
                             category,
                             template,
                             formData,
                             price,
-                        })
-                    }
+                        });
+                    }}
                 >
                     <Text style={styles.nextText}>Next</Text>
                 </TouchableOpacity>
             )}
+
+            <CustomAlertModal
+                visible={alertConfig.visible}
+                type={alertConfig.type || "warning"}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                onClose={() => setAlertConfig({ ...alertConfig, visible: false })}
+            />
         </View>
     );
 }

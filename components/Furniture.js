@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useContext, useState } from "react";
 import {
     View,
     Text,
@@ -9,10 +9,12 @@ import {
 import { AntDesign } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { textPresets } from "../theme/typography";
+import CustomAlertModal from "./CustomeAlertModal";
 
 export default function Furniture({ formData, setFormData, category, onPrevious, template, price, selectedDays, selectedLocations, selectedDates, startDate, endDate, isEditMode }) {
     if (category?.id !== "furniture") return null;
     const navigation = useNavigation();
+    const [alertConfig, setAlertConfig] = useState({ visible: false, title: "", message: "", type: "warning" });
 
     const ConditionButton = ({ label, value }) => (
         <TouchableOpacity
@@ -76,7 +78,7 @@ export default function Furniture({ formData, setFormData, category, onPrevious,
 
             <View style={styles.formCard}>
 
-                <Text style={styles.label}>Furniture Type</Text>
+                <Text style={styles.label}>Furniture Type <Text style={{ color: "#d92d20" }}>*</Text></Text>
                 <TextInput
                     style={styles.input}
                     value={formData.furnitureType || ""}
@@ -86,7 +88,7 @@ export default function Furniture({ formData, setFormData, category, onPrevious,
                     placeholder="e.g.Sofa, Bed, Table"
                 />
 
-                <Text style={styles.label}>Material</Text>
+                <Text style={styles.label}>Material <Text style={{ color: "#d92d20" }}>*</Text></Text>
                 <TextInput
                     style={styles.input}
                     value={formData.material || ""}
@@ -96,7 +98,7 @@ export default function Furniture({ formData, setFormData, category, onPrevious,
                     placeholder="e.g. Wood, Metal"
                 />
 
-                <Text style={styles.label}>Seating Capacity / Size</Text>
+                <Text style={styles.label}>Seating Capacity / Size <Text style={{ color: "#d92d20" }}>*</Text></Text>
                 <TextInput
                     style={styles.input}
                     value={formData.size || ""}
@@ -106,14 +108,14 @@ export default function Furniture({ formData, setFormData, category, onPrevious,
                     placeholder="e.g. 3 seater / 6ft x 3ft"
                 />
 
-                <Text style={styles.label}>Condition</Text>
+                <Text style={styles.label}>Condition <Text style={{ color: "#d92d20" }}>*</Text></Text>
                 <View style={styles.segmentRow}>
                     <ConditionButton label="New" value="new" />
                     <ConditionButton label="Like new" value="like new" />
                     <ConditionButton label="Fair" value="fair" />
                 </View>
 
-                <Text style={styles.label}>Price</Text>
+                <Text style={styles.label}>Price <Text style={{ color: "#d92d20" }}>*</Text></Text>
                 <TextInput
                     style={styles.input}
                     value={formData.price || ""}
@@ -141,10 +143,43 @@ export default function Furniture({ formData, setFormData, category, onPrevious,
             </View>
 
             {!isEditMode && (
-                <TouchableOpacity style={styles.nextBtn} onPress={() => { navigation.navigate("CalendarScreen", { category, template, formData, price }); }}>
+                <TouchableOpacity
+                    style={styles.nextBtn}
+                    onPress={() => {
+                        if (!formData.furnitureType?.trim()) {
+                            setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Furniture Type.", type: "warning" });
+                            return;
+                        }
+                        if (!formData.material?.trim()) {
+                            setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Material.", type: "warning" });
+                            return;
+                        }
+                        if (!formData.size?.trim()) {
+                            setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Seating Capacity / Size.", type: "warning" });
+                            return;
+                        }
+                        if (!formData.condition) {
+                            setAlertConfig({ visible: true, title: "Missing Information", message: "Please select Condition.", type: "warning" });
+                            return;
+                        }
+                        if (!formData.price?.trim()) {
+                            setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Price.", type: "warning" });
+                            return;
+                        }
+                        navigation.navigate("CalendarScreen", { category, template, formData, price });
+                    }}
+                >
                     <Text style={styles.nextText}>Next</Text>
                 </TouchableOpacity>
             )}
+
+            <CustomAlertModal
+                visible={alertConfig.visible}
+                type={alertConfig.type || "warning"}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                onClose={() => setAlertConfig({ ...alertConfig, visible: false })}
+            />
         </View>
     );
 }

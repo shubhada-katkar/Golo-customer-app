@@ -1,13 +1,15 @@
-import React from "react";
+import React, { useState } from "react";
 import { View, Text, TextInput, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
 import { useNavigation } from "@react-navigation/native";
 import { textPresets } from "../theme/typography";
+import CustomAlertModal from "./CustomeAlertModal";
 
 export default function Matrimonial({ formData, setFormData, category, onPrevious, template, price, selectedDays, selectedLocations, selectedDates, startDate, endDate, isEditMode }) {
   if (category?.id !== "matrimonial") return null;
   const navigation = useNavigation();
+  const [alertConfig, setAlertConfig] = useState({ visible: false, title: "", message: "", type: "warning" });
 
   return (
     <View>
@@ -45,7 +47,7 @@ export default function Matrimonial({ formData, setFormData, category, onPreviou
 
       <View style={styles.formCard}>
 
-        <Text style={styles.label}>Name</Text>
+        <Text style={styles.label}>Name <Text style={{ color: "#d92d20" }}>*</Text></Text>
         <TextInput
           style={styles.input}
           value={formData.name || ""}
@@ -55,7 +57,7 @@ export default function Matrimonial({ formData, setFormData, category, onPreviou
           placeholder="Enter full name"
         />
 
-        <Text style={styles.label}>Age</Text>
+        <Text style={styles.label}>Age <Text style={{ color: "#d92d20" }}>*</Text></Text>
         <TextInput
           style={styles.input}
           value={formData.age || ""}
@@ -66,7 +68,7 @@ export default function Matrimonial({ formData, setFormData, category, onPreviou
         />
 
         {/* new dropdowns inserted before religion */}
-        <Text style={styles.label}>Profile For</Text>
+        <Text style={styles.label}>Profile For <Text style={{ color: "#d92d20" }}>*</Text></Text>
         <View style={styles.pickerWrap}>
           <Picker
             selectedValue={formData.profileFor || ""}
@@ -83,7 +85,7 @@ export default function Matrimonial({ formData, setFormData, category, onPreviou
           </Picker>
         </View>
 
-        <Text style={styles.label}>Gender</Text>
+        <Text style={styles.label}>Gender <Text style={{ color: "#d92d20" }}>*</Text></Text>
         <View style={styles.pickerWrap}>
           <Picker
             selectedValue={formData.gender || ""}
@@ -99,7 +101,7 @@ export default function Matrimonial({ formData, setFormData, category, onPreviou
           </Picker>
         </View>
 
-        <Text style={styles.label}>Marital Status</Text>
+        <Text style={styles.label}>Marital Status <Text style={{ color: "#d92d20" }}>*</Text></Text>
         <View style={styles.pickerWrap}>
           <Picker
             selectedValue={formData.maritalStatus || ""}
@@ -117,7 +119,7 @@ export default function Matrimonial({ formData, setFormData, category, onPreviou
         </View>
         {/* end new dropdowns */}
 
-        <Text style={styles.label}>Religion</Text>
+        <Text style={styles.label}>Religion <Text style={{ color: "#d92d20" }}>*</Text></Text>
         <TextInput
           style={styles.input}
           value={formData.religion || ""}
@@ -127,7 +129,7 @@ export default function Matrimonial({ formData, setFormData, category, onPreviou
           placeholder="Enter religion"
         />
 
-        <Text style={styles.label}>Caste</Text>
+        <Text style={styles.label}>Caste <Text style={{ color: "#d92d20" }}>*</Text></Text>
         <TextInput
           style={styles.input}
           value={formData.caste || ""}
@@ -137,7 +139,7 @@ export default function Matrimonial({ formData, setFormData, category, onPreviou
           placeholder="Enter caste"
         />
 
-        <Text style={styles.label}>Education</Text>
+        <Text style={styles.label}>Education <Text style={{ color: "#d92d20" }}>*</Text></Text>
         <TextInput
           style={styles.input}
           value={formData.education || ""}
@@ -147,7 +149,7 @@ export default function Matrimonial({ formData, setFormData, category, onPreviou
           placeholder="Enter highest education level"
         />
 
-        <Text style={styles.label}>Occupation</Text>
+        <Text style={styles.label}>Occupation <Text style={{ color: "#d92d20" }}>*</Text></Text>
         <TextInput
           style={styles.input}
           value={formData.occupation || ""}
@@ -157,7 +159,7 @@ export default function Matrimonial({ formData, setFormData, category, onPreviou
           placeholder="Enter occupation"
         />
 
-        <Text style={styles.label}>Annual Income</Text>
+        <Text style={styles.label}>Annual Income <Text style={{ color: "#d92d20" }}>*</Text></Text>
         <TextInput
           style={styles.input}
           value={formData.annualIncome || ""}
@@ -167,7 +169,7 @@ export default function Matrimonial({ formData, setFormData, category, onPreviou
           placeholder="e.g. 10 LPA"
         />
 
-        <Text style={styles.label}>Height</Text>
+        <Text style={styles.label}>Height <Text style={{ color: "#d92d20" }}>*</Text></Text>
         <TextInput
           style={styles.input}
           value={formData.height || ""}
@@ -177,7 +179,7 @@ export default function Matrimonial({ formData, setFormData, category, onPreviou
           placeholder="e.g. 5'6"
         />
 
-        <Text style={styles.label}>Location</Text>
+        <Text style={styles.label}>Location <Text style={{ color: "#d92d20" }}>*</Text></Text>
         <TextInput
           style={styles.input}
           value={formData.location || ""}
@@ -187,7 +189,7 @@ export default function Matrimonial({ formData, setFormData, category, onPreviou
           placeholder="City, State"
         />
 
-        <Text style={styles.label}>About Me</Text>
+        <Text style={styles.label}>About Me <Text style={{ color: "#d92d20" }}>*</Text></Text>
         <TextInput
           style={styles.descriptionInput}
           value={formData.aboutMe || ""}
@@ -200,7 +202,7 @@ export default function Matrimonial({ formData, setFormData, category, onPreviou
           textAlignVertical="top"
         />
 
-        <Text style={styles.label}>Partner Preference</Text>
+        <Text style={styles.label}>Partner Preference <Text style={{ color: "#d92d20" }}>*</Text></Text>
         <TextInput
           style={styles.descriptionInput}
           value={formData.partnerPreference || ""}
@@ -216,11 +218,79 @@ export default function Matrimonial({ formData, setFormData, category, onPreviou
       </View>
 
       {!isEditMode && (
-        <TouchableOpacity style={styles.nextBtn} onPress={() => { navigation.navigate("CalendarScreen", { category, template, formData, price }); }}>
+        <TouchableOpacity
+          style={styles.nextBtn}
+          onPress={() => {
+            if (!formData.name?.trim()) {
+              setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Name.", type: "warning" });
+              return;
+            }
+            if (!formData.age?.trim()) {
+              setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Age.", type: "warning" });
+              return;
+            }
+            if (!formData.profileFor) {
+              setAlertConfig({ visible: true, title: "Missing Information", message: "Please select Profile For.", type: "warning" });
+              return;
+            }
+            if (!formData.gender) {
+              setAlertConfig({ visible: true, title: "Missing Information", message: "Please select Gender.", type: "warning" });
+              return;
+            }
+            if (!formData.maritalStatus) {
+              setAlertConfig({ visible: true, title: "Missing Information", message: "Please select Marital Status.", type: "warning" });
+              return;
+            }
+            if (!formData.religion?.trim()) {
+              setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Religion.", type: "warning" });
+              return;
+            }
+            if (!formData.caste?.trim()) {
+              setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Caste.", type: "warning" });
+              return;
+            }
+            if (!formData.education?.trim()) {
+              setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Education.", type: "warning" });
+              return;
+            }
+            if (!formData.occupation?.trim()) {
+              setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Occupation.", type: "warning" });
+              return;
+            }
+            if (!formData.annualIncome?.trim()) {
+              setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Annual Income.", type: "warning" });
+              return;
+            }
+            if (!formData.height?.trim()) {
+              setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Height.", type: "warning" });
+              return;
+            }
+            if (!formData.location?.trim()) {
+              setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Location.", type: "warning" });
+              return;
+            }
+            if (!formData.aboutMe?.trim()) {
+              setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in About Me.", type: "warning" });
+              return;
+            }
+            if (!formData.partnerPreference?.trim()) {
+              setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Partner Preference.", type: "warning" });
+              return;
+            }
+            navigation.navigate("CalendarScreen", { category, template, formData, price });
+          }}
+        >
           <Text style={styles.nextText}>Next</Text>
         </TouchableOpacity>
       )}
 
+      <CustomAlertModal
+        visible={alertConfig.visible}
+        type={alertConfig.type || "warning"}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        onClose={() => setAlertConfig({ ...alertConfig, visible: false })}
+      />
     </View >
   );
 }

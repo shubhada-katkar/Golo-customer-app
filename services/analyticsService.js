@@ -90,32 +90,60 @@ async function getAdAnalytics(adId) {
     throw new Error("Ad id is required");
   }
 
-  const analytics = await authorizedFetch("/ads/analytics/my", { method: "GET" });
-  const ad = Array.isArray(analytics?.ads)
-    ? analytics.ads.find((item) =>
-      String(item.adId) === String(adId) ||
-      String(item.id) === String(adId) ||
-      String(item._id) === String(adId)
-    )
-    : null;
+  const targetStr = String(adId).trim().toLowerCase();
 
-  if (!ad) {
-    throw new Error("Ad analytics not found");
+  try {
+    const analytics = await authorizedFetch("/ads/analytics/my", { method: "GET" });
+    const ad = Array.isArray(analytics?.ads)
+      ? analytics.ads.find((item) => {
+        const itemAdId = String(item.adId || "").trim().toLowerCase();
+        const itemId = String(item.id || "").trim().toLowerCase();
+        const itemMongoId = String(item._id || "").trim().toLowerCase();
+        return itemAdId === targetStr || itemId === targetStr || itemMongoId === targetStr;
+      })
+      : null;
+
+    if (ad) {
+      const adViews = Number(ad?.views ?? ad?.uniqueVisitors ?? ad?.viewHistory?.length ?? 0);
+      const adUniqueVisitors = Number(ad?.uniqueVisitors ?? ad?.views ?? ad?.viewHistory?.length ?? 0);
+      const adContactClicks = Number(ad?.contactClicks ?? 0);
+      const adWishlistCount = Number(ad?.wishlistCount ?? 0);
+      const adCtr = Number(ad?.clickThroughRate ?? 0);
+      const adWishlistRate = Number(ad?.wishlistRate ?? 0);
+
+      return {
+        ...analytics,
+        ad,
+        stats: {
+          clicks: adViews,
+          visitors: adUniqueVisitors,
+          contacts: adContactClicks,
+          wishlist: adWishlistCount,
+        },
+        rates: {
+          ctr: adCtr,
+          visitorsRate: 0,
+          wishlistRate: adWishlistRate,
+        },
+      };
+    }
+  } catch (err) {
+    console.warn("[analyticsService] authorizedFetch error in getAdAnalytics:", err.message);
   }
 
-  const adViews = Number(ad?.views ?? ad?.uniqueVisitors ?? ad?.viewHistory?.length ?? 0);
-  const adUniqueVisitors = Number(ad?.uniqueVisitors ?? ad?.views ?? ad?.viewHistory?.length ?? 0);
-  const adContactClicks = Number(ad?.contactClicks ?? 0);
-  const adWishlistCount = Number(ad?.wishlistCount ?? 0);
-  const adCtr = Number(ad?.clickThroughRate ?? 0);
-  const adWishlistRate = Number(ad?.wishlistRate ?? 0);
+  // Fallback to fetching public ad details
+  const publicAd = await getPublicAdAnalytics(adId);
+  const adViews = Number(publicAd?.views ?? publicAd?.uniqueVisitors ?? publicAd?.viewHistory?.length ?? 0);
+  const adContactClicks = Number(publicAd?.contactClicks ?? 0);
+  const adWishlistCount = Number(publicAd?.wishlistCount ?? 0);
+  const adCtr = adViews > 0 ? Number(((adContactClicks / adViews) * 100).toFixed(2)) : 0;
+  const adWishlistRate = adViews > 0 ? Number(((adWishlistCount / adViews) * 100).toFixed(2)) : 0;
 
   return {
-    ...analytics,
-    ad,
+    ad: publicAd,
     stats: {
       clicks: adViews,
-      visitors: adUniqueVisitors,
+      visitors: adViews,
       contacts: adContactClicks,
       wishlist: adWishlistCount,
     },

@@ -18,6 +18,7 @@ import {
     deleteConversation,
     clearChat,
 } from "../services/chatService";
+import { triggerChatNotification } from "../services/notificationService";
 import { LinearGradient } from "expo-linear-gradient";
 import { textPresets } from "../theme/typography";
 
@@ -236,6 +237,33 @@ export default function ChatScreen({ navigation, route }) {
                     // If chat is open and an incoming message arrives, mark it as read immediately.
                     if (String(message?.senderId) !== String(auth.userId)) {
                         socket.emit("mark_read", { conversationId: finalConversationId });
+
+                        const senderName = message?.sender?.name || sellerName || "New Message";
+                        const textPreview = message?.text || (Array.isArray(message?.attachments) && message.attachments.length ? "📷 Photo" : "Sent a message");
+
+                        triggerChatNotification({
+                            title: senderName,
+                            body: textPreview,
+                            conversationId: finalConversationId,
+                            sellerName,
+                        });
+                    }
+                });
+
+                socket.on("conversation_updated", (payload) => {
+                    if (!payload?.conversationId) return;
+
+                    const isIncoming = payload?.message && String(payload.message.senderId) !== String(auth.userId);
+                    if (isIncoming && payload.conversationId !== finalConversationId) {
+                        const senderName = payload.message?.sender?.name || "New Message";
+                        const textPreview = payload.lastMessageText || payload.message?.text || "Sent a message";
+
+                        triggerChatNotification({
+                            title: senderName,
+                            body: textPreview,
+                            conversationId: payload.conversationId,
+                            sellerName: senderName,
+                        });
                     }
                 });
 
@@ -1021,11 +1049,11 @@ const styles = StyleSheet.create({
     },
     menuDropdown: {
         position: "absolute",
-        top: 55,
+        top: 90,
         right: 0,
         backgroundColor: "#fff",
         paddingVertical: 6,
-        minWidth: 180,
+        minWidth: 150,
         elevation: 6,
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },

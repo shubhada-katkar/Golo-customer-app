@@ -1,13 +1,15 @@
-import React, { useContext } from "react";
+import React, { useContext, useState } from "react";
 import { View, Text, TextInput, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
 import { useNavigation } from "@react-navigation/native";
 import { textPresets } from "../theme/typography";
+import CustomAlertModal from "./CustomeAlertModal";
 
 export default function Education({ formData, setFormData, category, onPrevious, template, price, selectedDays, selectedLocations, selectedDates, startDate, endDate, isEditMode }) {
   if (category?.id !== "education") return null;
   const navigation = useNavigation();
+  const [alertConfig, setAlertConfig] = useState({ visible: false, title: "", message: "", type: "warning" });
 
   const Radio = ({ label, selected, onPress }) => (
     <TouchableOpacity style={styles.radioRow} onPress={onPress}>
@@ -61,7 +63,7 @@ export default function Education({ formData, setFormData, category, onPrevious,
 
       <View style={styles.formCard}>
 
-        <Text style={styles.label}>Institution Type</Text>
+        <Text style={styles.label}>Institution Type <Text style={{ color: "#d92d20" }}>*</Text></Text>
         <View style={styles.pickerWrap}>
           <Picker
             selectedValue={formData.courseType || ""}
@@ -77,7 +79,7 @@ export default function Education({ formData, setFormData, category, onPrevious,
           </Picker>
         </View>
 
-        <Text style={styles.label}>Mode of Education</Text>
+        <Text style={styles.label}>Mode of Education <Text style={{ color: "#d92d20" }}>*</Text></Text>
         <View style={{ flexDirection: "row", marginTop: 6 }}>
           <Radio
             label="Online"
@@ -91,7 +93,7 @@ export default function Education({ formData, setFormData, category, onPrevious,
           />
         </View>
 
-        <Text style={styles.label}>Demo Class Available</Text>
+        <Text style={styles.label}>Demo Class Available <Text style={{ color: "#d92d20" }}>*</Text></Text>
         <View style={{ flexDirection: "row", marginTop: 6 }}>
           <Radio
             label="Yes"
@@ -105,7 +107,7 @@ export default function Education({ formData, setFormData, category, onPrevious,
           />
         </View>
 
-        <Text style={styles.label}>Class / Standard</Text>
+        <Text style={styles.label}>Class / Standard <Text style={{ color: "#d92d20" }}>*</Text></Text>
         <TextInput
           style={styles.input}
           value={formData.class || ""}
@@ -115,7 +117,7 @@ export default function Education({ formData, setFormData, category, onPrevious,
           placeholder="e.g. 10th Grade, JEE"
         />
 
-        <Text style={styles.label}>Course Name</Text>
+        <Text style={styles.label}>Course Name <Text style={{ color: "#d92d20" }}>*</Text></Text>
         <TextInput
           style={styles.input}
           value={formData.subject || ""}
@@ -125,7 +127,7 @@ export default function Education({ formData, setFormData, category, onPrevious,
           placeholder="Mathematics, Physics, Chemistry..."
         />
 
-        <Text style={styles.label}>Institute Name</Text>
+        <Text style={styles.label}>Institute Name <Text style={{ color: "#d92d20" }}>*</Text></Text>
         <TextInput
           style={styles.input}
           value={formData.institute || ""}
@@ -135,7 +137,7 @@ export default function Education({ formData, setFormData, category, onPrevious,
           placeholder="Academy Name or Tutor Name"
         />
 
-        <Text style={styles.label}>Duration</Text>
+        <Text style={styles.label}>Duration <Text style={{ color: "#d92d20" }}>*</Text></Text>
         <TextInput
           style={styles.input}
           value={formData.duration || ""}
@@ -145,7 +147,7 @@ export default function Education({ formData, setFormData, category, onPrevious,
           placeholder="e.g. 6 Months"
         />
 
-        <Text style={styles.label}>Fees</Text>
+        <Text style={styles.label}>Fees <Text style={{ color: "#d92d20" }}>*</Text></Text>
         <TextInput
           style={styles.input}
           value={formData.fees || ""}
@@ -155,7 +157,7 @@ export default function Education({ formData, setFormData, category, onPrevious,
           placeholder="e.g. 5000"
         />
 
-        <Text style={styles.label}>Teaching Experience</Text>
+        <Text style={styles.label}>Teaching Experience <Text style={{ color: "#d92d20" }}>*</Text></Text>
         <TextInput
           style={styles.input}
           value={formData.experience || ""}
@@ -165,7 +167,7 @@ export default function Education({ formData, setFormData, category, onPrevious,
           placeholder="e.g. 5 years"
         />
 
-        <Text style={styles.label}>Qualification</Text>
+        <Text style={styles.label}>Qualification <Text style={{ color: "#d92d20" }}>*</Text></Text>
         <TextInput
           style={styles.input}
           value={formData.qualification || ""}
@@ -177,10 +179,63 @@ export default function Education({ formData, setFormData, category, onPrevious,
       </View>
 
       {!isEditMode && (
-        <TouchableOpacity style={styles.nextBtn} onPress={() => { navigation.navigate("CalendarScreen", { category, template, formData, price }); }}>
+        <TouchableOpacity
+          style={styles.nextBtn}
+          onPress={() => {
+            if (!formData.courseType) {
+              setAlertConfig({ visible: true, title: "Missing Information", message: "Please select Institution Type.", type: "warning" });
+              return;
+            }
+            if (!formData.modeOfEducation) {
+              setAlertConfig({ visible: true, title: "Missing Information", message: "Please select Mode of Education.", type: "warning" });
+              return;
+            }
+            if (!formData.demoAvailable) {
+              setAlertConfig({ visible: true, title: "Missing Information", message: "Please select Demo Class Available.", type: "warning" });
+              return;
+            }
+            if (!formData.class?.trim()) {
+              setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Class / Standard.", type: "warning" });
+              return;
+            }
+            if (!formData.subject?.trim()) {
+              setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Course Name.", type: "warning" });
+              return;
+            }
+            if (!formData.institute?.trim()) {
+              setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Institute Name.", type: "warning" });
+              return;
+            }
+            if (!formData.duration?.trim()) {
+              setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Duration.", type: "warning" });
+              return;
+            }
+            if (!formData.fees?.trim()) {
+              setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Fees.", type: "warning" });
+              return;
+            }
+            if (!formData.experience?.trim()) {
+              setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Teaching Experience.", type: "warning" });
+              return;
+            }
+            if (!formData.qualification?.trim()) {
+              setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Qualification.", type: "warning" });
+              return;
+            }
+            navigation.navigate("CalendarScreen", { category, template, formData, price });
+          }}
+        >
           <Text style={styles.nextText}>Next</Text>
         </TouchableOpacity>
       )}
+
+      <CustomAlertModal
+        visible={alertConfig.visible}
+        type={alertConfig.type || "warning"}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        onClose={() => setAlertConfig({ ...alertConfig, visible: false })}
+      />
     </View>
   );
 }

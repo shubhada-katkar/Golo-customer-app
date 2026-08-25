@@ -6,6 +6,7 @@ import { AntDesign } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
 import { useNavigation } from "@react-navigation/native";
 import { textPresets } from "../theme/typography";
+import CustomAlertModal from "./CustomeAlertModal";
 
 export default function Vehicles({ formData, setFormData, category, onPrevious, template, price, selectedDays, selectedLocations, selectedDates, startDate, endDate, isEditMode }) {
   if (category?.id !== "vehicles") return null;
@@ -13,6 +14,7 @@ export default function Vehicles({ formData, setFormData, category, onPrevious, 
     formData?.type === "Rent" ? "Rent" : "Sell"
   );
   const navigation = useNavigation();
+  const [alertConfig, setAlertConfig] = useState({ visible: false, title: "", message: "", type: "warning" });
 
   useEffect(() => {
     const desiredType = selectedTab === "Rent" ? "Rent" : "Sell";
@@ -131,7 +133,7 @@ export default function Vehicles({ formData, setFormData, category, onPrevious, 
 
         {selectedTab === "Sell" && (
           <>
-            <Text style={styles.label}>Vehicle Type</Text>
+            <Text style={styles.label}>Vehicle Type <Text style={{ color: "#d92d20" }}>*</Text></Text>
             <View style={styles.pickerWrap}>
               <Picker
                 selectedValue={formData.vehicleType || ""}
@@ -147,7 +149,7 @@ export default function Vehicles({ formData, setFormData, category, onPrevious, 
               </Picker>
             </View>
 
-            <Text style={styles.label}>Brand</Text>
+            <Text style={styles.label}>Brand <Text style={{ color: "#d92d20" }}>*</Text></Text>
             <TextInput
               style={styles.input}
               value={formData.brand || ""}
@@ -157,7 +159,7 @@ export default function Vehicles({ formData, setFormData, category, onPrevious, 
               placeholder="e.g. Maruti"
             />
 
-            <Text style={styles.label}>Model</Text>
+            <Text style={styles.label}>Model <Text style={{ color: "#d92d20" }}>*</Text></Text>
             <TextInput
               style={styles.input}
               value={formData.model || ""}
@@ -167,7 +169,7 @@ export default function Vehicles({ formData, setFormData, category, onPrevious, 
               placeholder="e.g. Swift"
             />
 
-            <Text style={styles.label}>Variant</Text>
+            <Text style={styles.label}>Variant <Text style={{ color: "#d92d20" }}>*</Text></Text>
             <TextInput
               style={styles.input}
               value={formData.variant || ""}
@@ -177,7 +179,7 @@ export default function Vehicles({ formData, setFormData, category, onPrevious, 
               placeholder="e.g. VXi"
             />
 
-            <Text style={styles.label}>Year</Text>
+            <Text style={styles.label}>Year <Text style={{ color: "#d92d20" }}>*</Text></Text>
             <TextInput
               style={styles.input}
               value={
@@ -193,7 +195,7 @@ export default function Vehicles({ formData, setFormData, category, onPrevious, 
               placeholder="e.g. 2022"
             />
 
-            <Text style={styles.label}>KM Driven</Text>
+            <Text style={styles.label}>KM Driven <Text style={{ color: "#d92d20" }}>*</Text></Text>
             <TextInput
               style={styles.input}
               value={
@@ -213,7 +215,7 @@ export default function Vehicles({ formData, setFormData, category, onPrevious, 
               placeholder="e.g. 25000"
             />
 
-            <Text style={styles.label}>Fuel Type</Text>
+            <Text style={styles.label}>Fuel Type <Text style={{ color: "#d92d20" }}>*</Text></Text>
             <View style={styles.pickerWrap}>
               <Picker
                 selectedValue={formData.fuelType || ""}
@@ -229,13 +231,13 @@ export default function Vehicles({ formData, setFormData, category, onPrevious, 
               </Picker>
             </View>
 
-            <Text style={styles.label}>Transmission</Text>
+            <Text style={styles.label}>Transmission <Text style={{ color: "#d92d20" }}>*</Text></Text>
             <View style={styles.segmentRow}>
               <ConditionButton label="Manual" value="Manual" field="transmission" />
               <ConditionButton label="Automatic" value="Automatic" field="transmission" />
             </View>
 
-            <Text style={styles.label}>Ownership</Text>
+            <Text style={styles.label}>Ownership <Text style={{ color: "#d92d20" }}>*</Text></Text>
             <View style={styles.pickerWrap}>
               <Picker
                 selectedValue={formData.ownership || ""}
@@ -249,13 +251,13 @@ export default function Vehicles({ formData, setFormData, category, onPrevious, 
               </Picker>
             </View>
 
-            <Text style={styles.label}>RC Available</Text>
+            <Text style={styles.label}>RC Available <Text style={{ color: "#d92d20" }}>*</Text></Text>
             <View style={styles.segmentRow}>
               <ConditionButton label="Yes" value="yes" field="rcAvailable" />
               <ConditionButton label="No" value="no" field="rcAvailable" />
             </View>
 
-            <Text style={styles.label}>Insurance Valid Till</Text>
+            <Text style={styles.label}>Insurance Valid Till <Text style={{ color: "#d92d20" }}>*</Text></Text>
             <TextInput
               style={styles.input}
               value={formData.insurance || ""}
@@ -265,14 +267,14 @@ export default function Vehicles({ formData, setFormData, category, onPrevious, 
               placeholder="e.g. DEC 2026"
             />
 
-            <Text style={styles.label}>Condition</Text>
+            <Text style={styles.label}>Condition <Text style={{ color: "#d92d20" }}>*</Text></Text>
             <View style={styles.segmentRow}>
               <ConditionButton label="Excellent" value="Excellent" field="condition" />
               <ConditionButton label="Very Good" value="Very Good" field="condition" />
               <ConditionButton label="Good" value="Good" field="condition" />
             </View>
 
-            <Text style={styles.label}>Price</Text>
+            <Text style={styles.label}>Price <Text style={{ color: "#d92d20" }}>*</Text></Text>
             <TextInput
               style={styles.input}
               value={formData.price || ""}
@@ -286,7 +288,7 @@ export default function Vehicles({ formData, setFormData, category, onPrevious, 
 
         {selectedTab === "Rent" && (
           <>
-            <Text style={styles.label}>Vehicle Type</Text>
+            <Text style={styles.label}>Vehicle Type <Text style={{ color: "#d92d20" }}>*</Text></Text>
             <View style={styles.pickerWrap}>
               <Picker
                 selectedValue={formData.vehicleType2 || ""}
@@ -302,7 +304,7 @@ export default function Vehicles({ formData, setFormData, category, onPrevious, 
               </Picker>
             </View>
 
-            <Text style={styles.label}>Brand / Model</Text>
+            <Text style={styles.label}>Brand / Model <Text style={{ color: "#d92d20" }}>*</Text></Text>
             <TextInput
               style={styles.input}
               value={formData.brand2 || ""}
@@ -312,7 +314,7 @@ export default function Vehicles({ formData, setFormData, category, onPrevious, 
               placeholder="e.g. Maruti"
             />
 
-            <Text style={styles.label}>Per Day Rent Amount</Text>
+            <Text style={styles.label}>Per Day Rent Amount <Text style={{ color: "#d92d20" }}>*</Text></Text>
             <TextInput
               style={styles.input}
               value={
@@ -328,7 +330,7 @@ export default function Vehicles({ formData, setFormData, category, onPrevious, 
               placeholder="e.g. 1000"
             />
 
-            <Text style={styles.label}>Security Deposit</Text>
+            <Text style={styles.label}>Security Deposit <Text style={{ color: "#d92d20" }}>*</Text></Text>
             <TextInput
               style={styles.input}
               value={
@@ -342,14 +344,14 @@ export default function Vehicles({ formData, setFormData, category, onPrevious, 
               placeholder="e.g. 5000"
             />
 
-            <Text style={styles.label}>Includes Driver</Text>
+            <Text style={styles.label}>Includes Driver <Text style={{ color: "#d92d20" }}>*</Text></Text>
             <View style={styles.segmentRow}>
               <ConditionButton label="Yes" value="Yes" field="includesDriver" />
               <ConditionButton label="No" value="No" field="includesDriver" />
               <ConditionButton label="Both" value="Both" field="includesDriver" />
             </View>
 
-            <Text style={styles.label}>Min Rental Duration (Days)</Text>
+            <Text style={styles.label}>Min Rental Duration (Days) <Text style={{ color: "#d92d20" }}>*</Text></Text>
             <TextInput
               style={styles.input}
               value={
@@ -367,10 +369,105 @@ export default function Vehicles({ formData, setFormData, category, onPrevious, 
       </View>
 
       {!isEditMode && (
-        <TouchableOpacity style={styles.nextBtn} onPress={() => { navigation.navigate("CalendarScreen", { category, template, formData, price }); }}>
+        <TouchableOpacity
+          style={styles.nextBtn}
+          onPress={() => {
+            if (selectedTab === "Sell") {
+              if (!formData.vehicleType) {
+                setAlertConfig({ visible: true, title: "Missing Information", message: "Please select Vehicle Type.", type: "warning" });
+                return;
+              }
+              if (!formData.brand?.trim()) {
+                setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Brand.", type: "warning" });
+                return;
+              }
+              if (!formData.model?.trim()) {
+                setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Model.", type: "warning" });
+                return;
+              }
+              if (!formData.variant?.trim()) {
+                setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Variant.", type: "warning" });
+                return;
+              }
+              const yr = formData.year ?? formData.yearOfRegistration;
+              if (yr == null || String(yr).trim() === "") {
+                setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Year.", type: "warning" });
+                return;
+              }
+              const km = formData.kilometersDriven ?? formData.kmDriven ?? formData.kmsDriven ?? formData.km_driven;
+              if (km == null || String(km).trim() === "") {
+                setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in KM Driven.", type: "warning" });
+                return;
+              }
+              if (!formData.fuelType) {
+                setAlertConfig({ visible: true, title: "Missing Information", message: "Please select Fuel Type.", type: "warning" });
+                return;
+              }
+              if (!formData.transmission) {
+                setAlertConfig({ visible: true, title: "Missing Information", message: "Please select Transmission.", type: "warning" });
+                return;
+              }
+              if (!formData.ownership) {
+                setAlertConfig({ visible: true, title: "Missing Information", message: "Please select Ownership.", type: "warning" });
+                return;
+              }
+              if (!formData.rcAvailable) {
+                setAlertConfig({ visible: true, title: "Missing Information", message: "Please select RC Available.", type: "warning" });
+                return;
+              }
+              if (!formData.insurance?.trim()) {
+                setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Insurance Valid Till.", type: "warning" });
+                return;
+              }
+              if (!formData.condition) {
+                setAlertConfig({ visible: true, title: "Missing Information", message: "Please select Condition.", type: "warning" });
+                return;
+              }
+              if (!formData.price?.trim()) {
+                setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Price.", type: "warning" });
+                return;
+              }
+            } else if (selectedTab === "Rent") {
+              if (!formData.vehicleType2) {
+                setAlertConfig({ visible: true, title: "Missing Information", message: "Please select Vehicle Type.", type: "warning" });
+                return;
+              }
+              if (!formData.brand2?.trim()) {
+                setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Brand / Model.", type: "warning" });
+                return;
+              }
+              const rent = formData.perDayRentAmount ?? formData.rentAmount;
+              if (rent == null || String(rent).trim() === "") {
+                setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Per Day Rent Amount.", type: "warning" });
+                return;
+              }
+              if (formData.securityDeposit == null || String(formData.securityDeposit).trim() === "") {
+                setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Security Deposit.", type: "warning" });
+                return;
+              }
+              if (!formData.includesDriver) {
+                setAlertConfig({ visible: true, title: "Missing Information", message: "Please select Includes Driver.", type: "warning" });
+                return;
+              }
+              if (formData.minRentalDuration == null || String(formData.minRentalDuration).trim() === "") {
+                setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Min Rental Duration.", type: "warning" });
+                return;
+              }
+            }
+            navigation.navigate("CalendarScreen", { category, template, formData, price });
+          }}
+        >
           <Text style={styles.nextText}>Next</Text>
         </TouchableOpacity>
       )}
+
+      <CustomAlertModal
+        visible={alertConfig.visible}
+        type={alertConfig.type || "warning"}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        onClose={() => setAlertConfig({ ...alertConfig, visible: false })}
+      />
     </View>
   );
 }

@@ -1,11 +1,12 @@
 import React, { useContext, useEffect, useState } from "react";
 import {
-  View, Text, TextInput, StyleSheet, TouchableOpacity,
+  View, Text, TextInput, StyleSheet, TouchableOpacity
 } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
 import { useNavigation } from "@react-navigation/native";
 import { textPresets } from "../theme/typography";
+import CustomAlertModal from "./CustomeAlertModal";
 
 export default function Property({ formData, setFormData, category, onPrevious, template, price, selectedDays, selectedLocations, selectedDates, startDate, endDate, isEditMode }) {
   if (category?.id !== "property") return null;
@@ -13,6 +14,7 @@ export default function Property({ formData, setFormData, category, onPrevious, 
     formData?.Type === "Rent" ? "Rent" : "Sell"
   );
   const navigation = useNavigation();
+  const [alertConfig, setAlertConfig] = useState({ visible: false, title: "", message: "", type: "warning" });
 
   useEffect(() => {
     if (formData?.Type !== selectedTab) {
@@ -129,7 +131,7 @@ export default function Property({ formData, setFormData, category, onPrevious, 
 
         {selectedTab === "Sell" && (
           <>
-            <Text style={styles.label}>Property Type</Text>
+            <Text style={styles.label}>Property Type <Text style={{ color: "#d92d20" }}>*</Text></Text>
             <View style={styles.pickerWrap}>
               <Picker
                 selectedValue={formData.propertyType || ""}
@@ -144,7 +146,7 @@ export default function Property({ formData, setFormData, category, onPrevious, 
               </Picker>
             </View>
 
-            <Text style={styles.label}>BHK</Text>
+            <Text style={styles.label}>BHK <Text style={{ color: "#d92d20" }}>*</Text></Text>
             <TextInput
               style={styles.input}
               value={formData.bhk || ""}
@@ -154,7 +156,7 @@ export default function Property({ formData, setFormData, category, onPrevious, 
               placeholder="e.g. 2BHK"
             />
 
-            <Text style={styles.label}>Built-up Area</Text>
+            <Text style={styles.label}>Built-up Area <Text style={{ color: "#d92d20" }}>*</Text></Text>
             <TextInput
               style={styles.input}
               value={formData.builtUpArea || ""}
@@ -164,7 +166,7 @@ export default function Property({ formData, setFormData, category, onPrevious, 
               placeholder="e.g. 1200 sqft"
             />
 
-            <Text style={styles.label}>Bathrooms</Text>
+            <Text style={styles.label}>Bathrooms <Text style={{ color: "#d92d20" }}>*</Text></Text>
             <TextInput
               style={styles.input}
               value={formData.bathrooms || ""}
@@ -174,7 +176,7 @@ export default function Property({ formData, setFormData, category, onPrevious, 
               placeholder="e.g. 2"
             />
 
-            <Text style={styles.label}>Floor</Text>
+            <Text style={styles.label}>Floor <Text style={{ color: "#d92d20" }}>*</Text></Text>
             <TextInput
               style={styles.input}
               value={formData.floor || ""}
@@ -184,7 +186,7 @@ export default function Property({ formData, setFormData, category, onPrevious, 
               placeholder="e.g. 3rd Floor"
             />
 
-            <Text style={styles.label}>Property Age</Text>
+            <Text style={styles.label}>Property Age <Text style={{ color: "#d92d20" }}>*</Text></Text>
             <TextInput
               style={styles.input}
               value={formData.propertyAge || ""}
@@ -194,7 +196,7 @@ export default function Property({ formData, setFormData, category, onPrevious, 
               placeholder="e.g. 5 years"
             />
 
-            <Text style={styles.label}>Furnishing</Text>
+            <Text style={styles.label}>Furnishing <Text style={{ color: "#d92d20" }}>*</Text></Text>
             <View style={styles.pickerWrap}>
               <Picker
                 selectedValue={formData.furnishing || ""}
@@ -208,14 +210,14 @@ export default function Property({ formData, setFormData, category, onPrevious, 
               </Picker>
             </View>
 
-            <Text style={styles.label}>Parking Available</Text>
+            <Text style={styles.label}>Parking Available <Text style={{ color: "#d92d20" }}>*</Text></Text>
             <View style={styles.segmentRow}>
               <ConditionButton label="Yes" value="Yes" />
               <ConditionButton label="No" value="No" />
             </View>
 
 
-            <Text style={styles.label}>Facing Side</Text>
+            <Text style={styles.label}>Facing Side <Text style={{ color: "#d92d20" }}>*</Text></Text>
             <TextInput
               style={styles.input}
               value={formData.facingSide || ""}
@@ -225,7 +227,7 @@ export default function Property({ formData, setFormData, category, onPrevious, 
               placeholder="North, South, East, West"
             />
 
-            <Text style={styles.label}>Asking Price</Text>
+            <Text style={styles.label}>Asking Price <Text style={{ color: "#d92d20" }}>*</Text></Text>
             <TextInput
               style={styles.input}
               value={formData.price || ""}
@@ -239,7 +241,7 @@ export default function Property({ formData, setFormData, category, onPrevious, 
 
         {selectedTab === "Rent" && (
           <>
-            <Text style={styles.label}>Property Type</Text>
+            <Text style={styles.label}>Property Type <Text style={{ color: "#d92d20" }}>*</Text></Text>
             <View style={styles.pickerWrap}>
               <Picker
                 selectedValue={formData.propertyType || ""}
@@ -254,7 +256,7 @@ export default function Property({ formData, setFormData, category, onPrevious, 
               </Picker>
             </View>
 
-            <Text style={styles.label}>Monthly Rent</Text>
+            <Text style={styles.label}>Monthly Rent <Text style={{ color: "#d92d20" }}>*</Text></Text>
             <TextInput
               style={styles.input}
               value={formData.monthlyRentAmount || ""}
@@ -264,7 +266,7 @@ export default function Property({ formData, setFormData, category, onPrevious, 
               placeholder="e.g. ₹10,000"
             />
 
-            <Text style={styles.label}>Security Deposit</Text>
+            <Text style={styles.label}>Security Deposit <Text style={{ color: "#d92d20" }}>*</Text></Text>
             <TextInput
               style={styles.input}
               value={formData.securityDeposit || ""}
@@ -274,7 +276,7 @@ export default function Property({ formData, setFormData, category, onPrevious, 
               placeholder="e.g. ₹20,000"
             />
 
-            <Text style={styles.label}>Maintenance Cost Per Month</Text>
+            <Text style={styles.label}>Maintenance Cost Per Month <Text style={{ color: "#d92d20" }}>*</Text></Text>
             <TextInput
               style={styles.input}
               value={formData.maintenanceAmount || ""}
@@ -284,7 +286,7 @@ export default function Property({ formData, setFormData, category, onPrevious, 
               placeholder="e.g. ₹1000"
             />
 
-            <Text style={styles.label}>Available From</Text>
+            <Text style={styles.label}>Available From <Text style={{ color: "#d92d20" }}>*</Text></Text>
             <TextInput
               style={styles.input}
               value={formData.availableFrom || ""}
@@ -294,7 +296,7 @@ export default function Property({ formData, setFormData, category, onPrevious, 
               placeholder="Enter available from date"
             />
 
-            <Text style={styles.label}>Select Tenant Type</Text>
+            <Text style={styles.label}>Select Tenant Type <Text style={{ color: "#d92d20" }}>*</Text></Text>
             <View style={styles.pickerWrap}>
               <Picker
                 selectedValue={formData.tenantType || ""}
@@ -308,7 +310,7 @@ export default function Property({ formData, setFormData, category, onPrevious, 
               </Picker>
             </View>
 
-            <Text style={styles.label}>Lease Duration</Text>
+            <Text style={styles.label}>Lease Duration <Text style={{ color: "#d92d20" }}>*</Text></Text>
             <TextInput
               style={styles.input}
               value={formData.leaseDuration || ""}
@@ -323,10 +325,94 @@ export default function Property({ formData, setFormData, category, onPrevious, 
       </View>
 
       {!isEditMode && (
-        <TouchableOpacity style={styles.nextBtn} onPress={() => { navigation.navigate("CalendarScreen", { category, template, formData, price }); }}>
+        <TouchableOpacity
+          style={styles.nextBtn}
+          onPress={() => {
+            if (selectedTab === "Sell") {
+              if (!formData.propertyType) {
+                setAlertConfig({ visible: true, title: "Missing Information", message: "Please select Property Type.", type: "warning" });
+                return;
+              }
+              if (!formData.bhk?.trim()) {
+                setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in BHK.", type: "warning" });
+                return;
+              }
+              if (!formData.builtUpArea?.trim()) {
+                setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Built-up Area.", type: "warning" });
+                return;
+              }
+              if (!formData.bathrooms?.trim()) {
+                setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Bathrooms.", type: "warning" });
+                return;
+              }
+              if (!formData.floor?.trim()) {
+                setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Floor.", type: "warning" });
+                return;
+              }
+              if (!formData.propertyAge?.trim()) {
+                setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Property Age.", type: "warning" });
+                return;
+              }
+              if (!formData.furnishing) {
+                setAlertConfig({ visible: true, title: "Missing Information", message: "Please select Furnishing.", type: "warning" });
+                return;
+              }
+              if (!formData.parkingAvailable) {
+                setAlertConfig({ visible: true, title: "Missing Information", message: "Please select Parking Available.", type: "warning" });
+                return;
+              }
+              if (!formData.facingSide?.trim()) {
+                setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Facing Side.", type: "warning" });
+                return;
+              }
+              if (!formData.price?.trim()) {
+                setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Asking Price.", type: "warning" });
+                return;
+              }
+            } else if (selectedTab === "Rent") {
+              if (!formData.propertyType) {
+                setAlertConfig({ visible: true, title: "Missing Information", message: "Please select Property Type.", type: "warning" });
+                return;
+              }
+              if (!formData.monthlyRentAmount?.trim()) {
+                setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Monthly Rent.", type: "warning" });
+                return;
+              }
+              if (!formData.securityDeposit?.trim()) {
+                setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Security Deposit.", type: "warning" });
+                return;
+              }
+              if (!formData.maintenanceAmount?.trim()) {
+                setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Maintenance Cost Per Month.", type: "warning" });
+                return;
+              }
+              if (!formData.availableFrom?.trim()) {
+                setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Available From.", type: "warning" });
+                return;
+              }
+              if (!formData.tenantType) {
+                setAlertConfig({ visible: true, title: "Missing Information", message: "Please select Tenant Type.", type: "warning" });
+                return;
+              }
+              if (!formData.leaseDuration?.trim()) {
+                setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Lease Duration.", type: "warning" });
+                return;
+              }
+            }
+            navigation.navigate("CalendarScreen", { category, template, formData, price });
+          }}
+        >
           <Text style={styles.nextText}>Next</Text>
         </TouchableOpacity>
       )}
+
+      <CustomAlertModal
+        visible={alertConfig.visible}
+        type={alertConfig.type || "warning"}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        onClose={() => setAlertConfig({ ...alertConfig, visible: false })}
+      />
     </View>
   );
 }

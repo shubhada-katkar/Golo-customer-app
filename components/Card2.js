@@ -1,13 +1,14 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
 import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView,
-  TextInput, Image, Alert, ActivityIndicator,
+  TextInput, Image, ActivityIndicator,
   Keyboard, TouchableWithoutFeedback, Modal
 } from "react-native";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons, MaterialIcons, Feather } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { textPresets } from "../theme/typography";
+import CustomAlertModal from "./CustomeAlertModal";
 
 function formatRestrictionUntil(date) {
   if (!date) return "";
@@ -34,6 +35,7 @@ export default function Card2({ category, formData, setFormData, onNext }) {
   const [restrictionModalVisible, setRestrictionModalVisible] = useState(false);
   const [restrictionUntil, setRestrictionUntil] = useState(null);
   const [countdownText, setCountdownText] = useState("");
+  const [alertConfig, setAlertConfig] = useState({ visible: false, title: "", message: "", type: "warning" });
 
   useEffect(() => {
     let interval;
@@ -264,7 +266,7 @@ export default function Card2({ category, formData, setFormData, onNext }) {
           <Text style={styles.label}>Category</Text>
           <Text style={styles.value}>{category?.label || category}</Text>
 
-          <Text style={styles.label}>Heading</Text>
+          <Text style={styles.label}>Heading <Text style={{ color: "#d92d20" }}>*</Text></Text>
           <TextInput
             style={styles.input}
             value={formData.heading}
@@ -272,7 +274,7 @@ export default function Card2({ category, formData, setFormData, onNext }) {
             placeholder="Type your heading here..."
           />
 
-          <Text style={styles.label}>Body text</Text>
+          <Text style={styles.label}>Body text <Text style={{ color: "#d92d20" }}>*</Text></Text>
           <TextInput
             style={styles.descriptionInput}
             value={formData.body}
@@ -282,7 +284,7 @@ export default function Card2({ category, formData, setFormData, onNext }) {
             scrollEnabled
           />
 
-          <Text style={styles.label}>Location</Text>
+          <Text style={styles.label}>Location <Text style={{ color: "#d92d20" }}>*</Text></Text>
           <View style={{ position: "relative", zIndex: 100 }}>
             <View style={styles.locationInputWrapper}>
               <TextInput
@@ -319,7 +321,7 @@ export default function Card2({ category, formData, setFormData, onNext }) {
             )}
           </View>
 
-          <Text style={styles.label}>Contact no.</Text>
+          <Text style={styles.label}>Contact no. <Text style={{ color: "#d92d20" }}>*</Text></Text>
           <TextInput
             style={styles.input}
             value={formData.contact}
@@ -328,7 +330,7 @@ export default function Card2({ category, formData, setFormData, onNext }) {
             placeholder="10 digit mobile number"
           />
 
-          <Text style={styles.label}>Add Image (1 image)</Text>
+          <Text style={styles.label}>Add Image (1 image) <Text style={{ color: "#d92d20" }}>*</Text></Text>
           <View style={styles.uploadBox}>
             <TouchableOpacity onPress={pickImage} style={{ alignItems: "center" }}>
               <Ionicons name="cloud-upload-outline" size={28} color="#555" />
@@ -364,21 +366,53 @@ export default function Card2({ category, formData, setFormData, onNext }) {
           style={styles.nextBtn}
           onPress={() => {
             const heading = (formData.heading || "").trim();
+            const body = (formData.body || "").trim();
+            const location = (formData.location || "").trim();
+            const contact = (formData.contact || "").trim();
             const hasImage = !!formData.image;
             if (!heading) {
-              Alert.alert(
-                "Missing Information",
-                "Please fill in the ad heading before proceeding.",
-                [{ text: "OK" }]
-              );
+              setAlertConfig({
+                visible: true,
+                title: "Missing Information",
+                message: "Please fill in the ad heading before proceeding.",
+                type: "warning"
+              });
+              return;
+            }
+            if (!body) {
+              setAlertConfig({
+                visible: true,
+                title: "Missing Information",
+                message: "Please fill in the body text before proceeding.",
+                type: "warning"
+              });
+              return;
+            }
+            if (!location) {
+              setAlertConfig({
+                visible: true,
+                title: "Missing Information",
+                message: "Please fill in the location before proceeding.",
+                type: "warning"
+              });
+              return;
+            }
+            if (!contact) {
+              setAlertConfig({
+                visible: true,
+                title: "Missing Information",
+                message: "Please fill in the contact number before proceeding.",
+                type: "warning"
+              });
               return;
             }
             if (!hasImage) {
-              Alert.alert(
-                "Missing Image",
-                "Please select an image for the ad before proceeding.",
-                [{ text: "OK" }]
-              );
+              setAlertConfig({
+                visible: true,
+                title: "Missing Image",
+                message: "Please select an image for the ad before proceeding.",
+                type: "warning"
+              });
               return;
             }
             onNext && onNext();
@@ -469,6 +503,14 @@ export default function Card2({ category, formData, setFormData, onNext }) {
             </View>
           </View>
         </Modal>
+
+        <CustomAlertModal
+          visible={alertConfig.visible}
+          type={alertConfig.type || "warning"}
+          title={alertConfig.title}
+          message={alertConfig.message}
+          onClose={() => setAlertConfig({ ...alertConfig, visible: false })}
+        />
       </ScrollView>
     </TouchableWithoutFeedback>
   );

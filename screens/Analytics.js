@@ -59,30 +59,37 @@ export default function Analytics({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const fetchAnalytics = useCallback(async () => {
+  const fetchAnalytics = useCallback(async (isSilent = false) => {
+    if (!isSilent && !analytics) {
+      setLoading(true);
+    }
     try {
       const data = await getMyAnalytics();
       setAnalytics(data || null);
       setError("");
     } catch (err) {
-      setError(err?.message || "Failed to load analytics");
+      if (!analytics) {
+        setError(err?.message || "Failed to load analytics");
+      }
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [analytics]);
 
   useFocusEffect(
     useCallback(() => {
-      fetchAnalytics();
+      fetchAnalytics(false);
     }, [fetchAnalytics]),
   );
 
   useEffect(() => {
-    fetchAnalytics();
-    const interval = setInterval(fetchAnalytics, 10000);
+    fetchAnalytics(false);
+    const interval = setInterval(() => {
+      fetchAnalytics(true);
+    }, 5000);
 
     return () => clearInterval(interval);
-  }, [fetchAnalytics]);
+  }, []);
 
   const normalizedAds = useMemo(() => {
     if (Array.isArray(analytics?.ads)) {
@@ -148,9 +155,9 @@ export default function Analytics({ navigation }) {
       { title: "Total Ads", value: resolvedStats.totalAds || 0 },
       { title: "Active Ads", value: resolvedStats.activeAds || 0 },
       { title: "Ad Card Clicks", value: resolvedStats.adCardClicks || 0 },
-      { title: "Unique Visitors", value: resolvedStats.uniqueVisitors || 0 },
+      // { title: "Unique Visitors", value: resolvedStats.uniqueVisitors || 0 },
       { title: "Contact Clicks", value: resolvedStats.contactClicks || 0 },
-      { title: "Wishlist Saves", value: resolvedStats.wishlistSaves || 0 },
+      // { title: "Wishlist Saves", value: resolvedStats.wishlistSaves || 0 },
     ];
   }, [analytics, normalizedAds]);
 
@@ -410,13 +417,13 @@ const styles = StyleSheet.create({
   statsContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    justifyContent: "space-between",
+    justifyContent: "space-between", // was space-around — even edge-to-edge alignment
   },
   card: {
-    width: "30%",
+    width: "48%", // was 46% — pairs with space-between so cards touch the container edges evenly
     backgroundColor: "#fff",
     paddingVertical: 16,
-    paddingHorizontal: 6,
+    paddingHorizontal: 10,
     borderRadius: 12,
     marginBottom: 10,
     borderWidth: 1,

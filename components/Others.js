@@ -1,12 +1,14 @@
-import React, { useContext } from "react";
+import React, { useContext, useState } from "react";
 import { View, Text, TextInput, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { textPresets } from "../theme/typography";
+import CustomAlertModal from "./CustomeAlertModal";
 
 export default function Others({ formData, setFormData, category, onPrevious, template, price, selectedDays, selectedLocations, selectedDates, startDate, endDate, isEditMode }) {
   if (category?.id !== "others") return null;
   const navigation = useNavigation();
+  const [alertConfig, setAlertConfig] = useState({ visible: false, title: "", message: "", type: "warning" });
 
   return (
     <View>
@@ -52,7 +54,7 @@ export default function Others({ formData, setFormData, category, onPrevious, te
 
       <View style={styles.formCard}>
 
-        <Text style={styles.label}>Title</Text>
+        <Text style={styles.label}>Title <Text style={{ color: "#d92d20" }}>*</Text></Text>
         <TextInput
           style={styles.input}
           value={formData.title || ""}
@@ -62,7 +64,7 @@ export default function Others({ formData, setFormData, category, onPrevious, te
           placeholder="Title of your listing"
         />
 
-        <Text style={styles.label}>Description</Text>
+        <Text style={styles.label}>Description <Text style={{ color: "#d92d20" }}>*</Text></Text>
 
         <TextInput
           style={styles.descriptionInput}
@@ -76,22 +78,47 @@ export default function Others({ formData, setFormData, category, onPrevious, te
           scrollEnabled={true}    // Enables vertical scrolling
         />
 
-        <Text style={styles.label}>Price</Text>
+        <Text style={styles.label}>Price <Text style={{ color: "#d92d20" }}>*</Text></Text>
         <TextInput
           style={styles.input}
           value={formData.price || ""}
           onChangeText={(text) =>
             setFormData({ ...formData, price: text })
           }
-          placeholder="₹ (Optional)"
+          placeholder="₹"
         />
       </View>
 
       {!isEditMode && (
-        <TouchableOpacity style={styles.nextBtn} onPress={() => { navigation.navigate("CalendarScreen", { category, template, formData, price }); }}>
+        <TouchableOpacity
+          style={styles.nextBtn}
+          onPress={() => {
+            if (!formData.title?.trim()) {
+              setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Title.", type: "warning" });
+              return;
+            }
+            if (!formData.description?.trim()) {
+              setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Description.", type: "warning" });
+              return;
+            }
+            if (!formData.price?.trim()) {
+              setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Price.", type: "warning" });
+              return;
+            }
+            navigation.navigate("CalendarScreen", { category, template, formData, price });
+          }}
+        >
           <Text style={styles.nextText}>Next</Text>
         </TouchableOpacity>
       )}
+
+      <CustomAlertModal
+        visible={alertConfig.visible}
+        type={alertConfig.type || "warning"}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        onClose={() => setAlertConfig({ ...alertConfig, visible: false })}
+      />
     </View>
   );
 }

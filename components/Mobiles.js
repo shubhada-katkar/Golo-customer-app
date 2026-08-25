@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useContext, useState } from "react";
 import {
   View, Text, TextInput, StyleSheet, ScrollView, TouchableOpacity,
   KeyboardAvoidingView, Platform
@@ -6,11 +6,13 @@ import {
 import { AntDesign } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { textPresets } from "../theme/typography";
+import CustomAlertModal from "./CustomeAlertModal";
 
 export default function Mobiles({ formData, setFormData, category, onPrevious, template, price, selectedDays, selectedLocations, selectedDates, startDate, endDate, isEditMode }) {
   if (category?.id !== "mobiles") return null;
 
   const navigation = useNavigation();
+  const [alertConfig, setAlertConfig] = useState({ visible: false, title: "", message: "", type: "warning" });
   const ConditionButton = ({ label, value }) => (
     <TouchableOpacity
       style={[
@@ -72,7 +74,7 @@ export default function Mobiles({ formData, setFormData, category, onPrevious, t
 
       <View style={styles.formCard}>
 
-        <Text style={styles.label}>Brand</Text>
+        <Text style={styles.label}>Brand <Text style={{ color: "#d92d20" }}>*</Text></Text>
         <TextInput
           style={styles.input}
           value={formData.brand || ""}
@@ -82,7 +84,7 @@ export default function Mobiles({ formData, setFormData, category, onPrevious, t
           placeholder="e.g. Apple, Samsung"
         />
 
-        <Text style={styles.label}>Model</Text>
+        <Text style={styles.label}>Model <Text style={{ color: "#d92d20" }}>*</Text></Text>
         <TextInput
           style={styles.input}
           value={formData.model || ""}
@@ -92,14 +94,14 @@ export default function Mobiles({ formData, setFormData, category, onPrevious, t
           placeholder="Model Name / Number"
         />
 
-        <Text style={styles.label}>Condition</Text>
+        <Text style={styles.label}>Condition <Text style={{ color: "#d92d20" }}>*</Text></Text>
         <View style={styles.segmentRow}>
           <ConditionButton label="New" value="new" />
           <ConditionButton label="Like new" value="like new" />
           <ConditionButton label="Fair" value="fair" />
         </View>
 
-        <Text style={styles.label}>Warranty Remaining</Text>
+        <Text style={styles.label}>Warranty Remaining <Text style={{ color: "#d92d20" }}>*</Text></Text>
         <TextInput
           style={styles.input}
           value={formData.warranty || ""}
@@ -109,7 +111,7 @@ export default function Mobiles({ formData, setFormData, category, onPrevious, t
           placeholder="e.g. 6 Months"
         />
 
-        <Text style={styles.label}>Price</Text>
+        <Text style={styles.label}>Price <Text style={{ color: "#d92d20" }}>*</Text></Text>
         <TextInput
           style={styles.input}
           value={formData.price || ""}
@@ -136,10 +138,43 @@ export default function Mobiles({ formData, setFormData, category, onPrevious, t
       </View>
 
       {!isEditMode && (
-        <TouchableOpacity style={styles.nextBtn} onPress={() => { navigation.navigate("CalendarScreen", { category, template, formData, price }); }}>
+        <TouchableOpacity
+          style={styles.nextBtn}
+          onPress={() => {
+            if (!formData.brand?.trim()) {
+              setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Brand.", type: "warning" });
+              return;
+            }
+            if (!formData.model?.trim()) {
+              setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Model.", type: "warning" });
+              return;
+            }
+            if (!formData.condition) {
+              setAlertConfig({ visible: true, title: "Missing Information", message: "Please select Condition.", type: "warning" });
+              return;
+            }
+            if (!formData.warranty?.trim()) {
+              setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Warranty Remaining.", type: "warning" });
+              return;
+            }
+            if (!formData.price?.trim()) {
+              setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Price.", type: "warning" });
+              return;
+            }
+            navigation.navigate("CalendarScreen", { category, template, formData, price });
+          }}
+        >
           <Text style={styles.nextText}>Next</Text>
         </TouchableOpacity>
       )}
+
+      <CustomAlertModal
+        visible={alertConfig.visible}
+        type={alertConfig.type || "warning"}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        onClose={() => setAlertConfig({ ...alertConfig, visible: false })}
+      />
     </View>
   );
 }

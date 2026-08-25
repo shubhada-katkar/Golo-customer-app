@@ -1,16 +1,18 @@
-import React, { useContext } from "react";
+import React, { useContext, useState } from "react";
 import {
-  View, Text, TextInput, StyleSheet, TouchableOpacity,
+  View, Text, TextInput, StyleSheet, TouchableOpacity
 } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
 import { Picker } from "@react-native-picker/picker";
 import { useNavigation } from "@react-navigation/native";
 import { textPresets } from "../theme/typography";
+import CustomAlertModal from "./CustomeAlertModal";
 
 export default function PublicNotice({ formData, setFormData, category, onPrevious, template, price, selectedDays, selectedLocations, selectedDates, startDate, endDate }) {
   if (category?.id !== "publicnotice") return null;
   const navigation = useNavigation();
+  const [alertConfig, setAlertConfig] = useState({ visible: false, title: "", message: "", type: "warning" });
   const pickPDF = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
@@ -77,7 +79,7 @@ export default function PublicNotice({ formData, setFormData, category, onPrevio
 
       <View style={styles.formCard}>
 
-        <Text style={styles.label}>Notice Type</Text>
+        <Text style={styles.label}>Notice Type <Text style={{ color: "#d92d20" }}>*</Text></Text>
         <View style={styles.pickerWrap}>
           <Picker
             selectedValue={formData.noticetype || ""}
@@ -94,7 +96,7 @@ export default function PublicNotice({ formData, setFormData, category, onPrevio
           </Picker>
         </View>
 
-        <Text style={styles.label}>Issuing Authority</Text>
+        <Text style={styles.label}>Issuing Authority <Text style={{ color: "#d92d20" }}>*</Text></Text>
         <TextInput
           style={styles.input}
           value={formData.issuingAuthority || ""}
@@ -104,7 +106,7 @@ export default function PublicNotice({ formData, setFormData, category, onPrevio
           placeholder="Department Name/Organization Name"
         />
 
-        <Text style={styles.label}>Detailed Notice Text</Text>
+        <Text style={styles.label}>Detailed Notice Text <Text style={{ color: "#d92d20" }}>*</Text></Text>
         <TextInput
           style={styles.descriptionInput}
           value={formData.detailedNotice || ""}
@@ -134,9 +136,34 @@ export default function PublicNotice({ formData, setFormData, category, onPrevio
         )}
       </View>
 
-      <TouchableOpacity style={styles.nextBtn} onPress={() => { navigation.navigate("CalendarScreen", { category, template, formData, price }); }}>
+      <TouchableOpacity
+        style={styles.nextBtn}
+        onPress={() => {
+          if (!formData.noticetype) {
+            setAlertConfig({ visible: true, title: "Missing Information", message: "Please select Notice Type.", type: "warning" });
+            return;
+          }
+          if (!formData.issuingAuthority?.trim()) {
+            setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Issuing Authority.", type: "warning" });
+            return;
+          }
+          if (!formData.detailedNotice?.trim()) {
+            setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Detailed Notice Text.", type: "warning" });
+            return;
+          }
+          navigation.navigate("CalendarScreen", { category, template, formData, price });
+        }}
+      >
         <Text style={styles.nextText}>Next</Text>
       </TouchableOpacity>
+
+      <CustomAlertModal
+        visible={alertConfig.visible}
+        type={alertConfig.type || "warning"}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        onClose={() => setAlertConfig({ ...alertConfig, visible: false })}
+      />
     </View>
   );
 }

@@ -1,13 +1,15 @@
-import React, { useContext } from "react";
+import React, { useContext, useState } from "react";
 import { View, Text, TextInput, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
 import { useNavigation } from "@react-navigation/native";
 import { textPresets } from "../theme/typography";
+import CustomAlertModal from "./CustomeAlertModal";
 
 export default function Personal({ formData, setFormData, category, onPrevious, template, price, selectedDays, selectedLocations, selectedDates, startDate, endDate, isEditMode }) {
   if (category?.id !== "personal") return null;
   const navigation = useNavigation();
+  const [alertConfig, setAlertConfig] = useState({ visible: false, title: "", message: "", type: "warning" });
 
   return (
     <View>
@@ -52,7 +54,7 @@ export default function Personal({ formData, setFormData, category, onPrevious, 
 
       <View style={styles.formCard}>
 
-        <Text style={styles.label}>Name</Text>
+        <Text style={styles.label}>Name <Text style={{ color: "#d92d20" }}>*</Text></Text>
         <TextInput
           style={styles.input}
           value={formData.name || ""}
@@ -62,7 +64,7 @@ export default function Personal({ formData, setFormData, category, onPrevious, 
           placeholder="Full name"
         />
 
-        <Text style={styles.label}>Gender</Text>
+        <Text style={styles.label}>Gender <Text style={{ color: "#d92d20" }}>*</Text></Text>
         <View style={styles.pickerWrap}>
           <Picker
             selectedValue={formData.gender || ""}
@@ -76,7 +78,7 @@ export default function Personal({ formData, setFormData, category, onPrevious, 
           </Picker>
         </View>
 
-        <Text style={styles.label}>Age</Text>
+        <Text style={styles.label}>Age <Text style={{ color: "#d92d20" }}>*</Text></Text>
         <TextInput
           style={styles.input}
           value={formData.age || ""}
@@ -86,7 +88,7 @@ export default function Personal({ formData, setFormData, category, onPrevious, 
           placeholder="Age"
         />
 
-        <Text style={styles.label}>Achievement Title</Text>
+        <Text style={styles.label}>Achievement Title <Text style={{ color: "#d92d20" }}>*</Text></Text>
         <TextInput
           style={styles.input}
           value={formData.achievementTitle || ""}
@@ -96,7 +98,7 @@ export default function Personal({ formData, setFormData, category, onPrevious, 
           placeholder="e.g. Best Employee of the Year"
         />
 
-        <Text style={styles.label}>Description</Text>
+        <Text style={styles.label}>Description <Text style={{ color: "#d92d20" }}>*</Text></Text>
         <TextInput
           style={styles.descriptionInput}
           value={formData.description || ""}
@@ -109,7 +111,7 @@ export default function Personal({ formData, setFormData, category, onPrevious, 
           scrollEnabled={true}
         />
 
-        <Text style={styles.label}>Contact</Text>
+        <Text style={styles.label}>Contact <Text style={{ color: "#d92d20" }}>*</Text></Text>
         <TextInput
           style={styles.input}
           value={formData.contact || ""}
@@ -121,10 +123,47 @@ export default function Personal({ formData, setFormData, category, onPrevious, 
       </View>
 
       {!isEditMode && (
-        <TouchableOpacity style={styles.nextBtn} onPress={() => { navigation.navigate("CalendarScreen", { category, template, formData, price }); }}>
+        <TouchableOpacity
+          style={styles.nextBtn}
+          onPress={() => {
+            if (!formData.name?.trim()) {
+              setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Name.", type: "warning" });
+              return;
+            }
+            if (!formData.gender) {
+              setAlertConfig({ visible: true, title: "Missing Information", message: "Please select Gender.", type: "warning" });
+              return;
+            }
+            if (!formData.age?.trim()) {
+              setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Age.", type: "warning" });
+              return;
+            }
+            if (!formData.achievementTitle?.trim()) {
+              setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Achievement Title.", type: "warning" });
+              return;
+            }
+            if (!formData.description?.trim()) {
+              setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Description.", type: "warning" });
+              return;
+            }
+            if (!formData.contact?.trim()) {
+              setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Contact.", type: "warning" });
+              return;
+            }
+            navigation.navigate("CalendarScreen", { category, template, formData, price });
+          }}
+        >
           <Text style={styles.nextText}>Next</Text>
         </TouchableOpacity>
       )}
+
+      <CustomAlertModal
+        visible={alertConfig.visible}
+        type={alertConfig.type || "warning"}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        onClose={() => setAlertConfig({ ...alertConfig, visible: false })}
+      />
     </View>
   );
 }

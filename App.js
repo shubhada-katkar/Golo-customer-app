@@ -162,6 +162,11 @@ export default function App() {
         if (navigationRef.isReady() && data) {
           if (data?.offerId) {
             navigationRef.navigate("OfferDetails", { offerId: data.offerId });
+          } else if (data?.conversationId) {
+            navigationRef.navigate("ChatScreen", {
+              conversationId: data.conversationId,
+              sellerName: data.sellerName || "Chat",
+            });
           } else if (data?.screen === "NotificationsPage") {
             navigationRef.navigate("NotificationsPage");
           }

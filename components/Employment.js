@@ -1,13 +1,15 @@
-import React, { useContext } from "react";
+import React, { useContext, useState } from "react";
 import { View, Text, TextInput, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
 import { useNavigation } from "@react-navigation/native";
 import { textPresets } from "../theme/typography";
+import CustomAlertModal from "./CustomeAlertModal";
 
 export default function Employment({ formData, setFormData, category, onPrevious, template, price, selectedDays, selectedLocations, selectedDates, startDate, endDate, isEditMode }) {
   if (category?.id !== "employment") return null;
   const navigation = useNavigation();
+  const [alertConfig, setAlertConfig] = useState({ visible: false, title: "", message: "", type: "warning" });
 
   const ConditionButton = ({ label, value, field }) => (
     <TouchableOpacity
@@ -71,7 +73,7 @@ export default function Employment({ formData, setFormData, category, onPrevious
 
       <View style={styles.formCard}>
 
-        <Text style={styles.label}>Employment Type</Text>
+        <Text style={styles.label}>Employment Type <Text style={{ color: "#d92d20" }}>*</Text></Text>
         <View style={styles.pickerWrap}>
           <Picker
             selectedValue={formData.employmentType || ""}
@@ -89,7 +91,7 @@ export default function Employment({ formData, setFormData, category, onPrevious
           </Picker>
         </View>
 
-        <Text style={styles.label}>Job Title</Text>
+        <Text style={styles.label}>Job Title <Text style={{ color: "#d92d20" }}>*</Text></Text>
         <TextInput
           style={styles.input}
           value={formData.jobTitle || ""}
@@ -99,7 +101,7 @@ export default function Employment({ formData, setFormData, category, onPrevious
           placeholder="e.g. Software Engineer"
         />
 
-        <Text style={styles.label}>Company Name</Text>
+        <Text style={styles.label}>Company Name <Text style={{ color: "#d92d20" }}>*</Text></Text>
         <TextInput
           style={styles.input}
           value={formData.companyName || ""}
@@ -109,7 +111,7 @@ export default function Employment({ formData, setFormData, category, onPrevious
           placeholder="e.g. Acme Corp"
         />
 
-        <Text style={styles.label}>Experience</Text>
+        <Text style={styles.label}>Experience <Text style={{ color: "#d92d20" }}>*</Text></Text>
         <TextInput
           style={styles.input}
           value={formData.experience || ""}
@@ -119,7 +121,7 @@ export default function Employment({ formData, setFormData, category, onPrevious
           placeholder="e.g. 2+ years"
         />
 
-        <Text style={styles.label}>Industry</Text>
+        <Text style={styles.label}>Industry <Text style={{ color: "#d92d20" }}>*</Text></Text>
         <TextInput
           style={styles.input}
           value={formData.industry || ""}
@@ -129,7 +131,7 @@ export default function Employment({ formData, setFormData, category, onPrevious
           placeholder="Industry (e.g. IT)"
         />
 
-        <Text style={styles.label}>Salary Range (Monthly)</Text>
+        <Text style={styles.label}>Salary Range (Monthly) <Text style={{ color: "#d92d20" }}>*</Text></Text>
 
         <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
           <TextInput
@@ -153,7 +155,7 @@ export default function Employment({ formData, setFormData, category, onPrevious
           />
         </View>
 
-        <Text style={styles.label}>Total Vacancies</Text>
+        <Text style={styles.label}>Total Vacancies <Text style={{ color: "#d92d20" }}>*</Text></Text>
         <TextInput
           style={styles.input}
           value={formData.vacancies || ""}
@@ -163,7 +165,7 @@ export default function Employment({ formData, setFormData, category, onPrevious
           placeholder="Number of openings"
         />
 
-        <Text style={styles.label}>Job Description</Text>
+        <Text style={styles.label}>Job Description <Text style={{ color: "#d92d20" }}>*</Text></Text>
         <TextInput
           style={styles.descriptionInput}
           value={formData.jobDescription || ""}
@@ -176,7 +178,7 @@ export default function Employment({ formData, setFormData, category, onPrevious
           textAlignVertical="top"
         />
 
-        <Text style={styles.label}>Requirements</Text>
+        <Text style={styles.label}>Requirements <Text style={{ color: "#d92d20" }}>*</Text></Text>
         <TextInput
           style={styles.descriptionInput}
           value={formData.requirements || ""}
@@ -189,7 +191,7 @@ export default function Employment({ formData, setFormData, category, onPrevious
           textAlignVertical="top"
         />
 
-        <Text style={styles.label}>Benefits & Perks</Text>
+        <Text style={styles.label}>Benefits & Perks <Text style={{ color: "#d92d20" }}>*</Text></Text>
         <TextInput
           style={styles.input}
           value={formData.benefits || ""}
@@ -202,10 +204,63 @@ export default function Employment({ formData, setFormData, category, onPrevious
       </View>
 
       {!isEditMode && (
-        <TouchableOpacity style={styles.nextBtn} onPress={() => { navigation.navigate("CalendarScreen", { category, template, formData, price }); }}>
+        <TouchableOpacity
+          style={styles.nextBtn}
+          onPress={() => {
+            if (!formData.employmentType) {
+              setAlertConfig({ visible: true, title: "Missing Information", message: "Please select Employment Type.", type: "warning" });
+              return;
+            }
+            if (!formData.jobTitle?.trim()) {
+              setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Job Title.", type: "warning" });
+              return;
+            }
+            if (!formData.companyName?.trim()) {
+              setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Company Name.", type: "warning" });
+              return;
+            }
+            if (!formData.experience?.trim()) {
+              setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Experience.", type: "warning" });
+              return;
+            }
+            if (!formData.industry?.trim()) {
+              setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Industry.", type: "warning" });
+              return;
+            }
+            if (!formData.salaryRange?.trim() || !formData.salaryRangeMax?.trim()) {
+              setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in complete Salary Range (Min and Max).", type: "warning" });
+              return;
+            }
+            if (!formData.vacancies?.trim()) {
+              setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Total Vacancies.", type: "warning" });
+              return;
+            }
+            if (!formData.jobDescription?.trim()) {
+              setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Job Description.", type: "warning" });
+              return;
+            }
+            if (!formData.requirements?.trim()) {
+              setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Requirements.", type: "warning" });
+              return;
+            }
+            if (!formData.benefits?.trim()) {
+              setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Benefits & Perks.", type: "warning" });
+              return;
+            }
+            navigation.navigate("CalendarScreen", { category, template, formData, price });
+          }}
+        >
           <Text style={styles.nextText}>Next</Text>
         </TouchableOpacity>
       )}
+
+      <CustomAlertModal
+        visible={alertConfig.visible}
+        type={alertConfig.type || "warning"}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        onClose={() => setAlertConfig({ ...alertConfig, visible: false })}
+      />
     </View>
   );
 }

@@ -3,8 +3,10 @@ import { View, Text, TextInput, StyleSheet, ScrollView, TouchableOpacity } from 
 import { AntDesign } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { textPresets } from "../theme/typography";
+import CustomAlertModal from "./CustomeAlertModal";
 
 export default function Business({ formData, setFormData, category, onPrevious, template, price, selectedDays, selectedLocations, selectedDates, startDate, endDate, isEditMode }) {
+    const [alertConfig, setAlertConfig] = useState({ visible: false, title: "", message: "", type: "warning" });
     const [socialMediaLinks, setSocialMediaLinks] = useState(
         formData.socialMediaLinks && Array.isArray(formData.socialMediaLinks)
             ? formData.socialMediaLinks
@@ -75,7 +77,7 @@ export default function Business({ formData, setFormData, category, onPrevious, 
 
             <View style={styles.formCard}>
 
-                <Text style={styles.label}>Business Name</Text>
+                <Text style={styles.label}>Business Name <Text style={{ color: "#d92d20" }}>*</Text></Text>
                 <TextInput
                     style={styles.input}
                     value={formData.businessName || ""}
@@ -85,7 +87,7 @@ export default function Business({ formData, setFormData, category, onPrevious, 
                     placeholder="Your Business Name"
                 />
 
-                <Text style={styles.label}>Business Type</Text>
+                <Text style={styles.label}>Business Type <Text style={{ color: "#d92d20" }}>*</Text></Text>
                 <TextInput
                     style={styles.input}
                     value={formData.businessType || ""}
@@ -95,7 +97,7 @@ export default function Business({ formData, setFormData, category, onPrevious, 
                     placeholder="e.g. Retail, Service, Manufacturing"
                 />
 
-                <Text style={styles.label}>Services Offered</Text>
+                <Text style={styles.label}>Services Offered <Text style={{ color: "#d92d20" }}>*</Text></Text>
                 <TextInput
                     style={[styles.descriptionInput, { minHeight: 100, maxHeight: 100 }]}
                     value={formData.serviceOffered || ""}
@@ -108,17 +110,17 @@ export default function Business({ formData, setFormData, category, onPrevious, 
                     scrollEnabled={true}
                 />
 
-                <Text style={styles.label}>GST Number</Text>
+                <Text style={styles.label}>GST Number <Text style={{ color: "#d92d20" }}>*</Text></Text>
                 <TextInput
                     style={styles.input}
                     value={formData.gstNumber || ""}
                     onChangeText={(text) =>
                         setFormData({ ...formData, gstNumber: text })
                     }
-                    placeholder="Enter GST Number (if applicable)"
+                    placeholder="Enter GST Number"
                 />
 
-                <Text style={styles.label}>Website URL</Text>
+                <Text style={styles.label}>Website URL <Text style={{ color: "#d92d20" }}>*</Text></Text>
                 <TextInput
                     style={styles.input}
                     value={formData.websiteUrl || ""}
@@ -191,7 +193,7 @@ export default function Business({ formData, setFormData, category, onPrevious, 
                 <View style={{ height: 1, backgroundColor: "#a0a0a0", marginTop: 20 }} />
 
                 <Text style={[styles.label, { alignSelf: "center", color: "#f5b85c" }]}>Offer Details</Text>
-                <Text style={styles.label}>Campaign Name</Text>
+                <Text style={styles.label}>Campaign Name <Text style={{ color: "#d92d20" }}>*</Text></Text>
                 <TextInput
                     style={styles.input}
                     value={formData.campaignName || ""}
@@ -201,7 +203,7 @@ export default function Business({ formData, setFormData, category, onPrevious, 
                     placeholder="e.g. Summer Sale"
                 />
 
-                <Text style={styles.label}>Valid Till</Text>
+                <Text style={styles.label}>Valid Till <Text style={{ color: "#d92d20" }}>*</Text></Text>
                 <TextInput
                     style={styles.input}
                     value={formData.validTill || ""}
@@ -211,7 +213,7 @@ export default function Business({ formData, setFormData, category, onPrevious, 
                     placeholder="Valid Till Date"
                 />
 
-                <Text style={styles.label}>Description</Text>
+                <Text style={styles.label}>Description <Text style={{ color: "#d92d20" }}>*</Text></Text>
                 <TextInput
                     style={styles.descriptionInput}
                     value={formData.description || ""}
@@ -224,7 +226,7 @@ export default function Business({ formData, setFormData, category, onPrevious, 
                     scrollEnabled={true}
                 />
 
-                <Text style={styles.label}>Shop Address</Text>
+                <Text style={styles.label}>Shop Address <Text style={{ color: "#d92d20" }}>*</Text></Text>
                 <TextInput
                     style={[styles.descriptionInput, { minHeight: 100, maxHeight: 100 }]}
                     value={formData.shopAddress || ""}
@@ -239,10 +241,59 @@ export default function Business({ formData, setFormData, category, onPrevious, 
             </View>
 
             {!isEditMode && (
-                <TouchableOpacity style={styles.nextBtn} onPress={() => { navigation.navigate("CalendarScreen", { category, template, formData, price }); }}>
+                <TouchableOpacity
+                    style={styles.nextBtn}
+                    onPress={() => {
+                        if (!formData.businessName?.trim()) {
+                            setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Business Name.", type: "warning" });
+                            return;
+                        }
+                        if (!formData.businessType?.trim()) {
+                            setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Business Type.", type: "warning" });
+                            return;
+                        }
+                        if (!formData.serviceOffered?.trim()) {
+                            setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Services Offered.", type: "warning" });
+                            return;
+                        }
+                        if (!formData.gstNumber?.trim()) {
+                            setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in GST Number.", type: "warning" });
+                            return;
+                        }
+                        if (!formData.websiteUrl?.trim()) {
+                            setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Website URL.", type: "warning" });
+                            return;
+                        }
+                        if (!formData.campaignName?.trim()) {
+                            setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Campaign Name.", type: "warning" });
+                            return;
+                        }
+                        if (!formData.validTill?.trim()) {
+                            setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Valid Till date.", type: "warning" });
+                            return;
+                        }
+                        if (!formData.description?.trim()) {
+                            setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Description.", type: "warning" });
+                            return;
+                        }
+                        if (!formData.shopAddress?.trim()) {
+                            setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Shop Address.", type: "warning" });
+                            return;
+                        }
+                        navigation.navigate("CalendarScreen", { category, template, formData, price });
+                    }}
+                >
                     <Text style={styles.nextText}>Next</Text>
                 </TouchableOpacity>
             )}
+
+            <CustomAlertModal
+                visible={alertConfig.visible}
+                type={alertConfig.type || "warning"}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                onClose={() => setAlertConfig({ ...alertConfig, visible: false })}
+            />
         </View>
     );
 }

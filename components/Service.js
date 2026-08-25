@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useContext, useState } from "react";
 import {
     View,
     Text,
@@ -10,10 +10,12 @@ import { AntDesign } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
 import { useNavigation } from "@react-navigation/native";
 import { textPresets } from "../theme/typography";
+import CustomAlertModal from "./CustomeAlertModal";
 
 export default function Service({ formData, setFormData, category, onPrevious, template, price, selectedDays, selectedLocations, selectedDates, startDate, endDate, isEditMode }) {
     if (category?.id !== "service") return null;
     const navigation = useNavigation();
+    const [alertConfig, setAlertConfig] = useState({ visible: false, title: "", message: "", type: "warning" });
 
     return (
         <View>
@@ -58,7 +60,7 @@ export default function Service({ formData, setFormData, category, onPrevious, t
 
             <View style={styles.formCard}>
 
-                <Text style={styles.label}>Service Category</Text>
+                <Text style={styles.label}>Service Category <Text style={{ color: "#d92d20" }}>*</Text></Text>
                 <View style={styles.pickerWrap}>
                     <Picker
                         selectedValue={formData.serviceCategory || ""}
@@ -78,7 +80,7 @@ export default function Service({ formData, setFormData, category, onPrevious, t
                     </Picker>
                 </View>
 
-                <Text style={styles.label}>Years of Experience</Text>
+                <Text style={styles.label}>Years of Experience <Text style={{ color: "#d92d20" }}>*</Text></Text>
                 <TextInput
                     style={styles.input}
                     value={formData.experience || ""}
@@ -88,7 +90,7 @@ export default function Service({ formData, setFormData, category, onPrevious, t
                     placeholder="e.g. * years"
                 />
 
-                <Text style={styles.label}>Service Area</Text>
+                <Text style={styles.label}>Service Area <Text style={{ color: "#d92d20" }}>*</Text></Text>
                 <TextInput
                     style={styles.input}
                     value={formData.serviceArea || ""}
@@ -98,7 +100,7 @@ export default function Service({ formData, setFormData, category, onPrevious, t
                     placeholder="Mumbai Central, Bandra, Andheri"
                 />
 
-                <Text style={styles.label}>Available Time</Text>
+                <Text style={styles.label}>Available Time <Text style={{ color: "#d92d20" }}>*</Text></Text>
                 <TextInput
                     style={styles.input}
                     value={formData.availableTime || ""}
@@ -108,7 +110,7 @@ export default function Service({ formData, setFormData, category, onPrevious, t
                     placeholder="9 AM - 6 PM, Monday to Saturday"
                 />
 
-                <Text style={styles.label}>Service Charges</Text>
+                <Text style={styles.label}>Service Charges <Text style={{ color: "#d92d20" }}>*</Text></Text>
                 <TextInput
                     style={styles.input}
                     value={formData.charges || ""}
@@ -132,7 +134,7 @@ export default function Service({ formData, setFormData, category, onPrevious, t
                     </TouchableOpacity>
                 </View>
 
-                <Text style={styles.label}>Service Bio & Skills</Text>
+                <Text style={styles.label}>Service Bio & Skills <Text style={{ color: "#d92d20" }}>*</Text></Text>
                 <TextInput
                     style={styles.descriptionInput}
                     value={formData.serviceBio || ""}
@@ -148,10 +150,47 @@ export default function Service({ formData, setFormData, category, onPrevious, t
             </View>
 
             {!isEditMode && (
-                <TouchableOpacity style={styles.nextBtn} onPress={() => { navigation.navigate("CalendarScreen", { category, template, formData, price }); }}>
+                <TouchableOpacity
+                    style={styles.nextBtn}
+                    onPress={() => {
+                        if (!formData.serviceCategory) {
+                            setAlertConfig({ visible: true, title: "Missing Information", message: "Please select Service Category.", type: "warning" });
+                            return;
+                        }
+                        if (!formData.experience?.trim()) {
+                            setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Years of Experience.", type: "warning" });
+                            return;
+                        }
+                        if (!formData.serviceArea?.trim()) {
+                            setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Service Area.", type: "warning" });
+                            return;
+                        }
+                        if (!formData.availableTime?.trim()) {
+                            setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Available Time.", type: "warning" });
+                            return;
+                        }
+                        if (!formData.charges?.trim()) {
+                            setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Service Charges.", type: "warning" });
+                            return;
+                        }
+                        if (!formData.serviceBio?.trim()) {
+                            setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Service Bio & Skills.", type: "warning" });
+                            return;
+                        }
+                        navigation.navigate("CalendarScreen", { category, template, formData, price });
+                    }}
+                >
                     <Text style={styles.nextText}>Next</Text>
                 </TouchableOpacity>
             )}
+
+            <CustomAlertModal
+                visible={alertConfig.visible}
+                type={alertConfig.type || "warning"}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                onClose={() => setAlertConfig({ ...alertConfig, visible: false })}
+            />
         </View>
     );
 }

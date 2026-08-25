@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useContext, useState } from "react";
 import {
     View,
     Text,
@@ -9,10 +9,12 @@ import {
 import { AntDesign } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { textPresets } from "../theme/typography";
+import CustomAlertModal from "./CustomeAlertModal";
 
 export default function Electronics({ formData, setFormData, category, onPrevious, template, price, selectedDays, selectedLocations, selectedDates, startDate, endDate, isEditMode }) {
     if (category?.id !== "electronics_home") return null;
     const navigation = useNavigation();
+    const [alertConfig, setAlertConfig] = useState({ visible: false, title: "", message: "", type: "warning" });
 
     const ConditionButton = ({ label, value }) => (
         <TouchableOpacity
@@ -76,7 +78,7 @@ export default function Electronics({ formData, setFormData, category, onPreviou
 
             <View style={styles.formCard}>
 
-                <Text style={styles.label}>Appliance Name</Text>
+                <Text style={styles.label}>Appliance Name <Text style={{ color: "#d92d20" }}>*</Text></Text>
                 <TextInput
                     style={styles.input}
                     value={formData.electronicsType || ""}
@@ -86,7 +88,7 @@ export default function Electronics({ formData, setFormData, category, onPreviou
                     placeholder="e.g. Washing Machine"
                 />
 
-                <Text style={styles.label}>Brand</Text>
+                <Text style={styles.label}>Brand <Text style={{ color: "#d92d20" }}>*</Text></Text>
                 <TextInput
                     style={styles.input}
                     value={formData.brand || ""}
@@ -96,7 +98,7 @@ export default function Electronics({ formData, setFormData, category, onPreviou
                     placeholder="Brand"
                 />
 
-                <Text style={styles.label}>Model Name / Number</Text>
+                <Text style={styles.label}>Model Name / Number <Text style={{ color: "#d92d20" }}>*</Text></Text>
                 <TextInput
                     style={styles.input}
                     value={formData.modelNumber || ""}
@@ -106,7 +108,7 @@ export default function Electronics({ formData, setFormData, category, onPreviou
                     placeholder="Model"
                 />
 
-                <Text style={styles.label}>Warranty Remaining</Text>
+                <Text style={styles.label}>Warranty Remaining <Text style={{ color: "#d92d20" }}>*</Text></Text>
                 <TextInput
                     style={styles.input}
                     value={formData.warrantyRemaining || ""}
@@ -116,7 +118,7 @@ export default function Electronics({ formData, setFormData, category, onPreviou
                     placeholder="e.g. 1 year"
                 />
 
-                <Text style={styles.label}>Capacity</Text>
+                <Text style={styles.label}>Capacity <Text style={{ color: "#d92d20" }}>*</Text></Text>
                 <TextInput
                     style={styles.input}
                     value={formData.capacity || ""}
@@ -126,14 +128,14 @@ export default function Electronics({ formData, setFormData, category, onPreviou
                     placeholder="e.g. 7 kg, 5000 L"
                 />
 
-                <Text style={styles.label}>Condition</Text>
+                <Text style={styles.label}>Condition <Text style={{ color: "#d92d20" }}>*</Text></Text>
                 <View style={styles.segmentRow}>
                     <ConditionButton label="New" value="new" />
                     <ConditionButton label="Like new" value="like new" />
                     <ConditionButton label="Fair" value="fair" />
                 </View>
 
-                <Text style={styles.label}>Price</Text>
+                <Text style={styles.label}>Price <Text style={{ color: "#d92d20" }}>*</Text></Text>
                 <TextInput
                     style={styles.input}
                     value={formData.price || ""}
@@ -160,10 +162,51 @@ export default function Electronics({ formData, setFormData, category, onPreviou
             </View>
 
             {!isEditMode && (
-                <TouchableOpacity style={styles.nextBtn} onPress={() => { navigation.navigate("CalendarScreen", { category, template, formData, price }); }}>
+                <TouchableOpacity
+                    style={styles.nextBtn}
+                    onPress={() => {
+                        if (!formData.electronicsType?.trim()) {
+                            setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Appliance Name.", type: "warning" });
+                            return;
+                        }
+                        if (!formData.brand?.trim()) {
+                            setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Brand.", type: "warning" });
+                            return;
+                        }
+                        if (!formData.modelNumber?.trim()) {
+                            setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Model Name / Number.", type: "warning" });
+                            return;
+                        }
+                        if (!formData.warrantyRemaining?.trim()) {
+                            setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Warranty Remaining.", type: "warning" });
+                            return;
+                        }
+                        if (!formData.capacity?.trim()) {
+                            setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Capacity.", type: "warning" });
+                            return;
+                        }
+                        if (!formData.condition) {
+                            setAlertConfig({ visible: true, title: "Missing Information", message: "Please select Condition.", type: "warning" });
+                            return;
+                        }
+                        if (!formData.price?.trim()) {
+                            setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Price.", type: "warning" });
+                            return;
+                        }
+                        navigation.navigate("CalendarScreen", { category, template, formData, price });
+                    }}
+                >
                     <Text style={styles.nextText}>Next</Text>
                 </TouchableOpacity>
             )}
+
+            <CustomAlertModal
+                visible={alertConfig.visible}
+                type={alertConfig.type || "warning"}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                onClose={() => setAlertConfig({ ...alertConfig, visible: false })}
+            />
         </View>
     );
 }

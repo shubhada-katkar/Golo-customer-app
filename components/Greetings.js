@@ -4,11 +4,13 @@ import { AntDesign } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
 import { useNavigation } from "@react-navigation/native";
 import { textPresets } from "../theme/typography";
+import CustomAlertModal from "./CustomeAlertModal";
 
 export default function Greetings({ formData, setFormData, category, onPrevious, template, price, selectedDays, selectedLocations, selectedDates, startDate, endDate, isEditMode }) {
   if (category?.id !== "greetings") return null;
   const [selectedTab, setSelectedTab] = useState("Greetings");
   const navigation = useNavigation();
+  const [alertConfig, setAlertConfig] = useState({ visible: false, title: "", message: "", type: "warning" });
 
   React.useEffect(() => {
     if (!formData.Type) {
@@ -121,7 +123,7 @@ export default function Greetings({ formData, setFormData, category, onPrevious,
 
         {selectedTab === "Greetings" && (
           <>
-            <Text style={styles.label}>Relationship</Text>
+            <Text style={styles.label}>Relationship <Text style={{ color: "#d92d20" }}>*</Text></Text>
             <View style={styles.pickerWrap}>
               <Picker
                 selectedValue={formData.relationType || ""}
@@ -139,7 +141,7 @@ export default function Greetings({ formData, setFormData, category, onPrevious,
               </Picker>
             </View>
 
-            <Text style={styles.label}>Name of the Person</Text>
+            <Text style={styles.label}>Name of the Person <Text style={{ color: "#d92d20" }}>*</Text></Text>
             <TextInput
               style={styles.input}
               value={formData.name || ""}
@@ -149,7 +151,7 @@ export default function Greetings({ formData, setFormData, category, onPrevious,
               placeholder="e.g. John"
             />
 
-            <Text style={styles.label}>Age Turning</Text>
+            <Text style={styles.label}>Age Turning <Text style={{ color: "#d92d20" }}>*</Text></Text>
             <TextInput
               style={styles.input}
               value={formData.age || ""}
@@ -159,7 +161,7 @@ export default function Greetings({ formData, setFormData, category, onPrevious,
               placeholder="e.g. 25"
             />
 
-            <Text style={styles.label}>Date of Birthday</Text>
+            <Text style={styles.label}>Date of Birthday <Text style={{ color: "#d92d20" }}>*</Text></Text>
             <TextInput
               style={styles.input}
               value={formData.year || ""}
@@ -169,7 +171,7 @@ export default function Greetings({ formData, setFormData, category, onPrevious,
               placeholder="Enter Birthdate"
             />
 
-            <Text style={styles.label}>Your Message / Wishes</Text>
+            <Text style={styles.label}>Your Message / Wishes <Text style={{ color: "#d92d20" }}>*</Text></Text>
             <TextInput
               style={styles.descriptionInput}
               value={formData.wishes || ""}
@@ -182,7 +184,7 @@ export default function Greetings({ formData, setFormData, category, onPrevious,
               scrollEnabled={true}
             />
 
-            <Text style={styles.label}>From (Your Name)</Text>
+            <Text style={styles.label}>From (Your Name) <Text style={{ color: "#d92d20" }}>*</Text></Text>
             <TextInput
               style={styles.input}
               value={formData.from || ""}
@@ -197,7 +199,7 @@ export default function Greetings({ formData, setFormData, category, onPrevious,
 
         {selectedTab === "Tribute" && (
           <>
-            <Text style={styles.label}>Full Name of Deceased</Text>
+            <Text style={styles.label}>Full Name of Deceased <Text style={{ color: "#d92d20" }}>*</Text></Text>
             <TextInput
               style={styles.input}
               value={formData.name2 || ""}
@@ -207,7 +209,7 @@ export default function Greetings({ formData, setFormData, category, onPrevious,
               placeholder="Full name of deceased"
             />
 
-            <Text style={styles.label}>Age</Text>
+            <Text style={styles.label}>Age <Text style={{ color: "#d92d20" }}>*</Text></Text>
             <TextInput
               style={styles.input}
               value={formData.age2 || ""}
@@ -217,7 +219,7 @@ export default function Greetings({ formData, setFormData, category, onPrevious,
               placeholder="Age at the time of passing"
             />
 
-            <Text style={styles.label}>Date of Birthday</Text>
+            <Text style={styles.label}>Date of Birthday <Text style={{ color: "#d92d20" }}>*</Text></Text>
             <TextInput
               style={styles.input}
               value={formData.year2 || ""}
@@ -227,7 +229,7 @@ export default function Greetings({ formData, setFormData, category, onPrevious,
               placeholder="Enter Birthdate"
             />
 
-            <Text style={styles.label}>Short Biography / Life Summary</Text>
+            <Text style={styles.label}>Short Biography / Life Summary <Text style={{ color: "#d92d20" }}>*</Text></Text>
             <TextInput
               style={styles.descriptionInput}
               value={formData.summary || ""}
@@ -258,10 +260,66 @@ export default function Greetings({ formData, setFormData, category, onPrevious,
       </View>
 
       {!isEditMode && (
-        <TouchableOpacity style={styles.nextBtn} onPress={() => { navigation.navigate("CalendarScreen", { category, template, formData, price }); }}>
+        <TouchableOpacity
+          style={styles.nextBtn}
+          onPress={() => {
+            if (selectedTab === "Greetings") {
+              if (!formData.relationType) {
+                setAlertConfig({ visible: true, title: "Missing Information", message: "Please select Relationship.", type: "warning" });
+                return;
+              }
+              if (!formData.name?.trim()) {
+                setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Name of the Person.", type: "warning" });
+                return;
+              }
+              if (!formData.age?.trim()) {
+                setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Age.", type: "warning" });
+                return;
+              }
+              if (!formData.year?.trim()) {
+                setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Date of Birthday.", type: "warning" });
+                return;
+              }
+              if (!formData.wishes?.trim()) {
+                setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Your Message / Wishes.", type: "warning" });
+                return;
+              }
+              if (!formData.from?.trim()) {
+                setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in From (Your Name).", type: "warning" });
+                return;
+              }
+            } else if (selectedTab === "Tribute") {
+              if (!formData.name2?.trim()) {
+                setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Full Name of Deceased.", type: "warning" });
+                return;
+              }
+              if (!formData.age2?.trim()) {
+                setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Age.", type: "warning" });
+                return;
+              }
+              if (!formData.year2?.trim()) {
+                setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Date of Birthday.", type: "warning" });
+                return;
+              }
+              if (!formData.summary?.trim()) {
+                setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Short Biography / Life Summary.", type: "warning" });
+                return;
+              }
+            }
+            navigation.navigate("CalendarScreen", { category, template, formData, price });
+          }}
+        >
           <Text style={styles.nextText}>Next</Text>
         </TouchableOpacity>
       )}
+
+      <CustomAlertModal
+        visible={alertConfig.visible}
+        type={alertConfig.type || "warning"}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        onClose={() => setAlertConfig({ ...alertConfig, visible: false })}
+      />
     </View>
   );
 }

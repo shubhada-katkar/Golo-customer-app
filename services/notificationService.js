@@ -1,5 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Notifications from "expo-notifications";
+import * as TaskManager from "expo-task-manager";
+import * as BackgroundFetch from "expo-background-fetch";
 import { Platform } from "react-native";
 import { BASE_URL } from "../config";
 import { getValidToken } from "./authService";
@@ -8,11 +10,38 @@ let pollingTimer = null;
 let pollingInFlight = false;
 let pushTokenRegistered = false;
 
+const BACKGROUND_NOTIFICATION_TASK = "BACKGROUND_CUSTOMER_NOTIFICATION_TASK";
+
+TaskManager.defineTask(BACKGROUND_NOTIFICATION_TASK, async () => {
+  try {
+    await pollCustomerNotifications();
+    return BackgroundFetch.BackgroundFetchResult.NewData;
+  } catch (error) {
+    console.log("Background notification task error:", error);
+    return BackgroundFetch.BackgroundFetchResult.Failed;
+  }
+});
+
+export async function registerBackgroundNotificationTask() {
+  try {
+    const isRegistered = await TaskManager.isTaskRegisteredAsync(BACKGROUND_NOTIFICATION_TASK);
+    if (!isRegistered) {
+      await BackgroundFetch.registerTaskAsync(BACKGROUND_NOTIFICATION_TASK, {
+        minimumInterval: 15 * 60,
+        stopOnTerminate: false,
+        startOnBoot: true,
+      });
+    }
+  } catch (error) {
+    console.log("Error registering background notification task:", error);
+  }
+}
+
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
     shouldPlaySound: true,
-    shouldSetBadge: false,
+    shouldSetBadge: true,
     shouldShowBanner: true,
     shouldShowList: true,
   }),
@@ -63,7 +92,19 @@ export async function registerCustomerPushToken(force = false) {
     const permissionGranted = await ensureNotificationPermission();
     if (!permissionGranted) return;
 
-    const expoToken = (await Notifications.getExpoPushTokenAsync()).data;
+    let expoToken = "";
+    try {
+      expoToken = (await Notifications.getExpoPushTokenAsync()).data;
+    } catch {
+      try {
+        const Constants = require("expo-constants").default || require("expo-constants");
+        const projectId = Constants?.expoConfig?.extra?.eas?.projectId || Constants?.easConfig?.projectId;
+        expoToken = (await Notifications.getExpoPushTokenAsync(projectId ? { projectId } : undefined)).data;
+      } catch (tokenErr) {
+        console.log("Failed to fetch Expo push token:", tokenErr);
+      }
+    }
+
     if (!expoToken) return;
 
     let token = "";
@@ -183,6 +224,7 @@ export async function startCustomerNotificationPolling() {
   const permissionGranted = await ensureNotificationPermission();
   if (permissionGranted) {
     await registerCustomerPushToken();
+    await registerBackgroundNotificationTask();
   }
   await pollCustomerNotifications();
 
@@ -191,9 +233,38 @@ export async function startCustomerNotificationPolling() {
   }, 30000);
 }
 
-export function stopCustomerNotificationPolling() {
+export async function stopCustomerNotificationPolling() {
   if (pollingTimer) {
     clearInterval(pollingTimer);
     pollingTimer = null;
   }
 }
+
+export async function triggerChatNotification({ title, body, conversationId, sellerName }) {
+  try {
+    const permissionGranted = await ensureNotificationPermission();
+    if (!permissionGranted) return;
+
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: title || "New Message",
+        body: body || "You received a new message",
+        sound: true,
+        data: {
+          screen: "ChatScreen",
+          conversationId,
+          sellerName: sellerName || "Chat",
+        },
+        android: {
+          channelId: "customer-notifications",
+          priority: Notifications.AndroidNotificationPriority.HIGH,
+          autoDismiss: true,
+        },
+      },
+      trigger: null,
+    });
+  } catch (error) {
+    console.log("Failed to schedule chat notification:", error);
+  }
+}
+

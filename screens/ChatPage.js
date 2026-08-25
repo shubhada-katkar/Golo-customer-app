@@ -17,6 +17,7 @@ import Topbar from "../components/Topbar";
 import ChojaBottom from "../components/ChojaBottom";
 import { MaterialIcons, Ionicons, Entypo } from "@expo/vector-icons";
 import { connectChatSocket, listConversations, getCachedConversations, getAuthContext } from "../services/chatService";
+import { triggerChatNotification } from "../services/notificationService";
 import { LinearGradient } from "expo-linear-gradient";
 import { textPresets } from "../theme/typography";
 import { ChatSkeleton } from "../components/Skeleton";
@@ -153,6 +154,19 @@ export default function ChatPage({ navigation, route }) {
 
                     socket.on("conversation_updated", (payload) => {
                         if (!payload?.conversationId) return;
+
+                        const isIncoming = payload?.message && String(payload.message.senderId) !== String(currentUserId);
+                        if (isIncoming) {
+                            const senderName = payload.message?.sender?.name || "New Message";
+                            const textPreview = payload.lastMessageText || payload.message?.text || "Sent a message";
+
+                            triggerChatNotification({
+                                title: senderName,
+                                body: textPreview,
+                                conversationId: payload.conversationId,
+                                sellerName: senderName,
+                            });
+                        }
 
                         setConversations((previous) => {
                             const index = previous.findIndex((item) => item.id === payload.conversationId);

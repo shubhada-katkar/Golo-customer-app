@@ -82,11 +82,15 @@ export default function AdAnalytics({ navigation, route }) {
         }
     };
 
-    const fetchAnalytics = useCallback(async () => {
+    const fetchAnalytics = useCallback(async (isSilent = false) => {
         if (!adId) {
             setLoading(false);
             setError("Ad id not found");
             return;
+        }
+
+        if (!isSilent && !analytics) {
+            setLoading(true);
         }
 
         try {
@@ -94,24 +98,28 @@ export default function AdAnalytics({ navigation, route }) {
             setAnalytics(data || null);
             setError("");
         } catch (err) {
-            setError(err?.message || "Failed to load ad analytics");
+            if (!analytics) {
+                setError(err?.message || "Failed to load ad analytics");
+            }
         } finally {
             setLoading(false);
         }
-    }, [adId]);
-
-    useEffect(() => {
-        fetchAnalytics();
-        const interval = setInterval(fetchAnalytics, 10000);
-
-        return () => clearInterval(interval);
-    }, [fetchAnalytics]);
+    }, [adId, analytics]);
 
     useFocusEffect(
         useCallback(() => {
-            fetchAnalytics();
+            fetchAnalytics(false);
         }, [fetchAnalytics]),
     );
+
+    useEffect(() => {
+        fetchAnalytics(false);
+        const interval = setInterval(() => {
+            fetchAnalytics(true);
+        }, 5000);
+
+        return () => clearInterval(interval);
+    }, [adId]);
 
     const data = useMemo(() => {
         const adViews = Number(analytics?.ad?.views ?? analytics?.ad?.uniqueVisitors ?? analytics?.ad?.viewHistory?.length ?? 0);
@@ -226,12 +234,12 @@ export default function AdAnalytics({ navigation, route }) {
                 }}>{error}</Text>}
 
                 {/* STATS */}
-                <View style={styles.row}>
-                    <StatCard title="Ad Card Clicks" value={data.clicks} />
-                    <StatCard title="Unique Visitors" value={data.visitors} />
-                </View>
+                {/* <View style={styles.row}> */}
+                {/* <StatCard title="Unique Visitors" value={data.visitors} /> */}
+                {/* </View> */}
 
                 <View style={styles.row}>
+                    <StatCard title="Ad Card Clicks" value={data.clicks} />
                     <StatCard title="Contact Clicks" value={data.contacts} />
                     <StatCard title="Wishlist Saves" value={data.wishlist} />
                 </View>
@@ -312,24 +320,28 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     headerTitle: {
-        ...textPresets.subtitle,
+        ...textPresets.body,
+        lineHeight: Math.round(14 * 1.5)
     },
     row: {
         flexDirection: "row",
-        justifyContent: "space-between",
+        marginHorizontal: -6, // cancels out each card's 6px margin so edges align with section padding
     },
     card: {
         flex: 1,
         backgroundColor: "#fff",
-        padding: 12,
+        padding: 10,
         borderRadius: 12,
         margin: 6,
         alignItems: "center",
+        justifyContent: "center", // add this — vertically centers content so cards match height
         borderWidth: 1,
         borderColor: "#afafaf",
+        minHeight: 90, // add this — keeps all 3 the same height even with 1 vs 2-line titles
     },
     value: {
-        ...textPresets.body
+        ...textPresets.body,
+        lineHeight: Math.round(14 * 1.5)
     },
     title: {
         marginTop: 6,
@@ -337,8 +349,8 @@ const styles = StyleSheet.create({
         color: "#555",
     },
     sub: {
-        color: "#999",
-        ...textPresets.label,
+        color: "#555",
+        ...textPresets.caption,
     },
     section: {
         backgroundColor: "#fff",
@@ -383,16 +395,16 @@ const styles = StyleSheet.create({
         marginTop: 10,
     },
     insightValue: {
-        ...textPresets.subtitle
+        ...textPresets.body,
+        lineHeight: Math.round(14 * 1.5)
     },
     insightTitle: {
-        ...textPresets.body,
-        lineHeight: Math.round(14 * 1.5),
+        ...textPresets.label,
         marginTop: 4,
     },
     insightTip: {
-        ...textPresets.label,
-        color: "#777",
+        ...textPresets.caption,
+        color: "#555",
         marginTop: 4,
     },
 });

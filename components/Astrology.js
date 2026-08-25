@@ -1,12 +1,14 @@
-import React, { useContext } from "react";
+import React, { useContext, useState } from "react";
 import { View, Text, TextInput, StyleSheet, TouchableOpacity } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { textPresets } from "../theme/typography";
+import CustomAlertModal from "./CustomeAlertModal";
 
 export default function Astrology({ formData, setFormData, category, onPrevious, template, selectedDays, selectedLocations, selectedDates, startDate, endDate, price, isEditMode }) {
     if (category?.id !== "astrology") return null;
     const navigation = useNavigation();
+    const [alertConfig, setAlertConfig] = useState({ visible: false, title: "", message: "", type: "warning" });
 
     const ConditionButton = ({ label, value, icon, selected, onPress }) => {
         return (
@@ -80,7 +82,7 @@ export default function Astrology({ formData, setFormData, category, onPrevious,
 
             <View style={styles.formCard}>
 
-                <Text style={styles.label}>Service Type</Text>
+                <Text style={styles.label}>Service Type <Text style={{ color: "#d92d20" }}>*</Text></Text>
                 <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
                     <View style={{ flexDirection: "row", alignItems: "center", marginTop: 20, gap: 45 }}>
                         <Text style={[styles.label, { marginTop: 0 }]}>Horoscope</Text>
@@ -145,7 +147,7 @@ export default function Astrology({ formData, setFormData, category, onPrevious,
                     </TouchableOpacity>
                 </View>
 
-                <Text style={styles.label}>Experience</Text>
+                <Text style={styles.label}>Experience <Text style={{ color: "#d92d20" }}>*</Text></Text>
                 <TextInput
                     style={styles.input}
                     value={formData.experience || ""}
@@ -155,7 +157,7 @@ export default function Astrology({ formData, setFormData, category, onPrevious,
                     placeholder="e.g. 15 years"
                 />
 
-                <Text style={styles.label}>Langauge Spoken</Text>
+                <Text style={styles.label}>Language Spoken <Text style={{ color: "#d92d20" }}>*</Text></Text>
                 <TextInput
                     style={styles.input}
                     value={formData.language || ""}
@@ -167,7 +169,7 @@ export default function Astrology({ formData, setFormData, category, onPrevious,
 
 
 
-                <Text style={styles.label}>Consultation Mode</Text>
+                <Text style={styles.label}>Consultation Mode <Text style={{ color: "#d92d20" }}>*</Text></Text>
                 <View style={{ flexDirection: "row", marginTop: 6 }}>
                     <Radio
                         label="Online"
@@ -186,7 +188,7 @@ export default function Astrology({ formData, setFormData, category, onPrevious,
                     />
                 </View>
 
-                <Text style={styles.label}>Consultation Fee</Text>
+                <Text style={styles.label}>Consultation Fee <Text style={{ color: "#d92d20" }}>*</Text></Text>
                 <TextInput
                     style={styles.input}
                     value={formData.fee || ""}
@@ -196,7 +198,7 @@ export default function Astrology({ formData, setFormData, category, onPrevious,
                     placeholder="e.g. ₹100"
                 />
 
-                <Text style={styles.label}>Availability Time</Text>
+                <Text style={styles.label}>Availability Time <Text style={{ color: "#d92d20" }}>*</Text></Text>
                 <TextInput
                     style={styles.input}
                     value={formData.availabilityTime || ""}
@@ -209,10 +211,48 @@ export default function Astrology({ formData, setFormData, category, onPrevious,
             </View>
 
             {!isEditMode && (
-                <TouchableOpacity style={styles.nextBtn} onPress={() => { navigation.navigate("CalendarScreen", { category, template, formData, price }); }}>
+                <TouchableOpacity
+                    style={styles.nextBtn}
+                    onPress={() => {
+                        const hasService = formData.horoscope || formData.kundli || formData.vaastu || formData.palm || formData.other;
+                        if (!hasService) {
+                            setAlertConfig({ visible: true, title: "Missing Information", message: "Please select at least one Service Type.", type: "warning" });
+                            return;
+                        }
+                        if (!formData.experience?.trim()) {
+                            setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Experience.", type: "warning" });
+                            return;
+                        }
+                        if (!formData.language?.trim()) {
+                            setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Language Spoken.", type: "warning" });
+                            return;
+                        }
+                        if (!formData.demoAvailable) {
+                            setAlertConfig({ visible: true, title: "Missing Information", message: "Please select Consultation Mode.", type: "warning" });
+                            return;
+                        }
+                        if (!formData.fee?.trim()) {
+                            setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Consultation Fee.", type: "warning" });
+                            return;
+                        }
+                        if (!formData.availabilityTime?.trim()) {
+                            setAlertConfig({ visible: true, title: "Missing Information", message: "Please fill in Availability Time.", type: "warning" });
+                            return;
+                        }
+                        navigation.navigate("CalendarScreen", { category, template, formData, price });
+                    }}
+                >
                     <Text style={styles.nextText}>Next</Text>
                 </TouchableOpacity>
             )}
+
+            <CustomAlertModal
+                visible={alertConfig.visible}
+                type={alertConfig.type || "warning"}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                onClose={() => setAlertConfig({ ...alertConfig, visible: false })}
+            />
         </View>
     );
 }
