@@ -13,7 +13,6 @@ import { submitReport } from '../services/reportService';
 import { ensureAuthenticated } from '../services/authService';
 import { BASE_URL } from '../config';
 import Topbar from '../components/Topbar';
-import { ThemeContext } from '../theme/ThemeContext';
 import { textPresets } from '../theme/typography';
 import CustomAlertModal from '../components/CustomeAlertModal';
 
@@ -209,21 +208,21 @@ export default function AdDetails({ route, navigation }) {
   const sellerAvatar = seller?.profile?.avatar || null;
 
   const handleOpenChat = async () => {
-    try {
-      await ensureAuthenticated(navigation);
-    } catch {
-      return;
-    }
-
     const currentAdId = ad?.adId || ad?._id || resolvedAdId || adId;
-    const resolvedSellerId = ad?.userId || ad?.user?.id || ad?.user?._id || seller?._id || seller?.id;
-
     if (currentAdId) {
       console.log('[AdDetails] Tracking contact click for ad:', currentAdId);
       trackContactClick(currentAdId).catch((error) => {
         console.warn('[AdDetails] Failed to track contact click:', error.message);
       });
     }
+
+    try {
+      await ensureAuthenticated(navigation);
+    } catch {
+      return;
+    }
+
+    const resolvedSellerId = ad?.userId || ad?.user?.id || ad?.user?._id || seller?._id || seller?.id;
 
     navigation.navigate('ChatScreen', {
       adId: currentAdId,

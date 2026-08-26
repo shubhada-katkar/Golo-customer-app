@@ -714,9 +714,10 @@ export default function GoloHome({ route }) {
             const subtitle = String(getOfferSubtitle(offer)).toLowerCase();
             const offerType = String(offer?.bannerCategory || offer?.offerType || offer?.category || "").toLowerCase();
             const desc = String(offer?.description || offer?.details || "").toLowerCase();
+            const isOfferMatch = offerTitle.includes(query) || subtitle.includes(query) || offerType.includes(query) || desc.includes(query);
 
             // 1. Offers Match
-            if (offerTitle.includes(query) || subtitle.includes(query) || offerType.includes(query) || desc.includes(query)) {
+            if (isOfferMatch) {
                 searchResultsOffers.push({
                     type: 'offer',
                     offer,

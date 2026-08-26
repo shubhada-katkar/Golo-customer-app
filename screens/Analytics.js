@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useFocusEffect } from '@react-navigation/native';
 import {
   View, StyleSheet, Text, TouchableOpacity, ScrollView,
@@ -56,11 +56,14 @@ function getStatusLabel(status) {
 
 export default function Analytics({ navigation }) {
   const [analytics, setAnalytics] = useState(null);
+  const analyticsRef = useRef(analytics);
+  analyticsRef.current = analytics;
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   const fetchAnalytics = useCallback(async (isSilent = false) => {
-    if (!isSilent && !analytics) {
+    if (!isSilent && !analyticsRef.current) {
       setLoading(true);
     }
     try {
@@ -68,28 +71,24 @@ export default function Analytics({ navigation }) {
       setAnalytics(data || null);
       setError("");
     } catch (err) {
-      if (!analytics) {
+      if (!analyticsRef.current) {
         setError(err?.message || "Failed to load analytics");
       }
     } finally {
       setLoading(false);
     }
-  }, [analytics]);
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
       fetchAnalytics(false);
+      const interval = setInterval(() => {
+        fetchAnalytics(true);
+      }, 30000);
+
+      return () => clearInterval(interval);
     }, [fetchAnalytics]),
   );
-
-  useEffect(() => {
-    fetchAnalytics(false);
-    const interval = setInterval(() => {
-      fetchAnalytics(true);
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, []);
 
   const normalizedAds = useMemo(() => {
     if (Array.isArray(analytics?.ads)) {

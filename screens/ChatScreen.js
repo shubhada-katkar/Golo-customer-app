@@ -779,7 +779,7 @@ export default function ChatScreen({ navigation, route }) {
                     </TouchableOpacity>
                     <View style={{ flex: 1 }}>
                         <Text style={styles.headerTitle}>{sellerName}</Text>
-                        <Text style={styles.presenceText}>{renderPresence()}</Text>
+                        {/* <Text style={styles.presenceText}>{renderPresence()}</Text> */}
                     </View>
                     <View>
                         <TouchableOpacity onPress={() => setShowMenu(true)}>

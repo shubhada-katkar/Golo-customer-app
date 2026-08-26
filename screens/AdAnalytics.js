@@ -1,16 +1,14 @@
-import React, { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useFocusEffect } from '@react-navigation/native';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Topbar from "../components/Topbar";
 import ChojaBottom from "../components/ChojaBottom";
-import { ThemeContext } from "../theme/ThemeContext";
 import { MaterialIcons } from "@expo/vector-icons";
 import { deleteAd, getAdAnalytics } from "../services/analyticsService";
 import { LinearGradient } from "expo-linear-gradient";
 import { textPresets } from "../theme/typography";
 import CustomAlertModal from "../components/CustomeAlertModal";
-import RatingsBox from "../components/RatingsBox";
 
 const StatCard = ({ title, value, subtitle }) => (
     <View style={styles.card}>
@@ -41,6 +39,9 @@ export default function AdAnalytics({ navigation, route }) {
     const routeParams = route?.params || {};
     const adId = routeParams.adId;
     const [analytics, setAnalytics] = useState(null);
+    const analyticsRef = useRef(analytics);
+    analyticsRef.current = analytics;
+
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [refreshing, setRefreshing] = useState(false);
@@ -89,7 +90,7 @@ export default function AdAnalytics({ navigation, route }) {
             return;
         }
 
-        if (!isSilent && !analytics) {
+        if (!isSilent && !analyticsRef.current) {
             setLoading(true);
         }
 
@@ -98,28 +99,24 @@ export default function AdAnalytics({ navigation, route }) {
             setAnalytics(data || null);
             setError("");
         } catch (err) {
-            if (!analytics) {
+            if (!analyticsRef.current) {
                 setError(err?.message || "Failed to load ad analytics");
             }
         } finally {
             setLoading(false);
         }
-    }, [adId, analytics]);
+    }, [adId]);
 
     useFocusEffect(
         useCallback(() => {
             fetchAnalytics(false);
+            const interval = setInterval(() => {
+                fetchAnalytics(true);
+            }, 30000);
+
+            return () => clearInterval(interval);
         }, [fetchAnalytics]),
     );
-
-    useEffect(() => {
-        fetchAnalytics(false);
-        const interval = setInterval(() => {
-            fetchAnalytics(true);
-        }, 5000);
-
-        return () => clearInterval(interval);
-    }, [adId]);
 
     const data = useMemo(() => {
         const adViews = Number(analytics?.ad?.views ?? analytics?.ad?.uniqueVisitors ?? analytics?.ad?.viewHistory?.length ?? 0);
@@ -131,11 +128,34 @@ export default function AdAnalytics({ navigation, route }) {
         };
     }, [analytics]);
 
-    const rates = {
-        ctr: Number(analytics?.rates?.ctr ?? analytics?.ad?.clickThroughRate ?? 0),
-        visitorsRate: Number(analytics?.rates?.visitorsRate ?? 0),
-        wishlistRate: Number(analytics?.rates?.wishlistRate ?? analytics?.ad?.wishlistRate ?? 0),
-    };
+    const rates = useMemo(() => {
+        const adCardClicks = Number(data.clicks || 0);
+        const contactClicks = Number(data.contacts || 0);
+        const wishlistSaves = Number(data.wishlist || 0);
+        const uniqueVisitors = Number(data.visitors || 0);
+
+        // CTR = (Contact clicks / Ad card clicks count) * 100
+        const ctr = adCardClicks > 0
+            ? Number(((contactClicks / adCardClicks) * 100).toFixed(1))
+            : Number(analytics?.rates?.ctr ?? analytics?.ad?.clickThroughRate ?? 0);
+
+        // Wishlist Rate = (Ad card clicks count / Wishlist count) * 100
+        const wishlistRate = wishlistSaves > 0
+            ? Number(((adCardClicks / wishlistSaves) * 100).toFixed(1))
+            : (adCardClicks > 0
+                ? Number(((wishlistSaves / adCardClicks) * 100).toFixed(1))
+                : Number(analytics?.rates?.wishlistRate ?? analytics?.ad?.wishlistRate ?? 0));
+
+        const visitorsRate = adCardClicks > 0
+            ? Number(((uniqueVisitors / adCardClicks) * 100).toFixed(1))
+            : Number(analytics?.rates?.visitorsRate ?? 0);
+
+        return {
+            ctr,
+            visitorsRate,
+            wishlistRate,
+        };
+    }, [data, analytics]);
     const adInfo = analytics?.ad || {};
     const resolvedAdId = adInfo?.adId || adId;
 

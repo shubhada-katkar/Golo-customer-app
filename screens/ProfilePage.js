@@ -491,7 +491,7 @@ export default function ProfilePage({ navigation }) {
                                         <Text style={styles.nameText}>{username}</Text>
                                     )}
 
-                                    <View style={styles.profileCard}>
+                                    <TouchableOpacity style={styles.profileCard} onPress={() => navigation.navigate("LoyaltyPoints")}>
                                         <View style={styles.loyaltyIconCircle}>
                                             <MaterialIcons name="workspace-premium" size={22} color={ORANGE} />
                                         </View>
@@ -503,7 +503,7 @@ export default function ProfilePage({ navigation }) {
                                             <Text style={styles.cardValue}>{loyaltyPoints}</Text>
                                             <Text style={styles.pointsLabel}>pts</Text>
                                         </View>
-                                    </View>
+                                    </TouchableOpacity>
                                 </View>
 
                                 <View style={{ paddingHorizontal: 14, marginTop: 22 }}>

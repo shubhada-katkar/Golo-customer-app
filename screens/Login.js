@@ -34,7 +34,7 @@ export default function Login({ navigation, route }) {
       return;
     }
 
-    navigation.reset({ index: 0, routes: [{ name: "GoloHome" }] });
+    navigation.reset({ index: 0, routes: [{ name: "GoloDeals" }] });
   };
 
   // Static for now — will be wired up to real OAuth later
@@ -99,7 +99,7 @@ export default function Login({ navigation, route }) {
 
       navigation.reset({
         index: 0,
-        routes: [{ name: returnTo || "GoloHome", params: returnTo ? returnParams : undefined }],
+        routes: [{ name: returnTo || "GoloDeals", params: returnTo ? returnParams : undefined }],
       });
     } catch (error) {
       setLoading(false);

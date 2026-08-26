@@ -165,8 +165,11 @@ export default function Template3Card({ ad, navigation }) {
         <TouchableOpacity
             activeOpacity={0.8}
             onPress={() => {
-                const currentAdId = ad?.adId || ad?._id;
-                navigation.navigate("AdDetails", { adId: currentAdId });
+                const currentAdId = ad?.adId || ad?._id || ad?.id;
+                if (currentAdId) {
+                    trackAdCardClick(currentAdId);
+                }
+                navigation.navigate("AdDetails", { adId: currentAdId, skipCardTrack: true });
             }}
             style={styles.card}
         >

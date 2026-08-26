@@ -191,8 +191,8 @@ async function trackAdCardClick(adId) {
     return;
   }
   console.log('[Analytics] trackAdCardClick called with:', adId);
-  // Ad card clicks are counted via the public ad detail endpoint for authenticated users.
-  // The backend tracks unique visitors on GET /ads/:adId, so no separate analytics route exists.
+  const safeAdId = encodeURIComponent(adId);
+  await publicPost(`/ads/${safeAdId}/view`);
 }
 
 async function trackContactClick(adId) {

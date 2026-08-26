@@ -152,11 +152,8 @@ const resolveImageUrl = (value) => {
 };
 
 const extractMerchantId = (item) => {
-    const raw = String(item?.merchantId || "").trim();
-    if (raw && !raw.startsWith("shop-")) {
-        return raw;
-    }
-    return "";
+    const raw = String(item?.merchantId || item?.merchant?._id || item?.merchant?.id || "").trim();
+    return raw;
 };
 
 const parseDateValue = (value) => {
@@ -169,6 +166,7 @@ const getBannerDisplayStatus = (item) => {
     const rawStatus = String(item?.status || "").trim().toLowerCase();
     if (rawStatus === "rejected") return "rejected";
     if (rawStatus === "under_review" || rawStatus === "pending") return "under_review";
+    if (rawStatus === "paused" || item?.isPaused) return "paused";
 
     const startDate = parseDateValue(item?.startDate || item?.start || item?.start_date);
     const endDate = parseDateValue(item?.endDate || item?.end || item?.end_date);
@@ -1580,7 +1578,6 @@ export default function GoloDeals({ route }) {
                                         keyExtractor={(item, index) => `${item.requestId || item._id || item.id || 'static'}-${index}`}
                                         renderItem={renderBannerItem}
                                         horizontal
-                                        pagingEnabled
                                         showsHorizontalScrollIndicator={false}
                                         onScroll={onBannerScroll}
                                         onScrollBeginDrag={onBannerScrollBeginDrag}
@@ -1588,6 +1585,8 @@ export default function GoloDeals({ route }) {
                                         scrollEventThrottle={16}
                                         getItemLayout={getItemLayout}
                                         snapToInterval={SLIDE_WIDTH + BANNER_GAP}
+                                        snapToAlignment="start"
+                                        disableIntervalMomentum={true}
                                         decelerationRate="fast"
                                         contentContainerStyle={{ paddingRight: 0 }}
                                     />
