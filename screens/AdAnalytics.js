@@ -1,7 +1,8 @@
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useFocusEffect } from '@react-navigation/native';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Dimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Svg, { Circle } from "react-native-svg";
 import Topbar from "../components/Topbar";
 import ChojaBottom from "../components/ChojaBottom";
 import { MaterialIcons } from "@expo/vector-icons";
@@ -10,7 +11,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { textPresets } from "../theme/typography";
 import CustomAlertModal from "../components/CustomeAlertModal";
 
-const StatCard = ({ title, value, subtitle }) => (
+const StatCard = ({ title, value, subtitle, icon, color }) => (
     <View style={styles.card}>
         <Text style={styles.value}>{value}</Text>
         <Text style={styles.title}>{title}</Text>
@@ -18,20 +19,65 @@ const StatCard = ({ title, value, subtitle }) => (
     </View>
 );
 
-const RateCircle = ({ label, value }) => (
-    <View style={styles.rateBox}>
-        <View style={styles.circle}>
-            <Text style={styles.rateText}>{value}</Text>
-        </View>
-        <Text style={styles.rateLabel}>{label}</Text>
-    </View>
-);
+// Circular progress ring — actually renders a filled arc proportional to `value` (0-100),
+// instead of a flat static border like the old version.
+const RateCircle = ({ label, value, color = "#f8a812" }) => {
+    const size = 88;
+    const strokeWidth = 9;
+    const radius = (size - strokeWidth) / 2;
+    const circumference = 2 * Math.PI * radius;
+    const pct = Math.max(0, Math.min(100, Number(value) || 0));
+    const strokeDashoffset = circumference - (pct / 100) * circumference;
 
-const InsightCard = ({ title, value, tip, color }) => (
-    <View style={[styles.insightCard, { borderColor: color }]}>
-        <Text style={[styles.insightValue, { color }]}>{value}</Text>
-        <Text style={styles.insightTitle}>{title}</Text>
-        <Text style={styles.insightTip}>{tip}</Text>
+    return (
+        <View style={styles.rateBox}>
+            <View style={{ width: size, height: size }}>
+                <Svg width={size} height={size}>
+                    {/* track */}
+                    <Circle
+                        cx={size / 2}
+                        cy={size / 2}
+                        r={radius}
+                        stroke="#eee"
+                        strokeWidth={strokeWidth}
+                        fill="none"
+                    />
+                    {/* filled progress arc */}
+                    <Circle
+                        cx={size / 2}
+                        cy={size / 2}
+                        r={radius}
+                        stroke={color}
+                        strokeWidth={strokeWidth}
+                        strokeLinecap="round"
+                        fill="none"
+                        strokeDasharray={`${circumference} ${circumference}`}
+                        strokeDashoffset={strokeDashoffset}
+                        rotation="-90"
+                        origin={`${size / 2}, ${size / 2}`}
+                    />
+                </Svg>
+                <View style={styles.rateTextWrap}>
+                    <Text style={[styles.rateText, { color }]}>{pct.toFixed(1)}%</Text>
+                </View>
+            </View>
+            <Text style={styles.rateLabel}>{label}</Text>
+        </View>
+    );
+};
+
+const InsightCard = ({ title, value, tip, color, icon }) => (
+    <View style={styles.insightCard}>
+        <View style={[styles.insightIconWrap, { backgroundColor: `${color}1A` }]}>
+            <MaterialIcons name={icon} size={18} color={color} />
+        </View>
+        <View style={{ flex: 1 }}>
+            <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" }}>
+                <Text style={styles.insightTitle}>{title}</Text>
+                <Text style={[styles.insightValue, { color }]}>{value}</Text>
+            </View>
+            <Text style={styles.insightTip}>{tip}</Text>
+        </View>
     </View>
 );
 
@@ -139,12 +185,10 @@ export default function AdAnalytics({ navigation, route }) {
             ? Number(((contactClicks / adCardClicks) * 100).toFixed(1))
             : Number(analytics?.rates?.ctr ?? analytics?.ad?.clickThroughRate ?? 0);
 
-        // Wishlist Rate = (Ad card clicks count / Wishlist count) * 100
-        const wishlistRate = wishlistSaves > 0
-            ? Number(((adCardClicks / wishlistSaves) * 100).toFixed(1))
-            : (adCardClicks > 0
-                ? Number(((wishlistSaves / adCardClicks) * 100).toFixed(1))
-                : Number(analytics?.rates?.wishlistRate ?? analytics?.ad?.wishlistRate ?? 0));
+        // Wishlist Rate = (Wishlist count / Ad card clicks count) * 100
+        const wishlistRate = adCardClicks > 0
+            ? Number(((wishlistSaves / adCardClicks) * 100).toFixed(1))
+            : Number(analytics?.rates?.wishlistRate ?? analytics?.ad?.wishlistRate ?? 0);
 
         const visitorsRate = adCardClicks > 0
             ? Number(((uniqueVisitors / adCardClicks) * 100).toFixed(1))
@@ -197,7 +241,7 @@ export default function AdAnalytics({ navigation, route }) {
     }, [resolvedAdId, adInfo.title, routeParams.adName, navigation]);
 
     return (
-        <SafeAreaView style={{ flex: 1 }}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: "#f8f6f2" }}>
             <LinearGradient
                 colors={["#f8a812", "#fad081", "#f8f6f265"]}
                 start={{ x: 0, y: 0 }}
@@ -206,73 +250,63 @@ export default function AdAnalytics({ navigation, route }) {
             />
             <Topbar />
 
-
             <View style={styles.row1}>
-                <TouchableOpacity onPress={() => navigation.goBack()}>
-                    <View style={{ justifyContent: 'center' }}>
-                        <MaterialIcons
-                            name="arrow-back-ios"
-                            style={{ padding: 10 }}
-                            size={22}
-                        />
-                    </View>
-
+                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+                    <MaterialIcons name="arrow-back-ios" size={20} />
                 </TouchableOpacity>
                 <Text style={{ flex: 1, ...textPresets.title }}>Ad Analytics</Text>
                 <TouchableOpacity onPress={handleDeleteAd} disabled={isDeleting} style={styles.deleteBtn}>
                     {isDeleting ? (
                         <ActivityIndicator size="small" color="#d14343" />
                     ) : (
-                        <MaterialIcons name="delete-outline" size={24} color="#d14343" />
+                        <MaterialIcons name="delete-outline" size={22} color="#d14343" />
                     )}
                 </TouchableOpacity>
             </View>
 
             <View style={{ flexDirection: "row", height: 1, marginVertical: 6, backgroundColor: "#000" }} />
 
-
             <ScrollView style={styles.container}
-                contentContainerStyle={{ paddingBottom: 110 }}>
-                {/* HEADER */}
-                <View style={styles.header}>
-                    <Text style={styles.headerTitle}>{adInfo.title || routeParams.adName || "Ad"}</Text>
-                    <Text style={styles.sub}>Posted {postedDate}</Text>
-                </View>
+                contentContainerStyle={{ paddingBottom: 110 }}
+                showsVerticalScrollIndicator={false}>
 
-                {loading && (
-                    <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 10 }}>
-                        <ActivityIndicator size="small" color="#157a4f" />
-                        <Text style={{
-                            marginLeft: 8, color: "#666",
-                            ...textPresets.body, lineHeight: Math.round(14 * 1.5)
-                        }}>Refreshing live data...</Text>
+                {/* HEADER CARD */}
+                <View style={styles.headerCard}>
+                    <Text style={styles.headerTitle} numberOfLines={2}>{adInfo.title || routeParams.adName || "Ad"}</Text>
+                    <View style={{ flexDirection: "row", alignItems: "center", marginTop: 4 }}>
+                        <MaterialIcons name="event" size={14} color="#888" />
+                        <Text style={[styles.sub, { marginLeft: 4 }]}>Posted {postedDate}</Text>
                     </View>
-                )}
 
-                {!!error && <Text style={{
-                    color: "#d14343", marginBottom: 8, ...textPresets.label
-                }}>{error}</Text>}
+                    {loading && (
+                        <View style={styles.loadingPill}>
+                            <ActivityIndicator size="small" color="#157a4f" />
+                            <Text style={styles.loadingPillText}>Refreshing live data...</Text>
+                        </View>
+                    )}
+
+                    {!!error && (
+                        <View style={styles.errorPill}>
+                            <MaterialIcons name="error-outline" size={16} color="#d14343" />
+                            <Text style={styles.errorPillText}>{error}</Text>
+                        </View>
+                    )}
+                </View>
 
                 {/* STATS */}
-                {/* <View style={styles.row}> */}
-                {/* <StatCard title="Unique Visitors" value={data.visitors} /> */}
-                {/* </View> */}
-
                 <View style={styles.row}>
-                    <StatCard title="Ad Card Clicks" value={data.clicks} />
-                    <StatCard title="Contact Clicks" value={data.contacts} />
-                    <StatCard title="Wishlist Saves" value={data.wishlist} />
+                    <StatCard title="Ad Card Clicks" value={data.clicks} icon="ads-click" color="#f8a812" />
+                    <StatCard title="Contact Clicks" value={data.contacts} icon="call" color="#157a4f" />
+                    <StatCard title="Wishlist Saves" value={data.wishlist} icon="favorite-border" color="#d14343" />
                 </View>
-
 
                 {/* PERFORMANCE */}
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Performance Rates</Text>
 
                     <View style={styles.row}>
-                        <RateCircle label="CTR" value={`${Number(rates.ctr || 0).toFixed(1)}%`} />
-                        <RateCircle label="Visitors" value={`${Number(rates.visitorsRate || 0).toFixed(1)}%`} />
-                        <RateCircle label="Wishlist" value={`${Number(rates.wishlistRate || 0).toFixed(1)}%`} />
+                        <RateCircle label="CTR" value={rates.ctr} color="#f5b849" />
+                        <RateCircle label="Wishlist Rate" value={rates.wishlistRate} color="#157a4f" />
                     </View>
                 </View>
 
@@ -283,22 +317,17 @@ export default function AdAnalytics({ navigation, route }) {
                     <InsightCard
                         title="Click-Through Rate"
                         value={`${Number(rates.ctr || 0).toFixed(1)}%`}
-                        tip="Try a clearer call-to-action."
-                        color="#f59e0b"
+                        tip="Connect with buyers directly."
+                        color="#f5b849"
+                        icon="ads-click"
                     />
 
                     <InsightCard
                         title="Wishlist Rate"
                         value={`${Number(rates.wishlistRate || 0).toFixed(1)}%`}
                         tip="Better photos can boost saves."
-                        color="#ef4444"
-                    />
-
-                    <InsightCard
-                        title="Unique Reach"
-                        value={`${Number(rates.visitorsRate || 0).toFixed(1)}%`}
-                        tip="Promote to reach more users."
-                        color="#8b5cf6"
+                        color="#157a4f"
+                        icon="favorite-border"
                     />
                 </View>
             </ScrollView>
@@ -323,25 +352,68 @@ export default function AdAnalytics({ navigation, route }) {
         </SafeAreaView>
     );
 }
+
 const styles = StyleSheet.create({
     row1: {
         alignItems: "center",
         flexDirection: "row",
-        paddingHorizontal: 14
+        paddingHorizontal: 8,
+        paddingBottom: 6,
+    },
+    backBtn: {
+        padding: 10,
     },
     deleteBtn: {
         padding: 8,
     },
     container: {
         flex: 1,
-        padding: 12,
+        paddingHorizontal: 14,
     },
-    header: {
-        marginBottom: 16,
+    headerCard: {
+        backgroundColor: "#fff",
+        borderRadius: 16,
+        padding: 16,
+        marginVertical: 14,
+        elevation: 3,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 6,
     },
     headerTitle: {
         ...textPresets.body,
-        lineHeight: Math.round(14 * 1.5)
+        lineHeight: Math.round(14 * 1.5),
+    },
+    loadingPill: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginTop: 10,
+        alignSelf: "flex-start",
+        backgroundColor: "#eafaf1",
+        paddingVertical: 4,
+        paddingHorizontal: 10,
+        borderRadius: 20,
+    },
+    loadingPillText: {
+        marginLeft: 8,
+        color: "#157a4f",
+        ...textPresets.caption,
+    },
+    errorPill: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginTop: 10,
+        alignSelf: "flex-start",
+        backgroundColor: "#fdecec",
+        paddingVertical: 4,
+        paddingHorizontal: 10,
+        borderRadius: 20,
+    },
+    errorPillText: {
+        marginLeft: 6,
+        color: "#d14343",
+        ...textPresets.caption,
     },
     row: {
         flexDirection: "row",
@@ -350,81 +422,96 @@ const styles = StyleSheet.create({
     card: {
         flex: 1,
         backgroundColor: "#fff",
-        padding: 10,
-        borderRadius: 12,
+        padding: 12,
+        borderRadius: 14,
         margin: 6,
         alignItems: "center",
-        justifyContent: "center", // add this — vertically centers content so cards match height
-        borderWidth: 1,
-        borderColor: "#afafaf",
-        minHeight: 90, // add this — keeps all 3 the same height even with 1 vs 2-line titles
+        justifyContent: "center", // vertically centers content so cards match height
+        minHeight: 100, // keeps all 3 the same height even with 1 vs 2-line titles
+        elevation: 2,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.06,
+        shadowRadius: 4,
     },
     value: {
         ...textPresets.body,
-        lineHeight: Math.round(14 * 1.5)
+        lineHeight: Math.round(14 * 1.5),
     },
     title: {
-        marginTop: 6,
+        marginTop: 4,
         ...textPresets.label,
         color: "#555",
+        textAlign: "center",
     },
     sub: {
-        color: "#555",
+        color: "#888",
         ...textPresets.caption,
     },
     section: {
         backgroundColor: "#fff",
         padding: 16,
-        borderRadius: 12,
-        marginTop: 16,
-        elevation: 6,
+        borderRadius: 16,
+        marginTop: 14,
+        elevation: 4,
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
+        shadowOpacity: 0.1,
         shadowRadius: 6,
     },
     sectionTitle: {
-        marginBottom: 10,
-        ...textPresets.subtitle
+        marginBottom: 14,
+        ...textPresets.subtitle,
     },
     rateBox: {
         alignItems: "center",
         flex: 1,
     },
-    circle: {
-        width: 70,
-        height: 70,
-        borderRadius: 35,
-        borderWidth: 6,
-        borderColor: "#ddd",
+    rateTextWrap: {
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
         alignItems: "center",
         justifyContent: "center",
     },
     rateText: {
-        lineHeight: Math.round(14 * 1.5),
         ...textPresets.body,
     },
     rateLabel: {
-        marginTop: 6,
+        marginTop: 8,
         ...textPresets.label,
+        color: "#555",
+        textAlign: "center",
     },
     insightCard: {
-        borderWidth: 1,
+        flexDirection: "row",
+        alignItems: "flex-start",
+        backgroundColor: "#fafafa",
         padding: 12,
-        borderRadius: 10,
+        borderRadius: 12,
         marginTop: 10,
+    },
+    insightIconWrap: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        alignItems: "center",
+        justifyContent: "center",
+        marginRight: 10,
     },
     insightValue: {
         ...textPresets.body,
-        lineHeight: Math.round(14 * 1.5)
+        lineHeight: Math.round(14 * 1.5),
     },
     insightTitle: {
         ...textPresets.label,
-        marginTop: 4,
+        color: "#333",
     },
     insightTip: {
         ...textPresets.caption,
-        color: "#555",
-        marginTop: 4,
+        color: "#777",
+        marginTop: 2,
     },
 });

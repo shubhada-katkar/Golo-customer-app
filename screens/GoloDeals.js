@@ -241,6 +241,54 @@ const getOfferDisplayPrice = (item) => {
     return lowestProductPrice !== undefined ? formatPrice(lowestProductPrice) : null;
 };
 
+const computeStartingPrice = (products = [], fallback = 0) => {
+    const fallbackValue = Number(fallback) || 0;
+    if (fallbackValue > 0) return fallbackValue;
+    if (!Array.isArray(products) || products.length === 0) return fallbackValue;
+    const values = products
+        .map((item) => Number(item?.offerPrice || item?.discountedPrice || item?.salePrice || item?.price) || 0)
+        .filter((price) => price > 0);
+    if (!values.length) return fallbackValue;
+    return values.reduce((sum, price) => sum + price, 0);
+};
+
+const computeBestDiscountPercent = (products = [], fallback = 0) => {
+    const fallbackValue = Number(fallback) || 0;
+    if (fallbackValue > 0) return Math.max(0, Math.round(fallbackValue));
+    return Math.round(
+        (Array.isArray(products) ? products : []).reduce((best, product) => {
+            const original = Number(product?.originalPrice || product?.mrp) || 0;
+            const offer = Number(product?.offerPrice || product?.discountedPrice || product?.salePrice || product?.price) || 0;
+            if (original <= 0 || offer < 0 || offer >= original) return best;
+            const discount = ((original - offer) / original) * 100;
+            return Math.max(best, discount);
+        }, 0)
+    );
+};
+
+const normalizeNearbyOffer = (row) => {
+    const selectedProducts = Array.isArray(row?.selectedProducts)
+        ? row.selectedProducts
+        : Array.isArray(row?.products)
+            ? row.products
+            : [];
+    const displayPrice = computeStartingPrice(
+        selectedProducts,
+        row?.displayPrice || row?.totalPrice || row?.price
+    );
+    const discountPercent = computeBestDiscountPercent(
+        selectedProducts,
+        row?.discountPercent
+    );
+
+    return {
+        ...row,
+        selectedProducts,
+        displayPrice,
+        discountPercent,
+    };
+};
+
 const getDistance = (lat1, lon1, lat2, lon2) => {
     if (!lat1 || !lon1 || !lat2 || !lon2) return null;
     const R = 6371; // Radius of the earth in km
@@ -324,6 +372,22 @@ export default function GoloDeals({ route }) {
     const [merchantsLimit, setMerchantsLimit] = useState(6);
     const [productsLimit, setProductsLimit] = useState(6);
 
+    // ─── Unified search state (matching website) ──────────────
+    const [unifiedMerchants, setUnifiedMerchants] = useState([]);
+    const [unifiedProducts, setUnifiedProducts] = useState([]);
+    const [unifiedOffers, setUnifiedOffers] = useState([]);
+    const [searchLoading, setSearchLoading] = useState(false);
+    const [merchantPage, setMerchantPage] = useState(1);
+    const [productPage, setProductPage] = useState(1);
+    const [offerPage, setOfferPage] = useState(1);
+    const [hasMoreMerchants, setHasMoreMerchants] = useState(false);
+    const [hasMoreProducts, setHasMoreProducts] = useState(false);
+    const [hasMoreOffers, setHasMoreOffers] = useState(false);
+    const [loadingMoreOffers, setLoadingMoreOffers] = useState(false);
+    const [loadingMoreMerchants, setLoadingMoreMerchants] = useState(false);
+    const [loadingMoreProducts, setLoadingMoreProducts] = useState(false);
+    const searchSeqRef = useRef(0);
+
     useEffect(() => {
         setOffersLimit(6);
         setMerchantsLimit(6);
@@ -338,6 +402,178 @@ export default function GoloDeals({ route }) {
             navigation.setParams({ searchQuery: undefined });
         }
     }, [route?.params?.searchQuery]);
+
+    // Fetch unified search results from backend API when searchQuery changes
+    useEffect(() => {
+        const queryTrimmed = String(searchQuery || "").trim();
+        if (!queryTrimmed || !BASE_URL) {
+            setUnifiedMerchants([]);
+            setUnifiedProducts([]);
+            setUnifiedOffers([]);
+            setSearchLoading(false);
+            setHasMoreMerchants(false);
+            setHasMoreProducts(false);
+            setHasMoreOffers(false);
+            return;
+        }
+
+        const fetchUnified = async () => {
+            const seq = ++searchSeqRef.current;
+            setSearchLoading(true);
+            setMerchantPage(1);
+            setProductPage(1);
+            setOfferPage(1);
+
+            try {
+                const url = `${BASE_URL}/search/unified?q=${encodeURIComponent(queryTrimmed)}&type=all&limit=16&page=1`;
+                const response = await fetch(url);
+                const res = await response.json();
+
+                if (seq !== searchSeqRef.current) return;
+
+                if (res?.success && res?.data) {
+                    const merchants = res.data.merchants || [];
+                    const products = res.data.products || [];
+                    const offers = (res.data.offers || []).map(normalizeNearbyOffer);
+
+                    setUnifiedMerchants(merchants);
+                    setUnifiedProducts(products);
+                    setUnifiedOffers(offers);
+
+                    setHasMoreMerchants(merchants.length === 16);
+                    setHasMoreProducts(products.length === 16);
+                    setHasMoreOffers(offers.length === 16);
+                } else {
+                    setUnifiedMerchants([]);
+                    setUnifiedProducts([]);
+                    setUnifiedOffers([]);
+                    setHasMoreMerchants(false);
+                    setHasMoreProducts(false);
+                    setHasMoreOffers(false);
+                }
+            } catch (err) {
+                if (seq !== searchSeqRef.current) return;
+                console.error("Unified search error:", err);
+                setUnifiedMerchants([]);
+                setUnifiedProducts([]);
+                setUnifiedOffers([]);
+            } finally {
+                if (seq === searchSeqRef.current) {
+                    setSearchLoading(false);
+                }
+            }
+        };
+
+        fetchUnified();
+    }, [searchQuery]);
+
+    const loadMoreOffers = async () => {
+        const queryTrimmed = String(searchQuery || "").trim();
+        if (!queryTrimmed || loadingMoreOffers || !hasMoreOffers || !BASE_URL) return;
+
+        setLoadingMoreOffers(true);
+        try {
+            const nextPage = offerPage + 1;
+            const url = `${BASE_URL}/search/unified?q=${encodeURIComponent(queryTrimmed)}&type=offers&limit=16&page=${nextPage}`;
+            const response = await fetch(url);
+            const res = await response.json();
+
+            if (res?.success && res?.data?.offers) {
+                const newOffers = (res.data.offers || []).map(normalizeNearbyOffer);
+                setUnifiedOffers(prev => {
+                    const combined = [...prev, ...newOffers];
+                    const seen = new Set();
+                    return combined.filter(o => {
+                        const id = o.offerId || o.requestId || o._id || o.id;
+                        if (!id) return true;
+                        if (seen.has(id)) return false;
+                        seen.add(id);
+                        return true;
+                    });
+                });
+                setOfferPage(nextPage);
+                setHasMoreOffers(newOffers.length === 16);
+            } else {
+                setHasMoreOffers(false);
+            }
+        } catch (e) {
+            console.error("Load more offers error:", e);
+        } finally {
+            setLoadingMoreOffers(false);
+        }
+    };
+
+    const loadMoreMerchants = async () => {
+        const queryTrimmed = String(searchQuery || "").trim();
+        if (!queryTrimmed || loadingMoreMerchants || !hasMoreMerchants || !BASE_URL) return;
+
+        setLoadingMoreMerchants(true);
+        try {
+            const nextPage = merchantPage + 1;
+            const url = `${BASE_URL}/search/unified?q=${encodeURIComponent(queryTrimmed)}&type=merchants&limit=16&page=${nextPage}`;
+            const response = await fetch(url);
+            const res = await response.json();
+
+            if (res?.success && res?.data?.merchants) {
+                const newMerchants = res.data.merchants || [];
+                setUnifiedMerchants(prev => {
+                    const combined = [...prev, ...newMerchants];
+                    const seen = new Set();
+                    return combined.filter(m => {
+                        const id = m._id || m.userId || m.merchantId;
+                        if (!id) return true;
+                        if (seen.has(id)) return false;
+                        seen.add(id);
+                        return true;
+                    });
+                });
+                setMerchantPage(nextPage);
+                setHasMoreMerchants(newMerchants.length === 16);
+            } else {
+                setHasMoreMerchants(false);
+            }
+        } catch (e) {
+            console.error("Load more merchants error:", e);
+        } finally {
+            setLoadingMoreMerchants(false);
+        }
+    };
+
+    const loadMoreProducts = async () => {
+        const queryTrimmed = String(searchQuery || "").trim();
+        if (!queryTrimmed || loadingMoreProducts || !hasMoreProducts || !BASE_URL) return;
+
+        setLoadingMoreProducts(true);
+        try {
+            const nextPage = productPage + 1;
+            const url = `${BASE_URL}/search/unified?q=${encodeURIComponent(queryTrimmed)}&type=products&limit=16&page=${nextPage}`;
+            const response = await fetch(url);
+            const res = await response.json();
+
+            if (res?.success && res?.data?.products) {
+                const newProducts = res.data.products || [];
+                setUnifiedProducts(prev => {
+                    const combined = [...prev, ...newProducts];
+                    const seen = new Set();
+                    return combined.filter(p => {
+                        const id = p._id || p.productId;
+                        if (!id) return true;
+                        if (seen.has(id)) return false;
+                        seen.add(id);
+                        return true;
+                    });
+                });
+                setProductPage(nextPage);
+                setHasMoreProducts(newProducts.length === 16);
+            } else {
+                setHasMoreProducts(false);
+            }
+        } catch (e) {
+            console.error("Load more products error:", e);
+        } finally {
+            setLoadingMoreProducts(false);
+        }
+    };
 
     // Location editing state
     const [isEditingLocation, setIsEditingLocation] = useState(false);
@@ -936,7 +1172,76 @@ export default function GoloDeals({ route }) {
     const searchResultsMerchantsMap = new Map();
     const searchResultsProducts = [];
 
+    const seenOfferIds = new Set();
+    const seenProductIds = new Set();
+
     if (query) {
+        // 1. Incorporate backend unified search offers
+        unifiedOffers.forEach((offer, offerIdx) => {
+            const id = offer?._id || offer?.requestId || offer?.id || `unified-offer-${offerIdx}`;
+            if (!seenOfferIds.has(id)) {
+                seenOfferIds.add(id);
+                searchResultsOffers.push({
+                    type: 'offer',
+                    offer,
+                    id,
+                });
+            }
+        });
+
+        // 2. Incorporate backend unified search merchants
+        unifiedMerchants.forEach((m, mIdx) => {
+            const merchantId = m.userId || m._id || `merchant-${mIdx}`;
+            const merchantName = m.storeName || m.name || "Merchant";
+            const merchantCategory = m.storeCategory || m.category || "";
+            const merchantAddress = m.storeLocation || m.address || "";
+            const merchantLogo = m.profilePhoto || m.shopPhoto || m.logo || m.imageUrl;
+            const lat = Number(m.storeLocationLatitude ?? m.latitude);
+            const lng = Number(m.storeLocationLongitude ?? m.longitude);
+            let distanceText = null;
+            if (Number.isFinite(lat) && Number.isFinite(lng) && userCoordinates?.lat && userCoordinates?.lng) {
+                const dist = getDistance(userCoordinates.lat, userCoordinates.lng, lat, lng);
+                if (dist !== null) {
+                    distanceText = dist < 1 ? `${Math.round(dist * 1000)} m` : `${dist.toFixed(1)} km`;
+                }
+            }
+
+            searchResultsMerchantsMap.set(String(merchantId).toLowerCase(), {
+                id: merchantId,
+                merchantId,
+                name: merchantName,
+                category: merchantCategory,
+                address: merchantAddress,
+                logo: merchantLogo,
+                distanceText,
+                merchantObj: m,
+            });
+        });
+
+        // 3. Incorporate backend unified search products
+        unifiedProducts.forEach((prod, prodIdx) => {
+            const prodId = prod._id || `unified-prod-${prodIdx}`;
+            if (!seenProductIds.has(prodId)) {
+                seenProductIds.add(prodId);
+                searchResultsProducts.push({
+                    type: 'product',
+                    product: prod,
+                    offer: {
+                        ...prod,
+                        _id: prod._id,
+                        merchantId: prod.merchantId,
+                        title: prod.name || prod.productName || "Product",
+                        imageUrl: prod.imageUrl || (Array.isArray(prod.images) ? prod.images[0] : null),
+                        displayPrice: formatPrice(prod.offerPrice ?? prod.discountedPrice ?? prod.salePrice ?? prod.price),
+                        merchantName: prod.merchantName || prod.storeName,
+                        merchant: { merchantId: prod.merchantId, name: prod.merchantName || prod.storeName },
+                    },
+                    id: prodId,
+                });
+            }
+        });
+
+        // 4. Combine with in-memory offers if they match
         allDealsOffers.forEach((offer, offerIdx) => {
             const offerTitle = String(getOfferTitle(offer)).toLowerCase();
             const subtitle = String(getOfferSubtitle(offer)).toLowerCase();
@@ -945,16 +1250,16 @@ export default function GoloDeals({ route }) {
 
             const isOfferMatch = offerTitle.includes(query) || subtitle.includes(query) || offerType.includes(query) || desc.includes(query);
 
-            // 1. Offers Match
-            if (isOfferMatch) {
+            const offerId = offer?._id || offer?.id || offer?.requestId || `offer-${offerIdx}`;
+            if (isOfferMatch && !seenOfferIds.has(offerId)) {
+                seenOfferIds.add(offerId);
                 searchResultsOffers.push({
                     type: 'offer',
                     offer,
-                    id: offer?._id || offer?.id || offer?.requestId || `offer-${offerIdx}`,
+                    id: offerId,
                 });
             }
 
-            // 2. Merchants Match
             const merchantName = getOfferSubtitle(offer);
             const merchantId = offer?.merchantId || offer?.merchant?._id || offer?.merchant?.id || merchantName;
             const merchantCategory = offer?.merchant?.storeCategory || offer?.merchant?.category || offer?.bannerCategory || offer?.category || "";
@@ -984,7 +1289,6 @@ export default function GoloDeals({ route }) {
                 }
             }
 
-            // 3. Products Match
             const products = Array.isArray(offer?.selectedProducts) && offer.selectedProducts.length
                 ? offer.selectedProducts
                 : (Array.isArray(offer?.products) ? offer.products : []);
@@ -993,22 +1297,28 @@ export default function GoloDeals({ route }) {
                 products.forEach((prod, prodIdx) => {
                     const prodName = String(prod?.productName || prod?.name || prod?.title || "").toLowerCase();
                     const prodDesc = String(prod?.description || "").toLowerCase();
-                    if (isOfferMatch || prodName.includes(query) || prodDesc.includes(query)) {
+                    const prodId = `${offer?._id || offer?.id || offer?.requestId || offerIdx}_prod_${prod?._id || prod?.productId || prodIdx}`;
+                    if ((isOfferMatch || prodName.includes(query) || prodDesc.includes(query)) && !seenProductIds.has(prodId)) {
+                        seenProductIds.add(prodId);
                         searchResultsProducts.push({
                             type: 'product',
                             product: prod,
                             offer,
-                            id: `${offer?._id || offer?.id || offer?.requestId || offerIdx}_prod_${prod?._id || prod?.productId || prodIdx}`,
+                            id: prodId,
                         });
                     }
                 });
             } else if (isOfferMatch) {
-                searchResultsProducts.push({
-                    type: 'product',
-                    product: null,
-                    offer,
-                    id: `${offer?._id || offer?.id || offer?.requestId || offerIdx}_prod_self`,
-                });
+                const prodId = `${offer?._id || offer?.id || offer?.requestId || offerIdx}_prod_self`;
+                if (!seenProductIds.has(prodId)) {
+                    seenProductIds.add(prodId);
+                    searchResultsProducts.push({
+                        type: 'product',
+                        product: null,
+                        offer,
+                        id: prodId,
+                    });
+                }
             }
         });
     }
@@ -1024,12 +1334,12 @@ export default function GoloDeals({ route }) {
 
         if (isProd && prod) {
             itemTitle = prod?.productName || prod?.name || prod?.title || getOfferTitle(parentOffer);
-            subtitle = getOfferSubtitle(parentOffer);
+            subtitle = prod?.merchantName || prod?.storeName || getOfferSubtitle(parentOffer);
             image = prod?.imageUrl || prod?.image?.url || (Array.isArray(prod?.images) ? prod.images[0] : null) || getOfferImage(parentOffer);
             const prodPrice = prod?.offerPrice ?? prod?.discountedPrice ?? prod?.salePrice ?? prod?.finalPrice ?? prod?.price;
             const prodOrigPrice = prod?.originalPrice ?? prod?.mrp;
             directPrice = formatPrice(prodPrice) || formatPrice(prodOrigPrice) || getOfferDisplayPrice(parentOffer);
-            offerType = parentOffer?.bannerCategory || parentOffer?.offerType || parentOffer?.category || "-";
+            offerType = prod?.category || parentOffer?.bannerCategory || parentOffer?.offerType || parentOffer?.category || "-";
         } else {
             itemTitle = getOfferTitle(parentOffer);
             subtitle = getOfferSubtitle(parentOffer);
@@ -1046,7 +1356,18 @@ export default function GoloDeals({ route }) {
                 key={itemObj.id || `card-${index}`}
                 activeOpacity={0.9}
                 style={[styles.card, { width: "48%", marginBottom: 16 }]}
-                onPress={() => navigation.navigate("OfferDetails", { offerData: parentOffer })}
+                onPress={() => {
+                    if (isProd && prod) {
+                        navigation.navigate("ProductDetail", {
+                            product: prod,
+                            productId: prod?.productId || prod?._id || prod?.id,
+                            offerId: parentOffer?.requestId || parentOffer?._id || parentOffer?.offerId,
+                            offerData: parentOffer,
+                        });
+                    } else if (parentOffer) {
+                        navigation.navigate("OfferDetails", { offerData: parentOffer });
+                    }
+                }}
             >
                 <View style={styles.cardInner}>
                     {imageSource ? (
@@ -1096,7 +1417,7 @@ export default function GoloDeals({ route }) {
                 style={[styles.card, { width: "48%", marginBottom: 16 }]}
                 onPress={() =>
                     navigation.navigate("StorePage", {
-                        merchantId: merchant.merchantId,
+                        merchantId: merchant.merchantId || merchant.id,
                         passedMerchant: merchant.merchantObj,
                     })
                 }
@@ -1431,6 +1752,13 @@ export default function GoloDeals({ route }) {
             >
                 {query ? (
                     <View style={{ width: "100%", marginTop: 10 }}>
+                        {searchLoading && searchResultsOffers.length === 0 && searchResultsMerchants.length === 0 && searchResultsProducts.length === 0 && (
+                            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", paddingVertical: 20 }}>
+                                <ActivityIndicator size="small" color="#157a4f" style={{ marginRight: 8 }} />
+                                <Text style={{ color: "#157a4f", ...textPresets.label }}>Searching offers, stores & products...</Text>
+                            </View>
+                        )}
+
                         {/* ---- Section 1: Offers ---- */}
                         {searchResultsOffers.length > 0 && (
                             <View style={{ marginBottom: 24 }}>
@@ -1442,38 +1770,64 @@ export default function GoloDeals({ route }) {
                                         renderDealsCardItem(item, index)
                                     )}
                                 </View>
-                                {searchResultsOffers.length > offersLimit && (
+                                {(searchResultsOffers.length > offersLimit || hasMoreOffers) && (
                                     <TouchableOpacity
                                         style={styles.loadMoreBtn}
-                                        onPress={() => setOffersLimit((prev) => prev + 5)}
+                                        onPress={() => {
+                                            if (searchResultsOffers.length > offersLimit) {
+                                                setOffersLimit((prev) => prev + 6);
+                                            } else if (hasMoreOffers) {
+                                                loadMoreOffers();
+                                            }
+                                        }}
+                                        disabled={loadingMoreOffers}
                                         activeOpacity={0.8}
                                     >
-                                        <Text style={styles.loadMoreBtnText}>Load More</Text>
-                                        <Ionicons name="chevron-down" size={16} color="#157a4f" />
+                                        {loadingMoreOffers ? (
+                                            <ActivityIndicator size="small" color="#157a4f" />
+                                        ) : (
+                                            <>
+                                                <Text style={styles.loadMoreBtnText}>Load More Offers</Text>
+                                                <Ionicons name="chevron-down" size={16} color="#157a4f" />
+                                            </>
+                                        )}
                                     </TouchableOpacity>
                                 )}
                             </View>
                         )}
 
-                        {/* ---- Section 2: Merchant ---- */}
+                        {/* ---- Section 2: Merchant / Stores ---- */}
                         {searchResultsMerchants.length > 0 && (
                             <View style={{ marginBottom: 24 }}>
                                 <View style={styles.sectionHeaderRow}>
-                                    <Text style={styles.sectionTitle}>Merchant ({searchResultsMerchants.length})</Text>
+                                    <Text style={styles.sectionTitle}>Stores ({searchResultsMerchants.length})</Text>
                                 </View>
                                 <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" }}>
                                     {searchResultsMerchants.slice(0, merchantsLimit).map((merchant, index) =>
                                         renderDealsMerchantCard(merchant, index)
                                     )}
                                 </View>
-                                {searchResultsMerchants.length > merchantsLimit && (
+                                {(searchResultsMerchants.length > merchantsLimit || hasMoreMerchants) && (
                                     <TouchableOpacity
                                         style={styles.loadMoreBtn}
-                                        onPress={() => setMerchantsLimit((prev) => prev + 5)}
+                                        onPress={() => {
+                                            if (searchResultsMerchants.length > merchantsLimit) {
+                                                setMerchantsLimit((prev) => prev + 6);
+                                            } else if (hasMoreMerchants) {
+                                                loadMoreMerchants();
+                                            }
+                                        }}
+                                        disabled={loadingMoreMerchants}
                                         activeOpacity={0.8}
                                     >
-                                        <Text style={styles.loadMoreBtnText}>Load More</Text>
-                                        <Ionicons name="chevron-down" size={16} color="#157a4f" />
+                                        {loadingMoreMerchants ? (
+                                            <ActivityIndicator size="small" color="#157a4f" />
+                                        ) : (
+                                            <>
+                                                <Text style={styles.loadMoreBtnText}>Load More Stores</Text>
+                                                <Ionicons name="chevron-down" size={16} color="#157a4f" />
+                                            </>
+                                        )}
                                     </TouchableOpacity>
                                 )}
                             </View>
@@ -1490,21 +1844,35 @@ export default function GoloDeals({ route }) {
                                         renderDealsCardItem(item, index)
                                     )}
                                 </View>
-                                {searchResultsProducts.length > productsLimit && (
+                                {(searchResultsProducts.length > productsLimit || hasMoreProducts) && (
                                     <TouchableOpacity
                                         style={styles.loadMoreBtn}
-                                        onPress={() => setProductsLimit((prev) => prev + 5)}
+                                        onPress={() => {
+                                            if (searchResultsProducts.length > productsLimit) {
+                                                setProductsLimit((prev) => prev + 6);
+                                            } else if (hasMoreProducts) {
+                                                loadMoreProducts();
+                                            }
+                                        }}
+                                        disabled={loadingMoreProducts}
                                         activeOpacity={0.8}
                                     >
-                                        <Text style={styles.loadMoreBtnText}>Load More</Text>
-                                        <Ionicons name="chevron-down" size={16} color="#157a4f" />
+                                        {loadingMoreProducts ? (
+                                            <ActivityIndicator size="small" color="#157a4f" />
+                                        ) : (
+                                            <>
+                                                <Text style={styles.loadMoreBtnText}>Load More Products</Text>
+                                                <Ionicons name="chevron-down" size={16} color="#157a4f" />
+                                            </>
+                                        )}
                                     </TouchableOpacity>
                                 )}
                             </View>
                         )}
 
                         {/* Empty search state */}
-                        {searchResultsOffers.length === 0 &&
+                        {!searchLoading &&
+                            searchResultsOffers.length === 0 &&
                             searchResultsMerchants.length === 0 &&
                             searchResultsProducts.length === 0 && (
                                 <View style={{ alignItems: "center", justifyContent: "center", paddingVertical: 40 }}>

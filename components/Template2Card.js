@@ -161,16 +161,18 @@ export default function Template2Card({ ad, navigation }) {
 
         Linking.openURL(`tel:${cleanedNumber}`);
     };
+    const handleCardPress = () => {
+        const currentAdId = ad?.adId || ad?._id || ad?.id;
+        if (currentAdId) {
+            trackAdCardClick(currentAdId);
+        }
+        navigation.navigate("AdDetails", { adId: currentAdId, skipCardTrack: true });
+    };
+
     return (
         <TouchableOpacity
             activeOpacity={0.8}
-            onPress={() => {
-                const currentAdId = ad?.adId || ad?._id || ad?.id;
-                if (currentAdId) {
-                    trackAdCardClick(currentAdId);
-                }
-                navigation.navigate("AdDetails", { adId: currentAdId, skipCardTrack: true });
-            }}
+            onPress={handleCardPress}
             style={styles.card}
         >
 
@@ -194,7 +196,9 @@ export default function Template2Card({ ad, navigation }) {
 
             <View style={styles.row}>
                 {ad.images?.length > 0 ? (
-                    <Image source={{ uri: ad.images[0] }} style={styles.image} />
+                    <TouchableOpacity activeOpacity={0.9} onPress={handleCardPress}>
+                        <Image source={{ uri: ad.images[0] }} style={styles.image} />
+                    </TouchableOpacity>
                 ) : (
                     <View style={styles.image} />
                 )}

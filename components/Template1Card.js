@@ -224,16 +224,18 @@ export default function Template1Card({ ad, navigation }) {
     return () => clearInterval(interval);
   }, [currentIndex]);
 
+  const handleCardPress = () => {
+    const currentAdId = ad?.adId || ad?._id || ad?.id;
+    if (currentAdId) {
+      trackAdCardClick(currentAdId);
+    }
+    navigation.navigate("AdDetails", { adId: currentAdId, skipCardTrack: true });
+  };
+
   return (
     <TouchableOpacity
       activeOpacity={0.8}
-      onPress={() => {
-        const currentAdId = ad?.adId || ad?._id || ad?.id;
-        if (currentAdId) {
-          trackAdCardClick(currentAdId);
-        }
-        navigation.navigate("AdDetails", { adId: currentAdId, skipCardTrack: true });
-      }}
+      onPress={handleCardPress}
       style={styles.card}
     >
 
@@ -243,7 +245,9 @@ export default function Template1Card({ ad, navigation }) {
 
       {ad.images?.length > 0 ? (
         ad.images.length === 1 ? (
-          <Image source={{ uri: ad.images[0] }} style={styles.image} />
+          <TouchableOpacity activeOpacity={0.9} onPress={handleCardPress}>
+            <Image source={{ uri: ad.images[0] }} style={styles.image} />
+          </TouchableOpacity>
         ) : (
           <>
             {/* LEFT ARROW */}
@@ -267,7 +271,9 @@ export default function Template1Card({ ad, navigation }) {
                   setCurrentIndex(index);
                 }}
                 renderItem={({ item }) => (
-                  <Image source={{ uri: item }} style={styles.image} />
+                  <TouchableOpacity activeOpacity={0.9} onPress={handleCardPress}>
+                    <Image source={{ uri: item }} style={styles.image} />
+                  </TouchableOpacity>
                 )}
               />
             </View>

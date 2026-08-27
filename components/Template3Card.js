@@ -161,16 +161,18 @@ export default function Template3Card({ ad, navigation }) {
 
         Linking.openURL(`tel:${cleanedNumber}`);
     };
+    const handleCardPress = () => {
+        const currentAdId = ad?.adId || ad?._id || ad?.id;
+        if (currentAdId) {
+            trackAdCardClick(currentAdId);
+        }
+        navigation.navigate("AdDetails", { adId: currentAdId, skipCardTrack: true });
+    };
+
     return (
         <TouchableOpacity
             activeOpacity={0.8}
-            onPress={() => {
-                const currentAdId = ad?.adId || ad?._id || ad?.id;
-                if (currentAdId) {
-                    trackAdCardClick(currentAdId);
-                }
-                navigation.navigate("AdDetails", { adId: currentAdId, skipCardTrack: true });
-            }}
+            onPress={handleCardPress}
             style={styles.card}
         >
 
