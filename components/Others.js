@@ -86,6 +86,7 @@ export default function Others({ formData, setFormData, category, onPrevious, te
             setFormData({ ...formData, price: text })
           }
           placeholder="₹"
+          keyboardType="numeric"
         />
       </View>
 

@@ -771,7 +771,7 @@ export default function Payment({ navigation, route }) {
 
             if (!response.ok || data?.success === false) {
                 showAlert("Failed", responseMessage || "Failed to post ad.", "error");
-                return false;
+                return { success: false };
             }
 
             if (data.success) {
@@ -780,19 +780,15 @@ export default function Payment({ navigation, route }) {
                 } catch (storageError) {
                     // Ignore storage issues for the moderation flow.
                 }
-                showAlert("Success", "Your ad has been posted successfully!", "success", {
-                    onClose: () => {
-                        navigation.navigate("ChojaHome");
-                    }
-                });
-                return true;
+                const createdAdId = data?.data?.adId || data?.data?._id || "";
+                return { success: true, adId: createdAdId, data: data.data };
             } else {
                 let errorMessage = "Failed to post ad.";
                 if (data.message) {
                     errorMessage = Array.isArray(data.message) ? data.message.join(" ") : data.message;
                 }
                 showAlert("Failed", errorMessage, "error");
-                return false;
+                return { success: false };
             }
         } catch (error) {
             const errorMessage = getErrorMessageFromResponse(error);
@@ -820,21 +816,17 @@ export default function Payment({ navigation, route }) {
                 }
 
                 setFlaggedModalVisible(true);
-                return false;
+                return { success: false };
             }
 
             showAlert("Error", errorMessage || String(error?.message || "An unexpected error occurred while posting."), "error");
-            return false;
+            return { success: false };
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    const handlePaymentAndSubmit = async () => {
-        await submitAdToBackend();
-    };
-
-    const handlePayWithRazorpay = async () => {
+    const handlePayWithRazorpay = async (adId = "") => {
         const userId = await AsyncStorage.getItem("customerId") || "default";
         if (restrictionUntil && restrictionUntil > new Date()) {
             setRestrictionModalVisible(true);
@@ -854,12 +846,34 @@ export default function Payment({ navigation, route }) {
             try {
                 token = await getValidToken();
             } catch (authErr) {
-                showAlert("Error", "You must be logged in to make payment.", "error");
+                showAlert("Authentication Required", "You must be logged in to make payment.", "error");
                 return;
             }
 
-            let orderData = null;
             const totalAmountInRupees = Math.round(total);
+            if (!totalAmountInRupees || totalAmountInRupees < 1) {
+                showAlert("Invalid Amount", "Payment amount must be at least ₹1.", "error");
+                return;
+            }
+
+            // Retrieve cached user profile for prefilling payment fields
+            let prefill = {};
+            try {
+                const cachedProfileStr = await AsyncStorage.getItem("@golo_user_profile_cache");
+                if (cachedProfileStr) {
+                    const cachedProfile = JSON.parse(cachedProfileStr);
+                    if (cachedProfile?.name) prefill.name = cachedProfile.name;
+                    if (cachedProfile?.email) prefill.email = cachedProfile.email;
+                    if (cachedProfile?.profile?.phone || cachedProfile?.phone) {
+                        prefill.contact = cachedProfile?.profile?.phone || cachedProfile?.phone;
+                    }
+                }
+            } catch (e) { }
+
+            let orderData = null;
+            let errorMessage = "";
+            const idempotencyKey = `pay_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+            const receipt = `rcpt_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
 
             try {
                 const response = await fetch(`${BASE_URL}/payments/create-order`, {
@@ -871,43 +885,77 @@ export default function Payment({ navigation, route }) {
                     body: JSON.stringify({
                         amount: totalAmountInRupees,
                         currency: "INR",
+                        idempotencyKey,
+                        receipt,
+                        ...(adId ? { adId } : {}),
                         description: `Ad Listing - ${category?.label || "General"}`,
                         notes: {
-                            category: category?.label,
-                            templateId: template
+                            category: category?.label || "General",
+                            templateId: template || "default",
+                            ...(adId ? { adId } : {})
                         }
                     })
                 });
 
                 const resData = await response.json();
-                if (response.ok && resData.success && resData.data?.keyId) {
-                    orderData = resData.data;
+                if (response.ok && resData?.success && resData?.data?.keyId) {
+                    orderData = {
+                        keyId: resData.data.keyId,
+                        order: resData.data.order,
+                        prefill
+                    };
+                } else {
+                    errorMessage = resData?.message || resData?.error || `Server returned error (${response.status})`;
+                    if (Array.isArray(errorMessage)) {
+                        errorMessage = errorMessage.join(", ");
+                    }
                 }
             } catch (apiErr) {
-                console.warn("Backend Razorpay order endpoint unavailable, using test mode:", apiErr);
+                console.warn("Backend Razorpay order creation failed:", apiErr);
+                errorMessage = apiErr?.message || "Unable to reach payment server. Please check your connection.";
             }
 
-            // Fallback for test mode if backend payment gateway endpoint is unconfigured on remote server
             if (!orderData) {
-                orderData = {
-                    keyId: "rzp_test_S0GsFh4dYJBDOG",
-                    order: {
-                        id: `order_test_${Date.now()}`,
-                        amount: totalAmountInRupees * 100,
-                        currency: "INR"
-                    }
-                };
+                showAlert("Payment Error", errorMessage || "Failed to initialize Razorpay payment order from server.", "error");
+                return;
             }
 
             setRazorpayOrderData(orderData);
             setRazorpayModalVisible(true);
         } catch (error) {
             console.error("Razorpay order initialization error:", error);
-            showAlert("Error", error.message || "An error occurred while launching Razorpay.", "error");
+            showAlert("Error", error?.message || "An error occurred while launching Razorpay.", "error");
         } finally {
             setIsRazorpayProcessing(false);
         }
     };
+
+    const handlePayAndSubmit = async () => {
+        if (isSubmitting || isRazorpayProcessing) return;
+
+        // Step 1: Submit Ad to Backend (triggers image & text moderation)
+        const adResult = await submitAdToBackend();
+        if (!adResult || !adResult.success) {
+            // Moderation failed or error occurred; modal/alert already displayed
+            return;
+        }
+
+        const totalAmountInRupees = Math.round(total);
+        if (totalAmountInRupees <= 0) {
+            // If total is 0, posting is complete without payment
+            showAlert("Success", "Your ad has been posted successfully!", "success", {
+                onClose: () => {
+                    navigation.navigate("ChojaHome");
+                }
+            });
+            return;
+        }
+
+        // Step 2: Trigger Razorpay payment gateway
+        await handlePayWithRazorpay(adResult.adId);
+    };
+
+    const handlePaymentAndSubmit = handlePayAndSubmit;
 
     const handleWebViewMessage = async (event) => {
         try {
@@ -941,12 +989,15 @@ export default function Payment({ navigation, route }) {
                             })
                         });
                     } catch (verifyErr) {
-                        console.warn("Backend payment verification skipped:", verifyErr);
+                        console.warn("Backend payment verification error:", verifyErr);
                     }
                 }
 
-                // Automatically post ad after payment verification
-                await submitAdToBackend();
+                showAlert("Success", "Your ad has been posted and payment completed successfully!", "success", {
+                    onClose: () => {
+                        navigation.navigate("ChojaHome");
+                    }
+                });
             } else if (data.event === "CANCELLED") {
                 setRazorpayModalVisible(false);
                 setRazorpayOrderData(null);
@@ -954,13 +1005,13 @@ export default function Payment({ navigation, route }) {
             } else if (data.event === "FAILED") {
                 setRazorpayModalVisible(false);
                 setRazorpayOrderData(null);
-                showAlert("Failed", data.error?.description || "Razorpay payment failed.", "error");
+                showAlert("Payment Failed", data.error?.description || data.error?.reason || "Razorpay payment could not be completed.", "error");
             }
         } catch (err) {
             console.error("Razorpay webview message error:", err);
             setRazorpayModalVisible(false);
             setRazorpayOrderData(null);
-            showAlert("Error", err.message || "An unexpected error occurred during payment verification.", "error");
+            showAlert("Error", err.message || "An unexpected error occurred during payment processing.", "error");
         } finally {
             setIsRazorpayProcessing(false);
         }
@@ -968,8 +1019,26 @@ export default function Payment({ navigation, route }) {
 
     const getRazorpayCheckoutHtml = () => {
         if (!razorpayOrderData) return "";
-        const { keyId, order } = razorpayOrderData;
-        const isRealOrder = order && order.id && !String(order.id).startsWith("order_test_");
+        const { keyId, order, prefill } = razorpayOrderData;
+
+        const optionsObj = {
+            key: keyId,
+            amount: order?.amount ? Number(order.amount) : Math.round(total * 100),
+            currency: order?.currency || "INR",
+            name: "Golo Ads",
+            description: `Ad Listing - ${category?.label || "General"}`,
+            ...(order?.id ? { order_id: order.id } : {}),
+            prefill: {
+                name: prefill?.name || "",
+                email: prefill?.email || "",
+                contact: prefill?.contact || ""
+            },
+            theme: {
+                color: "#157a4f"
+            }
+        };
+
+        const jsonOptions = JSON.stringify(optionsObj);
 
         return `
       <!DOCTYPE html>
@@ -977,8 +1046,10 @@ export default function Payment({ navigation, route }) {
         <head>
           <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
           <style>
+            * { box-sizing: border-box; }
             body {
               display: flex;
+              flex-direction: column;
               justify-content: center;
               align-items: center;
               height: 100vh;
@@ -989,50 +1060,78 @@ export default function Payment({ navigation, route }) {
             .loading {
               font-size: 16px;
               color: #157a4f;
-              font-weight: bold;
+              font-weight: 600;
+              margin-bottom: 8px;
+            }
+            .subtext {
+              font-size: 13px;
+              color: #666666;
             }
           </style>
           <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
         </head>
         <body>
-          <div class="loading">Loading Razorpay Gateway...</div>
+          <div class="loading">Opening Razorpay Checkout...</div>
+          <div class="subtext">Please complete your payment to proceed</div>
           <script>
-            var options = {
-              "key": "${keyId}",
-              "amount": "${order.amount}",
-              "currency": "${order.currency || 'INR'}",
-              "name": "Golo Ads",
-              "description": "Ad Listing - ${category?.label || 'General'}",
-              ${isRealOrder ? `"order_id": "${order.id}",` : ''}
-              "handler": function (response) {
-                window.ReactNativeWebView.postMessage(JSON.stringify({
+            function sendToApp(msg) {
+              if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
+                window.ReactNativeWebView.postMessage(JSON.stringify(msg));
+              }
+            }
+
+            window.onerror = function(message, source, lineno, colno, error) {
+              sendToApp({
+                event: "FAILED",
+                error: { description: message || "Script error loading checkout." }
+              });
+              return true;
+            };
+
+            try {
+              var options = ${jsonOptions};
+              options.handler = function (response) {
+                sendToApp({
                   event: "SUCCESS",
                   razorpay_payment_id: response.razorpay_payment_id,
                   razorpay_order_id: response.razorpay_order_id || "",
                   razorpay_signature: response.razorpay_signature || ""
-                }));
-              },
-              "modal": {
-                "ondismiss": function() {
-                  window.ReactNativeWebView.postMessage(JSON.stringify({
+                });
+              };
+              options.modal = {
+                ondismiss: function() {
+                  sendToApp({
                     event: "CANCELLED"
-                  }));
+                  });
+                },
+                escape: false,
+                backdropclose: false
+              };
+
+              var rzp = new Razorpay(options);
+              rzp.on('payment.failed', function (response) {
+                sendToApp({
+                  event: "FAILED",
+                  error: response.error
+                });
+              });
+
+              window.onload = function() {
+                try {
+                  rzp.open();
+                } catch (openErr) {
+                  sendToApp({
+                    event: "FAILED",
+                    error: { description: openErr.message || "Failed to open Razorpay modal." }
+                  });
                 }
-              },
-              "theme": {
-                "color": "#157a4f"
-              }
-            };
-            var rzp = new Razorpay(options);
-            rzp.on('payment.failed', function (response) {
-              window.ReactNativeWebView.postMessage(JSON.stringify({
+              };
+            } catch (err) {
+              sendToApp({
                 event: "FAILED",
-                error: response.error
-              }));
-            });
-            window.onload = function() {
-              rzp.open();
-            };
+                error: { description: err.message || "Initialization error" }
+              });
+            }
           </script>
         </body>
       </html>
@@ -1181,37 +1280,31 @@ export default function Payment({ navigation, route }) {
                             </View>
                         </View>
 
-                        {/* Pay through Razorpay Button */}
+                        {/* Single Pay & Post Ad Button */}
                         <TouchableOpacity
                             style={[
-                                styles.razorpayButton,
+                                styles.payButton,
                                 (isSubmitting || isRazorpayProcessing) && { opacity: 0.7 }
                             ]}
-                            onPress={handlePayWithRazorpay}
+                            onPress={handlePayAndSubmit}
                             disabled={isSubmitting || isRazorpayProcessing}
                             activeOpacity={0.85}
                         >
-                            {isRazorpayProcessing ? (
+                            {isSubmitting || isRazorpayProcessing ? (
                                 <ActivityIndicator color="white" style={{ marginRight: 8 }} />
                             ) : (
-                                <MaterialCommunityIcons name="card-outline" color={"#ffffff"} size={20} style={{ marginRight: 8 }} />
+                                <MaterialCommunityIcons name="shield-check-outline" color={"#ffffff"} size={20} style={{ marginRight: 8 }} />
                             )}
                             <Text style={styles.payText}>
-                                {isRazorpayProcessing ? "Initializing..." : `Pay ₹${total.toFixed(0)} through Razorpay`}
+                                {isSubmitting
+                                    ? "Verifying & Moderating..."
+                                    : isRazorpayProcessing
+                                        ? "Opening Razorpay..."
+                                        : `Pay ₹${total.toFixed(0)} & Post Ad`}
                             </Text>
-                        </TouchableOpacity>
-
-                        {/* Direct / Bypass Post Button */}
-                        <TouchableOpacity
-                            style={[styles.payButton, (isSubmitting || isRazorpayProcessing) && { opacity: 0.7 }]}
-                            onPress={submitAdToBackend}
-                            disabled={isSubmitting || isRazorpayProcessing}
-                        >
-                            {isSubmitting ? (
-                                <ActivityIndicator color="white" style={{ marginRight: 8 }} />
-                            ) : null}
-                            <Text style={styles.payText}>{isSubmitting ? "Processing..." : "Post Ad (Bypass Payment)"}</Text>
-                            {!isSubmitting && <MaterialIcons name="double-arrow" color={"#ffffff"} size={20} />}
+                            {!(isSubmitting || isRazorpayProcessing) && (
+                                <MaterialIcons name="double-arrow" color={"#ffffff"} size={20} />
+                            )}
                         </TouchableOpacity>
                     </View>
 
@@ -1241,11 +1334,17 @@ export default function Payment({ navigation, route }) {
                         {razorpayOrderData && (
                             <WebView
                                 originWhitelist={["*"]}
-                                source={{ html: getRazorpayCheckoutHtml() }}
+                                source={{ html: getRazorpayCheckoutHtml(), baseUrl: "https://razorpay.com" }}
                                 onMessage={handleWebViewMessage}
                                 javaScriptEnabled={true}
                                 domStorageEnabled={true}
                                 startInLoadingState={true}
+                                mixedContentMode="always"
+                                allowsInlineMediaPlayback={true}
+                                onError={(syntheticEvent) => {
+                                    const { nativeEvent } = syntheticEvent;
+                                    console.warn("Razorpay WebView error: ", nativeEvent);
+                                }}
                                 renderLoading={() => (
                                     <View style={styles.webViewLoading}>
                                         <ActivityIndicator size="large" color="#157a4f" />

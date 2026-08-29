@@ -1,12 +1,13 @@
 import React, { useState } from "react";
-import { View, TouchableOpacity, Text, TextInput, StyleSheet, Alert, ScrollView } from "react-native";
+import { View, TouchableOpacity, Text, TextInput, StyleSheet, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Dimensions } from "react-native";
 import { Ionicons, FontAwesome } from "@expo/vector-icons";
 import { BASE_URL } from "../config";
 import { saveAuthData, clearAuthStorage } from "../services/authService";
 import { startCustomerNotificationPolling } from "../services/notificationService";
-import { textPresets } from "../theme/typography"
+import { textPresets } from "../theme/typography";
+import CustomAlertModal from "../components/CustomeAlertModal";
 
 const { width } = Dimensions.get("window");
 
@@ -16,6 +17,34 @@ export default function Login({ navigation, route }) {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [visiblepass, setvisiblepass] = useState(false);
+  const [alertConfig, setAlertConfig] = useState({
+    visible: false,
+    title: "",
+    message: "",
+    type: "error",
+    buttonText: "OK",
+    showCancelButton: false,
+    cancelText: "Cancel",
+    onConfirm: null,
+  });
+
+  const showAlert = (title, message, type = "error", extraProps = {}) => {
+    setAlertConfig({
+      visible: true,
+      title,
+      message,
+      type,
+      buttonText: "OK",
+      showCancelButton: false,
+      cancelText: "Cancel",
+      onConfirm: null,
+      ...extraProps,
+    });
+  };
+
+  const hideAlert = () => {
+    setAlertConfig((prev) => ({ ...prev, visible: false }));
+  };
 
   const handleSkip = () => {
     const returnTo = route?.params?.returnTo;
@@ -39,22 +68,22 @@ export default function Login({ navigation, route }) {
 
   // Static for now — will be wired up to real OAuth later
   const handleGooglePress = () => {
-    Alert.alert("Coming soon", "Google sign-in will be available soon.");
+    showAlert("Coming soon", "Google sign-in will be available soon.", "info");
   };
 
   const handleFacebookPress = () => {
-    Alert.alert("Coming soon", "Facebook sign-in will be available soon.");
+    showAlert("Coming soon", "Facebook sign-in will be available soon.", "info");
   };
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
-      Alert.alert("Error", "Fill all fields");
+      showAlert("Error", "Fill all fields", "error");
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      Alert.alert("Error", "Enter valid email");
+      showAlert("Error", "Enter valid email", "warning");
       return;
     }
 
@@ -78,12 +107,12 @@ export default function Login({ navigation, route }) {
 
       if (!response.ok) {
         await clearAuthStorage();
-        Alert.alert("Login Failed", data.message || "Invalid credentials");
+        showAlert("Login Failed", data.message || "Invalid credentials", "error");
         return;
       }
 
       if (!data.data || !data.data.accessToken || !data.data.user || !data.data.user.id) {
-        Alert.alert("Error", "Invalid server response");
+        showAlert("Error", "Invalid server response", "error");
         return;
       }
 
@@ -104,9 +133,9 @@ export default function Login({ navigation, route }) {
     } catch (error) {
       setLoading(false);
       if (error.name === "AbortError") {
-        Alert.alert("Timeout", "Server took too long to respond");
+        showAlert("Timeout", "Server took too long to respond", "error");
       } else {
-        Alert.alert("Network Error", "Check your internet connection");
+        showAlert("Network Error", "Check your internet connection", "error");
       }
     }
   };
@@ -197,6 +226,19 @@ export default function Login({ navigation, route }) {
           <Text style={styles.skipText}>Skip for now</Text>
         </TouchableOpacity>
       </ScrollView>
+
+      <CustomAlertModal
+        visible={alertConfig.visible}
+        type={alertConfig.type}
+        title={alertConfig.title}
+        message={alertConfig.message}
+        buttonText={alertConfig.buttonText}
+        showCancelButton={alertConfig.showCancelButton}
+        cancelText={alertConfig.cancelText}
+        onConfirm={alertConfig.onConfirm}
+        onClose={hideAlert}
+        onCancel={hideAlert}
+      />
     </SafeAreaView>
   );
 }

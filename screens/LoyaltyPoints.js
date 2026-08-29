@@ -211,7 +211,7 @@ export default function LoyaltyPoints({ navigation }) {
                                                     styles.customerName,
                                                     { color: isTopStore ? "#105c3b" : "#111827" },
                                                 ]}
-                                                numberOfLines={1}
+                                                numberOfLines={1} ellipsizeMode="tail"
                                             >
                                                 {store.storeName}
                                             </Text>

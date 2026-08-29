@@ -7,6 +7,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemeContext } from "../theme/ThemeContext";
 import Topbar from "../components/Topbar";
 import CustomAlertModal from "../components/CustomeAlertModal";
+import DeleteAccountModal from "../components/DeleteAccountModal";
 import { AntDesign, MaterialIcons, Feather, FontAwesome } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { clearAuthStorage, getValidToken } from "../services/authService";
@@ -25,6 +26,7 @@ export default function ProfilePage({ navigation }) {
     const [profilePhotoBase64, setProfilePhotoBase64] = useState(null);
     const [username, setUsername] = useState("");
     const [visible, setVisible] = useState(false);
+    const [deleteModalVisible, setDeleteModalVisible] = useState(false);
     const [alertConfig, setAlertConfig] = useState({
         visible: false,
         title: "",
@@ -497,7 +499,7 @@ export default function ProfilePage({ navigation }) {
                                         </View>
                                         <View style={{ flex: 1 }}>
                                             <Text style={styles.cardTitle}>{loyaltyTier} Tier</Text>
-                                            <Text style={styles.cardSubtitle}>Loyalty status</Text>
+                                            <Text style={styles.cardSubtitle}>Click to view details</Text>
                                         </View>
                                         <View style={styles.pointsPill}>
                                             <Text style={styles.cardValue}>{loyaltyPoints}</Text>
@@ -731,7 +733,7 @@ export default function ProfilePage({ navigation }) {
                                         <Feather name="chevron-right" size={20} color={"#aaa"} />
                                     </TouchableOpacity> */}
 
-                                    <TouchableOpacity style={[styles.menuItem, { backgroundColor: "#fff", marginBottom: 0 }]}
+                                    <TouchableOpacity style={[styles.menuItem, { backgroundColor: "#fff" }]}
                                         onPress={() => { confirmLogout(); }} activeOpacity={0.7}>
                                         <View style={[styles.iconCircle, { backgroundColor: "#fff0f0" }]}>
                                             <MaterialIcons name="logout" size={18} color="#ff6b6b" />
@@ -743,11 +745,30 @@ export default function ProfilePage({ navigation }) {
                                         </View>
                                         <Feather name="chevron-right" size={20} color="#ff6b6b" />
                                     </TouchableOpacity>
+
+                                    <TouchableOpacity style={[styles.menuItem, { backgroundColor: "#fff", marginBottom: 0 }]}
+                                        onPress={() => setDeleteModalVisible(true)} activeOpacity={0.7}>
+                                        <View style={[styles.iconCircle, { backgroundColor: "#fff0f0" }]}>
+                                            <MaterialIcons name="delete" size={18} color="#ff6b6b" />
+                                        </View>
+                                        <View style={styles.menuText}>
+                                            <Text style={[styles.menuTitle, { color: "#ff6b6b" }]}>
+                                                Delete Account
+                                            </Text>
+                                        </View>
+                                        <Feather name="chevron-right" size={20} color="#ff6b6b" />
+                                    </TouchableOpacity>
                                 </View>
                             </>
                         )}
                     </ScrollView>
                 </KeyboardAvoidingView>
+                <DeleteAccountModal
+                    visible={deleteModalVisible}
+                    onClose={() => setDeleteModalVisible(false)}
+                    navigation={navigation}
+                    onShowAlert={showAlert}
+                />
                 <CustomAlertModal
                     visible={alertConfig.visible}
                     type={alertConfig.type}

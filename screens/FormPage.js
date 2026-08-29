@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
     View, Text, TouchableOpacity, StyleSheet,
-    Keyboard, KeyboardAvoidingView, Platform, TouchableWithoutFeedback
+    Keyboard, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, ScrollView
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialIcons } from "@expo/vector-icons";
-import { ScrollView } from "react-native-gesture-handler";
 
 import Card1 from "../components/Card1";
 import Card2 from "../components/Card2";
@@ -66,41 +65,41 @@ export default function FormPage({ route, navigation }) {
     const Step2Component = STEP_2_COMPONENTS[category?.id];
     return (
         <SafeAreaView style={{ flex: 1 }}>
-            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-                <KeyboardAvoidingView
+            <KeyboardAvoidingView
+                style={{ flex: 1 }}
+                behavior={Platform.OS === "ios" ? "padding" : "height"}
+                keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
+            >
+
+                <LinearGradient
+                    colors={["#f9a641", "#f5b849", "#ffffff"]}
+                    start={{ x: 0.5, y: 0 }}
+                    end={{ x: 0.5, y: 1 }}
                     style={{ flex: 1 }}
-                    behavior={Platform.OS === "ios" ? "padding" : "height"}
-                    keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
                 >
+                    <View style={{ padding: 16 }}>
+                        <View style={styles.row1}>
+                            <TouchableOpacity onPress={() => navigation.goBack()}>
+                                <MaterialIcons name="arrow-back-ios" size={22} style={{ paddingHorizontal: 10 }} />
+                            </TouchableOpacity>
 
-                    <LinearGradient
-                        colors={["#f9a641", "#f5b849", "#ffffff"]}
-                        start={{ x: 0.5, y: 0 }}
-                        end={{ x: 0.5, y: 1 }}
-                        style={{ flex: 1 }}
-                    >
-                        <View style={{ padding: 16 }}>
-                            <View style={styles.row1}>
-                                <TouchableOpacity onPress={() => navigation.goBack()}>
-                                    <MaterialIcons name="arrow-back-ios" size={22} style={{ paddingHorizontal: 10 }} />
-                                </TouchableOpacity>
-
-                                <Text style={{ ...textPresets.title }}>
-                                    Smart Jahirati
-                                </Text>
-                            </View>
-
-                            <Text style={{ ...textPresets.body, marginLeft: 56, lineHeight: Math.round(14 * 1.5) }}>
-                                Post Your Ads Instantly Online
+                            <Text style={{ ...textPresets.title }}>
+                                Smart Jahirati
                             </Text>
                         </View>
 
-                        <ScrollView
-                            ref={scrollRef}
-                            keyboardShouldPersistTaps="handled"
-                            contentContainerStyle={{ paddingBottom: 30 }}
-                            showsVerticalScrollIndicator={false}
-                        >
+                        <Text style={{ ...textPresets.body, marginLeft: 56, lineHeight: Math.round(14 * 1.5) }}>
+                            Post Your Ads Instantly Online
+                        </Text>
+                    </View>
+
+                    <ScrollView
+                        ref={scrollRef}
+                        keyboardShouldPersistTaps="handled"
+                        contentContainerStyle={{ paddingBottom: 30 }}
+                        showsVerticalScrollIndicator={false}
+                    >
+                        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                             <View style={{ flex: 1, padding: 20 }}>
 
                                 {step === 1 && (template === "card1" || String(template) === "1") && (
@@ -163,10 +162,10 @@ export default function FormPage({ route, navigation }) {
                                 )}
 
                             </View>
-                        </ScrollView>
-                    </LinearGradient>
-                </KeyboardAvoidingView>
-            </TouchableWithoutFeedback>
+                        </TouchableWithoutFeedback>
+                    </ScrollView>
+                </LinearGradient>
+            </KeyboardAvoidingView>
         </SafeAreaView>
     );
 }
