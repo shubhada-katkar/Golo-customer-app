@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "GOLO",
-    "slug": "customer-app",
+    "slug": "customerapp",
     "scheme": "golo",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -77,9 +77,9 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "cf44db4a-66e3-439f-a6a9-0f82e321b203"
+        "projectId": "e5f8b959-980d-47ff-88bf-ea587468c30d"
       }
     },
-    "owner": "katkar-shubhada"
+    "owner": "snigavekars-team"
   }
 }
